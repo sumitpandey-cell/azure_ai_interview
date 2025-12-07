@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Gradients -->
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E1B4B;stop-opacity:1" />
+    </radialGradient>
+    
+    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:0.7" />
+    </linearGradient>
+    
+    <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#60A5FA;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </radialGradient>
+    
+    <!-- Filters -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGradient)"/>
+  
+  <!-- Stars -->
+  <circle cx="50" cy="50" r="1" fill="white" opacity="0.6"/>
+  <circle cx="350" cy="80" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="80" cy="350" r="1" fill="white" opacity="0.5"/>
+  <circle cx="320" cy="300" r="1" fill="white" opacity="0.7"/>
+  <circle cx="150" cy="100" r="0.8" fill="white" opacity="0.6"/>
+  <circle cx="280" cy="150" r="1.2" fill="white" opacity="0.7"/>
+  
+  <!-- Outer Aura Rings -->
+  <circle cx="200" cy="200" r="180" fill="none" stroke="#A78BFA" stroke-width="2" opacity="0.3" filter="url(#softGlow)"/>
+  <circle cx="200" cy="200" r="160" fill="none" stroke="#8B5CF6" stroke-width="2" opacity="0.4" filter="url(#softGlow)"/>
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#7C3AED" stroke-width="2" opacity="0.5" filter="url(#softGlow)"/>
+  
+  <!-- Inner Glow Circle -->
+  <circle cx="200" cy="200" r="120" fill="url(#glowGradient)" opacity="0.3"/>
+  
+  <!-- Human Figure -->
+  <g transform="translate(200, 120)" filter="url(#glow)">
+    <!-- Head -->
+    <ellipse cx="0" cy="0" rx="20" ry="25" fill="none" stroke="url(#bodyGradient)" stroke-width="2"/>
+    <line x1="0" y1="-15" x2="0" y2="15" stroke="#60A5FA" stroke-width="2" opacity="0.8"/>
+    <circle cx="0" cy="-5" r="3" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- Neck -->
+    <line x1="0" y1="25" x2="0" y2="35" stroke="url(#bodyGradient)" stroke-width="3"/>
+    
+    <!-- Shoulders -->
+    <line x1="-25" y1="45" x2="25" y2="45" stroke="url(#bodyGradient)" stroke-width="2.5"/>
+    <circle cx="-25" cy="45" r="3" fill="#60A5FA" opacity="0.9"/>
+    <circle cx="25" cy="45" r="3" fill="#60A5FA" opacity="0.9"/>
+    
+    <!-- Torso -->
+    <line x1="0" y1="35" x2="0" y2="100" stroke="url(#bodyGradient)" stroke-width="3"/>
+    <circle cx="0" cy="60" r="4" fill="#FFFFFF" opacity="0.8"/>
+    
+    <!-- Arms -->
+    <line x1="-25" y1="45" x2="-30" y2="90" stroke="url(#bodyGradient)" stroke-width="2"/>
+    <line x1="25" y1="45" x2="30" y2="90" stroke="url(#bodyGradient)" stroke-width="2"/>
+    <circle cx="-30" cy="90" r="2.5" fill="#60A5FA" opacity="0.9"/>
+    <circle cx="30" cy="90" r="2.5" fill="#60A5FA" opacity="0.9"/>
+    
+    <!-- Chest Network -->
+    <line x1="-15" y1="55" x2="15" y2="55" stroke="#3B82F6" stroke-width="1" opacity="0.6"/>
+    <line x1="-12" y1="70" x2="12" y2="70" stroke="#3B82F6" stroke-width="1" opacity="0.6"/>
+    <circle cx="-15" cy="55" r="2" fill="#60A5FA" opacity="0.7"/>
+    <circle cx="15" cy="55" r="2" fill="#60A5FA" opacity="0.7"/>
+    <circle cx="-12" cy="70" r="2" fill="#60A5FA" opacity="0.7"/>
+    <circle cx="12" cy="70" r="2" fill="#60A5FA" opacity="0.7"/>
+    
+    <!-- Connection lines -->
+    <line x1="-15" y1="55" x2="0" y2="60" stroke="#3B82F6" stroke-width="0.8" opacity="0.5"/>
+    <line x1="15" y1="55" x2="0" y2="60" stroke="#3B82F6" stroke-width="0.8" opacity="0.5"/>
+    <line x1="-12" y1="70" x2="0" y2="60" stroke="#3B82F6" stroke-width="0.8" opacity="0.5"/>
+    <line x1="12" y1="70" x2="0" y2="60" stroke="#3B82F6" stroke-width="0.8" opacity="0.5"/>
+  </g>
+  
+  <!-- AURA Text -->
+  <text x="200" y="320" font-family="Arial, sans-serif" font-size="48" font-weight="300" 
+        fill="#E0E7FF" text-anchor="middle" letter-spacing="8" filter="url(#glow)">
+    AURA
+  </text>
+  
+  <!-- Decorative Star -->
+  <g transform="translate(360, 360)">
+    <path d="M 0,-8 L 2,-2 L 8,0 L 2,2 L 0,8 L -2,2 L -8,0 L -2,-2 Z" 
+          fill="#E0E7FF" opacity="0.6" filter="url(#glow)"/>
+  </g>
+</svg>
