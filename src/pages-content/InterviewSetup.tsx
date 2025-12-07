@@ -1,421 +1,184 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useParams } ;
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Brain, Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Settings } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { VideoOff, MicOff, Video, Mic, Sparkles, CheckCircle2, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useSubscription } from "@/hooks/use-subscription";
-import { Card, CardContent } from "@/components/ui/card";
-
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-interface SessionConfig {
-    skills?: string[];
-    jobDescription?: string;
-    duration?: number;
-    difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
-    selectedAvatar?: string; // ID of the selected interviewer avatar
-    companyInterviewConfig?: {
-        companyTemplateId: string;
-        companyName: string;
-        role: string;
-        experienceLevel: string;
-    };
-}
-
-interface SessionData {
-    id: string;
-    interview_type: string;
-    position: string;
-    duration_minutes?: number | null;
-    config?: SessionConfig | null;
-}
 
 export default function InterviewSetup() {
-    const { sessionId } = useParams();
+    const router = useRouter();
     const { user } = useAuth();
-    const [isMicOn, setIsMicOn] = useState(false);
-    const [isCameraOn, setIsCameraOn] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [session, setSession] = useState<SessionData | null>(null);
-    const [fetchingSession, setFetchingSession] = useState(true);
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const [cameraError, setCameraError] = useState<string | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const searchParams = useSearchParams();
 
-    const [showTimeWarning, setShowTimeWarning] = useState(false);
-    const { allowed, remaining_minutes, loading: subscriptionLoading } = useSubscription();
+    const [micEnabled, setMicEnabled] = useState(false);
+    const [cameraEnabled, setCameraEnabled] = useState(false);
 
-    useEffect(() => {
-        if (sessionId) {
-            fetchSession();
-        }
-    }, [sessionId]);
-
-    const fetchSession = async () => {
-        try {
-            const { data, error } = await supabase
-                .from("interview_sessions")
-                .select("id, interview_type, position, duration_minutes, config")
-                .eq("id", sessionId)
-                .single();
-
-            if (error) throw error;
-            // Cast config from Json to SessionConfig
-            setSession(data as SessionData);
-        } catch (error) {
-            console.error("Error fetching session:", error);
-            toast.error("Failed to load session details");
-        } finally {
-            setFetchingSession(false);
-        }
+    // Get session details from URL params or use defaults
+    const sessionDetails = {
+        type: searchParams?.get('type') || "Technical",
+        position: searchParams?.get('position') || "frontend developer",
+        skills: searchParams?.get('skills')?.split(',') || ["html", "css", "js"]
     };
 
-    const toggleMic = () => setIsMicOn(!isMicOn);
-
-
-
-    const startCamera = async () => {
-        try {
-            setCameraError(null);
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-            setIsCameraOn(true);
-            setIsMicOn(true); // Also enable mic when camera starts
-        } catch (error) {
-            console.error('Error accessing camera:', error);
-            setCameraError('Unable to access camera. Please check permissions.');
-            toast.error('Camera access denied. Please allow camera permissions.');
+    const handleStartInterview = () => {
+        if (!micEnabled || !cameraEnabled) {
+            return; // Don't proceed if permissions not enabled
         }
+        router.push('/interview/live');
     };
 
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-        setIsCameraOn(false);
-        setIsMicOn(false); // Also disable mic when camera stops
-    };
-
-    const toggleCamera = () => {
-        if (isCameraOn) {
-            stopCamera();
-        } else {
-            startCamera();
-        }
-    };
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [stream]);
-
-    const handleStart = async () => {
-        if (!allowed && !subscriptionLoading) {
-            toast.error("You have reached your daily interview limit.");
-            return;
-        }
-
-        if (remaining_minutes <= 0 && !subscriptionLoading) {
-            toast.error("You have no remaining interview time.");
-            return;
-        }
-
-        if (remaining_minutes < 5 && !showTimeWarning && !subscriptionLoading) {
-            setShowTimeWarning(true);
-            return;
-        }
-
-        proceedToStart();
-    };
-
-    const proceedToStart = () => {
-        if (!isMicOn) {
-            toast.error("Please turn on your microphone to continue");
-            return;
-        }
-
-        if (!isCameraOn) {
-            toast.error("Please turn on your camera to continue");
-            return;
-        }
-
-        setIsLoading(true);
-
-        // Simulate connection or setup delay
-        setTimeout(() => {
-            setIsLoading(false);
-            toast.success("Starting interview session...");
-            router.push(`/interview/${sessionId}/active`);
-            console.log("Starting interview for session:", sessionId);
-        }, 1000);
-    };
-
-    if (fetchingSession) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        );
-    }
+    const instructions = [
+        "Enable camera and microphone permissions",
+        "Find a quiet, well-lit environment",
+        "Speak clearly and naturally",
+        "Ensure stable internet connection"
+    ];
 
     return (
-        <div className="min-h-screen bg-background flex flex-col font-sans transition-colors duration-300">
-            {/* Header */}
-            <header className="h-16 border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50 flex items-center px-6 lg:px-12 justify-between">
-                <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-                    <img src="/arjuna-logo.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
-                    Arjuna AI
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Dashboard
-                </Button>
-            </header>
-
-            {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8 lg:py-12 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-                {/* Left Column: Video Preview */}
-                <div className="w-full max-w-3xl">
-                    <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-border/20 ring-1 ring-white/10">
-
-                        {/* Video Element */}
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className={`w-full h-full object-cover ${isCameraOn ? 'block' : 'hidden'} transform scale-x-[-1]`}
-                        />
-
-                        {/* User Label */}
-                        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-sm font-medium z-10 border border-white/10 flex items-center gap-2">
-                            <div className={`h-2 w-2 rounded-full ${isCameraOn ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                            {user?.user_metadata?.full_name || user?.email || "User"}
-                        </div>
-
-                        {/* Placeholder for Video Stream */}
-                        {!isCameraOn && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-slate-400 pb-20">
-                                <div className="h-16 w-16 md:h-24 md:w-24 rounded-full bg-slate-800/50 flex items-center justify-center mb-4 border border-slate-700 shadow-inner">
-                                    <VideoOff className="h-8 w-8 md:h-10 md:w-10 opacity-50" />
-                                </div>
-                                <p className="text-lg font-medium">Camera is turned off</p>
-                                {cameraError && (
-                                    <p className="text-red-400 text-sm text-center max-w-xs mt-2 bg-red-950/30 px-3 py-1 rounded-md border border-red-900/50">{cameraError}</p>
-                                )}
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Video Preview Section - 2 columns */}
+                <div className="lg:col-span-2 space-y-4">
+                    {/* Video Card */}
+                    <Card className="bg-[#0A0E1A] border-none shadow-2xl overflow-hidden rounded-2xl">
+                        <div className="relative aspect-video bg-[#0F1117] flex items-center justify-center">
+                            {/* User Name Badge - Top Left */}
+                            <div className="absolute top-6 left-6 z-10">
+                                <Badge variant="destructive" className="px-3 py-1.5 bg-red-500 hover:bg-red-500">
+                                    <span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
+                                    {user?.user_metadata?.full_name || "Ujjawal Mishra"}
+                                </Badge>
                             </div>
-                        )}
 
-                        {/* Controls Overlay */}
-                        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6 z-10">
-                            <button
-                                onClick={toggleMic}
-                                className={`h-12 w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-105 ${isMicOn
-                                    ? 'bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600'
-                                    : 'bg-red-500/90 hover:bg-red-600 text-white border border-red-400'
-                                    }`}
-                                title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
-                            >
-                                {isMicOn ? <Mic className="h-5 w-5 md:h-6 md:w-6" /> : <MicOff className="h-5 w-5 md:h-6 md:w-6" />}
-                            </button>
-                            <button
-                                onClick={toggleCamera}
-                                className={`h-12 w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-105 ${isCameraOn
-                                    ? 'bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600'
-                                    : 'bg-red-500/90 hover:bg-red-600 text-white border border-red-400'
-                                    }`}
-                                title={isCameraOn ? "Turn Off Camera" : "Turn On Camera"}
-                            >
-                                {isCameraOn ? <Video className="h-5 w-5 md:h-6 md:w-6" /> : <VideoOff className="h-5 w-5 md:h-6 md:w-6" />}
-                            </button>
+                            {/* Camera Off State - Center */}
+                            <div className="text-center">
+                                <div className="w-28 h-28 rounded-full bg-slate-800/50 border-2 border-slate-700 flex items-center justify-center mx-auto mb-4">
+                                    <VideoOff className="h-14 w-14 text-slate-500" />
+                                </div>
+                                <p className="text-slate-400 text-lg font-medium">Camera is turned off</p>
+                            </div>
+
+                            {/* Control Buttons - Bottom Center */}
+                            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-10">
+                                <button
+                                    onClick={() => setMicEnabled(!micEnabled)}
+                                    className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${micEnabled
+                                            ? "bg-slate-700 hover:bg-slate-600"
+                                            : "bg-red-500 hover:bg-red-600"
+                                        }`}
+                                    aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
+                                >
+                                    {micEnabled ? (
+                                        <Mic className="h-6 w-6 text-white" />
+                                    ) : (
+                                        <MicOff className="h-6 w-6 text-white" />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => setCameraEnabled(!cameraEnabled)}
+                                    className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${cameraEnabled
+                                            ? "bg-slate-700 hover:bg-slate-600"
+                                            : "bg-red-500 hover:bg-red-600"
+                                        }`}
+                                    aria-label={cameraEnabled ? "Turn off camera" : "Turn on camera"}
+                                >
+                                    {cameraEnabled ? (
+                                        <Video className="h-6 w-6 text-white" />
+                                    ) : (
+                                        <VideoOff className="h-6 w-6 text-white" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <p className="text-center text-sm text-muted-foreground mt-4">
+                    </Card>
+
+                    {/* Helper Text */}
+                    <p className="text-center text-sm text-muted-foreground">
                         Check your appearance and audio before joining the session.
                     </p>
                 </div>
 
-                {/* Right Column: Controls & Instructions */}
-                <div className="w-full max-w-sm space-y-6">
-                    {session && (
-                        <Card className="border-none shadow-lg bg-card/50 backdrop-blur-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-4 text-primary font-semibold">
-                                    <Settings className="h-4 w-4" />
-                                    <h3>Session Details</h3>
-                                </div>
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground">Type</span>
-                                        <span className="font-medium text-foreground">{session.interview_type}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground">Position</span>
-                                        <span className="font-medium text-foreground">{session.position}</span>
-                                    </div>
-                                    {session.config?.companyInterviewConfig && (
-                                        <>
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-primary/10 border border-primary/20">
-                                                <span className="text-muted-foreground">Company</span>
-                                                <span className="font-semibold text-primary">{session.config.companyInterviewConfig.companyName}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Role</span>
-                                                <span className="font-medium text-foreground">{session.config.companyInterviewConfig.role}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Experience Level</span>
-                                                <span className="font-medium text-foreground">{session.config.companyInterviewConfig.experienceLevel}</span>
-                                            </div>
-                                        </>
-                                    )}
-                                    {session.config?.difficulty && (
-                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground">Difficulty</span>
-                                            <span className={`px-2 py-1 rounded-md text-xs font-semibold ${session.config.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                                session.config.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
-                                                    'bg-red-500/10 text-red-600 dark:text-red-400'
-                                                }`}>
-                                                {session.config.difficulty}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {session.config?.skills && session.config.skills.length > 0 && (
-                                        <div className="p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground text-xs block mb-2">Skills to be assessed</span>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {session.config.skills.map((skill, idx) => (
-                                                    <span key={idx} className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {session.config?.jobDescription && (
-                                        <div className="p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground text-xs block mb-2">Job Description</span>
-                                            <p className="text-xs text-foreground line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title={session.config.jobDescription}>
-                                                {session.config.jobDescription}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    <div className="text-center space-y-6">
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-foreground">Ready to join?</h2>
-                            <p className="text-muted-foreground text-sm">The AI interviewer is waiting for you.</p>
+                {/* Right Sidebar - 1 column */}
+                <div className="space-y-6">
+                    {/* Session Details Card */}
+                    <Card className="p-6 border border-border bg-card shadow-md rounded-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Settings className="h-5 w-5 text-muted-foreground" />
+                            <h3 className="font-semibold text-foreground">Session Details</h3>
                         </div>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-1">Type</p>
+                                <p className="font-semibold text-foreground">{sessionDetails.type}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-1">Position</p>
+                                <p className="font-semibold text-foreground">{sessionDetails.position}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-2">Skills to be assessed</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {sessionDetails.skills.map((skill) => (
+                                        <Badge
+                                            key={skill}
+                                            variant="secondary"
+                                            className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md"
+                                        >
+                                            {skill}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
 
-                        <div className="space-y-3">
+                    {/* Ready to Join Card */}
+                    <Card className="p-6 border border-border bg-card shadow-md rounded-xl">
+                        <div className="text-center space-y-4">
+                            <h3 className="text-xl font-bold text-foreground">Ready to join?</h3>
+                            <p className="text-sm text-muted-foreground">
+                                The AI interviewer is waiting for you.
+                            </p>
                             <Button
+                                onClick={handleStartInterview}
+                                disabled={!micEnabled || !cameraEnabled}
+                                className="w-full h-12 text-base font-semibold bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
                                 size="lg"
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/25 transition-all hover:scale-[1.02]"
-                                onClick={handleStart}
-                                disabled={isLoading || subscriptionLoading || !allowed}
                             >
-                                {isLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                        Connecting...
-                                    </>
-                                ) : !allowed ? (
-                                    "Daily Limit Reached"
-                                ) : (
-                                    <>
-                                        <Sparkles className="mr-2 h-5 w-5" />
-                                        Start Interview Now
-                                    </>
-                                )}
+                                <Sparkles className="mr-2 h-5 w-5" />
+                                Start Interview Now
                             </Button>
-
-                            {!isMicOn && !isCameraOn && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable microphone and camera access</p>
-                            )}
-                            {(!isMicOn && isCameraOn) && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable microphone access</p>
-                            )}
-                            {(isMicOn && !isCameraOn) && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable camera access</p>
+                            {(!micEnabled || !cameraEnabled) && (
+                                <p className="text-xs text-red-500 font-medium">
+                                    Please enable microphone and camera access
+                                </p>
                             )}
                         </div>
-                    </div>
+                    </Card>
 
-
-
-                    <div className="space-y-4 pt-2">
-                        <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider text-center">Instructions</h3>
-                        <ul className="space-y-3 bg-muted/30 p-4 rounded-xl border border-border/50">
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Enable camera and microphone permissions</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Find a quiet, well-lit environment</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Speak clearly and naturally</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Ensure stable internet connection</span>
-                            </li>
-                        </ul>
-                    </div>
+                    {/* Instructions Card */}
+                    <Card className="p-6 border border-border bg-card shadow-md rounded-xl">
+                        <h3 className="font-bold text-foreground mb-4 uppercase text-xs tracking-wider">
+                            Instructions
+                        </h3>
+                        <div className="space-y-3">
+                            {instructions.map((instruction, index) => (
+                                <div key={index} className="flex items-start gap-3">
+                                    <div className="shrink-0 mt-0.5">
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {instruction}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
-
-            </main>
-
-            <AlertDialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Low Time Warning</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You have only {remaining_minutes} minutes remaining in your subscription.
-                            The interview will automatically end when your time runs out.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={proceedToStart}>Continue Anyway</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            </div>
         </div>
     );
 }

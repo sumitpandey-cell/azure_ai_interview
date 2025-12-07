@@ -659,3 +659,50 @@ Import trace for requested module:
  GET /dashboard 200 in 764ms
  GET /dashboard 200 in 767ms
  GET /start-interview 200 in 161ms
+ GET /dashboard 200 in 161ms
+ GET /settings 200 in 43ms
+ GET /dashboard 200 in 26ms
+ GET /start-interview 200 in 25ms
+ GET /dashboard 200 in 28ms
+ GET /start-interview 200 in 31ms
+ GET /dashboard 200 in 25ms
+ ✓ Compiled in 5.4s (2467 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /dashboard 200 in 118ms
+ ✓ Compiled in 673ms (1166 modules)
+ GET /dashboard 200 in 38ms
+ GET /dashboard 200 in 145ms
+ ✓ Compiled in 2.3s (2467 modules)
+ ✓ Compiled in 675ms (1166 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /start-interview 200 in 630ms
+ GET /dashboard 200 in 62ms
+ GET /start-interview 200 in 43ms
+ ✓ Compiled in 1534ms (1166 modules)
+ GET /start-interview 200 in 49ms
+ GET /start-interview 200 in 32ms
+ GET /start-interview 200 in 35ms
+ GET /start-interview 200 in 55ms
+ GET /start-interview 200 in 64ms
+ ✓ Compiled in 694ms (1166 modules)
+ GET /start-interview 200 in 92ms
+ GET /start-interview 200 in 91ms
+ GET /start-interview 200 in 255ms
+ GET /start-interview 200 in 269ms
+ ✓ Compiled in 3.3s (2467 modules)
+ ✓ Compiled in 855ms (1166 modules)
+ ✓ Compiled in 963ms (1166 modules)
+ ○ Compiling /interview/active ...
+ ✓ Compiled /interview/active in 7s (2467 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /interview/active 200 in 8099ms
+ GET /interview/active 200 in 142ms
+ GET /interview/active 200 in 105ms
+ GET /interview/active 200 in 46ms
+ GET /interview/active 200 in 27ms
+ GET /interview/active 200 in 35ms
+ ✓ Compiled in 19.3s (2474 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /interview/active 200 in 1389ms
+ GET /interview/active 200 in 4478ms
+ GET /start-interview 200 in 114ms
