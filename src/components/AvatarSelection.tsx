@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useParams } ;
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, CheckCircle2, ArrowRight, Mic, Zap, Heart, Target, Award, TrendingUp } from "lucide-react";
@@ -11,17 +11,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { INTERVIEWER_AVATARS, getDefaultAvatar, type InterviewerAvatar } from "@/config/interviewer-avatars";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
+
 export default function AvatarSelection() {
     const { sessionId } = useParams();
     const [selectedAvatar, setSelectedAvatar] = useState<InterviewerAvatar>(getDefaultAvatar());
     const [isLoading, setIsLoading] = useState(false);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const router = useRouter();
 
     const handleContinue = async () => {
         if (!sessionId) {
             toast.error("Session not found");
             return;
         }
+
+        // Ensure sessionId is a string (handle Next.js params that can be string | string[])
+        const sessionIdStr = Array.isArray(sessionId) ? sessionId[0] : sessionId;
 
         setIsLoading(true);
 
@@ -30,7 +35,7 @@ export default function AvatarSelection() {
             const { data: session, error: fetchError } = await supabase
                 .from('interview_sessions')
                 .select('config')
-                .eq('id', sessionId)
+                .eq('id', sessionIdStr)
                 .single();
 
             if (fetchError) throw fetchError;
@@ -45,7 +50,7 @@ export default function AvatarSelection() {
             const { error: updateError } = await supabase
                 .from('interview_sessions')
                 .update({ config: updatedConfig })
-                .eq('id', sessionId);
+                .eq('id', sessionIdStr);
 
             if (updateError) throw updateError;
 
@@ -53,7 +58,7 @@ export default function AvatarSelection() {
 
             // Navigate to interview setup
             setTimeout(() => {
-                router.push(`/interview/${sessionId}/setup`);
+                router.push(`/interview/${sessionIdStr}/setup`);
             }, 500);
         } catch (error) {
             console.error("Error saving avatar selection:", error);

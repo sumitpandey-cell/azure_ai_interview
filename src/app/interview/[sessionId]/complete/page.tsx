@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useParams } ;
+import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 
 export default function InterviewComplete() {
+    const router = useRouter();
     const { sessionId } = useParams();
 
     useEffect(() => {
@@ -15,7 +16,7 @@ export default function InterviewComplete() {
         }, 3000);
 
         return () => clearTimeout(timer);
-    }, [navigate, sessionId]);
+    }, [router, sessionId]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background font-sans p-4">

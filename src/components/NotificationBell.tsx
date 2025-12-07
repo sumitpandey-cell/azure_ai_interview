@@ -1,16 +1,17 @@
+"use client";
+
 import { useState } from "react";
-import { Bell, Check, X, Trash2 } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications } from "@/hooks/use-notifications";
+import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { formatDistanceToNow } from "date-fns";
 
 export function NotificationBell() {

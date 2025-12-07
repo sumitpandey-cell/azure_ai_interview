@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useParams } ;
+import { useParams } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +40,32 @@ interface InterviewSession {
     transcript: any;
 }
 
+interface Skill {
+    name: string;
+    score: number;
+    feedback: string;
+}
+
+interface TranscriptMessage {
+    id: string | number;
+    sender: string;
+    text: string;
+    timestamp?: string;
+}
+
+// Type for user metadata
+interface UserMetadata {
+    full_name?: string;
+    avatar_url?: string;
+    gender?: string;
+}
+
 export default function InterviewReport() {
-    const { sessionId } = useParams();
+    const router = useRouter();
+    const params = useParams();
+    const sessionId = typeof params.sessionId === 'string' ? params.sessionId : params.sessionId?.[0];
     const { user } = useAuth();
+    const userMetadata = user?.user_metadata as UserMetadata | undefined;
     const [loading, setLoading] = useState(true);
     const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError } = useInterviewStore();
     const { fetchSessionDetail, isCached, deleteInterviewSession } = useOptimizedQueries();
@@ -57,8 +80,12 @@ export default function InterviewReport() {
     const fetchSession = async () => {
         try {
             setLoading(true);
-            const data = await fetchSessionDetail(sessionId!);
-            setSession(data as InterviewSession);
+            if (sessionId) {
+                const data = await fetchSessionDetail(sessionId);
+                if (data) {
+                    setSession(data as InterviewSession);
+                }
+            }
         } catch (error) {
             console.error("Error fetching session:", error);
             // router.push("/dashboard"); // Optional: redirect on error
@@ -70,8 +97,8 @@ export default function InterviewReport() {
     const copyTranscriptToClipboard = async () => {
         try {
             const transcriptText = reportData.transcript
-                .map(msg => `${msg.sender.toUpperCase()}: ${msg.text}`)
-                .join('\n\n');
+                .map((msg: TranscriptMessage) => `${msg.sender.toUpperCase()}: ${msg.text}`)
+                .join('\\n\\n');
 
             await navigator.clipboard.writeText(transcriptText);
             toast.success("Transcript copied to clipboard!");
@@ -174,20 +201,20 @@ export default function InterviewReport() {
         <div class="section">
             <h2>Key Strengths</h2>
             <ul class="list">
-                ${reportData.strengths.map(item => `<li class="strength">${item}</li>`).join('')}
+                ${reportData.strengths.map((item: string) => `<li class="strength">${item}</li>`).join('')}
             </ul>
         </div>
 
         <div class="section">
             <h2>Areas for Improvement</h2>
             <ul class="list">
-                ${reportData.improvements.map(item => `<li class="improvement">${item}</li>`).join('')}
+                ${reportData.improvements.map((item: string) => `<li class="improvement">${item}</li>`).join('')}
             </ul>
         </div>
 
         <div class="section">
             <h2>Skills Assessment</h2>
-            ${reportData.skills.map(skill => `
+            ${reportData.skills.map((skill: Skill) => `
                 <div class="skill-item">
                     <div class="skill-header">
                         <span class="skill-name">${skill.name}</span>
@@ -204,14 +231,14 @@ export default function InterviewReport() {
         <div class="section">
             <h2>Recommended Action Plan</h2>
             <ul class="list">
-                ${reportData.actionPlan.map(item => `<li>${item}</li>`).join('')}
+                ${reportData.actionPlan.map((item: string) => `<li>${item}</li>`).join('')}
             </ul>
         </div>
 
         <div class="section">
             <h2>Interview Transcript</h2>
             <div class="transcript">
-                ${reportData.transcript.map(msg => `
+                ${reportData.transcript.map((msg: TranscriptMessage) => `
                     <div class="message ${msg.sender}">
                         <div class="message-sender">${msg.sender === 'ai' ? 'AI Interviewer' : 'Candidate'}</div>
                         <div class="message-text">${msg.text}</div>
@@ -293,7 +320,7 @@ export default function InterviewReport() {
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
                                 <div className="flex items-center gap-4 min-w-0 flex-1">
                                     <div className="min-w-0 flex-1">
-                                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 truncate">{user?.user_metadata?.full_name || "Candidate"}</h1>
+                                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 truncate">{userMetadata?.full_name || "Candidate"}</h1>
                                         <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg truncate">{session.position}</p>
                                     </div>
                                     {sessionId && isCached.sessionDetail(sessionId) && (
@@ -352,7 +379,7 @@ export default function InterviewReport() {
                                     <User className="h-4 w-4" />
                                     Candidate:
                                 </div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{user?.user_metadata?.full_name || "Candidate"}</span>
+                                <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{userMetadata?.full_name || "Candidate"}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm gap-2">
                                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 flex-shrink-0">
@@ -523,7 +550,7 @@ export default function InterviewReport() {
     console.log('=============================');
 
     const reportData = {
-        candidateName: user?.user_metadata?.full_name || "Candidate",
+        candidateName: userMetadata?.full_name || "Candidate",
         position: session.position,
         overallScore: session.score || (feedbackData && feedbackData.skills ? Math.round((feedbackData.skills.reduce((acc: any, s: any) => acc + (s.score || 0), 0) / (feedbackData.skills.length || 1))) : 0),
         date: new Date(session.created_at).toLocaleString(),
@@ -709,7 +736,7 @@ export default function InterviewReport() {
                                         </CardHeader>
                                         <CardContent>
                                             <ul className="space-y-3">
-                                                {reportData.strengths.map((item, i) => (
+                                                {reportData.strengths.map((item: string, i: number) => (
                                                     <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300 break-words">
                                                         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
                                                         <span className="break-words">{item}</span>
@@ -727,7 +754,7 @@ export default function InterviewReport() {
                                         </CardHeader>
                                         <CardContent>
                                             <ul className="space-y-3">
-                                                {reportData.improvements.map((item, i) => (
+                                                {reportData.improvements.map((item: string, i: number) => (
                                                     <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300 break-words">
                                                         <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
                                                         <span className="break-words">{item}</span>
@@ -745,7 +772,7 @@ export default function InterviewReport() {
                                             <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">Skills Assessment</CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-6">
-                                            {reportData.skills.map((skill, i) => (
+                                            {reportData.skills.map((skill: Skill, i: number) => (
                                                 <div key={i} className="space-y-2">
                                                     <div className="flex justify-between text-sm font-semibold text-slate-900 dark:text-slate-100 gap-2">
                                                         <span className="break-words flex-1">{skill.name}</span>
@@ -764,7 +791,7 @@ export default function InterviewReport() {
                                         </CardHeader>
                                         <CardContent>
                                             <ul className="space-y-4">
-                                                {reportData.actionPlan.map((item, i) => (
+                                                {reportData.actionPlan.map((item: string, i: number) => (
                                                     <li key={i} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
                                                         <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center shrink-0 mt-0.5">
                                                             <ArrowRight className="h-3 w-3 text-slate-400" />
@@ -867,7 +894,7 @@ export default function InterviewReport() {
 
                                 {/* Detailed Skills Grid */}
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    {reportData.skills.map((skill, i) => (
+                                    {reportData.skills.map((skill: Skill, i: number) => (
                                         <Card key={i} className="border-none shadow-sm">
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                                 <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">{skill.name}</CardTitle>
@@ -989,7 +1016,7 @@ export default function InterviewReport() {
                                             </div>
                                         ) : (
                                             // Actual transcript messages
-                                            reportData.transcript.map((msg) => (
+                                            reportData.transcript.map((msg: TranscriptMessage) => (
                                                 <div key={msg.id} className={`flex gap-4 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                                                     <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${msg.sender === 'ai' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
                                                         {msg.sender === 'ai' ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
