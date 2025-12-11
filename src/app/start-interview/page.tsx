@@ -1,315 +1,568 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+'use client'
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Briefcase, User, Code, FileText, Upload, Plus, X, Play } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2 } from "lucide-react";
+import { CompanyTemplate } from "@/types/company-types";
+import { useCompanyQuestions } from "@/hooks/use-company-questions";
+import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
+import { useInterviewStore } from "@/stores/use-interview-store";
+import { interviewService } from "@/services/interview.service";
+
+const formSchema = z.object({
+    interviewMode: z.enum(["general", "company"]),
+    interviewType: z.string().min(1, "Interview type is required"),
+    position: z.string().min(1, "Position is required"),
+    companyId: z.string().optional(),
+    role: z.string().optional(),
+    experienceLevel: z.string().optional(),
+    skills: z.string().optional(),
+    jobDescription: z.any().optional(),
+});
 
 export default function StartInterview() {
+    const { user } = useAuth();
     const router = useRouter();
-    const [interviewMode, setInterviewMode] = useState("general");
-    const [interviewType, setInterviewType] = useState("");
-    const [position, setPosition] = useState("");
-    const [skills, setSkills] = useState<string[]>([]);
+    const searchParams = useSearchParams();
+    const [isLoading, setIsLoading] = useState(false);
+    const [skillsList, setSkillsList] = useState<string[]>([]);
     const [skillInput, setSkillInput] = useState("");
-    const [jobDescriptionTab, setJobDescriptionTab] = useState("upload");
-    const [jobDescription, setJobDescription] = useState("");
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [jobDescriptionType, setJobDescriptionType] = useState<'upload' | 'manual'>('upload');
+    const [interviewMode, setInterviewMode] = useState<'general' | 'company'>(
+        searchParams.get('mode') === 'company' ? 'company' : 'general'
+    );
+    const [companyTemplate, setCompanyTemplate] = useState<CompanyTemplate | null>(null);
+    const { fetchCompanyTemplates } = useOptimizedQueries();
+    const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
+    const { setCurrentSession } = useInterviewStore();
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            interviewMode: interviewMode,
+            interviewType: "",
+            position: companyTemplate?.common_roles?.[0] || "",
+            companyId: companyTemplate?.id || "",
+            role: "",
+            experienceLevel: "",
+            skills: "",
+        },
+    });
+
+    // Fetch company templates for dropdown
+    useEffect(() => {
+        const loadCompanies = async () => {
+            const templates = await fetchCompanyTemplates();
+            setCompanyTemplates(templates);
+
+            // If companyId is in URL params, set the company template
+            const companyId = searchParams.get('companyId');
+            if (companyId && templates.length > 0) {
+                const template = templates.find(t => t.id === companyId);
+                if (template) {
+                    setCompanyTemplate(template);
+                }
+            }
+        };
+        loadCompanies();
+    }, [fetchCompanyTemplates, searchParams]);
+
+    // Update form when company template changes
+    useEffect(() => {
+        if (companyTemplate) {
+            form.setValue('companyId', companyTemplate.id);
+            form.setValue('position', companyTemplate.common_roles?.[0] || '');
+        }
+    }, [companyTemplate, form]);
 
     const handleAddSkill = () => {
-        if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-            setSkills([...skills, skillInput.trim()]);
+        if (skillInput.trim()) {
+            setSkillsList([...skillsList, skillInput.trim()]);
             setSkillInput("");
+            form.setValue("skills", ""); // Clear the hidden input if we were using one, or just manage state
         }
     };
 
-    const handleRemoveSkill = (skillToRemove: string) => {
-        setSkills(skills.filter(skill => skill !== skillToRemove));
-    };
+    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+        if (!user) {
+            toast.error("You must be logged in to start an interview");
+            return;
+        }
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Check file type
-            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-            if (!allowedTypes.includes(file.type)) {
-                toast.error("Please upload a PDF or DOCX file");
-                return;
+        setIsLoading(true);
+        try {
+            // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
+            const existingSessions = await interviewService.getInProgressSessions(user.id);
+
+            // If there are in-progress sessions, show dialog
+            if (existingSessions && existingSessions.length > 0) {
+                const previousSession = existingSessions[0];
+
+                const userChoice = window.confirm(
+                    `⚠️ You have an incomplete interview!\n\n` +
+                    `Position: ${previousSession.position}\n` +
+                    `Type: ${previousSession.interview_type}\n` +
+                    `Started: ${new Date(previousSession.created_at).toLocaleString()}\n\n` +
+                    `Would you like to:\n\n` +
+                    `• Click "OK" to CONTINUE the previous interview\n` +
+                    `• Click "Cancel" to START NEW (will abandon previous)`
+                );
+
+                if (userChoice) {
+                    // User wants to continue previous interview
+                    toast.info("Redirecting to previous interview...");
+                    // Resume from the correct stage
+                    const stage = (previousSession.config as any)?.currentStage || 'avatar';
+                    router.push(`/interview/${previousSession.id}/${stage}`);
+                    setIsLoading(false);
+                    return;
+                } else {
+                    // User wants to start new - mark old session as abandoned
+                    const abandonConfirm = window.confirm(
+                        `⚠️ Are you sure you want to abandon the previous interview?\n\n` +
+                        `This action cannot be undone. The previous interview will be marked as incomplete.`
+                    );
+
+                    if (!abandonConfirm) {
+                        // User changed their mind
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    // Abandon previous session using service
+                    const abandoned = await interviewService.abandonSession(previousSession.id);
+
+                    if (abandoned) {
+                        toast.success("Previous interview abandoned. Starting new session...");
+                    } else {
+                        toast.error("Failed to abandon previous session. Please try again.");
+                        setIsLoading(false);
+                        return;
+                    }
+                }
             }
-            // Check file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("File size must be less than 5MB");
-                return;
+
+            // Continue with creating new session
+            const config: any = {
+                skills: skillsList,
+                jobDescription: values.jobDescription || null,
+            };
+
+            // Add company-specific config if company interview
+            if (values.interviewMode === 'company' && values.companyId) {
+                const selectedCompany = companyTemplates.find(c => c.id === values.companyId) || companyTemplate;
+                config.companyInterviewConfig = {
+                    companyTemplateId: values.companyId,
+                    companyName: selectedCompany?.name || '',
+                    role: values.role || values.position,
+                    experienceLevel: values.experienceLevel || 'Mid'
+                };
             }
-            setUploadedFile(file);
-            toast.success("File uploaded successfully");
-        }
-    };
 
-    const handleStartInterview = () => {
-        // Validation
-        if (!interviewType) {
-            toast.error("Please select an interview type");
-            return;
-        }
-        if (!position.trim()) {
-            toast.error("Please enter a position");
-            return;
-        }
-        if (skills.length === 0) {
-            toast.error("Please add at least one skill");
-            return;
-        }
+            const { data, error } = await supabase.from("interview_sessions").insert({
+                user_id: user.id,
+                interview_type: values.interviewType,
+                position: values.position,
+                duration_minutes: 0, // Will be set to actual duration when interview completes
+                status: "pending",
+                config: {
+                    ...config,
+                    currentStage: 'avatar' // Initialize with avatar stage
+                }
+            }).select();
 
-        // Prepare session data
-        const sessionData = {
-            type: interviewType,
-            position: position,
-            skills: skills.join(','),
-            mode: interviewMode
-        };
+            if (error) throw error;
 
-        // Save to sessionStorage for persistence
-        if (typeof window !== 'undefined') {
-            sessionStorage.setItem('interviewSession', JSON.stringify(sessionData));
+            if (data && data.length > 0) {
+                const session = data[0];
+
+                // Store complete session data in Zustand for immediate access
+                console.log("💾 Storing session in Zustand:", session.id);
+                setCurrentSession({
+                    id: session.id,
+                    user_id: session.user_id,
+                    position: session.position,
+                    interview_type: session.interview_type,
+                    status: session.status,
+                    config: (session.config as any) || {},
+                    created_at: session.created_at
+                });
+
+                toast.success("Interview session created!");
+                router.push(`/interview/${session.id}/avatar`);
+            }
+        } catch (error) {
+            console.error("Error creating session:", error);
+            toast.error("Failed to create interview session");
+        } finally {
+            setIsLoading(false);
         }
-
-        toast.success("Proceeding to setup...");
-
-        // Redirect to interview setup page with data
-        setTimeout(() => {
-            const params = new URLSearchParams(sessionData);
-            router.push(`/interview/setup?${params.toString()}`);
-        }, 1000);
     };
 
     return (
         <DashboardLayout>
-            <div className="max-w-3xl mx-auto space-y-6 pb-8">
-                {/* Header */}
-                <div>
-                    <h2 className="mb-2 text-2xl sm:text-3xl font-bold text-foreground">
-                        Start New Interview
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                        Configure your interview session with customization options
+            <div className="mx-auto max-w-3xl space-y-8 pb-12">
+                <div className="text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-sm border border-primary/20">
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        AI-Powered Interview
+                    </div>
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Start Practice Interview</h1>
+                    <p className="text-muted-foreground max-w-xl mx-auto text-lg">
+                        Configure your AI-powered interview session with advanced customization options
                     </p>
                 </div>
 
-                {/* Main Form Card */}
-                <Card className="border-none shadow-lg bg-card">
-                    <CardContent className="p-6 space-y-6">
-                        {/* Interview Mode */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-primary" />
-                                <Label className="text-base font-semibold">
-                                    Interview Mode <span className="text-destructive">*</span>
-                                </Label>
-                            </div>
-                            <RadioGroup value={interviewMode} onValueChange={setInterviewMode}>
-                                <div className="space-y-3">
-                                    <div className={`flex items-start space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${interviewMode === "general"
-                                        ? "border-primary bg-primary/5"
-                                        : "border-border hover:border-primary/50"
-                                        }`}>
-                                        <RadioGroupItem value="general" id="general" className="mt-1" />
-                                        <div className="flex-1">
-                                            <Label htmlFor="general" className="font-medium cursor-pointer">
-                                                General Interview
-                                            </Label>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Practice with domain-based questions
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`flex items-start space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${interviewMode === "company"
-                                        ? "border-primary bg-primary/5"
-                                        : "border-border hover:border-primary/50"
-                                        }`}>
-                                        <RadioGroupItem value="company" id="company" className="mt-1" />
-                                        <div className="flex-1">
-                                            <Label htmlFor="company" className="font-medium cursor-pointer">
-                                                Company-Specific Interview
-                                            </Label>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Practice with real questions from top companies
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </RadioGroup>
-                        </div>
+                <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                    <CardContent className="p-8 sm:p-10">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
-                        {/* Interview Type */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="h-5 w-5 text-primary" />
-                                <Label className="text-base font-semibold">
-                                    Interview Type <span className="text-destructive">*</span>
-                                </Label>
-                            </div>
-                            <Select value={interviewType} onValueChange={setInterviewType}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="technical">Technical Interview</SelectItem>
-                                    <SelectItem value="behavioral">Behavioral Interview</SelectItem>
-                                    <SelectItem value="system-design">System Design</SelectItem>
-                                    <SelectItem value="coding">Coding Interview</SelectItem>
-                                    <SelectItem value="hr">HR Round</SelectItem>
-                                    <SelectItem value="case-study">Case Study</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Choose Position */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <User className="h-5 w-5 text-primary" />
-                                <Label htmlFor="position" className="text-base font-semibold">
-                                    Choose Position
-                                </Label>
-                            </div>
-                            <Input
-                                id="position"
-                                placeholder="e.g. Senior Frontend Engineer"
-                                value={position}
-                                onChange={(e) => setPosition(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
-
-                        {/* Select Skills */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Code className="h-5 w-5 text-primary" />
-                                <Label className="text-base font-semibold">
-                                    Select Skills <span className="text-destructive">*</span>
-                                </Label>
-                            </div>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Add a skill (e.g. React, Python)"
-                                    value={skillInput}
-                                    onChange={(e) => setSkillInput(e.target.value)}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddSkill();
-                                        }
-                                    }}
-                                    className="flex-1"
-                                />
-                                <Button
-                                    type="button"
-                                    onClick={handleAddSkill}
-                                    size="icon"
-                                    className="shrink-0"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            {skills.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
-                                    {skills.map((skill) => (
-                                        <Badge
-                                            key={skill}
-                                            variant="secondary"
-                                            className="px-3 py-1.5 text-sm"
-                                        >
-                                            {skill}
-                                            <button
-                                                onClick={() => handleRemoveSkill(skill)}
-                                                className="ml-2 hover:text-destructive"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </Badge>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Job Description */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-primary" />
-                                <Label className="text-base font-semibold">
-                                    Job Description
-                                </Label>
-                            </div>
-                            <Tabs value={jobDescriptionTab} onValueChange={setJobDescriptionTab}>
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="upload">Upload File</TabsTrigger>
-                                    <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="upload" className="mt-4">
-                                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                                        <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <h3 className="font-semibold mb-2">Upload job description file</h3>
-                                        <p className="text-sm text-muted-foreground mb-4">
-                                            PDF or DOCX (Max 5MB)
-                                        </p>
-                                        <input
-                                            type="file"
-                                            id="file-upload"
-                                            className="hidden"
-                                            accept=".pdf,.doc,.docx"
-                                            onChange={handleFileUpload}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => document.getElementById('file-upload')?.click()}
-                                        >
-                                            Choose File
-                                        </Button>
-                                        {uploadedFile && (
-                                            <div className="mt-4 p-3 bg-primary/10 rounded-lg flex items-center justify-between">
-                                                <span className="text-sm font-medium">{uploadedFile.name}</span>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setUploadedFile(null)}
+                                {/* Interview Mode Selection */}
+                                <FormField
+                                    control={form.control}
+                                    name="interviewMode"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-3">
+                                            <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                <div className="p-1.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                                    <Sparkles className="h-4 w-4" />
+                                                </div>
+                                                Interview Mode <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <RadioGroup
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value);
+                                                        setInterviewMode(value as 'general' | 'company');
+                                                    }}
+                                                    defaultValue={field.value}
+                                                    className="flex flex-col space-y-2"
                                                 >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="manual" className="mt-4">
-                                    <textarea
-                                        placeholder="Paste or type the job description here..."
-                                        value={jobDescription}
-                                        onChange={(e) => setJobDescription(e.target.value)}
-                                        className="w-full min-h-[200px] p-4 rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                                    />
-                                </TabsContent>
-                            </Tabs>
-                        </div>
+                                                    <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-input p-4 hover:bg-accent transition-colors">
+                                                        <RadioGroupItem value="general" id="general" />
+                                                        <Label htmlFor="general" className="flex-1 cursor-pointer">
+                                                            <div className="font-medium">General Interview</div>
+                                                            <div className="text-sm text-muted-foreground">Practice with domain-based questions</div>
+                                                        </Label>
+                                                    </div>
+                                                    <div className="flex items-center space-x-3 space-y-0 rounded-lg border border-input p-4 hover:bg-accent transition-colors">
+                                                        <RadioGroupItem value="company" id="company" />
+                                                        <Label htmlFor="company" className="flex-1 cursor-pointer">
+                                                            <div className="font-medium">Company-Specific Interview</div>
+                                                            <div className="text-sm text-muted-foreground">Practice with real questions from top companies</div>
+                                                        </Label>
+                                                    </div>
+                                                </RadioGroup>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                        {/* Start Button */}
-                        <Button
-                            onClick={handleStartInterview}
-                            className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90"
-                            size="lg"
-                        >
-                            <Play className="mr-2 h-5 w-5" />
-                            Start Interview Session
-                        </Button>
+                                {/* Company Selection - Only for company mode */}
+                                {interviewMode === 'company' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="companyId"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                    <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                        <Building2 className="h-4 w-4" />
+                                                    </div>
+                                                    Select Company <span className="text-red-500">*</span>
+                                                </FormLabel>
+                                                <Select
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value);
+                                                        const selected = companyTemplates.find(c => c.id === value);
+                                                        setCompanyTemplate(selected || null);
+                                                    }}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger className="bg-background/50 border-input h-12 text-base">
+                                                            <SelectValue placeholder="Choose a company" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {companyTemplates.map((company) => (
+                                                            <SelectItem key={company.id} value={company.id}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span>{company.name}</span>
+                                                                    {company.industry && (
+                                                                        <span className="text-xs text-muted-foreground">• {company.industry}</span>
+                                                                    )}
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {/* Role - Only for company mode */}
+                                {interviewMode === 'company' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="role"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                    <div className="p-1.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                                        <User className="h-4 w-4" />
+                                                    </div>
+                                                    Target Role
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g. Software Engineer, Product Manager" className="bg-background/50 border-input h-12 text-base" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {/* Experience Level - Only for company mode */}
+                                {interviewMode === 'company' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="experienceLevel"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                    <div className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                                                        <Briefcase className="h-4 w-4" />
+                                                    </div>
+                                                    Experience Level
+                                                </FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value || "Mid"}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="bg-background/50 border-input h-12 text-base">
+                                                            <SelectValue placeholder="Select experience level" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Entry">Entry Level</SelectItem>
+                                                        <SelectItem value="Mid">Mid Level</SelectItem>
+                                                        <SelectItem value="Senior">Senior Level</SelectItem>
+                                                        <SelectItem value="Staff">Staff Level</SelectItem>
+                                                        <SelectItem value="Principal">Principal Level</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                <FormField
+                                    control={form.control}
+                                    name="interviewType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                <div className="p-1.5 rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
+                                                    <Briefcase className="h-4 w-4" />
+                                                </div>
+                                                Interview Type <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="bg-background/50 border-input h-12 text-base">
+                                                        <SelectValue placeholder="Select type" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Technical">
+                                                        <div className="flex items-center gap-2">
+                                                            <Code className="h-4 w-4 text-muted-foreground" />
+                                                            Technical
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="Behavioral">
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="h-4 w-4 text-muted-foreground" />
+                                                            Behavioral
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="System Design">
+                                                        <div className="flex items-center gap-2">
+                                                            <Monitor className="h-4 w-4 text-muted-foreground" />
+                                                            System Design
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="position"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                    <User className="h-4 w-4" />
+                                                </div>
+                                                Choose Position
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g. Senior Frontend Engineer" className="bg-background/50 border-input h-12 text-base" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <div className="space-y-3">
+                                    <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                        <div className="p-1.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                            <Sparkles className="h-4 w-4" />
+                                        </div>
+                                        Select Skills <span className="text-red-500">*</span>
+                                    </FormLabel>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="Add a skill (e.g. React, Python)"
+                                            value={skillInput}
+                                            onChange={(e) => setSkillInput(e.target.value)}
+                                            className="bg-background/50 border-input h-12 text-base"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddSkill();
+                                                }
+                                            }}
+                                        />
+                                        <Button type="button" onClick={handleAddSkill} className="h-12 w-12 bg-primary hover:bg-primary/90 shadow-sm">
+                                            <Plus className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                    {skillsList.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3 p-4 rounded-xl bg-muted/30 border border-border/50">
+                                            {skillsList.map((skill, index) => (
+                                                <div key={index} className="bg-background border border-border px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-sm animate-in zoom-in-95 duration-200">
+                                                    {skill}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSkillsList(skillsList.filter((_, i) => i !== index))}
+                                                        className="text-muted-foreground hover:text-destructive transition-colors rounded-full p-0.5 hover:bg-destructive/10"
+                                                    >
+                                                        <Plus className="h-3 w-3 rotate-45" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                        <div className="p-1.5 rounded-md bg-pink-500/10 text-pink-600 dark:text-pink-400">
+                                            <FileText className="h-4 w-4" />
+                                        </div>
+                                        Job Description
+                                    </FormLabel>
+                                    <div className="grid grid-cols-2 gap-1 bg-muted p-1 rounded-xl mb-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setJobDescriptionType('upload')}
+                                            className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${jobDescriptionType === 'upload' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'}`}
+                                        >
+                                            Upload File
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setJobDescriptionType('manual')}
+                                            className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${jobDescriptionType === 'manual' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'}`}
+                                        >
+                                            Manual Entry
+                                        </button>
+                                    </div>
+
+                                    {jobDescriptionType === 'upload' ? (
+                                        <div className="border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5 p-10 text-center hover:bg-primary/10 transition-colors cursor-pointer group">
+                                            <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                                <Upload className="h-7 w-7" />
+                                            </div>
+                                            <h3 className="text-foreground font-semibold mb-1 text-lg">Upload job description file</h3>
+                                            <p className="text-muted-foreground text-sm mb-6">PDF or DOCX (Max 5MB)</p>
+                                            <Button type="button" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">Choose File</Button>
+                                        </div>
+                                    ) : (
+                                        <FormField
+                                            control={form.control}
+                                            name="jobDescription"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            placeholder="Paste or type the job description here..."
+                                                            className="min-h-[200px] bg-background/50 border-input resize-none focus-visible:ring-primary"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:shadow-primary/40"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                            Starting Session...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="mr-2 h-5 w-5 fill-current" />
+                                            Start Interview Session
+                                        </>
+                                    )}
+                                </Button>
+                            </form>
+                        </Form>
                     </CardContent>
                 </Card>
             </div>

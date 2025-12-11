@@ -1,331 +1,545 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
+import { useCallback } from 'react';
+import { useCacheStore } from '@/stores/use-cache-store';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Type definitions
-type InterviewSession = Tables<'interview_sessions'>;
-type Profile = Tables<'profiles'>;
-
-interface Stats {
-  totalInterviews: number;
-  completedInterviews: number;
-  averageScore: number;
-  totalDuration: number;
-  recentActivity: number;
-}
-
-interface CacheState {
-  sessions: boolean;
-  stats: boolean;
-  profile: boolean;
-  sessionDetails: Map<string, boolean>;
-}
-
-// Cache duration in milliseconds (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
-
-// In-memory cache
-const cache = {
-  sessions: { data: null as InterviewSession[] | null, timestamp: 0 },
-  stats: { data: null as Stats | null, timestamp: 0 },
-  profile: { data: null as Profile | null, timestamp: 0 },
-  sessionDetails: new Map<string, { data: InterviewSession | null; timestamp: number }>(),
-};
-
-// Helper to check if cache is valid
-const isCacheValid = (timestamp: number): boolean => {
-  return Date.now() - timestamp < CACHE_DURATION;
-};
+import { toast } from 'sonner';
+import { CompanyTemplate } from '@/types/company-types';
+import { PerformanceHistory, PerformanceMetrics } from '@/types/performance-types';
+import { interviewService } from '@/services/interview.service';
+import { companyService } from '@/services/company.service';
+import { profileService } from '@/services/profile.service';
+import { leaderboardService } from '@/services/leaderboard.service';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useOptimizedQueries() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<InterviewSession[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [cacheState, setCacheState] = useState<CacheState>({
-    sessions: false,
-    stats: false,
-    profile: false,
-    sessionDetails: new Map(),
-  });
+  const {
+    sessions,
+    stats,
+    profile,
+    leaderboard,
+    sessionDetails,
+    setSessions,
+    setStats,
+    setProfile,
+    setLeaderboard,
+    setSessionDetail,
+    isSessionsCacheValid,
+    isStatsCacheValid,
+    isProfileCacheValid,
+    isLeaderboardCacheValid,
+    isSessionDetailCacheValid,
+    onInterviewCreated,
+    onInterviewCompleted,
+    onInterviewUpdated,
+    onProfileUpdated,
+  } = useCacheStore();
 
-  // Fetch all interview sessions for the current user
-  const fetchSessions = useCallback(async (): Promise<InterviewSession[]> => {
-    if (!user) {
-      console.warn('No user logged in');
-      return [];
+  // Optimized sessions fetch
+  const fetchSessions = useCallback(async (forceRefresh = false) => {
+    if (!user?.id) return [];
+
+    // Return cached data if valid and not forcing refresh
+    if (!forceRefresh && isSessionsCacheValid() && sessions.length > 0) {
+      console.log('📦 Using cached sessions data');
+      return sessions;
     }
 
-    // Check cache first
-    if (isCacheValid(cache.sessions.timestamp) && cache.sessions.data) {
-      setSessions(cache.sessions.data);
-      setCacheState(prev => ({ ...prev, sessions: true }));
-      return cache.sessions.data;
-    }
-
+    console.log('🔄 Fetching sessions from database');
     try {
-      const { data, error } = await supabase
-        .from('interview_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const data = await interviewService.getUserSessions(user.id);
 
-      if (error) throw error;
-
-      const sessions = data || [];
-
-      // Update cache
-      cache.sessions = { data: sessions, timestamp: Date.now() };
-      setSessions(sessions);
-      setCacheState(prev => ({ ...prev, sessions: true }));
+      if (data && data.length > 0) {
+        setSessions(data);
+        return data;
+      }
 
       return sessions;
     } catch (error) {
-      console.error('Error fetching sessions:', error);
-      return [];
+      console.error("Error in fetchSessions:", error);
+      toast.error("Failed to load sessions");
+      return sessions;
     }
-  }, [user]);
+  }, [user?.id, sessions, isSessionsCacheValid, setSessions]);
 
-  // Fetch a specific session detail
-  const fetchSessionDetail = useCallback(async (sessionId: string): Promise<InterviewSession | null> => {
-    if (!user) {
-      console.warn('No user logged in');
-      return null;
-    }
+  // Optimized stats calculation
+  const fetchStats = useCallback(async (forceRefresh = false) => {
+    if (!user?.id) return null;
 
-    // Check cache first
-    const cachedSession = cache.sessionDetails.get(sessionId);
-    if (cachedSession && isCacheValid(cachedSession.timestamp)) {
-      setCacheState(prev => {
-        const newMap = new Map(prev.sessionDetails);
-        newMap.set(sessionId, true);
-        return { ...prev, sessionDetails: newMap };
-      });
-      return cachedSession.data;
+    // Return cached stats if valid and not forcing refresh
+    if (!forceRefresh && isStatsCacheValid() && stats) {
+      console.log('📦 Using cached stats data');
+      return stats;
     }
 
+    console.log('🔄 Calculating stats from database');
     try {
-      const { data, error } = await supabase
-        .from('interview_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .eq('user_id', user.id)
-        .single();
+      // Get fresh sessions data for stats calculation
+      const sessionsData = await fetchSessions(forceRefresh);
 
-      if (error) throw error;
+      // Calculate stats
+      const totalInterviews = sessionsData.length;
+      const completedSessions = sessionsData.filter(s => s.status === 'completed' && s.score !== null);
+      const averageScore = completedSessions.length > 0
+        ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
+        : 0;
+      // Only count duration from completed interviews to avoid inflating practice time
+      const timePracticed = completedSessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
 
-      // Update cache
-      cache.sessionDetails.set(sessionId, { data, timestamp: Date.now() });
-      setCacheState(prev => {
-        const newMap = new Map(prev.sessionDetails);
-        newMap.set(sessionId, true);
-        return { ...prev, sessionDetails: newMap };
-      });
+      // Calculate REAL leaderboard rank using Bayesian scoring
+      const rank = await interviewService.calculateUserRank(user.id);
 
-      return data;
-    } catch (error) {
-      console.error('Error fetching session detail:', error);
-      return null;
-    }
-  }, [user]);
-
-  // Fetch user statistics
-  const fetchStats = useCallback(async (): Promise<Stats | null> => {
-    if (!user) {
-      console.warn('No user logged in');
-      return null;
-    }
-
-    // Check cache first
-    if (isCacheValid(cache.stats.timestamp) && cache.stats.data) {
-      setStats(cache.stats.data);
-      setCacheState(prev => ({ ...prev, stats: true }));
-      return cache.stats.data;
-    }
-
-    try {
-      const { data: sessions, error } = await supabase
-        .from('interview_sessions')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      const completedSessions = sessions?.filter(s => s.status === 'completed') || [];
-      const sessionsWithScores = completedSessions.filter(s => s.score !== null);
-
-      const stats: Stats = {
-        totalInterviews: sessions?.length || 0,
-        completedInterviews: completedSessions.length,
-        averageScore: sessionsWithScores.length > 0
-          ? Math.round(sessionsWithScores.reduce((acc, s) => acc + (s.score || 0), 0) / sessionsWithScores.length)
-          : 0,
-        totalDuration: sessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0,
-        recentActivity: sessions?.filter(s => {
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return new Date(s.created_at) > weekAgo;
-        }).length || 0,
+      const calculatedStats = {
+        totalInterviews,
+        averageScore,
+        timePracticed,
+        rank
       };
 
-      // Update cache
-      cache.stats = { data: stats, timestamp: Date.now() };
-      setStats(stats);
-      setCacheState(prev => ({ ...prev, stats: true }));
-
+      setStats(calculatedStats);
+      return calculatedStats;
+    } catch (error) {
+      console.error("Error calculating stats:", error);
       return stats;
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      return null;
     }
-  }, [user]);
+  }, [user?.id, stats, isStatsCacheValid, setStats, fetchSessions]);
 
-  // Fetch user profile
-  const fetchProfile = useCallback(async (): Promise<Profile | null> => {
-    if (!user) {
-      console.warn('No user logged in');
-      return null;
-    }
+  // Optimized profile fetch
+  const fetchProfile = useCallback(async (forceRefresh = false) => {
+    if (!user?.id) return null;
 
-    // Check cache first
-    if (isCacheValid(cache.profile.timestamp) && cache.profile.data) {
-      setProfile(cache.profile.data);
-      setCacheState(prev => ({ ...prev, profile: true }));
-      return cache.profile.data;
+    // Return cached profile if valid and not forcing refresh
+    if (!forceRefresh && isProfileCacheValid() && profile) {
+      console.log('📦 Using cached profile data');
+      return profile;
     }
 
+    console.log('🔄 Fetching profile from database');
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const data = await profileService.getProfile(user.id);
 
-      if (error) throw error;
+      if (data) {
+        // If avatar_url is null, try to get it from user metadata (OAuth picture)
+        const profileData = {
+          full_name: data.full_name,
+          avatar_url: data.avatar_url || user.user_metadata?.picture || null,
+          streak_count: data.streak_count,
+          last_activity_date: data.last_activity_date
+        };
+        setProfile(profileData);
+        return profileData;
+      }
 
-      // Update cache
-      cache.profile = { data, timestamp: Date.now() };
-      setProfile(data);
-      setCacheState(prev => ({ ...prev, profile: true }));
-
-      return data;
+      return profile;
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      return null;
+      console.error('Error in fetchProfile:', error);
+      return profile;
     }
-  }, [user]);
+  }, [user?.id, user?.user_metadata?.picture, profile, isProfileCacheValid, setProfile]);
 
-  // Delete an interview session
-  const deleteInterviewSession = useCallback(async (sessionId: string): Promise<void> => {
-    if (!user) {
-      throw new Error('No user logged in');
+  // Optimized single session fetch
+  const fetchSessionDetail = useCallback(async (sessionId: string, forceRefresh = false) => {
+    if (!sessionId) return null;
+
+    // Return cached session if valid and not forcing refresh
+    if (!forceRefresh && isSessionDetailCacheValid(sessionId) && sessionDetails[sessionId]) {
+      console.log(`📦 Using cached session detail for ${sessionId}`);
+      return sessionDetails[sessionId];
     }
 
+    console.log(`🔄 Fetching session detail from database: ${sessionId}`);
     try {
-      const { error } = await supabase
-        .from('interview_sessions')
-        .delete()
-        .eq('id', sessionId)
-        .eq('user_id', user.id);
+      const data = await interviewService.getSessionById(sessionId);
 
-      if (error) throw error;
+      if (data) {
+        setSessionDetail(sessionId, data as any);
+        return data;
+      }
 
-      // Invalidate caches
-      cache.sessions.timestamp = 0;
-      cache.stats.timestamp = 0;
-      cache.sessionDetails.delete(sessionId);
+      return sessionDetails[sessionId] || null;
+    } catch (error) {
+      console.error("Error in fetchSessionDetail:", error);
+      return sessionDetails[sessionId] || null;
+    }
+  }, [sessionDetails, isSessionDetailCacheValid, setSessionDetail]);
 
-      // Update local state optimistically
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
-      setCacheState(prev => {
-        const newMap = new Map(prev.sessionDetails);
-        newMap.delete(sessionId);
-        return { ...prev, sessions: false, stats: false, sessionDetails: newMap };
+  // Optimized leaderboard fetch
+  const fetchLeaderboard = useCallback(async (forceRefresh = false) => {
+    // Return cached leaderboard if valid and not forcing refresh
+    if (!forceRefresh && isLeaderboardCacheValid() && leaderboard.length > 0) {
+      console.log('📦 Using cached leaderboard data');
+      return leaderboard;
+    }
+
+    console.log('🔄 Fetching leaderboard from database');
+    try {
+      // 1. Fetch all completed interview sessions with scores
+      const { data: sessions, error: sessionsError } = await supabase
+        .from("interview_sessions")
+        .select("user_id, score")
+        .not("score", "is", null)
+        .eq("status", "completed");
+
+      if (sessionsError) throw sessionsError;
+
+      // 2. Aggregate scores by user
+      const userStats: Record<string, { totalScore: number; count: number }> = {};
+
+      sessions?.forEach((session) => {
+        if (!userStats[session.user_id]) {
+          userStats[session.user_id] = { totalScore: 0, count: 0 };
+        }
+        userStats[session.user_id].totalScore += session.score || 0;
+        userStats[session.user_id].count += 1;
       });
 
-      // Refetch to ensure consistency
-      await fetchSessions();
-      await fetchStats();
+      // 3. Calculate Weighted Score (rewards both performance and experience)
+      const rankedUsers = Object.entries(userStats).map(([userId, stats]) => {
+        const avgScore = stats.totalScore / stats.count;
+        const experienceMultiplier = 1 + (Math.log10(stats.count) / 10);
+        const weightedScore = avgScore * experienceMultiplier;
+
+        return {
+          userId,
+          interviewCount: stats.count,
+          averageScore: avgScore,
+          bayesianScore: weightedScore,
+        };
+      });
+
+      // 4. Sort by Bayesian Score
+      const sortedUsers = rankedUsers.sort((a, b) => b.bayesianScore - a.bayesianScore);
+
+      // 5. Fetch profiles for all ranked users
+      if (sortedUsers.length > 0) {
+        const userIds = sortedUsers.map((u) => u.userId);
+
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Get current user's OAuth picture if they're in the leaderboard
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const currentUserOAuthPicture = currentUser?.user_metadata?.picture || currentUser?.user_metadata?.avatar_url;
+        const currentUserGender = currentUser?.user_metadata?.gender;
+
+        // Merge profile data
+        const finalLeaderboard = sortedUsers.map((user) => {
+          const profile = profiles?.find((p) => p.id === user.userId);
+          const oauthPicture = user.userId === currentUser?.id ? currentUserOAuthPicture : null;
+          const gender = user.userId === currentUser?.id ? currentUserGender : undefined;
+
+          return {
+            ...user,
+            fullName: profile?.full_name || "Anonymous",
+            avatarUrl: profile?.avatar_url ?? null,
+            oauthPicture: oauthPicture,
+            gender: gender,
+          };
+        });
+
+        setLeaderboard(finalLeaderboard);
+        return finalLeaderboard;
+      } else {
+        setLeaderboard([]);
+        return [];
+      }
     } catch (error) {
-      console.error('Error deleting session:', error);
+      console.error("Error in fetchLeaderboard:", error);
+      toast.error("Failed to load leaderboard data");
+      return leaderboard;
+    }
+  }, [leaderboard, isLeaderboardCacheValid, setLeaderboard]);
+
+  // Fetch all company templates
+  const fetchCompanyTemplates = useCallback(async () => {
+    try {
+      const companies = await companyService.getCompanies();
+      return companies as CompanyTemplate[];
+    } catch (error) {
+      console.error('Error in fetchCompanyTemplates:', error);
+      toast.error('Failed to load company templates');
+      return [];
+    }
+  }, []);
+
+  // Fetch company template by slug
+  const fetchCompanyTemplateBySlug = useCallback(async (slug: string) => {
+    try {
+      const company = await companyService.getCompanyBySlug(slug);
+      return company as CompanyTemplate | null;
+    } catch (error) {
+      console.error('Error in fetchCompanyTemplateBySlug:', error);
+      return null;
+    }
+  }, []);
+
+  // Create interview session with cache invalidation
+  const createInterviewSession = useCallback(async (sessionData: {
+    position: string;
+    interview_type: string;
+    duration_minutes?: number;
+    config?: any;
+  }) => {
+    if (!user?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const session = await interviewService.createSession({
+        userId: user.id,
+        interviewType: sessionData.interview_type,
+        position: sessionData.position,
+        config: sessionData.config || {},
+      });
+
+      if (!session) {
+        throw new Error('Failed to create interview session');
+      }
+
+      // Invalidate cache since we added a new interview
+      onInterviewCreated();
+
+      console.log('✅ Interview session created, cache invalidated');
+      return session;
+    } catch (error) {
+      console.error('Error creating interview session:', error);
       throw error;
     }
-  }, [user, fetchSessions, fetchStats]);
+  }, [user?.id, onInterviewCreated]);
 
-  // Update an interview session
+  // Complete interview session with cache invalidation
+  const completeInterviewSession = useCallback(async (
+    sessionId: string,
+    updateData: {
+      score?: number;
+      feedback?: any;
+      transcript?: any;
+      durationMinutes?: number;
+      totalHintsUsed?: number;
+      averagePerformanceScore?: number;
+    }
+  ) => {
+    try {
+      const session = await interviewService.completeSession(sessionId, updateData);
+
+      if (!session) {
+        throw new Error('Failed to complete interview session');
+      }
+
+      // Invalidate cache since we updated an interview
+      onInterviewCompleted(sessionId);
+
+      console.log(`✅ Interview ${sessionId} completed, cache invalidated`);
+      return session;
+    } catch (error) {
+      console.error('Error completing interview session:', error);
+      throw error;
+    }
+  }, [onInterviewCompleted]);
+
+  // Update interview session with cache invalidation
   const updateInterviewSession = useCallback(async (
     sessionId: string,
-    updates: Partial<InterviewSession>
-  ): Promise<void> => {
-    if (!user) {
-      throw new Error('No user logged in');
+    updateData: Partial<any>
+  ) => {
+    try {
+      const session = await interviewService.updateSession(sessionId, updateData);
+
+      if (!session) {
+        throw new Error('Failed to update interview session');
+      }
+
+      // Invalidate cache since we updated an interview
+      onInterviewUpdated(sessionId);
+
+      console.log(`✅ Interview ${sessionId} updated, cache invalidated`);
+      return session;
+    } catch (error) {
+      console.error('Error updating interview session:', error);
+      throw error;
+    }
+  }, [onInterviewUpdated]);
+
+  // Delete interview session with cache invalidation
+  const deleteInterviewSession = useCallback(async (sessionId: string) => {
+    if (!user?.id) {
+      throw new Error('User not authenticated');
     }
 
     try {
-      const { error } = await supabase
-        .from('interview_sessions')
-        .update(updates)
-        .eq('id', sessionId)
-        .eq('user_id', user.id);
+      console.log(`🗑️ Attempting to delete session ${sessionId}`);
 
-      if (error) throw error;
+      const success = await interviewService.deleteSession(sessionId);
 
-      // Invalidate caches
-      cache.sessions.timestamp = 0;
-      cache.stats.timestamp = 0;
-      cache.sessionDetails.delete(sessionId);
+      if (!success) {
+        throw new Error('Failed to delete interview session');
+      }
 
-      // Update local state optimistically
-      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, ...updates } : s));
-      setCacheState(prev => {
-        const newMap = new Map(prev.sessionDetails);
-        newMap.delete(sessionId);
-        return { ...prev, sessions: false, stats: false, sessionDetails: newMap };
-      });
+      // Invalidate cache since we deleted an interview
+      onInterviewUpdated(sessionId);
+
+      console.log(`✅ Interview ${sessionId} deleted successfully, cache invalidated`);
+      return true;
     } catch (error) {
-      console.error('Error updating session:', error);
+      console.error('Error deleting interview session:', error);
       throw error;
     }
-  }, [user]);
+  }, [onInterviewUpdated, user?.id]);
 
-  // Invalidate all caches
-  const invalidateCache = useCallback(() => {
-    cache.sessions.timestamp = 0;
-    cache.stats.timestamp = 0;
-    cache.profile.timestamp = 0;
-    cache.sessionDetails.clear();
-    setCacheState({
-      sessions: false,
-      stats: false,
-      profile: false,
-      sessionDetails: new Map(),
-    });
-  }, []);
+  // Fetch recent performance metrics from last 3 interviews
+  const fetchRecentPerformanceMetrics = useCallback(async (): Promise<PerformanceHistory> => {
+    if (!user?.id) {
+      return {
+        recentInterviews: [],
+        averageScores: {
+          technicalKnowledge: 0,
+          communication: 0,
+          problemSolving: 0,
+          adaptability: 0,
+          overall: 0,
+        },
+        trend: 'insufficient_data',
+      };
+    }
+
+    try {
+      console.log('🔍 Fetching recent performance metrics for user:', user.id);
+
+      // Fetch last 3 completed interviews with feedback
+      const data = await interviewService.getRecentPerformanceMetrics(user.id, 3);
+
+      if (!data || data.length === 0) {
+        console.log('📊 No previous interview data found');
+        return {
+          recentInterviews: [],
+          averageScores: {
+            technicalKnowledge: 0,
+            communication: 0,
+            problemSolving: 0,
+            adaptability: 0,
+            overall: 0,
+          },
+          trend: 'insufficient_data',
+        };
+      }
+
+      console.log(`📊 Found ${data.length} previous interviews with feedback`);
+
+      // Extract performance metrics from each session
+      const recentInterviews: PerformanceMetrics[] = data.map((session) => {
+        const feedback = session.feedback as any;
+        const skills = feedback?.skills || [];
+
+        return {
+          sessionId: session.id,
+          position: session.position,
+          interviewType: session.interview_type,
+          completedAt: session.completed_at || '',
+          skills: skills.map((skill: any) => ({
+            name: skill.name,
+            score: skill.score || 0,
+            feedback: skill.feedback || '',
+          })),
+          overallScore: session.score || 0,
+        };
+      });
+
+      // Calculate average scores across all interviews
+      const totalInterviews = recentInterviews.length;
+      let techSum = 0, commSum = 0, probSum = 0, adaptSum = 0, overallSum = 0;
+
+      recentInterviews.forEach((interview) => {
+        interview.skills.forEach((skill) => {
+          const skillName = skill.name.toLowerCase();
+          if (skillName.includes('technical')) techSum += skill.score;
+          else if (skillName.includes('communication')) commSum += skill.score;
+          else if (skillName.includes('problem')) probSum += skill.score;
+          else if (skillName.includes('adaptability')) adaptSum += skill.score;
+        });
+        overallSum += interview.overallScore;
+      });
+
+      const averageScores = {
+        technicalKnowledge: Math.round(techSum / totalInterviews),
+        communication: Math.round(commSum / totalInterviews),
+        problemSolving: Math.round(probSum / totalInterviews),
+        adaptability: Math.round(adaptSum / totalInterviews),
+        overall: Math.round(overallSum / totalInterviews),
+      };
+
+      // Determine trend (comparing most recent to oldest in the set)
+      let trend: PerformanceHistory['trend'] = 'insufficient_data';
+      if (totalInterviews >= 2) {
+        const recentScore = recentInterviews[0].overallScore;
+        const oldestScore = recentInterviews[totalInterviews - 1].overallScore;
+        const difference = recentScore - oldestScore;
+
+        if (difference > 5) trend = 'improving';
+        else if (difference < -5) trend = 'declining';
+        else trend = 'consistent';
+      }
+
+      console.log('📈 Performance metrics calculated:', {
+        totalInterviews,
+        averageScores,
+        trend,
+      });
+
+      return {
+        recentInterviews,
+        averageScores,
+        trend,
+      };
+    } catch (error) {
+      console.error('Error in fetchRecentPerformanceMetrics:', error);
+      return {
+        recentInterviews: [],
+        averageScores: {
+          technicalKnowledge: 0,
+          communication: 0,
+          problemSolving: 0,
+          adaptability: 0,
+          overall: 0,
+        },
+        trend: 'insufficient_data',
+      };
+    }
+  }, [user?.id]);
 
   return {
     // Data
     sessions,
     stats,
     profile,
+    leaderboard,
+    sessionDetails,
 
-    // Fetch functions
+    // Optimized fetch functions
     fetchSessions,
     fetchStats,
     fetchProfile,
     fetchSessionDetail,
+    fetchLeaderboard,
+    fetchCompanyTemplates,
+    fetchCompanyTemplateBySlug,
+    fetchRecentPerformanceMetrics,
 
-    // Mutation functions
-    deleteInterviewSession,
+    // CRUD operations with cache invalidation
+    createInterviewSession,
+    completeInterviewSession,
     updateInterviewSession,
+    deleteInterviewSession,
 
-    // Cache utilities
-    invalidateCache,
+    // Cache status
     isCached: {
-      sessions: cacheState.sessions,
-      stats: cacheState.stats,
-      profile: cacheState.profile,
-      sessionDetail: (sessionId: string) => cacheState.sessionDetails.get(sessionId) || false,
-    },
+      sessions: isSessionsCacheValid(),
+      stats: isStatsCacheValid(),
+      profile: isProfileCacheValid(),
+      leaderboard: isLeaderboardCacheValid(),
+      sessionDetail: (sessionId: string) => isSessionDetailCacheValid(sessionId),
+    }
   };
 }

@@ -1,4 +1,4 @@
-export type BadgeCategory = 'streak' | 'leaderboard' | 'milestone' | 'special';
+export type BadgeCategory = 'streak' | 'leaderboard' | 'milestone' | 'special' | 'performance' | 'communication' | 'skill' | 'speed' | 'diversity';
 
 export type BadgeRarity = 'bronze' | 'silver' | 'gold' | 'platinum' | 'special';
 

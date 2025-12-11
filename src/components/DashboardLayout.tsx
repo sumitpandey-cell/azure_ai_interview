@@ -1,3 +1,4 @@
+'use client'
 import { ReactNode, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -22,6 +23,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useAnalytics } from "@/hooks/use-analytics";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -34,9 +36,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { remaining_minutes, plan_name } = useSubscription();
 
-  // Placeholder data - backend removed
-  const [streak, setStreak] = useState(0);
-  const profile = null;
+  // Get streak data from analytics cache
+  const { streakData } = useAnalytics(user?.id);
+  const streak = streakData?.currentStreak || 0;
 
   // Initialize sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -97,7 +99,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full"></div>
                 <img
-                  src="/arjuna-logo.png"
+                  src="/favicon.ico"
                   alt="Arjuna AI"
                   className="relative h-10 w-10 object-contain drop-shadow-lg"
                 />
@@ -148,17 +150,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={`
-                group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
+                group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150
                 ${isActive(item.href)
                   ? "bg-white/10 text-white shadow-lg shadow-black/20"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white active:scale-95"
                 }
                 ${sidebarCollapsed ? "justify-center px-2" : ""}
               `}
               title={sidebarCollapsed ? item.name : undefined}
             >
               <item.icon
-                className={`h-5 w-5 flex-shrink-0 ${isActive(item.href) ? "text-blue-400" : ""}`}
+                className={`h-5 w-5 flex-shrink-0 transition-colors ${isActive(item.href) ? "text-blue-400" : ""}`}
               />
               {!sidebarCollapsed && <span>{item.name}</span>}
             </Link>

@@ -10,23 +10,13 @@ export const metadata: Metadata = {
   description: "Practice real interviews with AI scoring and feedback — built to train you like a real hiring manager.",
   keywords: ["interview", "AI", "practice", "job", "career", "preparation"],
   authors: [{ name: "Arjuna AI" }],
-  icons: {
-    icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-    other: [
-      { rel: 'manifest', url: '/site.webmanifest' },
-    ],
-  },
   openGraph: {
     title: "Arjuna AI - Ace Any Interview with AI",
     description: "Practice real interviews with AI scoring and feedback",
     type: "website",
-    images: ['/og-image.png'],
+    siteName: "Arjuna AI",
+    url: "https://arjuna.ai",
+    images: ['/arjuna-logo.png'],
   },
 };
 

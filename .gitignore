@@ -41,4 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# test
+src/lib/__tests__
+
+database
+.gemini
+.agent
+
 

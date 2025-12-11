@@ -1,4 +1,6 @@
 
+// No import needed for direct API calls
+
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
 interface Message {
@@ -7,16 +9,50 @@ interface Message {
     text: string;
 }
 
+interface InterviewSessionData {
+    id: string;
+    interview_type: string;
+    position: string;
+    config: {
+        interviewMode?: 'general' | 'company';
+        companyName?: string;
+        role?: string;
+        experienceLevel?: string;
+        skills?: string[];
+        jobDescription?: string;
+        difficulty?: string;
+        companyInterviewConfig?: {
+            companyTemplateId: string;
+            companyName: string;
+            role: string;
+            experienceLevel: string;
+        };
+    };
+}
+
 export interface FeedbackData {
     executiveSummary: string;
     strengths: string[];
     improvements: string[];
-    skills: {
+    // Overall assessment skills (always 4 categories)
+    overallSkills: {
+        name: string;
+        score: number;
+        feedback: string;
+    }[];
+    // Candidate-specified technical skills (from form)
+    technicalSkills: {
         name: string;
         score: number;
         feedback: string;
     }[];
     actionPlan: string[];
+    // Deprecated: kept for backward compatibility
+    skills?: {
+        name: string;
+        score: number;
+        feedback: string;
+    }[];
 }
 
 // Interview length thresholds
@@ -91,6 +127,36 @@ function getTooShortInterviewFeedback(position: string, analysis: InterviewLengt
             "Prepare for longer technical discussions to showcase your abilities",
             "Consider practicing with mock interviews to build confidence"
         ],
+        overallSkills: [
+            {
+                name: "Technical Knowledge",
+                score: 0,
+                feedback: "Insufficient interview duration to assess technical capabilities. Please complete a longer session for evaluation."
+            },
+            {
+                name: "Communication",
+                score: 0,
+                feedback: "Limited interaction time prevents meaningful assessment of communication skills."
+            },
+            {
+                name: "Problem Solving",
+                score: 0,
+                feedback: "No significant problem-solving scenarios were completed during this brief session."
+            },
+            {
+                name: "Cultural Fit",
+                score: 0,
+                feedback: "Unable to evaluate cultural fit due to insufficient interview content."
+            }
+        ],
+        technicalSkills: [],
+        actionPlan: [
+            "Schedule a complete interview session lasting at least 15-20 minutes",
+            "Prepare to engage with multiple technical questions and scenarios",
+            "Practice explaining your thought process clearly during problem-solving",
+            "Review common interview questions for your target position"
+        ],
+        // Backward compatibility
         skills: [
             {
                 name: "Technical Knowledge",
@@ -108,16 +174,10 @@ function getTooShortInterviewFeedback(position: string, analysis: InterviewLengt
                 feedback: "No significant problem-solving scenarios were completed during this brief session."
             },
             {
-                name: "Adaptability",
+                name: "Cultural Fit",
                 score: 0,
-                feedback: "Unable to evaluate adaptability due to insufficient interview content."
+                feedback: "Unable to evaluate cultural fit due to insufficient interview content."
             }
-        ],
-        actionPlan: [
-            "Schedule a complete interview session lasting at least 15-20 minutes",
-            "Prepare to engage with multiple technical questions and scenarios",
-            "Practice explaining your thought process clearly during problem-solving",
-            "Review common interview questions for your target position"
         ]
     };
 }
@@ -162,12 +222,17 @@ export { analyzeInterviewLength, INTERVIEW_THRESHOLDS };
 
 export async function generateFeedback(
     transcript: Message[],
-    position: string,
-    interviewType: string,
-    skills?: string[],
-    difficulty?: string
+    sessionData: InterviewSessionData
 ): Promise<FeedbackData> {
     console.log("Analyzing interview transcript:", transcript.length, "messages");
+    console.log("Session data:", sessionData);
+
+    // Extract session context
+    const { position, interview_type: interviewType, config } = sessionData;
+    const skills = config.skills || [];
+    const difficulty = config.difficulty || 'Intermediate';
+    const companyContext = config.companyInterviewConfig || config.companyName ?
+        `\n\nCOMPANY CONTEXT: This interview was conducted for ${config.companyName || config.companyInterviewConfig?.companyName} for the role of ${config.role || config.companyInterviewConfig?.role}. Experience level expected: ${config.experienceLevel || config.companyInterviewConfig?.experienceLevel}.` : '';
 
     // Analyze interview length before processing
     const lengthAnalysis = analyzeInterviewLength(transcript);
@@ -214,7 +279,7 @@ export async function generateFeedback(
 
     const prompt = `
     You are an expert technical interviewer and career coach. Analyze the following interview transcript for a ${position} position (${interviewType} interview).
-${skillsContext}${difficultyContext}
+${skillsContext}${difficultyContext}${companyContext}
 
 TRANSCRIPT:
 ${transcriptText}
@@ -313,17 +378,31 @@ For each:
 * Score strictly from 0–100, but proportional to observed evidence, not hypothetical expectations.
 * Do not let one weak question dominate the overall judgment if answers elsewhere were strong.
 
+
 OUTPUT FORMAT (JSON only):
+
+You must provide TWO separate skill assessments:
+
+1. **overallSkills**: ALWAYS include these 4 categories (overall assessment):
+   - Technical Knowledge
+   - Communication
+   - Problem Solving
+   - Cultural Fit
+
+2. **technicalSkills**: ${skills.length > 0 ? `Assess ONLY these specific skills mentioned by the candidate: ${skills.join(', ')}. Score each based on evidence from the transcript.` : 'Leave this as an empty array [] since no specific technical skills were provided.'}
 
 {
 "executiveSummary": "Include specific examples of strong/weak performance and justify overall assessment with evidence. If scores are very low (below 10%), clearly explain why based on transcript.",
 "strengths": ["Be specific about what they did well with examples from transcript - if no strengths observed, state 'Limited technical demonstration in this interview'"],
 "improvements": ["Be specific about gaps observed with examples from transcript - focus on fundamental skills needed"],
-"skills": [
+"overallSkills": [
 { "name": "Technical Knowledge", "score": 0-100, "feedback": "Specific evidence from transcript. If 0-10%: explain exactly what technical knowledge was missing. If listing technologies without explanation, score 5-10% maximum." },
 { "name": "Communication", "score": 0-100, "feedback": "Specific examples. If language mixing prevents technical discussion, score 5-15% maximum." },
 { "name": "Problem Solving", "score": 0-100, "feedback": "Specific examples. If candidate gives up immediately without trying, score 0-5% maximum." },
-{ "name": "Adaptability", "score": 0-100, "feedback": "Specific examples. If no evidence of adapting approach or depth, score accordingly." }
+{ "name": "Cultural Fit", "score": 0-100, "feedback": "Assess professionalism, attitude, and alignment with workplace values based on interview behavior." }
+],
+"technicalSkills": [
+${skills.length > 0 ? `{ "name": "SKILL_NAME", "score": 0-100, "feedback": "Specific evidence from transcript about this particular skill. Only score if there's clear evidence in the transcript." }` : '// Empty array if no skills specified'}
 ],
 "actionPlan": ["Specific, actionable recommendations focusing on fundamental skill building"]
 }
@@ -333,13 +412,19 @@ For the example transcript provided:
 - Technical Knowledge should be 5-10% (only lists "Node.js, Express, MongoDB" with ZERO explanation, cannot explain WebSocket implementation)
 - Communication should be 10-15% (heavy language mixing makes technical discussion incomprehensible)
 - Problem Solving should be 0-5% (immediately gives up: "As my mind was stuck so I leave that" - shows NO problem-solving attempt)
-- Adaptability should be 15-25% (provides basic responses but no evidence of adapting approach or depth)
+- Cultural Fit should be 15-25% (provides basic responses but no evidence of adapting approach or depth)
 
     `;
 
+    // Validate API key is available
+    if (!API_KEY) {
+        console.error('❌ NEXT_PUBLIC_GEMINI_API_KEY is not set');
+        throw new Error('NEXT_PUBLIC_GEMINI_API_KEY environment variable is required. Please set it in your .env.local file.');
+    }
+
     const cleanApiKey = API_KEY.replace(/[^a-zA-Z0-9_\-]/g, '');
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -383,13 +468,21 @@ For the example transcript provided:
             executiveSummary: "Feedback generation failed due to a technical issue. Please review the transcript manually.",
             strengths: ["Unable to analyze strengths"],
             improvements: ["Unable to analyze improvements"],
-            skills: [
+            overallSkills: [
                 { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },
                 { name: "Communication", score: 0, feedback: "Analysis failed" },
                 { name: "Problem Solving", score: 0, feedback: "Analysis failed" },
                 { name: "Cultural Fit", score: 0, feedback: "Analysis failed" }
             ],
-            actionPlan: ["Please try again later"]
+            technicalSkills: [],
+            actionPlan: ["Please try again later"],
+            // Backward compatibility
+            skills: [
+                { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },
+                { name: "Communication", score: 0, feedback: "Analysis failed" },
+                { name: "Problem Solving", score: 0, feedback: "Analysis failed" },
+                { name: "Cultural Fit", score: 0, feedback: "Analysis failed" }
+            ]
         };
     }
 }

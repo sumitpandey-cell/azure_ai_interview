@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { SkillData, WeeklyActivityData, PerformanceData, StreakData } from '@/services/analytics.service';
 
 interface InterviewSession {
   id: string;
@@ -14,6 +15,17 @@ interface InterviewSession {
   config?: any; // JSONB field for storing interview configuration
   feedback?: any;
   transcript?: any;
+}
+
+interface LeaderboardUser {
+  userId: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  oauthPicture?: string | null;
+  interviewCount: number;
+  averageScore: number;
+  bayesianScore: number;
+  gender?: string;
 }
 
 interface CacheState {
@@ -47,10 +59,32 @@ interface CacheState {
   streakLastFetch: number | null;
   streakCacheValid: boolean;
 
+  // Leaderboard cache
+  leaderboard: LeaderboardUser[];
+  leaderboardLastFetch: number | null;
+  leaderboardCacheValid: boolean;
+
   // Individual session cache
   sessionDetails: Record<string, InterviewSession>;
   sessionDetailsLastFetch: Record<string, number>;
   sessionDetailsCacheValid: Record<string, boolean>;
+
+  // Analytics cache
+  skillProgress: SkillData[];
+  skillProgressLastFetch: number | null;
+  skillProgressCacheValid: boolean;
+
+  weeklyActivity: WeeklyActivityData[];
+  weeklyActivityLastFetch: number | null;
+  weeklyActivityCacheValid: boolean;
+
+  streakData: StreakData | null;
+  streakDataLastFetch: number | null;
+  streakDataCacheValid: boolean;
+
+  performanceData: PerformanceData[];
+  performanceDataLastFetch: number | null;
+  performanceDataCacheValid: boolean;
 
   // Cache actions
   setSessions: (sessions: InterviewSession[]) => void;
@@ -61,8 +95,22 @@ interface CacheState {
   invalidateProfile: () => void;
   setStreak: (streak: number) => void;
   invalidateStreak: () => void;
+  setLeaderboard: (leaderboard: LeaderboardUser[]) => void;
+  invalidateLeaderboard: () => void;
   setSessionDetail: (sessionId: string, session: InterviewSession) => void;
   invalidateSessionDetail: (sessionId: string) => void;
+
+  // Analytics cache actions
+  setSkillProgress: (data: SkillData[]) => void;
+  invalidateSkillProgress: () => void;
+  setWeeklyActivity: (data: WeeklyActivityData[]) => void;
+  invalidateWeeklyActivity: () => void;
+  setStreakData: (data: StreakData) => void;
+  invalidateStreakData: () => void;
+  setPerformanceData: (data: PerformanceData[]) => void;
+  invalidatePerformanceData: () => void;
+  invalidateAllAnalytics: () => void;
+
   invalidateAllCache: () => void;
 
   // Cache validation
@@ -70,7 +118,14 @@ interface CacheState {
   isStatsCacheValid: () => boolean;
   isProfileCacheValid: () => boolean;
   isStreakCacheValid: () => boolean;
+  isLeaderboardCacheValid: () => boolean;
   isSessionDetailCacheValid: (sessionId: string) => boolean;
+
+  // Analytics cache validation
+  isSkillProgressCacheValid: () => boolean;
+  isWeeklyActivityCacheValid: () => boolean;
+  isStreakDataCacheValid: () => boolean;
+  isPerformanceDataCacheValid: () => boolean;
 
   // Event tracking for cache invalidation
   onInterviewCreated: () => void;
@@ -104,6 +159,27 @@ export const useCacheStore = create<CacheState>()(
       sessionDetails: {},
       sessionDetailsLastFetch: {},
       sessionDetailsCacheValid: {},
+
+      leaderboard: [],
+      leaderboardLastFetch: null,
+      leaderboardCacheValid: false,
+
+      // Analytics initial state
+      skillProgress: [],
+      skillProgressLastFetch: null,
+      skillProgressCacheValid: false,
+
+      weeklyActivity: [],
+      weeklyActivityLastFetch: null,
+      weeklyActivityCacheValid: false,
+
+      streakData: null,
+      streakDataLastFetch: null,
+      streakDataCacheValid: false,
+
+      performanceData: [],
+      performanceDataLastFetch: null,
+      performanceDataCacheValid: false,
 
       // Cache setters
       setSessions: (sessions) => set({
@@ -150,6 +226,17 @@ export const useCacheStore = create<CacheState>()(
         streak: null
       }),
 
+      setLeaderboard: (leaderboard) => set({
+        leaderboard,
+        leaderboardLastFetch: Date.now(),
+        leaderboardCacheValid: true
+      }),
+
+      invalidateLeaderboard: () => set({
+        leaderboardCacheValid: false,
+        leaderboard: []
+      }),
+
       setSessionDetail: (sessionId, session) => set((state) => ({
         sessionDetails: { ...state.sessionDetails, [sessionId]: session },
         sessionDetailsLastFetch: { ...state.sessionDetailsLastFetch, [sessionId]: Date.now() },
@@ -172,18 +259,85 @@ export const useCacheStore = create<CacheState>()(
         };
       }),
 
+      // Analytics cache setters
+      setSkillProgress: (data) => set({
+        skillProgress: data,
+        skillProgressLastFetch: Date.now(),
+        skillProgressCacheValid: true
+      }),
+
+      invalidateSkillProgress: () => set({
+        skillProgressCacheValid: false,
+        skillProgress: []
+      }),
+
+      setWeeklyActivity: (data) => set({
+        weeklyActivity: data,
+        weeklyActivityLastFetch: Date.now(),
+        weeklyActivityCacheValid: true
+      }),
+
+      invalidateWeeklyActivity: () => set({
+        weeklyActivityCacheValid: false,
+        weeklyActivity: []
+      }),
+
+      setStreakData: (data) => set({
+        streakData: data,
+        streakDataLastFetch: Date.now(),
+        streakDataCacheValid: true
+      }),
+
+      invalidateStreakData: () => set({
+        streakDataCacheValid: false,
+        streakData: null
+      }),
+
+      setPerformanceData: (data) => set({
+        performanceData: data,
+        performanceDataLastFetch: Date.now(),
+        performanceDataCacheValid: true
+      }),
+
+      invalidatePerformanceData: () => set({
+        performanceDataCacheValid: false,
+        performanceData: []
+      }),
+
+      invalidateAllAnalytics: () => set({
+        skillProgressCacheValid: false,
+        weeklyActivityCacheValid: false,
+        streakDataCacheValid: false,
+        performanceDataCacheValid: false,
+        skillProgress: [],
+        weeklyActivity: [],
+        streakData: null,
+        performanceData: []
+      }),
+
       invalidateAllCache: () => set({
         sessionsCacheValid: false,
         statsCacheValid: false,
         profileCacheValid: false,
         streakCacheValid: false,
+        leaderboardCacheValid: false,
         sessionDetailsCacheValid: {},
         sessions: [],
         stats: null,
         profile: null,
         streak: null,
+        leaderboard: [],
         sessionDetails: {},
         sessionDetailsLastFetch: {},
+        // Analytics
+        skillProgressCacheValid: false,
+        weeklyActivityCacheValid: false,
+        streakDataCacheValid: false,
+        performanceDataCacheValid: false,
+        skillProgress: [],
+        weeklyActivity: [],
+        streakData: null,
+        performanceData: []
       }),
 
       // Cache validation
@@ -201,6 +355,7 @@ export const useCacheStore = create<CacheState>()(
 
       isProfileCacheValid: () => {
         const state = get();
+        if (!state.profileCacheValid || !state.profileLastFetch) return false;
         return Date.now() - state.profileLastFetch < CACHE_DURATION;
       },
 
@@ -208,6 +363,12 @@ export const useCacheStore = create<CacheState>()(
         const state = get();
         if (!state.streakCacheValid || !state.streakLastFetch) return false;
         return Date.now() - state.streakLastFetch < CACHE_DURATION;
+      },
+
+      isLeaderboardCacheValid: () => {
+        const state = get();
+        if (!state.leaderboardCacheValid || !state.leaderboardLastFetch) return false;
+        return Date.now() - state.leaderboardLastFetch < CACHE_DURATION;
       },
 
       isSessionDetailCacheValid: (sessionId) => {
@@ -218,13 +379,39 @@ export const useCacheStore = create<CacheState>()(
         return Date.now() - state.sessionDetailsLastFetch[sessionId] < CACHE_DURATION;
       },
 
+      // Analytics cache validation
+      isSkillProgressCacheValid: () => {
+        const state = get();
+        if (!state.skillProgressCacheValid || !state.skillProgressLastFetch) return false;
+        return Date.now() - state.skillProgressLastFetch < CACHE_DURATION;
+      },
+
+      isWeeklyActivityCacheValid: () => {
+        const state = get();
+        if (!state.weeklyActivityCacheValid || !state.weeklyActivityLastFetch) return false;
+        return Date.now() - state.weeklyActivityLastFetch < CACHE_DURATION;
+      },
+
+      isStreakDataCacheValid: () => {
+        const state = get();
+        if (!state.streakDataCacheValid || !state.streakDataLastFetch) return false;
+        return Date.now() - state.streakDataLastFetch < CACHE_DURATION;
+      },
+
+      isPerformanceDataCacheValid: () => {
+        const state = get();
+        if (!state.performanceDataCacheValid || !state.performanceDataLastFetch) return false;
+        return Date.now() - state.performanceDataLastFetch < CACHE_DURATION;
+      },
+
       // Event handlers for cache invalidation
       onInterviewCreated: () => {
         const state = get();
-        // Invalidate sessions and stats when new interview is created
+        // Invalidate sessions, stats, and leaderboard when new interview is created
         set({
           sessionsCacheValid: false,
-          statsCacheValid: false
+          statsCacheValid: false,
+          leaderboardCacheValid: false
         });
       },
 
@@ -234,10 +421,16 @@ export const useCacheStore = create<CacheState>()(
         set({
           sessionsCacheValid: false,
           statsCacheValid: false,
+          leaderboardCacheValid: false,
           sessionDetailsCacheValid: {
             ...state.sessionDetailsCacheValid,
             [sessionId]: false
-          }
+          },
+          // Invalidate analytics cache
+          skillProgressCacheValid: false,
+          weeklyActivityCacheValid: false,
+          streakDataCacheValid: false,
+          performanceDataCacheValid: false
         });
       },
 
@@ -247,6 +440,7 @@ export const useCacheStore = create<CacheState>()(
         set({
           sessionsCacheValid: false,
           statsCacheValid: false,
+          leaderboardCacheValid: false,
           sessionDetailsCacheValid: {
             ...state.sessionDetailsCacheValid,
             [sessionId]: false
@@ -273,6 +467,8 @@ export const useCacheStore = create<CacheState>()(
         profileCacheValid: false,
         streakLastFetch: state.streakLastFetch,
         streakCacheValid: false,
+        leaderboardLastFetch: state.leaderboardLastFetch,
+        leaderboardCacheValid: false,
         sessionDetailsLastFetch: state.sessionDetailsLastFetch,
         sessionDetailsCacheValid: {}, // Always invalidate on app restart
       }),

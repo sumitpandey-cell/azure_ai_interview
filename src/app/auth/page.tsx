@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Brain, Mail, Lock, User, Eye, EyeOff, CheckCircle2, Sparkles, Upload, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
@@ -42,6 +42,9 @@ export default function Auth() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const { signUp, signIn, signInWithGoogle, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+  const pendingRedirect = useRef(false);
 
   const signUpForm = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
@@ -82,12 +85,13 @@ export default function Auth() {
     }
   }, [watchPassword, isSignUp]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in or after successful sign-in
   useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
+    if (user && (pendingRedirect.current || !isSignUp)) {
+      pendingRedirect.current = false;
+      router.push(redirectTo);
     }
-  }, [user, router]);
+  }, [user, router, redirectTo, isSignUp]);
 
   // Reset forms when switching between sign in/sign up
   useEffect(() => {
@@ -167,9 +171,11 @@ export default function Auth() {
 
   const handleSignIn = async (values: SignInForm) => {
     try {
+      pendingRedirect.current = true;
       await signIn(values.email, values.password);
-      router.push("/dashboard");
+      // Redirect will happen in useEffect when user state updates
     } catch (error) {
+      pendingRedirect.current = false;
       // Error is handled in the context
     }
   };
