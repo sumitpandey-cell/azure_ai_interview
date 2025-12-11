@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +47,7 @@ const formSchema = z.object({
     jobDescription: z.any().optional(),
 });
 
-export default function StartInterview() {
+function StartInterviewContent() {
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -567,5 +567,19 @@ export default function StartInterview() {
                 </Card>
             </div>
         </DashboardLayout>
+    );
+}
+
+export default function StartInterview() {
+    return (
+        <Suspense fallback={
+            <DashboardLayout>
+                <div className="flex min-h-[60vh] items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                </div>
+            </DashboardLayout>
+        }>
+            <StartInterviewContent />
+        </Suspense>
     );
 }

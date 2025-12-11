@@ -1,0 +1,12 @@
+# Ignore the agent directory - this is a separate backend service
+agent/
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/__tests__/
+
+# Ignore development files
+.gemini/
+.agent/
+database/

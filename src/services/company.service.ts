@@ -70,16 +70,16 @@ export const companyService = {
                 .eq("is_active", true);
 
             if (filters?.questionType) {
-                query = query.eq("question_type", filters.questionType);
+                query = query.eq("question_type", filters.questionType as any);
             }
             if (filters?.difficulty) {
-                query = query.eq("difficulty", filters.difficulty);
+                query = query.eq("difficulty", filters.difficulty as any);
             }
             if (filters?.role) {
-                query = query.eq("role", filters.role);
+                query = query.eq("role", filters.role as any);
             }
             if (filters?.experienceLevel) {
-                query = query.eq("experience_level", filters.experienceLevel);
+                query = query.eq("experience_level", filters.experienceLevel as any);
             }
 
             const { data, error } = await query;

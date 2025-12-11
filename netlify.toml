@@ -1,0 +1,11 @@
+[build]
+  command = "next build"
+  publish = ".next"
+
+# Ignore the agent directory during build
+[build.environment]
+  NODE_VERSION = "18"
+
+# Exclude agent directory from deployment
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

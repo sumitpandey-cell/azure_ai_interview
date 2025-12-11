@@ -97,6 +97,11 @@ export function getLanguageByCode(code: string): LanguageOption {
  * Get the user's preferred language from localStorage or browser settings
  */
 export function getPreferredLanguage(): LanguageOption {
+  // Only access localStorage in browser environment
+  if (typeof window === 'undefined') {
+    return DEFAULT_LANGUAGE;
+  }
+
   // Check localStorage first
   const savedLanguage = localStorage.getItem('interview-language');
   if (savedLanguage) {
@@ -143,6 +148,6 @@ export function getLanguageInstructions(languageCode: string): string {
     ko: "인터뷰 중에는 한국어로 명확하게 말씀해 주세요.",
     zh: "请在面试过程中用普通话清晰地说话。"
   };
-  
+
   return instructions[languageCode] || instructions.en;
 }
