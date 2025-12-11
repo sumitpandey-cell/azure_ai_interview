@@ -87,13 +87,11 @@ export async function middleware(req: NextRequest) {
         pathname === route || pathname.startsWith(`${route}/`)
     );
 
-    // Check if the current route is an auth route
-    const isAuthRoute = AUTH_ROUTES.some(route =>
-        pathname === route || pathname.startsWith(`${route}/`)
-    );
+    // Check if the current route is an auth route (excluding callback)
+    const isAuthRoute = pathname === '/auth';
 
-    // If user is authenticated and trying to access auth routes, redirect to dashboard
-    if (session && isAuthRoute && pathname !== '/auth/callback') {
+    // If user is authenticated and trying to access auth page, redirect to dashboard
+    if (session && isAuthRoute) {
         const dashboardUrl = new URL('/dashboard', req.url);
         return NextResponse.redirect(dashboardUrl);
     }

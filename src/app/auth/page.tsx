@@ -210,9 +210,9 @@ function AuthContent() {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-2xl rounded-full"></div>
           <img
-            src="/arjuna-logo.png"
+            src="/arjuna-icon.png"
             alt="Arjuna AI"
-            className="relative h-16 w-16 object-contain drop-shadow-2xl"
+            className="relative h-24 w-24 object-contain drop-shadow-2xl"
           />
         </div>
         <div>
