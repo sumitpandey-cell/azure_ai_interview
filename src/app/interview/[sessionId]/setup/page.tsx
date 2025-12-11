@@ -347,6 +347,20 @@ export default function InterviewSetup() {
                                     </div>
                                     {session.config?.companyInterviewConfig && (
                                         <>
+                                            {/* Coming Soon Banner */}
+                                            <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/30 p-3 mb-2">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+                                                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                                                        Coming Soon
+                                                    </span>
+                                                    <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+                                                </div>
+                                                <p className="text-xs text-center text-amber-700 dark:text-amber-300 mt-1">
+                                                    Company-specific interviews are under development
+                                                </p>
+                                            </div>
+
                                             <div className="flex justify-between items-center p-2 rounded-md bg-primary/10 border border-primary/20">
                                                 <span className="text-muted-foreground">Company</span>
                                                 <span className="font-semibold text-primary">{session.config.companyInterviewConfig.companyName}</span>

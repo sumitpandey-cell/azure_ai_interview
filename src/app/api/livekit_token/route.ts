@@ -54,7 +54,7 @@ export async function GET(request: Request) {
         const config = typeof session.config === 'object' && session.config !== null ? session.config as any : {};
 
         if (config.selectedVoice) {
-          const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar'];
+          const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir'];
           if (supportedVoices.includes(config.selectedVoice)) {
             selectedVoice = config.selectedVoice;
             console.log(`✓ Using voice from session config: ${selectedVoice}`);
