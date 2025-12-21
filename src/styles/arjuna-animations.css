@@ -1,0 +1,51 @@
+/* Arjuna Loader Animations */
+
+/* Blob Animation for Background */
+@keyframes arjuna-blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-arjuna-blob {
+  animation: arjuna-blob 7s infinite;
+}
+
+/* Bow Drawing Animation */
+@keyframes arjuna-drawBow {
+  0% { d: path("M40,10 Q60,50 40,90"); }
+  50% { d: path("M30,10 Q80,50 30,90"); }
+  55% { d: path("M40,10 Q60,50 40,90"); }
+  100% { d: path("M40,10 Q60,50 40,90"); }
+}
+
+/* String Pulling Animation */
+@keyframes arjuna-pullString {
+  0% { d: path("M40,10 L40,90"); }
+  50% { d: path("M30,10 L15,50 L30,90"); }
+  55% { d: path("M40,10 L45,50 L40,90"); }
+  60% { d: path("M40,10 L38,50 L40,90"); }
+  100% { d: path("M40,10 L40,90"); }
+}
+
+/* Arrow Flying Animation */
+@keyframes arjuna-arrowFly {
+  0% { transform: translateX(0) scale(1); opacity: 0; }
+  10% { transform: translateX(0) scale(1); opacity: 1; }
+  40% { transform: translateX(-15px) scale(1); opacity: 1; }
+  50% { transform: translateX(-15px) scale(1); opacity: 1; }
+  55% { transform: translateX(100px) scale(1); opacity: 0; }
+  56% { transform: translateX(-20px) scale(0); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 0; }
+}
+
+/* Slow Pulse Animation */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

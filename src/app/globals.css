@@ -217,16 +217,34 @@
   }
 
   .shimmer {
-    animation: shimmer 2s infinite linear;
-    background-size: 1000px 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--muted);
   }
 
-  @keyframes shimmer {
-    0% {
-      background-position: -1000px 0;
-    }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.05),
+        transparent);
+    animation: shimmer-animation 2s infinite;
+  }
+
+  /* Light mode adjustments for shimmer */
+  :root:not(.dark) .shimmer::after {
+    background-image: linear-gradient(90deg,
+        transparent,
+        rgba(0, 0, 0, 0.02),
+        transparent);
+  }
+
+  @keyframes shimmer-animation {
     100% {
-      background-position: 1000px 0;
+      transform: translateX(100%);
     }
   }
 }

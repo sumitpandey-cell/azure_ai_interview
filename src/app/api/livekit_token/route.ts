@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient, AgentDispatchClient } from "livekit-server-sdk";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -80,6 +80,49 @@ export async function GET(request: Request) {
       }
     }
 
+    // Create or update room with agent dispatch configuration
+    const roomName = sessionId || "interview-room";
+    const roomClient = new RoomServiceClient(
+      process.env.LIVEKIT_URL!,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!
+    );
+
+    try {
+      // Try to create room with agent dispatch enabled
+      await roomClient.createRoom({
+        name: roomName,
+        emptyTimeout: 300, // 5 minutes
+        maxParticipants: 10,
+        metadata: JSON.stringify({
+          sessionId,
+          createdAt: new Date().toISOString()
+        })
+      });
+      console.log(`✅ Room created: ${roomName}`);
+    } catch (err: any) {
+      // Room might already exist, that's okay
+      if (err.message?.includes('already exists')) {
+        console.log(`Room already exists: ${roomName}`);
+      } else {
+        console.warn(`Room creation warning:`, err.message);
+      }
+    }
+
+    // Always dispatch agent (whether room is new or existing)
+    try {
+      const dispatchClient = new AgentDispatchClient(
+        process.env.LIVEKIT_URL!,
+        process.env.LIVEKIT_API_KEY!,
+        process.env.LIVEKIT_API_SECRET!
+      );
+
+      await dispatchClient.createDispatch(roomName, 'Arjuna-Interview-AI');
+      console.log(`✅ Agent dispatched to room: ${roomName}`);
+    } catch (dispatchErr: any) {
+      console.warn(`⚠️ Could not dispatch agent:`, dispatchErr.message || dispatchErr);
+    }
+
     const token = new AccessToken(
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!,
@@ -95,7 +138,7 @@ export async function GET(request: Request) {
 
     token.addGrant({
       roomJoin: true,
-      room: sessionId || "interview-room",
+      room: roomName,
       canPublish: true,
       canSubscribe: true,
     });

@@ -9,6 +9,8 @@ import { interviewService } from "@/services/interview.service";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
+import { AvatarSelection } from "@/components/AvatarSelection";
+import { getDefaultAvatar, getAvatarById, type InterviewerAvatar } from "@/config/interviewer-avatars";
 
 import {
     AlertDialog,
@@ -55,6 +57,7 @@ export default function InterviewSetup() {
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [selectedAvatar, setSelectedAvatar] = useState<InterviewerAvatar>(getDefaultAvatar());
 
     const [showTimeWarning, setShowTimeWarning] = useState(false);
     const { allowed, remaining_minutes, loading: subscriptionLoading } = useSubscription();
@@ -65,6 +68,16 @@ export default function InterviewSetup() {
             fetchSession();
         }
     }, [sessionId]);
+
+    // Load selected avatar from session config
+    useEffect(() => {
+        if (session?.config?.selectedAvatar) {
+            const avatar = getAvatarById(session.config.selectedAvatar);
+            if (avatar) {
+                setSelectedAvatar(avatar);
+            }
+        }
+    }, [session]);
 
     const fetchSession = async () => {
         try {
@@ -200,16 +213,18 @@ export default function InterviewSetup() {
         setIsLoading(true);
 
         try {
-            // Update session config to track current stage
+            // Update session config to track current stage and selected avatar
             if (sessionId && typeof sessionId === 'string') {
                 const currentConfig = (session?.config as Record<string, any>) || {};
                 await interviewService.updateSession(sessionId, {
                     config: {
                         ...currentConfig,
+                        selectedAvatar: selectedAvatar.id,
+                        selectedVoice: selectedAvatar.voice,
                         currentStage: 'live'
                     }
                 });
-                console.log("✓ Session stage updated to 'live'");
+                console.log("✓ Session stage updated to 'live', avatar:", selectedAvatar.name);
             }
 
             // Pre-fetch LiveKit token to speed up connection on live page
@@ -236,7 +251,7 @@ export default function InterviewSetup() {
         }
 
         setIsLoading(false);
-        toast.success("Starting interview session...");
+        toast.success(`Starting interview with ${selectedAvatar.name}...`);
         router.push(`/interview/${sessionId}/live?mic=${isMicOn}&camera=${isCameraOn}`);
         console.log("Starting interview for session:", sessionId);
     };
@@ -325,91 +340,98 @@ export default function InterviewSetup() {
                     <p className="text-center text-sm text-muted-foreground mt-4">
                         Check your appearance and audio before joining the session.
                     </p>
+
+                    {/* Avatar Selection */}
+                    <div className="mt-8 mb-8">
+                        <AvatarSelection
+                            selectedAvatar={selectedAvatar}
+                            onSelect={setSelectedAvatar}
+                        />
+                    </div>
                 </div>
 
                 {/* Right Column: Controls & Instructions */}
-                <div className="w-full max-w-sm space-y-6">
-                    {session && (
-                        <Card className="border-none shadow-lg bg-card/50 backdrop-blur-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-4 text-primary font-semibold">
-                                    <Settings className="h-4 w-4" />
-                                    <h3>Session Details</h3>
+                <div className="w-full max-w-sm space-y-6">{session && (
+                    <Card className="border-none shadow-lg bg-card/50 backdrop-blur-sm">
+                        <CardContent className="p-5">
+                            <div className="flex items-center gap-2 mb-4 text-primary font-semibold">
+                                <Settings className="h-4 w-4" />
+                                <h3>Session Details</h3>
+                            </div>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                                    <span className="text-muted-foreground">Type</span>
+                                    <span className="font-medium text-foreground">{session.interview_type}</span>
                                 </div>
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground">Type</span>
-                                        <span className="font-medium text-foreground">{session.interview_type}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground">Position</span>
-                                        <span className="font-medium text-foreground">{session.position}</span>
-                                    </div>
-                                    {session.config?.companyInterviewConfig && (
-                                        <>
-                                            {/* Coming Soon Banner */}
-                                            <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/30 p-3 mb-2">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
-                                                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                                                        Coming Soon
-                                                    </span>
-                                                    <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
-                                                </div>
-                                                <p className="text-xs text-center text-amber-700 dark:text-amber-300 mt-1">
-                                                    Company-specific interviews are under development
-                                                </p>
+                                <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                                    <span className="text-muted-foreground">Position</span>
+                                    <span className="font-medium text-foreground">{session.position}</span>
+                                </div>
+                                {session.config?.companyInterviewConfig && (
+                                    <>
+                                        {/* Coming Soon Banner */}
+                                        <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/30 p-3 mb-2">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+                                                <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                                                    Coming Soon
+                                                </span>
+                                                <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
                                             </div>
-
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-primary/10 border border-primary/20">
-                                                <span className="text-muted-foreground">Company</span>
-                                                <span className="font-semibold text-primary">{session.config.companyInterviewConfig.companyName}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Role</span>
-                                                <span className="font-medium text-foreground">{session.config.companyInterviewConfig.role}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Experience Level</span>
-                                                <span className="font-medium text-foreground">{session.config.companyInterviewConfig.experienceLevel}</span>
-                                            </div>
-                                        </>
-                                    )}
-                                    {session.config?.difficulty && (
-                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground">Difficulty</span>
-                                            <span className={`px-2 py-1 rounded-md text-xs font-semibold ${session.config.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                                session.config.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
-                                                    'bg-red-500/10 text-red-600 dark:text-red-400'
-                                                }`}>
-                                                {session.config.difficulty}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {session.config?.skills && session.config.skills.length > 0 && (
-                                        <div className="p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground text-xs block mb-2">Skills to be assessed</span>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {session.config.skills.map((skill, idx) => (
-                                                    <span key={idx} className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {session.config?.jobDescription && (
-                                        <div className="p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground text-xs block mb-2">Job Description</span>
-                                            <p className="text-xs text-foreground line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title={session.config.jobDescription}>
-                                                {session.config.jobDescription}
+                                            <p className="text-xs text-center text-amber-700 dark:text-amber-300 mt-1">
+                                                Company-specific interviews are under development
                                             </p>
                                         </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+
+                                        <div className="flex justify-between items-center p-2 rounded-md bg-primary/10 border border-primary/20">
+                                            <span className="text-muted-foreground">Company</span>
+                                            <span className="font-semibold text-primary">{session.config.companyInterviewConfig.companyName}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                                            <span className="text-muted-foreground">Role</span>
+                                            <span className="font-medium text-foreground">{session.config.companyInterviewConfig.role}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                                            <span className="text-muted-foreground">Experience Level</span>
+                                            <span className="font-medium text-foreground">{session.config.companyInterviewConfig.experienceLevel}</span>
+                                        </div>
+                                    </>
+                                )}
+                                {session.config?.difficulty && (
+                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                                        <span className="text-muted-foreground">Difficulty</span>
+                                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${session.config.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                                            session.config.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
+                                                'bg-red-500/10 text-red-600 dark:text-red-400'
+                                            }`}>
+                                            {session.config.difficulty}
+                                        </span>
+                                    </div>
+                                )}
+                                {session.config?.skills && session.config.skills.length > 0 && (
+                                    <div className="p-2 rounded-md bg-muted/50">
+                                        <span className="text-muted-foreground text-xs block mb-2">Skills to be assessed</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {session.config.skills.map((skill, idx) => (
+                                                <span key={idx} className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {session.config?.jobDescription && (
+                                    <div className="p-2 rounded-md bg-muted/50">
+                                        <span className="text-muted-foreground text-xs block mb-2">Job Description</span>
+                                        <p className="text-xs text-foreground line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title={session.config.jobDescription}>
+                                            {session.config.jobDescription}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                     <div className="text-center space-y-6">
                         <div className="space-y-2">
