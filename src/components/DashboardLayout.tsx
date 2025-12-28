@@ -34,7 +34,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { remaining_minutes, plan_name } = useSubscription();
+  const { remaining_minutes, plan_name, invalidateCache } = useSubscription();
+
+  // Force refresh subscription data when returning to dashboard
+  useEffect(() => {
+    invalidateCache();
+  }, [invalidateCache]);
 
   // Get streak data from analytics cache
   const { streakData } = useAnalytics(user?.id);

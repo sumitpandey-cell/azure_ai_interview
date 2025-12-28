@@ -14,7 +14,7 @@ export interface SubscriptionStatus {
 
 // In-memory cache to prevent re-fetching on every navigation
 const subscriptionCache = new Map<string, { data: SubscriptionStatus; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 30 * 1000; // 30 seconds
 
 export function useSubscription() {
     const { user } = useAuth();
