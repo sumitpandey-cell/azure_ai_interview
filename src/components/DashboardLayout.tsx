@@ -13,8 +13,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Bell,
-  User,
   Flame,
   Trophy,
   BellRing,
@@ -24,6 +22,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { useInterviewStore } from "@/stores/use-interview-store";
+import { useFeedback } from "@/context/FeedbackContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -35,6 +35,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { remaining_minutes, plan_name, invalidateCache } = useSubscription();
+  const { currentSession } = useInterviewStore();
+  const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
+
+  const isCurrentSessionGenerating = isGenerating && generatingSessionId === currentSession?.id;
+  const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
+  const isCompleted = currentSession?.status === 'completed';
+  const isActive = (path: string) => pathname === path;
+  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
 
   // Force refresh subscription data when returning to dashboard
   useEffect(() => {
@@ -74,7 +82,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
-  const isActive = (path: string) => pathname === path;
+
 
   return (
     <div className="flex h-screen bg-sidebar text-foreground font-sans overflow-hidden">
@@ -194,6 +202,78 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
           )}
+
+          {/* Report Action Card */}
+          {!sidebarCollapsed && showReportAction ? (
+            <div className="bg-sidebar-accent rounded-2xl p-4 border border-sidebar-border shadow-lg text-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sidebar-foreground font-bold text-sm truncate w-32">{currentSession?.position || "Latest Interview"}</p>
+                    <p className="text-[10px] text-sidebar-foreground/50">Report Status</p>
+                  </div>
+                </div>
+
+                <Button
+                  className={`w-full h-9 text-xs font-semibold rounded-xl shadow-sm transition-all active:scale-95 ${isCurrentSessionGenerating
+                    ? 'bg-blue-500/20 text-blue-400 cursor-not-allowed hover:bg-blue-500/20'
+                    : hasFeedback
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                  disabled={isCurrentSessionGenerating}
+                  onClick={() => {
+                    if (hasFeedback) {
+                      router.push(`/interview/${currentSession?.id}/report`);
+                    } else if (currentSession?.id) {
+                      generateFeedbackInBackground(currentSession.id);
+                      router.push(`/interview/${currentSession.id}/report`);
+                    }
+                  }}
+                >
+                  {isCurrentSessionGenerating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Generating...
+                    </div>
+                  ) : hasFeedback ? (
+                    "View Report"
+                  ) : (
+                    "Generate Report"
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : sidebarCollapsed && showReportAction ? (
+            <div className="flex justify-center group" title={hasFeedback ? "View Report" : "Generate Report"}>
+              <button
+                onClick={() => {
+                  if (hasFeedback) {
+                    router.push(`/interview/${currentSession?.id}/report`);
+                  } else if (currentSession?.id) {
+                    generateFeedbackInBackground(currentSession.id);
+                    router.push(`/interview/${currentSession.id}/report`);
+                  }
+                }}
+                disabled={isCurrentSessionGenerating}
+                className={`p-2.5 rounded-xl border transition-all active:scale-95 relative ${isCurrentSessionGenerating
+                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 animate-pulse'
+                  : hasFeedback
+                    ? 'bg-blue-600/10 border-blue-600/20 text-blue-400 hover:bg-blue-600/20'
+                    : 'bg-emerald-600/10 border-emerald-600/20 text-emerald-400 hover:bg-emerald-600/20'
+                  }`}
+              >
+                <FileText className="h-5 w-5" />
+                {isCurrentSessionGenerating && (
+                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 border-2 border-sidebar rounded-full animate-bounce" />
+                )}
+              </button>
+            </div>
+          ) : null}
 
           {/* Upgrade Card */}
           {!sidebarCollapsed ? (

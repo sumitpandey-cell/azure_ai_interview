@@ -36,7 +36,8 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
         setShouldRefreshDashboard(false);
 
         const processFeedback = async () => {
-            console.log("🤖 [Background] Generating AI feedback for session:", sessionId);
+            console.log("🚀 [FeedbackContext] STARTING background feedback generation for:", sessionId);
+            console.log("🔧 [FeedbackContext] This is a client-side process using Gemini API");
             // toast.info("Generating AI feedback in background..."); // Using toast here might be redundant if user is redirected
 
             try {

@@ -85,39 +85,43 @@ export default function InterviewSetup() {
                 throw new Error('Invalid session ID');
             }
 
-            // First check if we have the session in store
+            let sessionData: any;
+
+            // 1. Check store first
             if (currentSession && currentSession.id === sessionId) {
-                console.log("📦 Found session in store:", currentSession.id, "Status:", currentSession.status);
-                // Check if session is already in progress or completed
-                if (currentSession.status === 'in_progress' || currentSession.status === 'completed') {
-                    toast.info("This interview session has already been started. Redirecting to dashboard.");
-                    router.replace('/dashboard');
-                    return;
-                }
-                setSession(currentSession as SessionData);
-                setFetchingSession(false);
+                console.log("📦 Found session in store:", currentSession.id);
+                sessionData = currentSession;
+            } else {
+                // 2. Fetch from DB if not in store
+                const data = await interviewService.getSessionById(sessionId);
+                if (!data) throw new Error('Session not found');
+
+                console.log("🔍 Fetched session from DB:", data.id);
+                sessionData = data;
+
+                // Update store with fetched session
+                setCurrentSession({
+                    id: data.id,
+                    user_id: data.user_id,
+                    interview_type: data.interview_type,
+                    position: data.position,
+                    status: data.status,
+                    config: (data.config as SessionConfig) || {},
+                    created_at: data.created_at
+                });
+            }
+
+            // 3. Security check: Redirect if session is already completed or past the setup stage
+            if (sessionData.status === 'completed' || (sessionData.config as any)?.currentStage === 'live') {
+                const message = sessionData.status === 'completed'
+                    ? "This interview session has already been completed."
+                    : "This interview session is already in progress.";
+                toast.info(`${message} Redirecting to dashboard.`);
+                router.replace('/dashboard');
                 return;
             }
 
-            const data = await interviewService.getSessionById(sessionId);
-
-            if (!data) {
-                throw new Error('Session not found');
-            }
-
-            console.log("🔍 Fetched session from DB:", data.id, "Status:", data.status);
-            setSession(data as SessionData);
-
-            // Update store with fetched session
-            setCurrentSession({
-                id: data.id,
-                user_id: data.user_id,
-                interview_type: data.interview_type,
-                position: data.position,
-                status: data.status,
-                config: (data.config as SessionConfig) || {},
-                created_at: data.created_at
-            });
+            setSession(sessionData as SessionData);
         } catch (error) {
             console.error("Error fetching session:", error);
             toast.error("Session not found. Redirecting to start interview.");

@@ -60,7 +60,7 @@ function StartInterviewContent() {
         searchParams.get('mode') === 'company' ? 'company' : 'general'
     );
     const [companyTemplate, setCompanyTemplate] = useState<CompanyTemplate | null>(null);
-    const { fetchCompanyTemplates } = useOptimizedQueries();
+    const { fetchCompanyTemplates, createInterviewSession } = useOptimizedQueries();
     const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
     const { setCurrentSession } = useInterviewStore();
 
@@ -123,17 +123,21 @@ function StartInterviewContent() {
             // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
             const existingSessions = await interviewService.getInProgressSessions(user.id);
 
-            // If there are in-progress sessions, show dialog
-            if (existingSessions && existingSessions.length > 0) {
-                const previousSession = existingSessions[0];
+            // Filter for session of the SAME DOMAIN (position and type)
+            const sameDomainSession = existingSessions?.find(s =>
+                s.position.toLowerCase() === values.position.toLowerCase() &&
+                s.interview_type.toLowerCase() === values.interviewType.toLowerCase()
+            );
 
+            // If there is an in-progress session of the SAME DOMAIN, show dialog
+            if (sameDomainSession) {
                 const userChoice = window.confirm(
-                    `⚠️ You have an incomplete interview!\n\n` +
-                    `Position: ${previousSession.position}\n` +
-                    `Type: ${previousSession.interview_type}\n` +
-                    `Started: ${new Date(previousSession.created_at).toLocaleString()}\n\n` +
+                    `⚠️ You have an incomplete interview for this role!\n\n` +
+                    `Position: ${sameDomainSession.position}\n` +
+                    `Type: ${sameDomainSession.interview_type}\n` +
+                    `Started: ${new Date(sameDomainSession.created_at).toLocaleString()}\n\n` +
                     `Would you like to:\n\n` +
-                    `• Click "OK" to CONTINUE the previous interview\n` +
+                    `• Click "OK" to CONTINUE this interview\n` +
                     `• Click "Cancel" to START NEW (will abandon previous)`
                 );
 
@@ -141,14 +145,14 @@ function StartInterviewContent() {
                     // User wants to continue previous interview
                     toast.info("Redirecting to previous interview...");
                     // Resume from the correct stage
-                    const stage = (previousSession.config as any)?.currentStage || 'avatar';
-                    router.push(`/interview/${previousSession.id}/${stage}`);
+                    const stage = (sameDomainSession.config as any)?.currentStage || 'setup';
+                    router.push(`/interview/${sameDomainSession.id}/${stage}`);
                     setIsLoading(false);
                     return;
                 } else {
                     // User wants to start new - mark old session as abandoned
                     const abandonConfirm = window.confirm(
-                        `⚠️ Are you sure you want to abandon the previous interview?\n\n` +
+                        `⚠️ Are you sure you want to abandon the previous ${sameDomainSession.position} interview?\n\n` +
                         `This action cannot be undone. The previous interview will be marked as incomplete.`
                     );
 
@@ -159,7 +163,7 @@ function StartInterviewContent() {
                     }
 
                     // Abandon previous session using service
-                    const abandoned = await interviewService.abandonSession(previousSession.id);
+                    const abandoned = await interviewService.abandonSession(sameDomainSession.id);
 
                     if (abandoned) {
                         toast.success("Previous interview abandoned. Starting new session...");
@@ -189,23 +193,19 @@ function StartInterviewContent() {
                 };
             }
 
-            const { data, error } = await supabase.from("interview_sessions").insert({
-                user_id: user.id,
-                interview_type: values.interviewType,
+            // ✅ CREATE NEW SESSION USING OPTIMIZED HOOK
+            const session = await createInterviewSession({
                 position: values.position,
-                duration_seconds: 0, // Will be set to actual duration when interview completes
-                status: "pending",
+                interview_type: values.interviewType,
+                difficulty: values.difficulty,
+                jobDescription: values.jobDescription,
                 config: {
                     ...config,
-                    currentStage: 'avatar' // Initialize with avatar stage
+                    currentStage: 'setup' // Initialize with setup stage
                 }
-            }).select();
+            });
 
-            if (error) throw error;
-
-            if (data && data.length > 0) {
-                const session = data[0];
-
+            if (session) {
                 // Store complete session data in Zustand for immediate access
                 console.log("💾 Storing session in Zustand:", session.id);
                 setCurrentSession({

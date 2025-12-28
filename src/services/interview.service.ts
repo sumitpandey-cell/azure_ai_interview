@@ -14,6 +14,8 @@ export interface CreateSessionConfig {
     userId: string;
     interviewType: string;
     position: string;
+    difficulty?: string;
+    jobDescription?: string;
     config?: any;
 }
 
@@ -36,10 +38,12 @@ export const interviewService = {
      */
     async createSession(config: CreateSessionConfig): Promise<InterviewSession | null> {
         try {
-            const sessionData: InterviewSessionInsert = {
+            const sessionData: any = {
                 user_id: config.userId,
                 interview_type: config.interviewType,
                 position: config.position,
+                difficulty: config.difficulty || config.config?.difficulty || "Intermediate",
+                job_description: config.jobDescription || config.config?.jobDescription || null,
                 status: "in_progress",
                 config: config.config || {},
                 created_at: new Date().toISOString(),
@@ -739,11 +743,29 @@ export const interviewService = {
                 return false;
             }
 
-            const resumptions = await this.getResumptionHistory(sessionId);
+            let resumptions = await this.getResumptionHistory(sessionId);
             if (resumptions.length === 0) {
-                console.log("No resumptions found for session:", sessionId);
-                return false;
+                console.log("⚠️ No resumptions found for session:", sessionId, "- falling back to full session transcript");
+                const transcriptCount = await this.getTranscriptCount(sessionId);
+
+                if (transcriptCount === 0) {
+                    console.error("❌ No transcript found for session. Cannot generate feedback.");
+                    return false;
+                }
+
+                // Create a virtual resumption for the entire session
+                resumptions = [{
+                    id: 'full-session-resumption',
+                    interview_session_id: sessionId,
+                    start_transcript_index: 0,
+                    end_transcript_index: transcriptCount,
+                    resumed_at: session.created_at,
+                    ended_at: session.completed_at || new Date().toISOString(),
+                    duration_seconds: session.duration_seconds || 0,
+                } as any];
             }
+
+            console.log(`🤖 Processing feedback for ${resumptions.length} conversation segment(s)`);
 
             // Generate feedback for each resumption
             const resumptionFeedbacks = [];

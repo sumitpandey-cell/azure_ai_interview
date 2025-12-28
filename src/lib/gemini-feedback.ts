@@ -234,8 +234,12 @@ export async function generateFeedback(
     const { position, interview_type: interviewType, config } = sessionData;
     const skills = config.skills || [];
     const difficulty = config.difficulty || 'Intermediate';
+    const jobDescription = config.jobDescription || null;
+
     const companyContext = config.companyInterviewConfig || config.companyName ?
         `\n\nCOMPANY CONTEXT: This interview was conducted for ${config.companyName || config.companyInterviewConfig?.companyName} for the role of ${config.role || config.companyInterviewConfig?.role}. Experience level expected: ${config.experienceLevel || config.companyInterviewConfig?.experienceLevel}.` : '';
+
+    const jdContext = jobDescription ? `\n\nJOB DESCRIPTION:\n${jobDescription}` : '';
 
     // Analyze interview length before processing
     const lengthAnalysis = analyzeInterviewLength(transcript);
@@ -285,7 +289,7 @@ export async function generateFeedback(
         : '';
 
     const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
-${skillsContext}${companyContext}
+${skillsContext}${companyContext}${jdContext}
 
 TRANSCRIPT:
 ${transcriptText}

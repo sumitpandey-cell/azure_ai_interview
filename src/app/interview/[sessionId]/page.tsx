@@ -161,7 +161,7 @@ export default function StartInterview() {
                 });
 
                 toast.success("Interview session created!");
-                router.push(`/interview/${session.id}/avatar`);
+                router.push(`/interview/${session.id}/setup`);
             } else {
                 throw new Error('Failed to create session');
             }

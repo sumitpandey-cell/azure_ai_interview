@@ -252,6 +252,7 @@ export type Database = {
           difficulty_progression: Json
           total_hints_used: number
           average_performance_score: number | null
+          difficulty: string | null
         }
         Insert: {
           id?: string
@@ -269,6 +270,7 @@ export type Database = {
           difficulty_progression?: Json
           total_hints_used?: number
           average_performance_score?: number | null
+          difficulty?: string | null
         }
         Update: {
           id?: string
@@ -286,6 +288,7 @@ export type Database = {
           difficulty_progression?: Json
           total_hints_used?: number
           average_performance_score?: number | null
+          difficulty?: string | null
         }
         Relationships: []
       }

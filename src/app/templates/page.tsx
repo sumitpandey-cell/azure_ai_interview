@@ -136,6 +136,7 @@ export default function Templates() {
       const session = await createInterviewSession({
         position: template.title,
         interview_type: template.interview_type,
+        difficulty: template.difficulty,
         config: {
           skills: template.skills,
           difficulty: template.difficulty,
@@ -187,6 +188,7 @@ export default function Templates() {
       const session = await createInterviewSession({
         position: role,
         interview_type: "Technical",
+        difficulty: company.difficulty || 'Intermediate',
         config: {
           companyInterviewConfig: {
             companyTemplateId: company.id,

@@ -281,7 +281,9 @@ export function useOptimizedQueries() {
   const createInterviewSession = useCallback(async (sessionData: {
     position: string;
     interview_type: string;
+    difficulty?: string;
     duration_seconds?: number;
+    jobDescription?: string;
     config?: any;
   }) => {
     if (!user?.id) {
@@ -293,6 +295,8 @@ export function useOptimizedQueries() {
         userId: user.id,
         interviewType: sessionData.interview_type,
         position: sessionData.position,
+        difficulty: sessionData.difficulty || sessionData.config?.difficulty,
+        jobDescription: sessionData.jobDescription || sessionData.config?.jobDescription,
         config: sessionData.config || {},
       });
 

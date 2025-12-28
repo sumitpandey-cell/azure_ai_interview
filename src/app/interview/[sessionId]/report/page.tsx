@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2 } from "lucide-react";
+import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -28,6 +28,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
+import { classifyError, ErrorSeverity, FeedbackError, shouldRetry, getRetryDelay, getRetryMessage } from "@/lib/feedback-error";
+import { useFeedback } from "@/context/FeedbackContext";
 
 interface InterviewSession {
     id: string;
@@ -70,9 +72,13 @@ export default function InterviewReport() {
     const userMetadata = user?.user_metadata as UserMetadata | undefined;
     const [loading, setLoading] = useState(true);
     const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError } = useInterviewStore();
-    const { fetchSessionDetail, isCached, deleteInterviewSession } = useOptimizedQueries();
+    const { fetchSessionDetail, deleteInterviewSession } = useOptimizedQueries();
+    const { generateFeedbackInBackground } = useFeedback();
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
+    const [errorState, setErrorState] = useState<FeedbackError | null>(null);
+    const [retryAttempt, setRetryAttempt] = useState(0);
+    const MAX_RETRIES = 5;
 
     useEffect(() => {
         if (sessionId) {
@@ -87,6 +93,11 @@ export default function InterviewReport() {
                 const data = await fetchSessionDetail(sessionId);
                 if (data) {
                     setSession(data as InterviewSession);
+                    // Automatically trigger generation if report is missing
+                    if (data.status === 'completed' && !data.feedback) {
+                        console.log("🔍 [ReportPage] Report missing, triggering generation...");
+                        generateFeedbackInBackground(sessionId);
+                    }
                 } else {
                     toast.error("Interview session not found. Redirecting to dashboard.");
                     router.push("/dashboard");
@@ -112,24 +123,74 @@ export default function InterviewReport() {
         let pollCount = 0;
         const MAX_POLLS = 20; // 20 polls × 3 seconds = 60 seconds timeout
 
+        // Smart polling with retry logic
+        const pollWithRetry = async (): Promise<'SUCCESS' | 'PENDING' | 'RETRY' | 'FATAL'> => {
+            try {
+                const data = await fetchSessionDetail(sessionId, true);
+
+                if (data?.feedback) {
+                    // Success! Feedback is ready
+                    setSession(data as InterviewSession);
+                    setErrorState(null);
+                    setRetryAttempt(0);
+                    toast.success("Feedback report is ready!");
+                    return 'SUCCESS';
+                }
+
+                return 'PENDING';
+            } catch (error) {
+                console.error("Error polling for feedback:", error);
+
+                // Classify the error
+                const classified = classifyError(error, undefined, retryAttempt);
+
+                // Check if we should retry
+                if (shouldRetry(classified, MAX_RETRIES)) {
+                    // Network issue - retry with exponential backoff
+                    const nextRetryCount = retryAttempt + 1;
+                    setRetryAttempt(nextRetryCount);
+
+                    const retryMessage = getRetryMessage(retryAttempt, MAX_RETRIES);
+                    toast.warning(retryMessage, { duration: getRetryDelay(retryAttempt) });
+
+                    // Schedule next retry with exponential backoff
+                    setTimeout(() => {
+                        // Trigger re-poll by updating a dependency
+                    }, getRetryDelay(retryAttempt));
+
+                    return 'RETRY';
+                } else {
+                    // Fatal error or max retries exceeded
+                    const finalError: FeedbackError = {
+                        ...classified,
+                        retryCount: retryAttempt,
+                    };
+
+                    if (retryAttempt >= MAX_RETRIES && classified.severity === ErrorSeverity.RETRYABLE) {
+                        finalError.message = 'Network connection unstable. Please check your internet and try again.';
+                        finalError.severity = ErrorSeverity.FATAL; // Treat as fatal after max retries
+                    }
+
+                    setErrorState(finalError);
+                    toast.error(finalError.message);
+                    return 'FATAL';
+                }
+            }
+        };
+
         const pollInterval = setInterval(async () => {
             pollCount++;
 
-            try {
-                const data = await fetchSessionDetail(sessionId);
-                if (data?.feedback) {
-                    // Feedback is ready!
-                    setSession(data as InterviewSession);
-                    clearInterval(pollInterval);
-                    toast.success("Feedback report is ready!");
-                    return;
-                }
-            } catch (error) {
-                console.error("Error polling for feedback:", error);
+            const result = await pollWithRetry();
+
+            // Stop polling on success or fatal error
+            if (result === 'SUCCESS' || result === 'FATAL') {
+                clearInterval(pollInterval);
+                return;
             }
 
-            // Timeout after 60 seconds
-            if (pollCount >= MAX_POLLS) {
+            // Timeout after 60 seconds of pending state
+            if (pollCount >= MAX_POLLS && result === 'PENDING') {
                 clearInterval(pollInterval);
                 setFeedbackTimeout(true);
                 toast.error("Feedback generation is taking longer than expected.");
@@ -137,7 +198,7 @@ export default function InterviewReport() {
         }, 3000); // Poll every 3 seconds
 
         return () => clearInterval(pollInterval);
-    }, [isFeedbackGenerating, sessionId]);
+    }, [isFeedbackGenerating, sessionId, retryAttempt]);
 
     const copyTranscriptToClipboard = async () => {
         try {
@@ -307,93 +368,181 @@ export default function InterviewReport() {
         );
     }
 
-    // Beautiful loading state for feedback generation
-    if (isFeedbackGenerating && !feedbackTimeout) {
+    // Show skeleton while generating feedback (non-blocking)
+    if (isFeedbackGenerating && !feedbackTimeout && !errorState) {
         return (
             <DashboardLayout>
-                <div className="min-h-[80vh] flex items-center justify-center p-4">
-                    <Card className="max-w-2xl w-full border-none shadow-2xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900">
-                        <CardContent className="p-8 md:p-12">
-                            <div className="flex flex-col items-center text-center space-y-8">
-                                {/* Animated AI Brain Icon */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 rounded-full blur-2xl opacity-50 animate-pulse"></div>
-                                    <div className="relative bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-500 rounded-full p-8 animate-bounce">
-                                        <Bot className="h-16 w-16 text-white" />
-                                    </div>
-                                </div>
+                <ReportPageSkeleton />
+                {/* Subtle notification that analysis is in progress */}
+                <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg animate-pulse z-50">
+                    <div className="flex items-center gap-2">
+                        <Bot className="h-4 w-4" />
+                        <span className="text-sm font-medium">Analyzing interview...</span>
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
 
-                                {/* Title */}
-                                <div className="space-y-3">
-                                    <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                                        Analyzing Your Interview
-                                    </h2>
-                                    <p className="text-slate-600 dark:text-slate-400 text-lg">
-                                        Our AI is carefully reviewing your responses...
-                                    </p>
-                                </div>
+    // Error state handling - show contextual error UI
+    if (errorState) {
+        const isRetryable = errorState.severity === ErrorSeverity.RETRYABLE;
+        const isFatal = errorState.severity === ErrorSeverity.FATAL;
 
-                                {/* Animated Progress Bar */}
-                                <div className="w-full space-y-3">
-                                    <div className="relative h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 animate-[shimmer_2s_ease-in-out_infinite]"
-                                            style={{
-                                                backgroundSize: '200% 100%',
-                                                animation: 'shimmer 2s ease-in-out infinite'
-                                            }}>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                                        This usually takes 10-30 seconds
-                                    </p>
-                                </div>
-
-                                {/* Processing Steps */}
-                                <div className="w-full space-y-4 pt-4">
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                                            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                        </div>
-                                        <span className="text-slate-700 dark:text-slate-300">Transcribing conversation</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center animate-pulse">
-                                            <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></div>
-                                        </div>
-                                        <span className="text-slate-700 dark:text-slate-300">Evaluating technical skills</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-left opacity-50">
-                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
-                                            <div className="w-2 h-2 rounded-full bg-slate-500"></div>
-                                        </div>
-                                        <span className="text-slate-700 dark:text-slate-300">Generating insights</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-left opacity-50">
-                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
-                                            <div className="w-2 h-2 rounded-full bg-slate-500"></div>
-                                        </div>
-                                        <span className="text-slate-700 dark:text-slate-300">Preparing your report</span>
-                                    </div>
-                                </div>
-
-                                {/* Encouraging Message */}
-                                <div className="pt-6 px-6 py-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
-                                    <p className="text-blue-700 dark:text-blue-300 text-sm">
-                                        💡 <strong>Tip:</strong> Your detailed feedback report will include personalized recommendations for improvement!
+        return (
+            <DashboardLayout>
+                <div className="space-y-6 max-w-4xl mx-auto p-4">
+                    {/* Header with partial data */}
+                    <Card className="border-none shadow-sm">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                                        {userMetadata?.full_name || "Candidate"}
+                                    </h1>
+                                    <p className="text-slate-500 dark:text-slate-400 text-lg">
+                                        {session?.position || "Interview Report"}
                                     </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                </div>
 
-                {/* Add shimmer animation */}
-                <style>{`
-                    @keyframes shimmer {
-                        0% { background-position: -200% 0; }
-                        100% { background-position: 200% 0; }
-                    }
-                `}</style>
+                    {/* Error Card */}
+                    <Card className={`border-2 ${isFatal
+                        ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                        : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
+                        }`}>
+                        <CardContent className="p-8">
+                            <div className="flex flex-col items-center gap-6 text-center">
+                                {/* Error Icon */}
+                                <div className={`h-16 w-16 rounded-full flex items-center justify-center ${isFatal ? 'bg-red-100 dark:bg-red-900' : 'bg-yellow-100 dark:bg-yellow-900'
+                                    }`}>
+                                    <XCircle className={`h-8 w-8 ${isFatal ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                                        }`} />
+                                </div>
+
+                                {/* Error Title & Message */}
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                                        {isFatal
+                                            ? 'Feedback Generation Failed'
+                                            : 'Network Connection Issue'}
+                                    </h2>
+                                    <p className="text-slate-600 dark:text-slate-400 max-w-md">
+                                        {errorState.message}
+                                    </p>
+                                </div>
+
+                                {/* Action Buttons */}
+                                {isRetryable ? (
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <Button
+                                            onClick={() => {
+                                                setErrorState(null);
+                                                setRetryAttempt(0);
+                                                fetchSession();
+                                            }}
+                                            className="bg-primary hover:bg-primary/90"
+                                        >
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Retry Now
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => router.push('/dashboard')}
+                                        >
+                                            Back to Dashboard
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 w-full max-w-md">
+                                        {/* Technical Details Box */}
+                                        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg text-left">
+                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                                Technical Details:
+                                            </p>
+                                            <p className="font-mono text-xs text-slate-600 dark:text-slate-400 break-all">
+                                                Session ID: {sessionId}
+                                            </p>
+                                            {errorState.code && (
+                                                <p className="font-mono text-xs text-slate-600 dark:text-slate-400">
+                                                    Error Code: {errorState.code}
+                                                </p>
+                                            )}
+                                            {errorState.technicalDetails && (
+                                                <p className="font-mono text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                                    {errorState.technicalDetails}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                                            Please contact the developer with the above information if this issue persists.
+                                        </p>
+
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <Button
+                                                onClick={() => {
+                                                    setErrorState(null);
+                                                    setRetryAttempt(0);
+                                                    fetchSession();
+                                                }}
+                                                variant="outline"
+                                            >
+                                                <RefreshCw className="mr-2 h-4 w-4" />
+                                                Try Again
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => router.push('/dashboard')}
+                                            >
+                                                Back to Dashboard
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Transcript is still available even if feedback failed */}
+                    {session?.transcript && Array.isArray(session.transcript) && session.transcript.length > 0 && (
+                        <Card className="border-none shadow-sm">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <MessageSquare className="h-5 w-5" />
+                                    Interview Transcript
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                                    Your interview conversation was saved. You can review it below while we work on the feedback issue.
+                                </p>
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                    {(session.transcript as any[]).slice(0, 5).map((msg: any, idx: number) => (
+                                        <div key={idx} className={`p-3 rounded-lg ${msg.sender === 'ai'
+                                            ? 'bg-blue-50 dark:bg-blue-950/20'
+                                            : 'bg-slate-50 dark:bg-slate-800'
+                                            }`}>
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                                                {msg.sender === 'ai' ? 'AI Interviewer' : 'You'}
+                                            </p>
+                                            <p className="text-sm text-slate-700 dark:text-slate-300">
+                                                {msg.text}
+                                            </p>
+                                        </div>
+                                    ))}
+                                    {(session.transcript as any[]).length > 5 && (
+                                        <p className="text-xs text-center text-slate-500 dark:text-slate-400">
+                                            + {(session.transcript as any[]).length - 5} more messages
+                                        </p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </DashboardLayout>
         );
     }
@@ -423,8 +572,17 @@ export default function InterviewReport() {
                                     <li>• Temporary service issue</li>
                                 </ul>
                                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                                    <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90">
-                                        Refresh Page
+                                    <Button
+                                        onClick={() => {
+                                            setFeedbackTimeout(false);
+                                            generateFeedbackInBackground(sessionId);
+                                            // Re-trigger polling by reloading or just setting pollCount=0 if we were in useEffect
+                                            window.location.reload();
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    >
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Try Regenerating
                                     </Button>
                                     <Button variant="outline" onClick={() => router.push('/dashboard')}>
                                         Back to Dashboard

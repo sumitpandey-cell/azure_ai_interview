@@ -75,7 +75,13 @@ export default function Dashboard() {
   const { skillProgress, weeklyActivity, streakData, performanceData } = useAnalytics(user?.id);
   const currentStreak = streakData?.currentStreak || 0;
 
-  const { shouldRefreshDashboard, resetFeedbackState, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
+  const {
+    shouldRefreshDashboard,
+    resetFeedbackState,
+    isGenerating,
+    currentSessionId: generatingSessionId,
+    generateFeedbackInBackground
+  } = useFeedback();
 
   // Helper to check if a session is currently generating feedback
   const isSessionGenerating = (sessionId: string) => {
@@ -442,10 +448,16 @@ export default function Dashboard() {
                               </div>
                             ) : (
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.status === 'completed'
-                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
+                                ? session.score !== null
+                                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
+                                  : 'bg-amber-500/10 text-amber-500 border border-amber-200/50'
                                 : 'bg-yellow-500/10 text-yellow-500 border border-yellow-200/50'
                                 }`}>
-                                {session.status === 'completed' ? 'Completed' : 'In Progress'}
+                                {session.status === 'completed'
+                                  ? session.score !== null
+                                    ? 'Completed'
+                                    : 'Report Pending'
+                                  : 'In Progress'}
                               </div>
                             )}
                           </td>
@@ -494,13 +506,24 @@ export default function Dashboard() {
                                   variant="secondary"
                                   size="sm"
                                   disabled={isGeneratingFeedback}
-                                  onClick={() => router.push(`/interview/${session.id}/report`)}
+                                  onClick={() => {
+                                    if (session.score === null) {
+                                      generateFeedbackInBackground(session.id);
+                                    }
+                                    router.push(`/interview/${session.id}/report`);
+                                  }}
                                   className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 shadow-sm ${isGeneratingFeedback
                                     ? 'bg-blue-300 text-blue-700 pointer-events-none'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : session.score !== null
+                                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                                     }`}
                                 >
-                                  {isGeneratingFeedback ? 'Analyzing...' : 'Report'}
+                                  {isGeneratingFeedback
+                                    ? 'Analyzing...'
+                                    : session.score !== null
+                                      ? 'Report'
+                                      : 'Generate Report'}
                                 </Button>
                               )}
                             </div>

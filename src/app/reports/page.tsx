@@ -18,6 +18,7 @@ import { ReportsPageSkeleton } from "@/components/ReportsPageSkeleton";
 import { interviewService } from "@/services/interview.service";
 import { formatDuration, formatDurationShort } from "@/lib/format-duration";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { useFeedback } from "@/context/FeedbackContext";
 
 interface UserProfile {
   full_name: string | null;
@@ -49,6 +50,7 @@ export default function Reports() {
   // Get analytics data from cache
   const { skillProgress, performanceData, streakData } = useAnalytics(user?.id);
   const currentStreak = streakData?.currentStreak || 0;
+  const { generateFeedbackInBackground } = useFeedback();
 
   // Filtering and sorting state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -274,8 +276,8 @@ export default function Reports() {
             Completed
           </Badge>
         ) : (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-            In Progress
+          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            Report Pending
           </Badge>
         );
       case 'in_progress':
@@ -740,17 +742,21 @@ export default function Reports() {
                           </div>
                         </td>
                         <td className="py-3 sm:py-4 text-right pr-2 sm:pr-4 flex justify-end">
-                          {session.status === 'completed' && session.score !== null ? (
+                          {session.status === 'completed' ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              className="rounded-full bg-blue-600 border-border hover:bg-accent hover:text-accent-foreground px-3 sm:px-6 text-xs sm:text-sm h-7 sm:h-9"
+                              className={`rounded-full border-border hover:bg-accent hover:text-accent-foreground px-3 sm:px-6 text-xs sm:text-sm h-7 sm:h-9 ${session.score !== null ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (session.status === 'completed' && session.score === null) {
+                                  generateFeedbackInBackground(session.id);
+                                }
                                 router.push(`/interview/${session.id}/report`);
                               }}
                             >
-                              Report
+                              {session.score !== null ? 'Report' : 'Generate Report'}
                             </Button>
                           ) : (
                             <Button
