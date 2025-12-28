@@ -21,27 +21,39 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
+import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
 import { LoadingSVG } from "./ui/LoadingSVG";
+import { BeautifulBarVisualizer } from "./ui/BeautifulBarVisualizer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArjunaLoader, BowLoader } from "@/components/ArjunaLoader";
-import { TranscriptProvider } from "@/contexts/TranscriptContext";
+import { TranscriptProvider, TranscriptEntry } from "@/contexts/TranscriptContext";
 import "@/styles/arjuna-animations.css";
 
 interface LiveInterviewSessionProps {
+    sessionId: string;
     onEndSession: () => void;
-    timeElapsed: number;
-    formatTime: (seconds: number) => string;
+    remainingMinutes: number;
+    remainingSeconds: number;
+    isLowTime: boolean;
+    isCriticalTime: boolean;
+    formatTime: () => string;
     initialMicEnabled?: boolean;
     initialCameraEnabled?: boolean;
+    initialTranscripts?: TranscriptEntry[];
 }
 
 export function LiveInterviewSession({
+    sessionId,
     onEndSession,
-    timeElapsed,
+    remainingMinutes,
+    remainingSeconds,
+    isLowTime,
+    isCriticalTime,
     formatTime,
     initialMicEnabled = true,
     initialCameraEnabled = true,
+    initialTranscripts = [],
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
     const { localParticipant } = useLocalParticipant();
@@ -49,16 +61,25 @@ export function LiveInterviewSession({
         useVoiceAssistant();
     const room = useRoomContext();
 
+    // Debug: Log agent detection
+    useEffect(() => {
+        console.log("🔍 Agent Detection Debug:", {
+            agent: agent ? "DETECTED" : "NOT DETECTED",
+            agentState,
+            agentAudioTrack: agentAudioTrack ? "Present" : "Missing",
+            roomState,
+            remoteParticipants: Array.from(room.remoteParticipants.values()).map(p => ({
+                identity: p.identity,
+                kind: p.kind,
+                metadata: p.metadata,
+                audioTracks: Array.from(p.audioTrackPublications.values()).length
+            }))
+        });
+    }, [agent, agentState, agentAudioTrack, roomState, room.remoteParticipants]);
+
     const [isMuted, setIsMuted] = useState(!initialMicEnabled);
     const [cameraEnabled, setCameraEnabled] = useState(initialCameraEnabled);
     const [showTranscript, setShowTranscript] = useState(false);
-
-    // Track local media state
-    useEffect(() => {
-        // Sync initial state
-        setIsMuted(!localParticipant.isMicrophoneEnabled);
-        setCameraEnabled(localParticipant.isCameraEnabled);
-    }, [localParticipant]);
 
     // Set initial mic/camera state when room connects (respect user's setup choice)
     useEffect(() => {
@@ -69,6 +90,15 @@ export function LiveInterviewSession({
             setCameraEnabled(initialCameraEnabled);
         }
     }, [roomState, localParticipant, initialMicEnabled, initialCameraEnabled]);
+
+    // Sync state with actual track status
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setIsMuted(!localParticipant.isMicrophoneEnabled);
+            setCameraEnabled(localParticipant.isCameraEnabled);
+        }, 100);
+        return () => clearInterval(interval);
+    }, [localParticipant]);
 
     const toggleMute = async () => {
         const newState = !isMuted;
@@ -84,8 +114,13 @@ export function LiveInterviewSession({
 
     const handleEndCall = () => {
         if (confirm("Are you sure you want to end the interview?")) {
-            room.disconnect();
+            // Call onEndSession FIRST to trigger redirect
+            // This prevents the room disconnect from interfering with navigation
             onEndSession();
+            // Disconnect room after a small delay to allow redirect to start
+            setTimeout(() => {
+                room.disconnect();
+            }, 100);
         }
     };
 
@@ -183,7 +218,10 @@ export function LiveInterviewSession({
 
 
     return (
-        <TranscriptProvider>
+        <TranscriptProvider initialTranscripts={initialTranscripts}>
+            {/* Context Tracker for Persistence */}
+            <TranscriptTracker sessionId={sessionId} agentAudioTrack={agentAudioTrack} />
+
             <div className="min-h-screen bg-black relative overflow-hidden text-white">
                 {/* Main Video Area */}
                 <div className="absolute inset-0">
@@ -251,27 +289,38 @@ export function LiveInterviewSession({
                             </p>
                         </div>
 
-                        {/* Timer */}
-                        <div className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                            <span className="text-white font-mono text-sm">{formatTime(timeElapsed)}</span>
+                        {/* Countdown Timer */}
+                        <div className={`backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 transition-colors ${isCriticalTime
+                            ? 'bg-red-600/80'
+                            : isLowTime
+                                ? 'bg-amber-600/80'
+                                : 'bg-black/40'
+                            }`}>
+                            <div className={`w-2 h-2 rounded-full ${isCriticalTime
+                                ? 'bg-white animate-pulse'
+                                : isLowTime
+                                    ? 'bg-white/80 animate-pulse'
+                                    : 'bg-red-500 animate-pulse'
+                                }`}></div>
+                            <span className={`font-mono text-sm font-semibold ${isCriticalTime || isLowTime ? 'text-white' : 'text-white'
+                                }`}>
+                                {formatTime()}
+                            </span>
                         </div>
 
                         {/* Visualizer or Loader */}
-                        <div className="h-10 w-16 flex items-center justify-center">
+                        <div className="h-10 flex items-center justify-center" style={{ minWidth: '80px' }}>
                             {roomState === ConnectionState.Connecting || agentState === "connecting" ? (
                                 <BowLoader size="tiny" />
                             ) : roomState === ConnectionState.Connected && agentAudioTrack ? (
-                                <BarVisualizer
+                                <BeautifulBarVisualizer
                                     state={agentState}
                                     trackRef={agentAudioTrack}
-                                    barCount={4}
-                                    options={{ minHeight: 4, maxHeight: 24 }}
-                                    style={{ color: "#60a5fa" }}
-                                    className="h-full w-full"
+                                    barCount={7}
+                                    className="h-full"
                                 />
                             ) : (
-                                <div className="text-xs text-white">...</div>
+                                <div className="text-xs text-white/50">...</div>
                             )}
                         </div>
                     </div>
@@ -348,7 +397,6 @@ export function LiveInterviewSession({
         </TranscriptProvider>
     );
 }
-
 
 // Helper for connection state enum usage if needed, though imported
 const connectionState = ConnectionState;

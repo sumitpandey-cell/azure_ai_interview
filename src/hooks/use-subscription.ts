@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,67 +12,87 @@ export interface SubscriptionStatus {
     loading: boolean;
 }
 
+// In-memory cache to prevent re-fetching on every navigation
+const subscriptionCache = new Map<string, { data: SubscriptionStatus; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useSubscription() {
     const { user } = useAuth();
-    const [status, setStatus] = useState<SubscriptionStatus>({
-        type: 'free',
-        allowed: true,
-        remaining_minutes: 30,
-        loading: true
-    });
 
-    const recordUsage = useCallback(async (minutes: number) => {
-        if (!user?.id) return;
-
-        try {
-            const { error } = await (supabase as any).rpc('increment_usage', {
-                user_uuid: user.id,
-                minutes_to_add: minutes
-            });
-
-            if (error) {
-                console.error('Error recording usage:', error);
-            } else {
-                // Refresh status after recording usage
-                checkEligibility();
+    // Initialize with cached data if available to prevent flash
+    const getInitialState = (): SubscriptionStatus => {
+        if (user?.id) {
+            const cached = subscriptionCache.get(user.id);
+            if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+                return cached.data;
             }
-        } catch (error) {
-            console.error('Error in recordUsage:', error);
         }
-    }, [user?.id]);
+        return {
+            type: 'free',
+            allowed: true,
+            remaining_minutes: 0,
+            loading: true
+        };
+    };
+
+    const [status, setStatus] = useState<SubscriptionStatus>(getInitialState);
+
+    // Track if we've already fetched for this user in this session
+    const hasFetchedRef = useRef(false);
 
     const checkEligibility = useCallback(async () => {
         if (!user?.id) return;
 
+        // Check cache first
+        const cached = subscriptionCache.get(user.id);
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            console.log('📦 Using cached subscription data');
+            setStatus(cached.data);
+            return;
+        }
+
         try {
+            console.log('🔄 Fetching fresh subscription data');
             // Call the database function we created
-            const { data, error } = await (supabase as any).rpc('check_and_reset_daily_usage', { user_uuid: user.id });
+            const { data, error } = await (supabase as any).rpc('check_and_reset_monthly_usage', { user_uuid: user.id });
 
             if (error) {
                 console.error('Error checking eligibility:', error);
                 return;
             }
 
-            if (data) {
+            if (data && data.length > 0) {
+                const subscriptionData = data[0]; // RPC returns an array
+                console.log('🔍 RPC Response:', subscriptionData);
                 let planName = 'Free';
-                if (data.plan_id) {
+                if (subscriptionData.plan_id) {
                     const { data: planData } = await (supabase as any)
                         .from('plans')
                         .select('name')
-                        .eq('id', data.plan_id)
+                        .eq('id', subscriptionData.plan_id)
                         .single();
                     if (planData) {
                         planName = planData.name;
                     }
                 }
 
-                setStatus({
-                    type: data.type,
+                const newStatus: SubscriptionStatus = {
+                    type: subscriptionData.type,
                     plan_name: planName,
-                    allowed: data.allowed,
-                    remaining_minutes: data.remaining_minutes,
-                    plan_id: data.plan_id,
+                    allowed: subscriptionData.allowed,
+                    remaining_minutes: subscriptionData.remaining_minutes,
+                    plan_id: subscriptionData.plan_id,
                     loading: false
+                };
+
+                console.log('📊 Final Status:', newStatus);
+
+                setStatus(newStatus);
+
+                // Cache the result
+                subscriptionCache.set(user.id, {
+                    data: newStatus,
+                    timestamp: Date.now()
                 });
             }
         } catch (error) {
@@ -82,14 +102,61 @@ export function useSubscription() {
         }
     }, [user?.id]);
 
-    // Check on mount and when user changes
+    const recordUsage = useCallback(async (minutes: number) => {
+        if (!user?.id) return;
+
+        try {
+            const { error } = await (supabase as any).rpc('increment_usage', {
+                user_uuid: user.id,
+                seconds_to_add: minutes * 60 // Convert minutes to seconds
+            });
+
+            if (error) {
+                console.error('Error recording usage:', error);
+            } else {
+                // Invalidate cache and refresh
+                subscriptionCache.delete(user.id);
+                checkEligibility();
+            }
+        } catch (error) {
+            console.error('Error in recordUsage:', error);
+        }
+    }, [user?.id, checkEligibility]);
+
+    // Only fetch once per user session
     useEffect(() => {
-        checkEligibility();
-    }, [checkEligibility]);
+        if (user?.id && !hasFetchedRef.current) {
+            hasFetchedRef.current = true;
+            checkEligibility();
+        }
+    }, [user?.id, checkEligibility]);
+
+    // Function to manually invalidate cache
+    const invalidateCache = useCallback(() => {
+        if (user?.id) {
+            subscriptionCache.delete(user.id);
+            checkEligibility();
+        }
+    }, [user?.id, checkEligibility]);
+
+    // Listen for global updates to refresh data immediately
+    useEffect(() => {
+        const handleGlobalUpdate = () => {
+            if (user?.id) {
+                console.log('🔔 Subscription update event received, refreshing...');
+                subscriptionCache.delete(user.id);
+                checkEligibility();
+            }
+        };
+
+        window.addEventListener('subscription-updated', handleGlobalUpdate);
+        return () => window.removeEventListener('subscription-updated', handleGlobalUpdate);
+    }, [user?.id, checkEligibility]);
 
     return {
         ...status,
         checkEligibility,
-        recordUsage
+        recordUsage,
+        invalidateCache
     };
 }

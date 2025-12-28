@@ -25,12 +25,15 @@ export const FeedbackSchema = z.object({
     improvements: z.array(z.string().min(3))  // Reduced from 5
         .min(1, "At least one improvement required")
         .max(10, "Too many improvements"),
-    skills: z.array(SkillSchema)
-        .min(3, "At least 3 skills required")
-        .max(6, "Too many skills"),
+    overallSkills: z.array(SkillSchema)
+        .min(3, "At least 3 overall skills required")
+        .max(6, "Too many overall skills"),
+    technicalSkills: z.array(SkillSchema).optional().default([]),
     actionPlan: z.array(z.string().min(5))  // Reduced from 10
         .min(1, "At least one action item required")
-        .max(10, "Too many action items")
+        .max(10, "Too many action items"),
+    // Deprecated: kept for backward compatibility
+    skills: z.array(SkillSchema).optional()
 });
 
 export type ValidatedFeedback = z.infer<typeof FeedbackSchema>;
@@ -42,14 +45,14 @@ export type InterviewLengthCategory = 'too-short' | 'short' | 'medium' | 'long';
  * Validates feedback data with length-aware sanity checks
  */
 export function validateFeedback(
-    feedback: unknown, 
+    feedback: unknown,
     interviewLength: InterviewLengthCategory = 'medium'
 ): ValidatedFeedback {
     // Schema validation
     const validated = FeedbackSchema.parse(feedback);
 
     // Length-aware sanity checks
-    const avgScore = validated.skills.reduce((sum, s) => sum + s.score, 0) / validated.skills.length;
+    const avgScore = validated.overallSkills.reduce((sum, s) => sum + s.score, 0) / validated.overallSkills.length;
 
     // Adjust validation strictness based on interview length
     if (interviewLength === 'short') {
@@ -57,15 +60,15 @@ export function validateFeedback(
         if (avgScore > 75) {
             console.warn('⚠️ Score too high for short interview - should be capped at 75% for limited assessment');
         }
-        
-        if (avgScore > 65 && validated.skills.length < 4) {
+
+        if (avgScore > 65 && validated.overallSkills.length < 4) {
             console.warn('⚠️ High score in short interview with few skills assessed');
         }
-        
+
         // Allow placeholder content for short interviews
         const allowedPlaceholders = ['insufficient data', 'limited assessment', 'brief session', 'not assessed', 'limited questions', 'few questions'];
         const hasAllowedPlaceholders = [
-            ...validated.skills.map(s => s.feedback),
+            ...validated.overallSkills.map(s => s.feedback),
             validated.executiveSummary
         ].some(text =>
             allowedPlaceholders.some(placeholder =>
@@ -76,12 +79,12 @@ export function validateFeedback(
         if (hasAllowedPlaceholders) {
             console.log('✅ Short interview contains appropriate limitation language');
         }
-        
+
         // Check if executive summary mentions question count limitation
-        const mentionsQuestionCount = validated.executiveSummary.toLowerCase().includes('question') || 
-                                     validated.executiveSummary.toLowerCase().includes('limited') ||
-                                     validated.executiveSummary.toLowerCase().includes('brief');
-        
+        const mentionsQuestionCount = validated.executiveSummary.toLowerCase().includes('question') ||
+            validated.executiveSummary.toLowerCase().includes('limited') ||
+            validated.executiveSummary.toLowerCase().includes('brief');
+
         if (!mentionsQuestionCount) {
             console.warn('⚠️ Short interview should mention question count limitation in executive summary');
         }
@@ -114,7 +117,7 @@ export function validateFeedback(
     }
 
     // Check for duplicate skills (applies to all lengths)
-    const skillNames = validated.skills.map(s => s.name.toLowerCase());
+    const skillNames = validated.overallSkills.map(s => s.name.toLowerCase());
     const uniqueSkills = new Set(skillNames);
     if (skillNames.length !== uniqueSkills.size) {
         throw new Error('Duplicate skills detected in feedback');
@@ -170,41 +173,41 @@ export function calculateFeedbackQuality(
         if (feedback.strengths.length < 2) score -= 10;
         if (feedback.improvements.length < 2) score -= 10;
         if (feedback.actionPlan.length < 2) score -= 10;
-        
+
         // Check if scores are properly capped for short interviews
-        const avgSkillScore = feedback.skills.reduce((sum, s) => sum + s.score, 0) / feedback.skills.length;
+        const avgSkillScore = feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / feedback.overallSkills.length;
         if (avgSkillScore > 75) {
             score -= 20; // Heavy penalty for not respecting score caps
             console.warn('⚠️ Skills scores not properly capped for short interview');
         }
-        
+
         // Bonus for acknowledging interview limitations
         const limitationPhrases = ['limited', 'brief', 'short', 'insufficient', 'few questions', 'limited questions'];
         const feedbackText = feedback.executiveSummary.toLowerCase();
-        const hasLimitationLanguage = limitationPhrases.some(phrase => 
+        const hasLimitationLanguage = limitationPhrases.some(phrase =>
             feedbackText.includes(phrase)
         );
-        
+
         if (hasLimitationLanguage) {
             score += 15; // Increased bonus for acknowledging limitations
         }
-        
+
     } else if (interviewLength === 'medium') {
         // Standard scoring for medium interviews
         if (feedback.executiveSummary.length < 100) score -= 8;
         if (feedback.strengths.length < 3) score -= 8;
         if (feedback.improvements.length < 3) score -= 8;
         if (feedback.actionPlan.length < 3) score -= 8;
-        
+
     } else if (interviewLength === 'long') {
         // More strict scoring for long interviews
         if (feedback.executiveSummary.length < 150) score -= 10;
         if (feedback.strengths.length < 4) score -= 10;
         if (feedback.improvements.length < 4) score -= 10;
         if (feedback.actionPlan.length < 4) score -= 10;
-        
+
         // Bonus for detailed analysis in long interviews
-        if (feedback.skills.every(s => s.feedback.length > 80)) score += 15;
+        if (feedback.overallSkills.every(s => s.feedback.length > 80)) score += 15;
     }
 
     // Deduct for generic feedback (applies to all lengths)
@@ -213,7 +216,7 @@ export function calculateFeedbackQuality(
         feedback.executiveSummary,
         ...feedback.strengths,
         ...feedback.improvements,
-        ...feedback.skills.map(s => s.feedback),
+        ...feedback.overallSkills.map(s => s.feedback),
         ...feedback.actionPlan
     ].join(' ').toLowerCase();
 
@@ -226,9 +229,9 @@ export function calculateFeedbackQuality(
 
     // Bonus for specific, detailed feedback
     if (feedback.executiveSummary.length > 200) score += 5;
-    
+
     const minFeedbackLength = interviewLength === 'short' ? 30 : 50;
-    if (feedback.skills.every(s => s.feedback.length > minFeedbackLength)) score += 10;
+    if (feedback.overallSkills.every(s => s.feedback.length > minFeedbackLength)) score += 10;
 
     return Math.max(0, Math.min(100, score));
 }

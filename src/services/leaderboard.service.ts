@@ -41,7 +41,7 @@ export const leaderboardService = {
           user_id,
           score,
           status,
-          duration_minutes,
+          duration_seconds,
           created_at
         `)
                 .eq('status', 'completed')
@@ -75,7 +75,7 @@ export const leaderboardService = {
                     stats.scores.push(session.score);
                 }
                 stats.totalInterviews++;
-                stats.totalDuration += session.duration_minutes || 0;
+                stats.totalDuration += session.duration_seconds || 0;
 
                 // Update last activity if this session is more recent
                 if (new Date(session.created_at) > new Date(stats.lastActivity)) {

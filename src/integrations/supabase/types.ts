@@ -194,6 +194,47 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_resumptions: {
+        Row: {
+          id: string
+          interview_session_id: string
+          resumed_at: string
+          ended_at: string | null
+          start_transcript_index: number
+          end_transcript_index: number | null
+          duration_seconds: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          interview_session_id: string
+          resumed_at: string
+          ended_at?: string | null
+          start_transcript_index?: number
+          end_transcript_index?: number | null
+          duration_seconds?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          interview_session_id?: string
+          resumed_at?: string
+          ended_at?: string | null
+          start_transcript_index?: number
+          end_transcript_index?: number | null
+          duration_seconds?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_resumptions_interview_session_id_fkey"
+            columns: ["interview_session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       interview_sessions: {
         Row: {
           id: string
@@ -202,7 +243,7 @@ export type Database = {
           position: string
           score: number | null
           status: string
-          duration_minutes: number | null
+          duration_seconds: number | null
           created_at: string
           completed_at: string | null
           config: Json
@@ -219,7 +260,7 @@ export type Database = {
           position: string
           score?: number | null
           status?: string
-          duration_minutes?: number | null
+          duration_seconds?: number | null
           created_at?: string
           completed_at?: string | null
           config?: Json
@@ -236,7 +277,7 @@ export type Database = {
           position?: string
           score?: number | null
           status?: string
-          duration_minutes?: number | null
+          duration_seconds?: number | null
           created_at?: string
           completed_at?: string | null
           config?: Json
@@ -285,21 +326,21 @@ export type Database = {
         Row: {
           id: string
           name: string
-          monthly_minutes: number
+          monthly_seconds: number
           price_monthly: number
           created_at: string
         }
         Insert: {
           id?: string
           name: string
-          monthly_minutes: number
+          monthly_seconds: number
           price_monthly: number
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
-          monthly_minutes?: number
+          monthly_seconds?: number
           price_monthly?: number
           created_at?: string
         }
@@ -409,8 +450,8 @@ export type Database = {
           status: string
           current_period_start: string
           current_period_end: string
-          monthly_minutes: number
-          minutes_used: number
+          monthly_seconds: number
+          seconds_used: number
           created_at: string
           updated_at: string
         }
@@ -421,8 +462,8 @@ export type Database = {
           status?: string
           current_period_start?: string
           current_period_end?: string
-          monthly_minutes: number
-          minutes_used?: number
+          monthly_seconds: number
+          seconds_used?: number
           created_at?: string
           updated_at?: string
         }
@@ -433,8 +474,56 @@ export type Database = {
           status?: string
           current_period_start?: string
           current_period_end?: string
-          monthly_minutes?: number
-          minutes_used?: number
+          monthly_seconds?: number
+          seconds_used?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          icon_name: string
+          color: string
+          interview_type: 'Technical' | 'Behavioral' | 'Creative'
+          skills: string[]
+          difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+          is_active: boolean
+          is_popular: boolean
+          category: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          icon_name: string
+          color: string
+          interview_type: 'Technical' | 'Behavioral' | 'Creative'
+          skills?: string[]
+          difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+          is_active?: boolean
+          is_popular?: boolean
+          category?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          icon_name?: string
+          color?: string
+          interview_type?: 'Technical' | 'Behavioral' | 'Creative'
+          skills?: string[]
+          difficulty?: 'Beginner' | 'Intermediate' | 'Advanced'
+          is_active?: boolean
+          is_popular?: boolean
+          category?: string | null
           created_at?: string
           updated_at?: string
         }

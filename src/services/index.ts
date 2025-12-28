@@ -8,3 +8,4 @@ export * from './badge.service';
 export * from './notification.service';
 export * from './company.service';
 export * from './leaderboard.service';
+export * from './template.service';

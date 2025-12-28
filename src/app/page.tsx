@@ -208,7 +208,7 @@ export default function Landing() {
           <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
             <div className="relative">
               <img
-                src="/arjuna-logo.png"
+                src="/arjuna-icon.png"
                 alt="Arjuna AI"
                 className="h-9 w-9 object-contain drop-shadow-lg"
               />

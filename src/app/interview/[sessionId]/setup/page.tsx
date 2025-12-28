@@ -41,7 +41,7 @@ interface SessionData {
     id: string;
     interview_type: string;
     position: string;
-    duration_minutes?: number | null;
+    duration_seconds?: number | null;
     config?: SessionConfig | null;
 }
 
@@ -91,7 +91,7 @@ export default function InterviewSetup() {
                 // Check if session is already in progress or completed
                 if (currentSession.status === 'in_progress' || currentSession.status === 'completed') {
                     toast.info("This interview session has already been started. Redirecting to dashboard.");
-                    router.push('/dashboard');
+                    router.replace('/dashboard');
                     return;
                 }
                 setSession(currentSession as SessionData);
@@ -121,7 +121,7 @@ export default function InterviewSetup() {
         } catch (error) {
             console.error("Error fetching session:", error);
             toast.error("Session not found. Redirecting to start interview.");
-            router.push("/start-interview");
+            router.replace("/start-interview");
         } finally {
             setFetchingSession(false);
         }
@@ -191,7 +191,7 @@ export default function InterviewSetup() {
             return;
         }
 
-        if (remaining_minutes < 5 && !showTimeWarning && !subscriptionLoading) {
+        if (remaining_minutes < 300 && !showTimeWarning && !subscriptionLoading) {
             setShowTimeWarning(true);
             return;
         }
@@ -252,7 +252,7 @@ export default function InterviewSetup() {
 
         setIsLoading(false);
         toast.success(`Starting interview with ${selectedAvatar.name}...`);
-        router.push(`/interview/${sessionId}/live?mic=${isMicOn}&camera=${isCameraOn}`);
+        router.replace(`/interview/${sessionId}/live?mic=${isMicOn}&camera=${isCameraOn}`);
         console.log("Starting interview for session:", sessionId);
     };
 
@@ -269,10 +269,10 @@ export default function InterviewSetup() {
             {/* Header */}
             <header className="h-16 border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50 flex items-center px-6 lg:px-12 justify-between">
                 <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-                    <img src="/arjuna-logo.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
+                    <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
                     Arjuna AI
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" onClick={() => router.replace('/dashboard')} className="text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Dashboard
                 </Button>
@@ -505,7 +505,7 @@ export default function InterviewSetup() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Low Time Warning</AlertDialogTitle>
                         <AlertDialogDescription>
-                            You have only {remaining_minutes} minutes remaining in your subscription.
+                            You have only {Math.ceil(remaining_minutes / 60)} minutes remaining in your subscription.
                             The interview will automatically end when your time runs out.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

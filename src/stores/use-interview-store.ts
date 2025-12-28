@@ -37,7 +37,7 @@ interface InterviewSessionData {
         };
     };
     created_at: string;
-    duration_minutes?: number;
+    duration_seconds?: number;
     transcript?: any;
     feedback?: any;
     score?: number;
@@ -46,25 +46,25 @@ interface InterviewSessionData {
 interface InterviewState {
     // Current session data
     currentSession: InterviewSessionData | null;
-    
+
     // AI feedback and transcript
     feedback: FeedbackData | null;
     transcript: Message[];
-    
+
     // Loading states
     isLoading: boolean;
     error: string | null;
     isSaving: boolean;
     saveError: string | null;
-    
+
     // Company interview state
     companyTemplateId: string | null;
     companyQuestions: CompanyQuestion[];
-    
+
     // Coding challenge state
     codingChallenges: CodingChallenge[];
     currentCodingQuestion: CompanyQuestion | null;
-    
+
     // Actions
     setCurrentSession: (session: InterviewSessionData | null) => void;
     updateSessionConfig: (config: Partial<InterviewSessionData['config']>) => void;
@@ -87,60 +87,60 @@ export const useInterviewStore = create<InterviewState>()(
         (set, get) => ({
             // Current session data
             currentSession: null,
-            
+
             // AI feedback and transcript
             feedback: null,
             transcript: [],
-            
+
             // Loading states
             isLoading: false,
             error: null,
             isSaving: false,
             saveError: null,
-            
+
             // Company interview state
             companyTemplateId: null,
             companyQuestions: [],
-            
+
             // Coding challenge state
             codingChallenges: [],
             currentCodingQuestion: null,
-            
+
             // Actions
             setCurrentSession: (session) => set({ currentSession: session }),
-            
+
             updateSessionConfig: (config) => set((state) => ({
                 currentSession: state.currentSession ? {
                     ...state.currentSession,
                     config: { ...state.currentSession.config, ...config }
                 } : null
             })),
-            
+
             setFeedback: (feedback) => set({ feedback, isLoading: false, error: null }),
             setTranscript: (transcript) => set({ transcript }),
             setLoading: (isLoading) => set({ isLoading }),
             setError: (error) => set({ error, isLoading: false }),
             setSaving: (isSaving) => set({ isSaving }),
             setSaveError: (error) => set({ saveError: error, isSaving: false }),
-            
+
             setCompanyData: (templateId, questions) => set({
                 companyTemplateId: templateId,
                 companyQuestions: questions
             }),
-            
+
             clearCompanyData: () => set({
                 companyTemplateId: null,
                 companyQuestions: []
             }),
-            
+
             addCodingChallenge: (challenge) => set((state) => ({
                 codingChallenges: [...state.codingChallenges, challenge]
             })),
-            
+
             setCurrentCodingQuestion: (question) => set({ currentCodingQuestion: question }),
-            
+
             clearFeedback: () => set({ feedback: null }),
-            
+
             clearSession: () => set({
                 currentSession: null,
                 feedback: null,

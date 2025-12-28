@@ -5,7 +5,7 @@ export type Subscription = Tables<"subscriptions">;
 export type SubscriptionInsert = TablesInsert<"subscriptions">;
 export type SubscriptionUpdate = TablesUpdate<"subscriptions">;
 export type Plan = Tables<"plans">;
-export type DailyUsage = Tables<"daily_usage">;
+
 
 /**
  * Subscription Service
@@ -75,8 +75,8 @@ export const subscriptionService = {
                 user_id: userId,
                 plan_id: planId,
                 status: "active",
-                monthly_minutes: plan.monthly_minutes,
-                minutes_used: 0,
+                monthly_seconds: plan.monthly_seconds,
+                seconds_used: 0,
                 current_period_start: new Date().toISOString(),
                 current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
             };
@@ -98,65 +98,76 @@ export const subscriptionService = {
 
     /**
      * Track usage for a user
+     * Updates the seconds_used in the database using an atomic RPC call
      */
-    async trackUsage(userId: string, minutes: number): Promise<boolean> {
+    async trackUsage(userId: string, seconds: number): Promise<boolean> {
         try {
-            // Get current subscription
-            const subscription = await this.getSubscription(userId);
-            if (!subscription) {
-                console.warn("No active subscription found for user:", userId);
-                return false;
+            console.log(`📊 trackUsage called: userId=${userId}, seconds=${seconds}`);
+
+            if (seconds <= 0) return true;
+
+            // Use the atomic RPC function to increment usage
+            // This is safer as it prevents race conditions and handles both subscription and daily_usage
+            const { error } = await (supabase as any).rpc('increment_usage', {
+                user_uuid: userId,
+                seconds_to_add: Math.round(seconds)
+            });
+
+            if (error) {
+                console.error("❌ Error incrementing usage via RPC:", error);
+
+                // Fallback: Try manual update if RPC fails
+                // 1. Update subscriptions table
+                const { data: subscriptions } = await supabase
+                    .from("subscriptions")
+                    .select("id, seconds_used")
+                    .eq("user_id", userId)
+                    .eq("status", "active")
+                    .limit(1);
+
+                if (subscriptions && subscriptions.length > 0) {
+                    const sub = subscriptions[0];
+                    const newSecondsUsed = (sub.seconds_used || 0) + seconds;
+                    const { error: updateError } = await supabase
+                        .from("subscriptions")
+                        .update({
+                            seconds_used: Math.round(newSecondsUsed),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq("id", sub.id);
+
+                    if (updateError) {
+                        console.error("❌ Fallback subscription update failed:", updateError);
+                    } else {
+                        console.log("✅ Fallback subscription update successful");
+                        // Trigger refresh even on fallback success
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('subscription-updated'));
+                        }
+                    }
+                } else {
+                    console.warn("⚠️ No active subscription found for fallback tracking");
+                }
+
+                return !error;
             }
 
-            // Update subscription minutes
-            const newMinutesUsed = subscription.minutes_used + minutes;
-            await supabase
-                .from("subscriptions")
-                .update({
-                    minutes_used: newMinutesUsed,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", subscription.id);
+            console.log(`✅ Usage tracked successfully via RPC for user ${userId}: +${seconds} seconds`);
 
-            // Update daily usage
-            const today = new Date().toISOString().split('T')[0];
-            const { data: existingUsage } = await supabase
-                .from("daily_usage")
-                .select("*")
-                .eq("user_id", userId)
-                .eq("date", today)
-                .single();
-
-            if (existingUsage) {
-                // Update existing record
-                await supabase
-                    .from("daily_usage")
-                    .update({
-                        minutes_used: existingUsage.minutes_used + minutes,
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq("id", existingUsage.id);
-            } else {
-                // Create new record
-                await supabase
-                    .from("daily_usage")
-                    .insert({
-                        user_id: userId,
-                        date: today,
-                        minutes_used: minutes,
-                    });
+            // Trigger global refresh for hooks (like the one in DashboardLayout)
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('subscription-updated'));
             }
 
-            console.log(`✓ Usage tracked: ${minutes} minutes for user ${userId}`);
             return true;
         } catch (error) {
-            console.error("Error tracking usage:", error);
+            console.error("❌ Error tracking usage:", error);
             return false;
         }
     },
 
     /**
-     * Check if user has remaining minutes
+     * Check if user has remaining time (converts seconds in DB to minutes for display)
      */
     async checkUsageLimit(userId: string): Promise<{
         hasLimit: boolean;
@@ -166,37 +177,24 @@ export const subscriptionService = {
         try {
             const subscription = await this.getSubscription(userId);
 
-            // If no subscription exists, user is on free tier with 30 minutes
             if (!subscription) {
-                console.log('📊 No subscription found - checking free tier usage');
-                // Check if user has used any minutes this month
-                const { data: sessions } = await supabase
-                    .from('interview_sessions')
-                    .select('duration_minutes')
-                    .eq('user_id', userId)
-                    .eq('status', 'completed')
-                    .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-
-                const minutesUsed = sessions?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
-                const FREE_TIER_MINUTES = 30;
-                const remainingMinutes = FREE_TIER_MINUTES - minutesUsed;
-                const percentageUsed = Math.round((minutesUsed / FREE_TIER_MINUTES) * 100);
-
-                console.log(`📊 Free tier usage: ${minutesUsed}/${FREE_TIER_MINUTES} minutes (${remainingMinutes} remaining)`);
-
+                console.error('❌ No subscription found for user');
+                // Return default free tier limits if no subscription exists
                 return {
-                    hasLimit: remainingMinutes <= 0,
-                    remainingMinutes: Math.max(0, remainingMinutes),
-                    percentageUsed,
+                    hasLimit: false,
+                    remainingMinutes: 100,
+                    percentageUsed: 0,
                 };
             }
 
-            const remainingMinutes = subscription.monthly_minutes - subscription.minutes_used;
-            const percentageUsed = Math.round((subscription.minutes_used / subscription.monthly_minutes) * 100);
+            const remainingSeconds = subscription.monthly_seconds - subscription.seconds_used;
+            const percentageUsed = Math.round((subscription.seconds_used / subscription.monthly_seconds) * 100);
+
+            console.log(`📊 Subscription usage: ${subscription.seconds_used}/${subscription.monthly_seconds} seconds (${remainingSeconds} remaining)`);
 
             return {
-                hasLimit: remainingMinutes <= 0,
-                remainingMinutes: Math.max(0, remainingMinutes),
+                hasLimit: remainingSeconds <= 0,
+                remainingMinutes: Math.max(0, remainingSeconds), // Note: Keeping the key name for compatibility but it contains seconds
                 percentageUsed,
             };
         } catch (error) {
@@ -204,34 +202,31 @@ export const subscriptionService = {
             // On error, allow free tier access
             return {
                 hasLimit: false,
-                remainingMinutes: 30,
+                remainingMinutes: 100,
                 percentageUsed: 0,
             };
         }
     },
 
     /**
-     * Get usage history for a user
+     * Get remaining time in minutes for countdown timer (converts from seconds stored in DB)
      */
-    async getUsageHistory(userId: string, days: number = 30): Promise<DailyUsage[]> {
-        try {
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - days);
-
-            const { data, error } = await supabase
-                .from("daily_usage")
-                .select("*")
-                .eq("user_id", userId)
-                .gte("date", startDate.toISOString().split('T')[0])
-                .order("date", { ascending: false });
-
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            console.error("Error fetching usage history:", error);
-            return [];
-        }
+    async getRemainingMinutes(userId: string): Promise<number> {
+        const { remainingMinutes } = await this.checkUsageLimit(userId);
+        return remainingMinutes;
     },
+
+    /**
+     * Check if user has low remaining time (< 5 minutes)
+     */
+    async hasLowTime(userId: string): Promise<boolean> {
+        const remaining = await this.getRemainingMinutes(userId);
+        return remaining < 5 && remaining > 0;
+    },
+
+
+
+
 
     /**
      * Update subscription plan
@@ -255,7 +250,7 @@ export const subscriptionService = {
                 .from("subscriptions")
                 .update({
                     plan_id: newPlanId,
-                    monthly_minutes: plan.monthly_minutes,
+                    monthly_seconds: plan.monthly_seconds,
                     updated_at: new Date().toISOString(),
                 })
                 .eq("id", subscription.id)

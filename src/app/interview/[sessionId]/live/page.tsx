@@ -10,7 +10,10 @@ import { toast } from "sonner";
 import { useInterviewStore } from "@/stores/interviewStore";
 import { LiveInterviewSession } from "@/components/agent-playground/LiveInterviewSession";
 import { Button } from "@/components/ui/button";
-import { ArjunaLoader } from '@/components/ArjunaLoader'
+import { ArjunaLoader } from '@/components/ArjunaLoader';
+import { useSubscriptionTimer } from "@/hooks/use-subscription-timer"
+import { useFeedback } from "@/context/FeedbackContext";
+import type { InterviewSession } from "@/services/interview.service";
 
 export default function LiveInterview() {
     const { sessionId } = useParams();
@@ -24,13 +27,11 @@ export default function LiveInterview() {
     const [isSessionLoading, setIsSessionLoading] = useState(true);
     const [shouldConnect, setShouldConnect] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [timeElapsed, setTimeElapsed] = useState(0);
+    const [sessionStartTime] = useState(Date.now());
+    const [session, setSession] = useState<InterviewSession | null>(null);
 
     const { setCurrentSessionId } = useInterviewStore();
     const currentSessionId = sessionId as string;
-
-    // Timer ref
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Guard to prevent multiple onConnected calls
     const hasConnected = useRef(false);
@@ -38,12 +39,23 @@ export default function LiveInterview() {
     // Guard to prevent multiple initializations
     const hasInitialized = useRef(false);
 
-    // Format time helper
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
+    // Track if session is being ended to prevent duplicate redirects
+    const isEndingSession = useRef(false);
+
+    // Track current segment timing locally (don't create resumption on connect)
+    const sessionSegmentStart = useRef<Date | null>(null);
+    const sessionStartTranscriptIndex = useRef<number>(0);
+    const [isRedirecting, setIsRedirecting] = useState(false);
+
+    // Will be assigned after being defined
+    let handleEndSession: () => void;
+
+    // Subscription countdown timer
+    const subscriptionTimer = useSubscriptionTimer({
+        userId: user?.id,
+        onTimeExpired: () => handleEndSession?.(),
+        warnAt: [5, 2, 1],
+    });
 
     // Load Session & Token
     useEffect(() => {
@@ -56,7 +68,7 @@ export default function LiveInterview() {
         const initSession = async () => {
             if (!user?.id || !currentSessionId) {
                 toast.error("Invalid session.");
-                router.push("/dashboard");
+                router.replace("/dashboard");
                 return;
             }
 
@@ -65,15 +77,15 @@ export default function LiveInterview() {
                 const usageCheck = await subscriptionService.checkUsageLimit(user.id);
                 if (usageCheck.hasLimit) {
                     toast.error("Monthly usage limit reached.");
-                    router.push("/pricing");
+                    router.replace("/pricing");
                     return;
                 }
 
                 // 2. Fetch Session
-                const session = await interviewService.getSessionById(currentSessionId);
-                if (!session) {
+                const fetchedSession = await interviewService.getSessionById(currentSessionId);
+                if (!fetchedSession) {
                     toast.warning("Session not found, creating temporary.");
-                } else if (session.status === "completed") {
+                } else if (fetchedSession.status === "completed") {
                     toast.warning("Session already completed.");
                 }
 
@@ -106,6 +118,11 @@ export default function LiveInterview() {
                     authToken = data.token;
                 }
 
+
+                if (fetchedSession) {
+                    setSession(fetchedSession);
+                }
+
                 setServerUrl(url);
                 setToken(authToken);
                 // Enable connection after token is ready
@@ -121,43 +138,99 @@ export default function LiveInterview() {
         initSession();
     }, [authLoading, user, currentSessionId, router, setCurrentSessionId]);
 
-
-    // Handle Timer
+    // Handle browser navigation (back button, close tab, etc.)
     useEffect(() => {
-        if (!isSessionLoading && !error) {
-            timerRef.current = setInterval(() => {
-                setTimeElapsed(prev => prev + 1);
-            }, 1000);
-        }
         return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
+            // Fire-and-forget: Start save operations immediately on unmount
+            if (sessionSegmentStart.current && !isEndingSession.current) {
+                const endTime = new Date();
+                const startTime = sessionSegmentStart.current;
+                const durationMs = endTime.getTime() - startTime.getTime();
+                const durationSeconds = Math.max(1, Math.round(durationMs / 1000)); // Store exact seconds
+
+                console.log(`🔌 Component unmounting, saving resumption: ${durationSeconds} seconds`);
+
+                // Fire all operations without awaiting (they'll complete in background)
+                interviewService.getTranscriptCount(currentSessionId).then(endTranscriptIndex => {
+                    interviewService.createCompletedResumption(currentSessionId, {
+                        resumed_at: startTime.toISOString(),
+                        ended_at: endTime.toISOString(),
+                        start_transcript_index: sessionStartTranscriptIndex.current,
+                        end_transcript_index: endTranscriptIndex,
+                        duration_seconds: durationSeconds
+                    }).then(() => {
+                        console.log(`✅ [cleanup] Resumption record created`);
+                    });
+                });
+
+                interviewService.getSessionById(currentSessionId).then(session => {
+                    if (session) {
+                        const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
+                        interviewService.updateSession(currentSessionId, {
+                            duration_seconds: newTotalDuration
+                        }).then(() => {
+                            console.log(`✅ [cleanup] Session duration updated to ${newTotalDuration} seconds`);
+                        });
+
+                        subscriptionService.trackUsage(session.user_id, durationSeconds).then(() => {
+                            console.log(`✅ [cleanup] Subscription usage tracked`);
+                        });
+                    }
+                });
+            }
         };
-    }, [isSessionLoading, error]);
+    }, [currentSessionId]);
 
     // Handle Session End
-    const handleEndSession = useCallback(async () => {
-        if (timerRef.current) clearInterval(timerRef.current);
+    const { generateFeedbackInBackground } = useFeedback();
+
+    // Handle Session End
+    handleEndSession = useCallback(async () => {
+        // Prevent duplicate calls
+        if (isEndingSession.current) return;
+        isEndingSession.current = true;
+        setIsRedirecting(true); // Show loader immediately
 
         try {
-            toast.info("Ending interview session...");
-            await interviewService.completeSession(currentSessionId, {
-                durationMinutes: Math.ceil(timeElapsed / 60)
-            });
+            console.log("🚀 Ending session intentionally:", currentSessionId);
 
-            // Update usage
-            if (user?.id) {
-                await subscriptionService.trackUsage(user.id, Math.ceil(timeElapsed / 60));
+            // Calculate duration of final segment (don't create resumption record)
+            if (sessionSegmentStart.current) {
+                const endTime = new Date();
+                const startTime = sessionSegmentStart.current;
+                const durationMs = endTime.getTime() - startTime.getTime();
+                const durationSeconds = Math.max(1, Math.round(durationMs / 1000)); // Store exact seconds
+
+                // Update session total duration
+                const session = await interviewService.getSessionById(currentSessionId);
+                if (session) {
+                    const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
+                    await interviewService.updateSession(currentSessionId, {
+                        duration_seconds: newTotalDuration
+                    });
+
+                    // Track usage in subscription for final segment
+                    await subscriptionService.trackUsage(session.user_id, durationSeconds);
+                    console.log(`✅ Final segment duration: ${durationSeconds} seconds, Total: ${newTotalDuration} seconds`);
+                }
             }
 
-            router.push(`/interview/${currentSessionId}/feedback`);
+            // Complete the session (no resumption record created)
+            await interviewService.completeSession(currentSessionId, {});
+            console.log("✅ Session completed");
+
+            // 3. Trigger BACKGROUND feedback generation
+            generateFeedbackInBackground(currentSessionId);
+
+            // 4. Redirect immediately
+            router.replace(`/dashboard`);
 
         } catch (err) {
             console.error("Error ending session:", err);
-            toast.error("Error saving session data");
-            // Force redirect anyway
-            router.push(`/interview/${currentSessionId}/feedback`);
+            // Force redirect to dashboard anyway
+            router.replace(`/dashboard`);
         }
-    }, [currentSessionId, timeElapsed, user, router]);
+    }, [currentSessionId, router, generateFeedbackInBackground]);
 
 
     // Error State
@@ -167,12 +240,16 @@ export default function LiveInterview() {
                 <div className="p-4 bg-red-900/20 rounded border border-red-500/50">
                     <h2 className="text-xl font-bold mb-2">Error</h2>
                     <p>{error}</p>
-                    <Button onClick={() => router.push('/dashboard')} className="mt-4" variant="destructive">
+                    <Button onClick={() => router.replace('/dashboard')} className="mt-4" variant="destructive">
                         Return to Dashboard
                     </Button>
                 </div>
             </div>
         )
+    }
+
+    if (isRedirecting) {
+        return <ArjunaLoader variant="fullscreen" message="Saving results and returning to dashboard..." />;
     }
 
     // Get initial mic and camera states from URL params
@@ -198,13 +275,67 @@ export default function LiveInterview() {
                 console.error("LiveKit Error:", err);
                 toast.error(`Connection error: ${err.message}`);
             }}
-            onConnected={() => {
+            onConnected={async () => {
                 // Guard to prevent multiple calls
                 if (hasConnected.current) return;
                 hasConnected.current = true;
 
                 // Room connected successfully
                 setIsSessionLoading(false);
+
+                // Track segment start time and transcript position locally (don't create DB record yet)
+                sessionSegmentStart.current = new Date();
+                const transcriptCount = await interviewService.getTranscriptCount(currentSessionId);
+                sessionStartTranscriptIndex.current = transcriptCount;
+
+                console.log(`✅ Segment started at index ${transcriptCount}`);
+            }}
+            onDisconnected={async () => {
+                console.log("🔌 Room disconnected");
+
+                // If we're intentionally ending (user clicked end button), do nothing here
+                if (isEndingSession.current) {
+                    return;
+                }
+
+                // Unexpected disconnection - save resumption record
+                try {
+                    if (sessionSegmentStart.current) {
+                        const endTime = new Date();
+                        const startTime = sessionSegmentStart.current;
+                        const durationMs = endTime.getTime() - startTime.getTime();
+                        const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
+
+                        const endTranscriptIndex = await interviewService.getTranscriptCount(currentSessionId);
+
+                        // Create resumption record for this disconnected segment
+                        await interviewService.createCompletedResumption(currentSessionId, {
+                            resumed_at: startTime.toISOString(),
+                            ended_at: endTime.toISOString(),
+                            start_transcript_index: sessionStartTranscriptIndex.current,
+                            end_transcript_index: endTranscriptIndex,
+                            duration_seconds: durationSeconds
+                        });
+
+                        // Update session total duration
+                        const session = await interviewService.getSessionById(currentSessionId);
+                        if (session) {
+                            const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
+                            await interviewService.updateSession(currentSessionId, {
+                                duration_seconds: newTotalDuration
+                            });
+
+                            // Track usage in subscription
+                            await subscriptionService.trackUsage(session.user_id, durationSeconds);
+                            console.log(`✅ Resumption saved: ${durationSeconds} seconds, Total: ${newTotalDuration} seconds`);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error saving resumption on disconnect:", error);
+                }
+
+                toast.warning("Connection lost. Redirecting to dashboard...");
+                router.replace("/dashboard");
             }}
             data-lk-theme="default"
         >
@@ -212,9 +343,14 @@ export default function LiveInterview() {
                 <ArjunaLoader variant="fullscreen" message="Connecting to Interview..." />
             ) : (
                 <LiveInterviewSession
+                    sessionId={currentSessionId}
+                    initialTranscripts={(session?.transcript as any) || []}
                     onEndSession={handleEndSession}
-                    timeElapsed={timeElapsed}
-                    formatTime={formatTime}
+                    remainingMinutes={subscriptionTimer.remainingMinutes}
+                    remainingSeconds={subscriptionTimer.remainingSeconds}
+                    isLowTime={subscriptionTimer.isLowTime}
+                    isCriticalTime={subscriptionTimer.isCriticalTime}
+                    formatTime={subscriptionTimer.formatTime}
                     initialMicEnabled={initialMicEnabled}
                     initialCameraEnabled={initialCameraEnabled}
                 />

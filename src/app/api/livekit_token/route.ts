@@ -14,6 +14,7 @@ export async function GET(request: Request) {
 
     // Fetch session config to get avatar selection and session context
     let selectedVoice = 'alloy'; // Default voice
+    let selectedAvatar = 'default'; // Default avatar ID
     let sessionContext: any = null;
 
     if (sessionId) {
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
         const config = typeof session.config === 'object' && session.config !== null ? session.config as any : {};
 
         if (config.selectedVoice) {
-          const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir'];
+          const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
           if (supportedVoices.includes(config.selectedVoice)) {
             selectedVoice = config.selectedVoice;
             console.log(`✓ Using voice from session config: ${selectedVoice}`);
@@ -64,21 +65,68 @@ export async function GET(request: Request) {
           }
         }
 
+        // Extract selected avatar ID
+        if (config.selectedAvatar) {
+          selectedAvatar = config.selectedAvatar;
+          console.log(`✓ Using avatar from session config: ${selectedAvatar}`);
+        }
+
         // Prepare session context for the AI agent
+        // Check if this is a company-specific interview
+        const isCompanyInterview = config.companyInterviewConfig != null;
+
         sessionContext = {
           position: session.position,
           interviewType: session.interview_type,
-          companyName: config.companyName || config.company?.name || 'Unknown Company',
+          // For company interviews, use companyInterviewConfig; otherwise fallback to direct config
+          companyName: isCompanyInterview
+            ? config.companyInterviewConfig.companyName
+            : (config.companyName || config.company?.name || null),
+          role: isCompanyInterview
+            ? config.companyInterviewConfig.role
+            : (config.role || session.position),
+          experienceLevel: isCompanyInterview
+            ? config.companyInterviewConfig.experienceLevel
+            : (config.experienceLevel || 'Mid'),
           skills: config.skills || [],
           difficulty: config.difficulty || 'Intermediate',
-          experienceLevel: config.experienceLevel || 'Mid-level',
           duration: config.duration || 30
         };
+
+        // If this is a company-specific interview, fetch questions from DB
+        const companyId = config.companyInterviewConfig?.companyId || config.companyInterviewConfig?.companyTemplateId;
+
+        if (isCompanyInterview && companyId) {
+          const difficulty = sessionContext.difficulty || 'Medium';
+          console.log(`Fetching questions for company: ${companyId}, difficulty: ${difficulty}`);
+
+          // Fetch questions for this company from Supabase
+          const { data: questions, error: questionsError } = await supabase
+            .from('company_questions')
+            .select('question_text')
+            .eq('company_id', companyId)
+            //.eq('difficulty', difficulty) // Optional: strict difficulty matching, or fallback
+            .limit(5);
+
+          if (!questionsError && questions && questions.length > 0) {
+            const questionTexts = questions.map(q => q.question_text);
+            sessionContext.questions = questionTexts;
+            sessionContext.isCompanySpecific = true;
+            console.log(`✓ Fetched ${questions.length} company-specific questions`);
+          } else {
+            console.warn("Could not fetch company questions", questionsError);
+          }
+        } else if (isCompanyInterview && !companyId) {
+          console.warn("⚠️ Company interview detected but no companyId/companyTemplateId found in config");
+        }
+
+
         console.log("✅ Session context prepared for agent:", sessionContext);
       } else {
         console.warn(`⚠️ Session not found for ID: ${sessionId}`, error);
       }
     }
+    console.log("✅ Session context prepared for agent:", sessionContext);
 
     // Create or update room with agent dispatch configuration
     const roomName = sessionId || "interview-room";
@@ -130,6 +178,7 @@ export async function GET(request: Request) {
         identity: candidateIdentity,
         metadata: JSON.stringify({
           selectedVoice,
+          selectedAvatar,
           sessionId,
           sessionContext
         })

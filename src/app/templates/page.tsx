@@ -16,163 +16,18 @@ import { toast } from "sonner";
 import {
   Search,
   Code2,
-  Database,
-  PenTool,
-  Server,
-  Layers,
-  BrainCircuit,
-  Bitcoin,
-  Coffee,
-  Megaphone,
-  Feather,
-  BarChart,
-  Users,
   Loader2,
   Settings as SettingsIcon,
-  LogOut,
   ChevronLeft,
-  ChevronRight,
   Code,
   Clock,
   Briefcase,
   CheckCircle2,
   ArrowRight
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { NotificationBell } from "@/components/NotificationBell";
-import { getAvatarUrl, getInitials } from "@/lib/avatar-utils";
 import { TemplatesPageSkeleton, CompanyTemplatesPageSkeleton } from "@/components/TemplatesPageSkeleton";
-
-const templates = [
-  {
-    id: "frontend-developer",
-    title: "Frontend Developer",
-    icon: Code2,
-    description: "Template for assessing frontend development skills, including UI design, interactivity, and integration with APIs.",
-    color: "text-blue-500",
-    interviewType: "Technical",
-    skills: ["React", "JavaScript", "CSS", "HTML", "UI/UX"],
-    difficulty: "Intermediate"
-  },
-  {
-    id: "backend-developer",
-    title: "Backend Developer",
-    icon: Database,
-    description: "Template for assessing backend development skills, including API design, database management, and application architecture.",
-    color: "text-purple-500",
-    interviewType: "Technical",
-    skills: ["Node.js", "Database", "API Design", "System Design"],
-    difficulty: "Intermediate"
-  },
-  {
-    id: "content-creator",
-    title: "Content Creator",
-    icon: PenTool,
-    description: "Template for evaluating content creation skills, including writing quality, creativity, audience engagement, and platform knowledge.",
-    color: "text-pink-500",
-    interviewType: "Creative",
-    skills: ["Writing", "Creativity", "Social Media", "Analytics"],
-    difficulty: "Beginner"
-  },
-  {
-    id: "devops-engineer",
-    title: "DevOps Engineer",
-    icon: Server,
-    description: "Template for assessing DevOps skills, including CI/CD implementation, cloud infrastructure management, automation, and monitoring.",
-    color: "text-orange-500",
-    interviewType: "Technical",
-    skills: ["Docker", "Kubernetes", "CI/CD", "Cloud", "Monitoring"],
-    difficulty: "Advanced"
-  },
-  {
-    id: "fullstack-developer",
-    title: "Full Stack Developer",
-    icon: Layers,
-    description: "Template for assessing full stack development skills, including frontend, backend, APIs, and deployment.",
-    color: "text-indigo-500",
-    interviewType: "Technical",
-    skills: ["Frontend", "Backend", "Database", "Deployment"],
-    difficulty: "Advanced"
-  },
-  {
-    id: "ai-ml-engineer",
-    title: "AI/ML Engineer",
-    icon: BrainCircuit,
-    description: "Template for assessing artificial intelligence and machine learning skills, including model building, data processing, and evaluation.",
-    color: "text-green-500",
-    interviewType: "Technical",
-    skills: ["Python", "TensorFlow", "Data Science", "Statistics"],
-    difficulty: "Advanced"
-  },
-  {
-    id: "blockchain-developer",
-    title: "Blockchain Developer",
-    icon: Bitcoin,
-    description: "Template for assessing blockchain development skills, including smart contracts, decentralized applications, and cryptography.",
-    color: "text-yellow-500",
-    interviewType: "Technical",
-    skills: ["Solidity", "Web3", "Smart Contracts", "Cryptography"],
-    difficulty: "Advanced"
-  },
-  {
-    id: "java-developer",
-    title: "Java Developer",
-    icon: Coffee,
-    description: "Template for assessing Java programming skills, including OOP, frameworks, and backend development.",
-    color: "text-red-500",
-    interviewType: "Technical",
-    skills: ["Java", "Spring Boot", "OOP", "Microservices"],
-    difficulty: "Intermediate"
-  },
-  {
-    id: "marketing-head",
-    title: "Marketing Head",
-    icon: Megaphone,
-    description: "Template for assessing marketing leadership skills, including strategy, brand management, and market analysis.",
-    color: "text-cyan-500",
-    interviewType: "Behavioral",
-    skills: ["Strategy", "Leadership", "Analytics", "Branding"],
-    difficulty: "Advanced"
-  },
-  {
-    id: "content-writer",
-    title: "Content Writer",
-    icon: Feather,
-    description: "Template for assessing content writing skills, including research, creativity, and SEO.",
-    color: "text-teal-500",
-    interviewType: "Creative",
-    skills: ["Writing", "SEO", "Research", "Grammar"],
-    difficulty: "Beginner"
-  },
-  {
-    id: "digital-marketing-specialist",
-    title: "Digital Marketing Specialist",
-    icon: BarChart,
-    description: "Template for assessing digital marketing skills, including SEO, SEM, social media, and analytics.",
-    color: "text-violet-500",
-    interviewType: "Technical",
-    skills: ["SEO", "SEM", "Social Media", "Analytics"],
-    difficulty: "Intermediate"
-  },
-  {
-    id: "hr-specialist",
-    title: "HR Specialist",
-    icon: Users,
-    description: "Template for assessing human resources skills, including recruitment, employee relations, and compliance.",
-    color: "text-rose-500",
-    interviewType: "Behavioral",
-    skills: ["Recruitment", "Employee Relations", "Compliance"],
-    difficulty: "Intermediate"
-  },
-];
+import { Template } from "@/services/template.service";
+import * as LucideIcons from "lucide-react";
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -182,9 +37,29 @@ export default function Templates() {
   const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyTemplate | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { createInterviewSession, profile, fetchCompanyTemplates } = useOptimizedQueries();
+  const { createInterviewSession, profile, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
+
+  // Fetch general templates on mount
+  useEffect(() => {
+    const loadTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const data = await fetchTemplates();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        toast.error('Failed to load templates');
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    loadTemplates();
+  }, [fetchTemplates]);
 
   // Fetch company templates on mount
   useEffect(() => {
@@ -213,14 +88,17 @@ export default function Templates() {
   // Categories for filtering
   const categories = ["All", "Popular", "Engineer", "Marketing"];
 
-  // Popular templates (you can customize this list)
-  const popularTemplateIds = ["frontend-developer", "backend-developer", "fullstack-developer", "ai-ml-engineer"];
+  // Get icon component from icon name string
+  const getIconComponent = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[iconName];
+    return IconComponent || Code2; // Fallback to Code2 if icon not found
+  };
 
   // Filter templates based on category
   const getCategoryTemplates = () => {
     switch (activeCategory) {
       case "Popular":
-        return templates.filter(t => popularTemplateIds.includes(t.id));
+        return templates.filter(t => t.is_popular);
       case "Engineer":
         return templates.filter(t =>
           t.title.toLowerCase().includes("developer") ||
@@ -245,7 +123,7 @@ export default function Templates() {
   );
 
   // Function to start interview with selected template
-  const startInterviewWithTemplate = async (template: typeof templates[0]) => {
+  const startInterviewWithTemplate = async (template: Template) => {
     if (!user) {
       toast.error("Please log in to start an interview");
       return;
@@ -257,7 +135,7 @@ export default function Templates() {
       // Create a new interview session using optimized method
       const session = await createInterviewSession({
         position: template.title,
-        interview_type: template.interviewType,
+        interview_type: template.interview_type,
         config: {
           skills: template.skills,
           difficulty: template.difficulty,
@@ -267,11 +145,14 @@ export default function Templates() {
       if (!session) {
         throw new Error('Failed to create interview session');
       }
+      if (session.id) {
+        console.log("Session created", session)
+      }
 
       toast.success(`Starting ${template.title} interview...`);
 
       // Navigate to avatar selection page first
-      router.push(`/interview/${session.id}/avatar`);
+      router.push(`/interview/${session.id}/setup`);
 
     } catch (error: any) {
       console.error('Error starting interview:', error);
@@ -321,7 +202,7 @@ export default function Templates() {
       }
 
       toast.success(`Starting ${role} interview at ${company.name}...`);
-      router.push(`/interview/${session.id}/avatar`);
+      router.push(`/interview/${session.id}/setup`);
 
     } catch (error: any) {
       console.error('Error starting company interview:', error);
@@ -391,116 +272,125 @@ export default function Templates() {
           </div>
 
           <TabsContent value="general" className="mt-0 space-y-6">
-            {searchTerm && (
-              <p className="text-sm text-muted-foreground mb-4">
-                Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
-              </p>
-            )}
+            {loadingTemplates ? (
+              <TemplatesPageSkeleton />
+            ) : (
+              <>
+                {searchTerm && (
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                  </p>
+                )}
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {filteredTemplates.map((template) => (
-                <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  {/* Decorative gradient background at top */}
-                  <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-slate-50/80 to-transparent dark:from-slate-900/50 dark:to-transparent opacity-50 pointer-events-none`} />
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredTemplates.map((template) => {
+                    const IconComponent = getIconComponent(template.icon_name);
+                    return (
+                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        {/* Decorative gradient background at top */}
+                        <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-slate-50/80 to-transparent dark:from-slate-900/50 dark:to-transparent opacity-50 pointer-events-none`} />
 
-                  <CardContent className="p-6 flex flex-col h-full relative z-10">
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-5">
-                      <div className="flex gap-4">
-                        {/* Icon */}
-                        <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 p-2.5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
-                          <template.icon className={`h-7 w-7 ${template.color} dark:opacity-90`} />
-                        </div>
+                        <CardContent className="p-6 flex flex-col h-full relative z-10">
+                          {/* Header */}
+                          <div className="flex justify-between items-start mb-5">
+                            <div className="flex gap-4">
+                              {/* Icon */}
+                              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 p-2.5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                <IconComponent className={`h-7 w-7 ${template.color} dark:opacity-90`} />
+                              </div>
 
-                        <div>
-                          <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 leading-tight mb-1 group-hover:text-primary transition-colors">
-                            {template.title}
-                          </h3>
-                          <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium">
-                            {template.interviewType}
-                          </Badge>
-                        </div>
-                      </div>
+                              <div>
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 leading-tight mb-1 group-hover:text-primary transition-colors">
+                                  {template.title}
+                                </h3>
+                                <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium">
+                                  {template.interview_type}
+                                </Badge>
+                              </div>
+                            </div>
 
-                      <Badge className={`text-[10px] px-2 py-0.5 border ${getDifficultyColor(template.difficulty)}`}>
-                        {template.difficulty}
-                      </Badge>
-                    </div>
+                            <Badge className={`text-[10px] px-2 py-0.5 border ${getDifficultyColor(template.difficulty)}`}>
+                              {template.difficulty}
+                            </Badge>
+                          </div>
 
-                    {/* Description */}
-                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-6 leading-relaxed">
-                      {template.description}
-                    </p>
+                          {/* Description */}
+                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-6 leading-relaxed">
+                            {template.description}
+                          </p>
 
-                    {/* Skills */}
-                    <div className="mt-auto">
-                      <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">
-                        Key Skills
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {template.skills.slice(0, 3).map((skill, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800 font-normal"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                        {template.skills.length > 3 && (
-                          <span className="text-xs px-1.5 py-0.5 text-slate-400 dark:text-slate-500 font-medium">
-                            +{template.skills.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                          {/* Skills */}
+                          <div className="mt-auto">
+                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">
+                              Key Skills
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {template.skills.slice(0, 3).map((skill, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800 font-normal"
+                                >
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {template.skills.length > 3 && (
+                                <span className="text-xs px-1.5 py-0.5 text-slate-400 dark:text-slate-500 font-medium">
+                                  +{template.skills.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                    {/* Footer / Button */}
-                    <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="font-medium">Verified Template</span>
-                      </div>
+                          {/* Footer / Button */}
+                          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="font-medium">Verified Template</span>
+                            </div>
 
-                      <Button
-                        size="sm"
-                        className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white/90 shadow-sm hover:shadow transition-all rounded-lg px-4"
-                        onClick={() => startInterviewWithTemplate(template)}
-                        disabled={loadingTemplate === template.id}
+                            <Button
+                              size="sm"
+                              className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white/90 shadow-sm hover:shadow transition-all rounded-lg px-4"
+                              onClick={() => startInterviewWithTemplate(template)}
+                              disabled={loadingTemplate === template.id}
+                            >
+                              {loadingTemplate === template.id ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                                  Starting...
+                                </>
+                              ) : (
+                                <>
+                                  Use Template
+                                  <ArrowRight className="h-3.5 w-3.5 ml-2 opacity-70" />
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {filteredTemplates.length === 0 && (
+                  <div className="text-center py-12">
+                    <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No templates found</h3>
+                    <p className="text-muted-foreground">
+                      Try adjusting your search term or{" "}
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="text-primary hover:underline"
                       >
-                        {loadingTemplate === template.id ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                            Starting...
-                          </>
-                        ) : (
-                          <>
-                            Use Template
-                            <ArrowRight className="h-3.5 w-3.5 ml-2 opacity-70" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {filteredTemplates.length === 0 && (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No templates found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search term or{" "}
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="text-primary hover:underline"
-                  >
-                    clear the search
-                  </button>{" "}
-                  to see all templates.
-                </p>
-              </div>
+                        clear the search
+                      </button>{" "}
+                      to see all templates.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 

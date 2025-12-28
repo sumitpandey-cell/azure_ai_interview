@@ -8,6 +8,7 @@ import { interviewService } from '@/services/interview.service';
 import { companyService } from '@/services/company.service';
 import { profileService } from '@/services/profile.service';
 import { leaderboardService } from '@/services/leaderboard.service';
+import { templateService, Template } from '@/services/template.service';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useOptimizedQueries() {
@@ -83,7 +84,7 @@ export function useOptimizedQueries() {
         ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
         : 0;
       // Only count duration from completed interviews to avoid inflating practice time
-      const timePracticed = completedSessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+      const timePracticed = completedSessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0);
 
       // Calculate REAL leaderboard rank using Bayesian scoring
       const rank = await interviewService.calculateUserRank(user.id);
@@ -280,7 +281,7 @@ export function useOptimizedQueries() {
   const createInterviewSession = useCallback(async (sessionData: {
     position: string;
     interview_type: string;
-    duration_minutes?: number;
+    duration_seconds?: number;
     config?: any;
   }) => {
     if (!user?.id) {
@@ -509,6 +510,51 @@ export function useOptimizedQueries() {
     }
   }, [user?.id]);
 
+  // Fetch all general templates with caching
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const templates = await templateService.getAllTemplates();
+      return templates;
+    } catch (error) {
+      console.error('Error in fetchTemplates:', error);
+      toast.error('Failed to load templates');
+      return [];
+    }
+  }, []);
+
+  // Fetch popular templates with caching
+  const fetchPopularTemplates = useCallback(async () => {
+    try {
+      const templates = await templateService.getPopularTemplates();
+      return templates;
+    } catch (error) {
+      console.error('Error in fetchPopularTemplates:', error);
+      return [];
+    }
+  }, []);
+
+  // Fetch single template by ID
+  const fetchTemplateById = useCallback(async (id: string) => {
+    try {
+      const template = await templateService.getTemplateById(id);
+      return template;
+    } catch (error) {
+      console.error('Error in fetchTemplateById:', error);
+      return null;
+    }
+  }, []);
+
+  // Search templates
+  const searchTemplates = useCallback(async (query: string) => {
+    try {
+      const templates = await templateService.searchTemplates(query);
+      return templates;
+    } catch (error) {
+      console.error('Error in searchTemplates:', error);
+      return [];
+    }
+  }, []);
+
   return {
     // Data
     sessions,
@@ -526,6 +572,10 @@ export function useOptimizedQueries() {
     fetchCompanyTemplates,
     fetchCompanyTemplateBySlug,
     fetchRecentPerformanceMetrics,
+    fetchTemplates,
+    fetchPopularTemplates,
+    fetchTemplateById,
+    searchTemplates,
 
     // CRUD operations with cache invalidation
     createInterviewSession,

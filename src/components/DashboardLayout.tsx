@@ -200,16 +200,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 Upgrade
               </Button>
               <div className="text-xs text-sidebar-foreground/70 font-medium">
-                Remaining Time:
-                <div className="text-sm font-bold text-sidebar-foreground mt-1 font-mono">
-                  {Math.floor(remaining_minutes / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                  :
-                  {Math.floor(remaining_minutes % 60)
-                    .toString()
-                    .padStart(2, "0")}
-                  :59
+                Plan : {plan_name}
+                <div className={`text-lg font-bold mt-1 font-mono transition-colors ${remaining_minutes <= 120
+                  ? 'text-red-500'
+                  : remaining_minutes < 300
+                    ? 'text-amber-500'
+                    : 'text-sidebar-foreground'
+                  }`}>
+                  {Math.ceil(remaining_minutes / 60)} min
+                  <span className="text-xs text-sidebar-foreground/50 ml-1">/ 100</span>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-2 h-1.5 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${remaining_minutes <= 120
+                      ? 'bg-red-500'
+                      : remaining_minutes < 300
+                        ? 'bg-amber-500'
+                        : 'bg-blue-500'
+                      }`}
+                    style={{ width: `${Math.min((remaining_minutes / 6000) * 100, 100)}%` }}
+                  />
                 </div>
               </div>
             </div>

@@ -39,6 +39,9 @@ import { WeeklyActivityChart } from "@/components/WeeklyActivityChart";
 import { PerformanceAnalysisChart } from "@/components/PerformanceAnalysisChart";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
+import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
+import { Timer, Zap } from "lucide-react";
+import { formatDuration, formatDurationShort } from "@/lib/format-duration";
 
 // Type for user metadata
 interface UserMetadata {
@@ -65,6 +68,7 @@ export default function Dashboard() {
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [remainingMinutes, setRemainingMinutes] = useState<number>(15);
   const [loading, setLoading] = useState(true);
 
   // Use analytics hook for cached data
@@ -83,6 +87,11 @@ export default function Dashboard() {
 
     try {
       setLoading(true);
+
+      // Invalidate subscription cache to get fresh data
+      if (invalidateCache) {
+        invalidateCache();
+      }
 
       // Load recent sessions
       const recentSessions = await interviewService.getSessionHistory(user.id, 5);
@@ -122,6 +131,10 @@ export default function Dashboard() {
       // Load subscription
       const userSubscription = await subscriptionService.getSubscription(user.id);
       setSubscription(userSubscription);
+
+      // Load remaining minutes
+      const remaining = await subscriptionService.getRemainingMinutes(user.id);
+      setRemainingMinutes(remaining);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     } finally {
@@ -129,10 +142,12 @@ export default function Dashboard() {
     }
   };
 
-  // Load data from database
+  // Load data on mount and when navigating back to dashboard
   useEffect(() => {
-    loadData();
-  }, [user]);
+    if (user?.id) {
+      loadData();
+    }
+  }, [user?.id]); // Removed hasFetched guard - reload every time we mount
 
   // Refresh data when feedback is ready
   useEffect(() => {
@@ -143,7 +158,7 @@ export default function Dashboard() {
     }
   }, [shouldRefreshDashboard]);
 
-  const { allowed, loading: subscriptionLoading } = useSubscription();
+  const { allowed, loading: subscriptionLoading, invalidateCache } = useSubscription();
 
   const startInterview = () => {
     router.push('/start-interview');
@@ -151,7 +166,7 @@ export default function Dashboard() {
 
   // Helper to render stars based on score
   const renderStars = (score: number | null) => {
-    if (score === null) return <span className="text-muted-foreground">-</span>;
+    if (score === null) return null;
     const stars = Math.round(score / 20); // 0-5 stars
     return (
       <div className="flex gap-1">
@@ -165,11 +180,9 @@ export default function Dashboard() {
     );
   };
 
-  // Helper to format time
-  const formatTime = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}h ${m}m`;
+  // Helper to format time (now accepts seconds and formats them)
+  const formatTime = (seconds: number) => {
+    return formatDurationShort(seconds);
   };
 
   return (
@@ -257,6 +270,16 @@ export default function Dashboard() {
               <ThemeToggle />
             </div>
           </div>
+
+          {/* Low Time Warning Banner */}
+          {remainingMinutes < 5 && remainingMinutes > 0 && (
+            <LowTimeWarningBanner
+              remainingMinutes={remainingMinutes}
+              variant="dashboard"
+            />
+          )}
+
+
 
           {/* Top Actions Section */}
           <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
@@ -382,16 +405,13 @@ export default function Dashboard() {
                       const isGeneratingFeedback = isSessionGenerating(session.id);
 
                       return (
-                        <tr key={session.id} className={`group hover:bg-muted/30 transition-colors ${isGeneratingFeedback ? 'relative' : ''}`}>
-                          {/* Shimmer overlay for generating feedback */}
-                          {isGeneratingFeedback && (
-                            <td colSpan={8} className="absolute inset-0 p-0 pointer-events-none">
-                              <div className="shimmer-overlay" />
-                            </td>
-                          )}
-
+                        <tr key={session.id} className="group hover:bg-muted/30 transition-colors relative">
                           <td className="py-3 pl-4 relative z-10">
-                            <div className="flex items-center gap-3">
+                            {/* Shimmer overlay for generating feedback - moved inside td for valid HTML */}
+                            {isGeneratingFeedback && (
+                              <div className="shimmer-overlay absolute inset-0 w-full h-full pointer-events-none z-0" />
+                            )}
+                            <div className="flex items-center gap-3 relative z-10">
                               <div className="h-9 w-9 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center text-xs font-bold">
                                 {initials}
                               </div>
@@ -411,19 +431,19 @@ export default function Dashboard() {
                           <td className="py-3 relative z-10">
                             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                               <Clock className="h-3.5 w-3.5" />
-                              {session.duration_minutes ? `${session.duration_minutes}m` : '0m'}
+                              {session.duration_seconds ? formatDuration(session.duration_seconds) : '0s'}
                             </div>
                           </td>
                           <td className="py-3 relative z-10">
                             {isGeneratingFeedback ? (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Generating...
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 shadow-sm border border-blue-200/50">
+                                <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+                                <span>Generating...</span>
                               </div>
                             ) : (
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.status === 'completed'
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : 'bg-yellow-500/10 text-yellow-500'
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
+                                : 'bg-yellow-500/10 text-yellow-500 border border-yellow-200/50'
                                 }`}>
                                 {session.status === 'completed' ? 'Completed' : 'In Progress'}
                               </div>
@@ -432,7 +452,7 @@ export default function Dashboard() {
                           <td className="py-3 relative z-10">
                             <div className="flex items-center gap-3">
                               <span className={`text-sm font-bold ${session.score !== null ? scoreColor : 'text-muted-foreground'}`}>
-                                {session.score !== null ? `${session.score}%` : '-'}
+                                {session.score !== null ? `${session.score}%` : '—'}
                               </span>
                               {renderStars(session.score)}
                             </div>
@@ -440,42 +460,50 @@ export default function Dashboard() {
                           <td className="py-3 relative z-10">
                             <div className="flex items-center gap-2">
                               {isGeneratingFeedback ? (
-                                <div className="flex items-center gap-1.5 text-xs text-blue-500">
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span>Processing...</span>
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic">
+                                  <span>Processing feedback...</span>
                                 </div>
-                              ) : (
+                              ) : session.score !== null ? (
                                 <>
-                                  <ThumbsUp className={`h-4 w-4 ${session.score !== null && session.score >= 70 ? "text-green-500 fill-green-500/20" : "text-muted-foreground/30"}`} />
-                                  <ThumbsDown className={`h-4 w-4 ${session.score !== null && session.score < 70 ? "text-red-500 fill-red-500/20" : "text-muted-foreground/30"}`} />
+                                  <ThumbsUp className={`h-4 w-4 ${session.score >= 70 ? "text-green-500 fill-green-500/20" : "text-muted-foreground/30"}`} />
+                                  <ThumbsDown className={`h-4 w-4 ${session.score < 70 ? "text-red-500 fill-red-500/20" : "text-muted-foreground/30"}`} />
                                 </>
+                              ) : (
+                                <span className="text-xs text-muted-foreground italic">—</span>
                               )}
                             </div>
                           </td>
-                          <td className="py-3 pr-4 text-right relative z-10 flex justify-end">
-                            {session.status === 'in_progress' ? (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => {
-                                  const stage = (session.config as any)?.currentStage || 'avatar';
-                                  router.push(`/interview/${session.id}/${stage}`);
-                                }}
-                                className="h-8 px-4 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
-                              >
-                                <Play className="h-3.5 w-3.5" />
-                                Continue
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => router.push(`/interview/${session.id}/report`)}
-                                className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-xs font-medium text-white flex items-center gap-1.5"
-                              >
-                                Report
-                              </Button>
-                            )}
+                          <td className="py-3 pr-4 text-right relative z-10">
+                            <div className="flex justify-end">
+                              {session.status === 'in_progress' ? (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  disabled={isGeneratingFeedback}
+                                  onClick={() => {
+                                    const stage = (session.config as any)?.currentStage || 'setup';
+                                    router.push(`/interview/${session.id}/${stage}`);
+                                  }}
+                                  className="h-8 px-4 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm"
+                                >
+                                  <Play className="h-3.5 w-3.5" />
+                                  Continue
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  disabled={isGeneratingFeedback}
+                                  onClick={() => router.push(`/interview/${session.id}/report`)}
+                                  className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 shadow-sm ${isGeneratingFeedback
+                                    ? 'bg-blue-300 text-blue-700 pointer-events-none'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    }`}
+                                >
+                                  {isGeneratingFeedback ? 'Analyzing...' : 'Report'}
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

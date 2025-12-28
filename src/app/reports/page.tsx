@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ReportsPageSkeleton } from "@/components/ReportsPageSkeleton";
+import { interviewService } from "@/services/interview.service";
+import { formatDuration, formatDurationShort } from "@/lib/format-duration";
 import { useAnalytics } from "@/hooks/use-analytics";
 
 interface UserProfile {
@@ -30,7 +32,7 @@ interface InterviewSession {
   status: string;
   created_at: string;
   completed_at: string | null;
-  duration_minutes: number | null;
+  duration_seconds: number | null;
   config?: any; // JSONB field for storing interview configuration
 }
 
@@ -229,9 +231,9 @@ export default function Reports() {
         case 'score-desc':
           return (b.score || 0) - (a.score || 0);
         case 'duration-asc':
-          return (a.duration_minutes || 0) - (b.duration_minutes || 0);
+          return (a.duration_seconds || 0) - (b.duration_seconds || 0);
         case 'duration-desc':
-          return (b.duration_minutes || 0) - (a.duration_minutes || 0);
+          return (b.duration_seconds || 0) - (a.duration_seconds || 0);
         default:
           return 0;
       }
@@ -413,7 +415,7 @@ export default function Reports() {
                   <div className="flex flex-col md:pl-8">
                     <span className="text-sm text-muted-foreground mb-1 font-normal">Practice Time</span>
                     <span className="text-2xl md:text-4xl font-bold text-foreground">
-                      {Math.floor(sessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) / 60)}h {sessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) % 60}m
+                      {formatDurationShort(sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0))}
                     </span>
                   </div>
                 </div>
@@ -439,7 +441,7 @@ export default function Reports() {
                   <div className="flex flex-col md:pl-8">
                     <span className="text-sm text-muted-foreground mb-1 font-normal">Practice Time</span>
                     <span className="text-2xl md:text-4xl font-bold text-foreground">
-                      {Math.floor(filteredAndSortedSessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) / 60)}h {filteredAndSortedSessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) % 60}m
+                      {formatDurationShort(filteredAndSortedSessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0))}
                     </span>
                   </div>
                 </div>
@@ -715,7 +717,7 @@ export default function Reports() {
                         <td className="py-3 sm:py-4 text-muted-foreground text-sm">
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            <span>{session.duration_minutes || 0}m</span>
+                            <span>{formatDuration(session.duration_seconds || 0)}</span>
                           </div>
                         </td>
                         <td className="py-3 sm:py-4">

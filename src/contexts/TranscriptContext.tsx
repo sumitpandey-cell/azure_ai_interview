@@ -17,8 +17,32 @@ interface TranscriptContextType {
 
 const TranscriptContext = createContext<TranscriptContextType | undefined>(undefined);
 
-export function TranscriptProvider({ children }: { children: ReactNode }) {
-    const [transcripts, setTranscripts] = useState<Map<string, ChatMessageType>>(new Map());
+export type TranscriptEntry = {
+    speaker: "user" | "ai";
+    text: string;
+    timestamp: number;
+};
+
+export function TranscriptProvider({
+    children,
+    initialTranscripts = []
+}: {
+    children: ReactNode;
+    initialTranscripts?: TranscriptEntry[];
+}) {
+    const [transcripts, setTranscripts] = useState<Map<string, ChatMessageType>>(() => {
+        const map = new Map<string, ChatMessageType>();
+        initialTranscripts.forEach((t, i) => {
+            const id = `initial-${i}`;
+            map.set(id, {
+                name: t.speaker === 'user' ? 'You' : 'Agent',
+                message: t.text,
+                isSelf: t.speaker === 'user',
+                timestamp: t.timestamp
+            });
+        });
+        return map;
+    });
 
     const addOrUpdateTranscript = useCallback((id: string, message: ChatMessageType) => {
         setTranscripts((prev) => {

@@ -13,12 +13,13 @@ const plans = [
         price: "₹0",
         description: "Perfect for getting started",
         features: [
-            "30 minutes daily interview time",
+            "100 minutes monthly interview time",
             "Basic AI Interviewer",
             "Standard feedback report",
-            "Community support"
+            "Community support",
+            "Resets every day at midnight"
         ],
-        limit: "30 mins/day",
+        limit: "100 mins/month",
         buttonText: "Current Plan",
         popular: false
     },
@@ -32,7 +33,8 @@ const plans = [
             "Advanced AI Interviewer",
             "Detailed performance analytics",
             "Priority email support",
-            "No daily limits"
+            "No daily limits",
+            "Access to all templates"
         ],
         limit: "300 mins/month",
         buttonText: "Upgrade to Basic",
@@ -48,7 +50,8 @@ const plans = [
             "Premium AI Voices",
             "In-depth behavioral analysis",
             "Resume review assistance",
-            "Priority 24/7 support"
+            "Priority 24/7 support",
+            "Custom interview scenarios"
         ],
         limit: "1,000 mins/month",
         buttonText: "Upgrade to Pro",
@@ -64,7 +67,8 @@ const plans = [
             "All Pro features",
             "Custom interview scenarios",
             "Team management dashboard",
-            "Dedicated account manager"
+            "Dedicated account manager",
+            "API access"
         ],
         limit: "Unlimited",
         buttonText: "Contact Sales",

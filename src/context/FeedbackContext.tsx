@@ -9,7 +9,7 @@ interface FeedbackContextType {
     feedbackReady: boolean;
     currentSessionId: string | null;
     shouldRefreshDashboard: boolean;
-    generateFeedbackInBackground: (sessionId: string, transcripts: any[], sessionData: any) => Promise<void>;
+    generateFeedbackInBackground: (sessionId: string) => Promise<void>;
     resetFeedbackState: () => void;
 }
 
@@ -29,92 +29,41 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [shouldRefreshDashboard, setShouldRefreshDashboard] = useState(false);
 
-    const generateFeedbackInBackground = useCallback(async (sessionId: string, transcripts: any[], sessionData: any) => {
+    const generateFeedbackInBackground = useCallback(async (sessionId: string) => {
         setIsGenerating(true);
         setFeedbackReady(false);
         setCurrentSessionId(sessionId);
         setShouldRefreshDashboard(false);
 
-        // We don't await this promise so the UI can continue immediately
-        // However, since this function is async, the caller can choose to await or not.
-        // For "background" processing, the caller should NOT await this, or we wrap the logic in a non-awaited promise.
-
-        // Actually, to ensure it runs in "background" from the caller's perspective, 
-        // we can just start the process here.
-
         const processFeedback = async () => {
             console.log("🤖 [Background] Generating AI feedback for session:", sessionId);
-            toast.info("Generating AI feedback in background...");
+            // toast.info("Generating AI feedback in background..."); // Using toast here might be redundant if user is redirected
 
             try {
-                // 1. Format transcripts for Gemini
-                const formattedTranscripts = transcripts.map((t, index) => ({
-                    id: index + 1,
-                    sender: t.speaker as 'user' | 'ai',
-                    text: t.text
-                }));
+                // Generate feedback using the service (which handles resumptions and scores)
+                const success = await interviewService.generateAllResumptionFeedback(sessionId);
 
-                // 2. Prepare session context
-                const sessionConfig = typeof sessionData.config === 'object' && sessionData.config !== null ? sessionData.config as any : {};
-                const sessionContext = {
-                    id: sessionData.id,
-                    position: sessionData.position,
-                    interview_type: sessionData.interview_type,
-                    config: {
-                        skills: sessionConfig.skills || [],
-                        difficulty: sessionConfig.difficulty || 'Intermediate',
-                        companyName: sessionConfig.companyName || sessionConfig.company?.name,
-                        experienceLevel: sessionConfig.experienceLevel || 'Mid-level',
-                        role: sessionConfig.role || sessionData.position,
-                        ...sessionConfig
-                    }
-                };
+                if (success) {
+                    console.log("✅ [Background] Feedback generated successfully");
+                    setFeedbackReady(true);
+                    setShouldRefreshDashboard(true);
 
-                // 3. Generate feedback using Gemini (Client-side)
-                // Dynamically import to ensure it works on client
-                const { generateFeedback } = await import("@/lib/gemini-feedback");
-                const feedback = await generateFeedback(formattedTranscripts, sessionContext);
-
-                // 4. Calculate score
-                let overallScore = 0;
-                if (feedback.skills && Array.isArray(feedback.skills)) {
-                    const scores = feedback.skills.map((skill: any) => skill.score || 0);
-                    overallScore = Math.round(scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length);
+                    // Show success toast with action
+                    toast.success("Interview feedback is ready!", {
+                        action: {
+                            label: "View Report",
+                            onClick: () => window.location.href = `/interview/${sessionId}/report`
+                        },
+                        duration: 5000,
+                    });
                 } else {
-                    overallScore = (feedback as any).overallScore || 0;
+                    console.error("❌ [Background] Feedback generation returned false");
+                    toast.error("Feedback generation failed. Please try again from the report page.");
                 }
-
-                console.log("✅ [Background] Feedback generated:", feedback);
-
-                // 5. Save feedback and transcripts to DB
-                const updateData: any = {
-                    feedback: feedback,
-                    score: overallScore,
-                    transcript: transcripts.map((t, index) => ({
-                        id: index + 1,
-                        speaker: t.speaker,
-                        text: t.text,
-                        timestamp: t.timestamp
-                    }))
-                };
-
-                await interviewService.updateSession(sessionId, updateData);
-                console.log("💾 [Background] Feedback and transcripts saved to DB");
-
-                setFeedbackReady(true);
-                setShouldRefreshDashboard(true);
-
-                toast.success("Interview feedback is ready!", {
-                    action: {
-                        label: "View Report",
-                        onClick: () => window.location.href = `/interview/${sessionId}/report`
-                    },
-                    duration: 5000,
-                });
 
             } catch (error) {
                 console.error("❌ [Background] Error generating feedback:", error);
-                toast.error("Feedback generation failed. You can try regenerating it from the report page.");
+                toast.error("Feedback generation failed due to an error.");
             } finally {
                 setIsGenerating(false);
             }

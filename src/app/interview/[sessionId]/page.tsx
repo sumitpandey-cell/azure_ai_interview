@@ -144,7 +144,7 @@ export default function StartInterview() {
             const session = await createInterviewSession({
                 interview_type: values.interviewType,
                 position: values.position,
-                duration_minutes: 0,
+                duration_seconds: 0,
                 config: config
             });
 

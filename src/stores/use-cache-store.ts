@@ -9,7 +9,7 @@ interface InterviewSession {
   score: number | null;
   status: string;
   created_at: string;
-  duration_minutes: number | null;
+  duration_seconds: number | null;
   completed_at: string | null;
   user_id: string;
   config?: any; // JSONB field for storing interview configuration

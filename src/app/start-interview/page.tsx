@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2, Target } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
 import { useCompanyQuestions } from "@/hooks/use-company-questions";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
@@ -40,6 +40,7 @@ const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
     interviewType: z.string().min(1, "Interview type is required"),
     position: z.string().min(1, "Position is required"),
+    difficulty: z.enum(["Easy", "Medium", "Hard"]).default("Medium"),
     companyId: z.string().optional(),
     role: z.string().optional(),
     experienceLevel: z.string().optional(),
@@ -69,6 +70,7 @@ function StartInterviewContent() {
             interviewMode: interviewMode,
             interviewType: "",
             position: companyTemplate?.common_roles?.[0] || "",
+            difficulty: "Medium",
             companyId: companyTemplate?.id || "",
             role: "",
             experienceLevel: "",
@@ -173,6 +175,7 @@ function StartInterviewContent() {
             const config: any = {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
+                difficulty: values.difficulty,
             };
 
             // Add company-specific config if company interview
@@ -190,7 +193,7 @@ function StartInterviewContent() {
                 user_id: user.id,
                 interview_type: values.interviewType,
                 position: values.position,
-                duration_minutes: 0, // Will be set to actual duration when interview completes
+                duration_seconds: 0, // Will be set to actual duration when interview completes
                 status: "pending",
                 config: {
                     ...config,
@@ -216,7 +219,7 @@ function StartInterviewContent() {
                 });
 
                 toast.success("Interview session created!");
-                router.push(`/interview/${session.id}/avatar`);
+                router.replace(`/interview/${session.id}/setup`);
             }
         } catch (error) {
             console.error("Error creating session:", error);
@@ -444,6 +447,52 @@ function StartInterviewContent() {
                                             <FormControl>
                                                 <Input placeholder="e.g. Senior Frontend Engineer" className="bg-background/50 border-input h-12 text-base" {...field} />
                                             </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="difficulty"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-foreground font-semibold flex items-center gap-2 text-base">
+                                                <div className="p-1.5 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                                                    <Target className="h-4 w-4" />
+                                                </div>
+                                                Difficulty Level <span className="text-red-500">*</span>
+                                            </FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="bg-background/50 border-input h-12 text-base">
+                                                        <SelectValue placeholder="Select difficulty" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Easy">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                                            <span>Easy</span>
+                                                            <span className="text-xs text-muted-foreground ml-2">• Beginner-friendly questions</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="Medium">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                                                            <span>Medium</span>
+                                                            <span className="text-xs text-muted-foreground ml-2">• Intermediate level questions</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="Hard">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                                            <span>Hard</span>
+                                                            <span className="text-xs text-muted-foreground ml-2">• Advanced & challenging questions</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

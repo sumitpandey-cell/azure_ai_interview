@@ -4,9 +4,11 @@
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
 interface Message {
-    id: number;
-    sender: 'user' | 'ai';
+    id?: number;
+    sender?: 'user' | 'ai';
+    speaker?: 'user' | 'ai';  // Database uses 'speaker' instead of 'sender'
     text: string;
+    timestamp?: number;  // Database includes timestamp
 }
 
 interface InterviewSessionData {
@@ -73,13 +75,14 @@ export interface InterviewLengthAnalysis {
 }
 
 
-
 /**
  * Analyzes the interview transcript to determine length and quality metrics
  */
 function analyzeInterviewLength(transcript: Message[]): InterviewLengthAnalysis {
-    const userMessages = transcript.filter(msg => msg.sender === 'user');
-    const aiMessages = transcript.filter(msg => msg.sender === 'ai');
+    // Handle both 'sender' and 'speaker' field names
+    const getSpeaker = (msg: Message) => msg.sender || msg.speaker;
+    const userMessages = transcript.filter(msg => getSpeaker(msg) === 'user');
+    const aiMessages = transcript.filter(msg => getSpeaker(msg) === 'ai');
 
     const totalWordCount = transcript.reduce((count, msg) => {
         return count + msg.text.trim().split(/\s+/).length;
@@ -257,7 +260,11 @@ export async function generateFeedback(
             return { ...msg, text: cleanText };
         })
         .filter(msg => msg.text.trim().length > 0)
-        .map(msg => `${msg.sender.toUpperCase()}: ${msg.text}`)
+        .map(msg => {
+            // Handle both 'sender' and 'speaker' field names
+            const speaker = (msg.sender || msg.speaker || 'unknown').toUpperCase();
+            return `${speaker}: ${msg.text}`;
+        })
         .join('\n');
 
     // Adjust prompt based on interview length
@@ -277,144 +284,89 @@ export async function generateFeedback(
         }`
         : '';
 
-    const prompt = `
-    You are an expert technical interviewer and career coach. Analyze the following interview transcript for a ${position} position (${interviewType} interview).
-${skillsContext}${difficultyContext}${companyContext}
+    const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
+${skillsContext}${companyContext}
 
 TRANSCRIPT:
 ${transcriptText}
 
-INTERVIEW METRICS:
-
-* Total exchanges: ${lengthAnalysis.totalTurns}
-* Category: ${lengthAnalysis.category.toUpperCase()}
-* Total words: ${lengthAnalysis.totalWordCount}
+METRICS: ${lengthAnalysis.totalTurns} exchanges, ${lengthAnalysis.totalWordCount} words, ${lengthAnalysis.category} interview
 ${lengthSpecificInstructions}
 
-CRITICAL: Be EXTREMELY STRICT in scoring for each category and score out of 100 and text feedback should match. Do not give ANY generous scores without clear evidence.
+DIFFICULTY-BASED SCORING (MANDATORY):
+${difficulty === 'Beginner' ? `
+BEGINNER LEVEL - Be Encouraging but Honest:
+- 70-100%: Shows basic understanding, can explain simple concepts
+- 40-69%: Knows terminology, struggles with explanations
+- 10-39%: Very limited knowledge, mostly incorrect
+- 0-9%: No understanding demonstrated` : difficulty === 'Advanced' ? `
+ADVANCED LEVEL - Be EXTREMELY STRICT:
+- 90-100%: Deep expertise, discusses trade-offs, advanced patterns, production experience
+- 70-89%: Solid advanced knowledge, explains complex concepts well
+- 50-69%: Intermediate knowledge (NOT acceptable for advanced role)
+- 30-49%: Basic knowledge only (major red flag)
+- 0-29%: Insufficient for advanced position` : `
+INTERMEDIATE LEVEL - Balanced Strictness:
+- 80-100%: Strong knowledge, explains concepts clearly with examples
+- 60-79%: Good understanding, some gaps acceptable
+- 40-59%: Basic knowledge, significant improvement needed
+- 20-39%: Limited knowledge, major gaps
+- 0-19%: Insufficient knowledge`}
 
-DETAILED SCORING CRITERIA FOR EACH SKILL:
+SCORING CRITERIA (0-100 for each):
 
-**TECHNICAL KNOWLEDGE (0-100):**
-- **90-100%**: Deep understanding, explains complex concepts, provides detailed examples, discusses trade-offs
-- **70-89%**: Solid understanding, explains how technologies work, gives specific use cases
-- **50-69%**: Can explain basic concepts, shows understanding beyond just naming technologies
-- **30-49%**: Shows some understanding but with significant gaps or confusion
-- **15-29%**: Very limited knowledge, mostly incorrect or confused explanations
-- **5-14%**: Only lists technology names without ANY explanation or understanding
-- **0-4%**: No technical knowledge demonstrated, completely incorrect, or refuses to answer
+Technical Knowledge:
+- 90-100: Deep understanding, detailed examples, discusses trade-offs
+- 70-89: Solid understanding, explains how things work
+- 50-69: Basic concepts understood
+- 30-49: Significant gaps
+- 5-29: Very limited, mostly incorrect
+- 0-4: No knowledge or refuses to answer
 
-**COMMUNICATION (0-100):**
-- **90-100%**: Crystal clear, professional, excellent fluency, well-structured responses
-- **70-89%**: Clear communication, minor language issues don't affect understanding
-- **50-69%**: Generally understandable with some communication gaps
-- **30-49%**: Significant communication barriers, some responses unclear
-- **15-29%**: Frequent communication issues, difficult to follow
-- **5-14%**: Poor communication, language mixing makes responses hard to understand
-- **0-4%**: Cannot communicate effectively, responses are incomprehensible
+Communication:
+- 90-100: Crystal clear, professional, well-structured
+- 70-89: Clear with minor issues
+- 50-69: Generally understandable
+- 30-49: Significant barriers
+- 0-29: Poor, hard to understand
 
-**PROBLEM SOLVING (0-100):**
-- **90-100%**: Systematic approach, breaks down complex problems, considers multiple solutions
-- **70-89%**: Shows logical thinking, attempts structured problem-solving
-- **50-69%**: Basic problem-solving approach, shows some logical reasoning
-- **30-49%**: Limited problem-solving attempts, struggles with systematic approach
-- **15-29%**: Minimal problem-solving effort, shows confusion
-- **5-14%**: Avoids problem-solving, gives up quickly without real attempt
-- **0-4%**: Immediately gives up on problems, shows no problem-solving skills
+Problem Solving:
+- 90-100: Systematic, breaks down problems, multiple solutions
+- 70-89: Logical thinking, structured approach
+- 50-69: Basic reasoning
+- 30-49: Limited attempts
+- 0-29: Gives up quickly, no real attempt
 
-**ADAPTABILITY (0-100):**
-- **90-100%**: Seamlessly adapts to different topics, adjusts communication style effectively
-- **70-89%**: Shows good flexibility, handles topic changes well
-- **50-69%**: Some adaptability, adjusts reasonably to different questions
-- **30-49%**: Limited adaptability, prefers staying in comfort zone
-- **15-29%**: Struggles to adapt, rigid responses
-- **5-14%**: Very limited adaptability, uncomfortable with topic changes
-- **0-4%**: Cannot adapt to new topics or questions
+Cultural Fit:
+- 90-100: Professional, positive attitude, great collaboration signals
+- 70-89: Good professionalism
+- 50-69: Acceptable behavior
+- 30-49: Some concerns
+- 0-29: Unprofessional or poor attitude
 
-ULTRA-STRICT SCORING RULES:
-- **Lists technologies without explanation** = Technical Knowledge: 5-10%
-- **Gives up on first problem without trying** = Problem Solving: 0-5%
-- **Cannot explain basic concepts** = Technical Knowledge: 0-10%
-- **Frequent language mixing that hinders technical discussion** = Communication: 5-15%
-- **Shows no understanding of mentioned technologies** = Technical Knowledge: 0-5%
-- **Immediately abandons problems** ("I leave that") = Problem Solving: 0-5%
-- **Cannot articulate any technical concept clearly** = Technical Knowledge: 0-10%
+STRICT RULES:
+- Lists tech without explanation = Tech: 5-10%
+- Gives up immediately = Problem Solving: 0-5%
+- Can't explain basics = Tech: 0-10%
+- Heavy language mixing = Communication: 5-15%
+- "I don't know" without trying = Problem Solving: 0-10%
 
-MANDATORY: If candidate shows ZERO technical explanation ability, score Technical Knowledge 0-5%
-
-INSTRUCTIONS FOR FAIR EVALUATION:
-
-1. Ignore any system logs or AI internal thoughts.
-2. Score only based on what the candidate actually demonstrated.
-
-   * If a skill can’t be evaluated due to lack of data, mark it as: "Not Assessed" or give score 50.
-   * Do NOT penalize missing or skipped answers.
-3. Scale the depth and strictness of analysis according to the transcript length:
-
-   * SHORT (${INTERVIEW_THRESHOLDS.SHORT_INTERVIEW} turns): limited evidence → evaluate with leniency.
-   * MEDIUM (${INTERVIEW_THRESHOLDS.MEDIUM_INTERVIEW} turns): balanced scoring.
-   * LONG (${INTERVIEW_THRESHOLDS.LONG_INTERVIEW}+): detailed and strict.
-4. Normalize scoring by available evidence:
-
-   * Assign high or low scores only when there is enough information.
-   * A short answer cannot earn extreme scores unless quality is clear.
-5. Base feedback and scoring ONLY on:
-
-   * Technical correctness
-   * Explanation quality
-   * Demonstrated reasoning
-   * Communication
-   * Adaptability (when visible)
-
-SCORING RULES (MANDATORY):
-
-* Technical Knowledge
-* Communication
-* Problem Solving
-* Adaptability
-
-For each:
-
-* Score strictly from 0–100, but proportional to observed evidence, not hypothetical expectations.
-* Do not let one weak question dominate the overall judgment if answers elsewhere were strong.
-
-
-OUTPUT FORMAT (JSON only):
-
-You must provide TWO separate skill assessments:
-
-1. **overallSkills**: ALWAYS include these 4 categories (overall assessment):
-   - Technical Knowledge
-   - Communication
-   - Problem Solving
-   - Cultural Fit
-
-2. **technicalSkills**: ${skills.length > 0 ? `Assess ONLY these specific skills mentioned by the candidate: ${skills.join(', ')}. Score each based on evidence from the transcript.` : 'Leave this as an empty array [] since no specific technical skills were provided.'}
-
+OUTPUT (JSON only):
 {
-"executiveSummary": "Include specific examples of strong/weak performance and justify overall assessment with evidence. If scores are very low (below 10%), clearly explain why based on transcript.",
-"strengths": ["Be specific about what they did well with examples from transcript - if no strengths observed, state 'Limited technical demonstration in this interview'"],
-"improvements": ["Be specific about gaps observed with examples from transcript - focus on fundamental skills needed"],
-"overallSkills": [
-{ "name": "Technical Knowledge", "score": 0-100, "feedback": "Specific evidence from transcript. If 0-10%: explain exactly what technical knowledge was missing. If listing technologies without explanation, score 5-10% maximum." },
-{ "name": "Communication", "score": 0-100, "feedback": "Specific examples. If language mixing prevents technical discussion, score 5-15% maximum." },
-{ "name": "Problem Solving", "score": 0-100, "feedback": "Specific examples. If candidate gives up immediately without trying, score 0-5% maximum." },
-{ "name": "Cultural Fit", "score": 0-100, "feedback": "Assess professionalism, attitude, and alignment with workplace values based on interview behavior." }
-],
-"technicalSkills": [
-${skills.length > 0 ? `{ "name": "SKILL_NAME", "score": 0-100, "feedback": "Specific evidence from transcript about this particular skill. Only score if there's clear evidence in the transcript." }` : '// Empty array if no skills specified'}
-],
-"actionPlan": ["Specific, actionable recommendations focusing on fundamental skill building"]
+  "executiveSummary": "2-3 sentences with specific examples and scores justification",
+  "strengths": ["Specific examples from transcript"],
+  "improvements": ["Specific gaps with examples"],
+  "overallSkills": [
+    {"name": "Technical Knowledge", "score": 0-100, "feedback": "Evidence-based, match score"},
+    {"name": "Communication", "score": 0-100, "feedback": "Evidence-based"},
+    {"name": "Problem Solving", "score": 0-100, "feedback": "Evidence-based"},
+    {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based"}
+  ],
+  "technicalSkills": [${skills.length > 0 ? `{"name": "SKILL", "score": 0-100, "feedback": "Evidence only"}` : ''}],
+  "actionPlan": ["Specific, actionable steps"]
 }
 
-REMEMBER: Be brutally honest and realistic. A 5% score with constructive feedback is more helpful than an inflated 30% score.
-For the example transcript provided:
-- Technical Knowledge should be 5-10% (only lists "Node.js, Express, MongoDB" with ZERO explanation, cannot explain WebSocket implementation)
-- Communication should be 10-15% (heavy language mixing makes technical discussion incomprehensible)
-- Problem Solving should be 0-5% (immediately gives up: "As my mind was stuck so I leave that" - shows NO problem-solving attempt)
-- Cultural Fit should be 15-25% (provides basic responses but no evidence of adapting approach or depth)
-
-    `;
+Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.`;
 
     // Validate API key is available
     if (!API_KEY) {
@@ -465,7 +417,7 @@ For the example transcript provided:
         console.error("Error generating feedback:", error);
         // Return fallback data in case of error
         return {
-            executiveSummary: "Feedback generation failed due to a technical issue. Please review the transcript manually.",
+            executiveSummary: `Feedback generation failed. ${error instanceof Error ? error.message : "A technical error occurred"}. Please review the transcript manually.`,
             strengths: ["Unable to analyze strengths"],
             improvements: ["Unable to analyze improvements"],
             overallSkills: [

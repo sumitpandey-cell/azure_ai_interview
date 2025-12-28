@@ -1,9 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { subscriptionService } from "./subscription.service";
 
 export type InterviewSession = Tables<"interview_sessions">;
 export type InterviewSessionInsert = TablesInsert<"interview_sessions">;
 export type InterviewSessionUpdate = TablesUpdate<"interview_sessions">;
+
+export type InterviewResumption = Tables<"interview_resumptions">;
+export type InterviewResumptionInsert = TablesInsert<"interview_resumptions">;
+export type InterviewResumptionUpdate = TablesUpdate<"interview_resumptions">;
 
 export interface CreateSessionConfig {
     userId: string;
@@ -85,9 +90,13 @@ export const interviewService = {
             const updateData: InterviewSessionUpdate = {
                 status: "completed",
                 completed_at: new Date().toISOString(),
-                duration_minutes: durationMinutes,
                 ...otherData,
             };
+
+            // Only include duration_seconds if explicitly provided
+            if (durationMinutes !== undefined) {
+                updateData.duration_seconds = durationMinutes;
+            }
 
             const { data, error } = await supabase
                 .from("interview_sessions")
@@ -210,7 +219,7 @@ export const interviewService = {
         try {
             const { data, error } = await supabase
                 .from("interview_sessions")
-                .select("status, score, duration_minutes")
+                .select("status, score, duration_seconds")
                 .eq("user_id", userId);
 
             if (error) throw error;
@@ -231,7 +240,7 @@ export const interviewService = {
             }
 
             // Calculate total duration
-            stats.totalDuration = data.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+            stats.totalDuration = data.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
 
             return stats;
         } catch (error) {
@@ -343,7 +352,7 @@ export const interviewService = {
 
                     if (transcripts.length > 0) {
                         // Complete the session and generate feedback
-                        const durationMinutes = session.duration_minutes || 10; // Default duration
+                        const durationMinutes = session.duration_seconds || 10; // Default duration in seconds
 
                         await this.completeSession(session.id, {
                             durationMinutes,
@@ -508,6 +517,319 @@ export const interviewService = {
         } catch (error) {
             console.error("Error fetching session config:", error);
             return null;
+        }
+    },
+
+    // ==========================================
+    // Interview Resumption Tracking Methods
+    // ==========================================
+
+    /**
+     * Create a new resumption record when interview starts or resumes
+     */
+    async createResumption(sessionId: string, startTranscriptIndex: number = 0): Promise<InterviewResumption | null> {
+        try {
+            const resumptionData: InterviewResumptionInsert = {
+                interview_session_id: sessionId,
+                resumed_at: new Date().toISOString(),
+                start_transcript_index: startTranscriptIndex,
+            };
+
+            const { data, error } = await supabase
+                .from("interview_resumptions")
+                .insert(resumptionData)
+                .select()
+                .single();
+
+            if (error) throw error;
+            console.log("✓ Interview resumption created:", data.id);
+            return data;
+        } catch (error) {
+            console.error("Error creating interview resumption:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Create a completed resumption record (used when disconnection occurs)
+     * This is the new method that creates a resumption with all data at once
+     */
+    async createCompletedResumption(
+        sessionId: string,
+        data: {
+            resumed_at: string;
+            ended_at: string;
+            start_transcript_index: number;
+            end_transcript_index: number;
+            duration_seconds: number;
+        }
+    ): Promise<InterviewResumption | null> {
+        try {
+            const resumptionData: InterviewResumptionInsert = {
+                interview_session_id: sessionId,
+                resumed_at: data.resumed_at,
+                ended_at: data.ended_at,
+                start_transcript_index: data.start_transcript_index,
+                end_transcript_index: data.end_transcript_index,
+                duration_seconds: data.duration_seconds,
+            };
+
+            const { data: result, error } = await supabase
+                .from("interview_resumptions")
+                .insert(resumptionData)
+                .select()
+                .single();
+
+            if (error) throw error;
+            console.log("✓ Completed resumption record created:", result.id, "Duration:", data.duration_seconds, "seconds");
+            return result;
+        } catch (error) {
+            console.error("Error creating completed resumption:", error);
+            return null;
+        }
+    },
+
+    /**
+     * End the current active resumption
+     */
+    async endCurrentResumption(sessionId: string, endTranscriptIndex: number): Promise<InterviewResumption | null> {
+        try {
+            // Get the active resumption (one without ended_at)
+            const { data: activeResumptions, error: fetchError } = await supabase
+                .from("interview_resumptions")
+                .select("*")
+                .eq("interview_session_id", sessionId)
+                .is("ended_at", null)
+                .order("resumed_at", { ascending: false })
+                .limit(1);
+
+            if (fetchError) throw fetchError;
+
+            if (!activeResumptions || activeResumptions.length === 0) {
+                console.warn("No active resumption found for session:", sessionId);
+                return null;
+            }
+
+            const activeResumption = activeResumptions[0];
+            const endedAt = new Date();
+            const resumedAt = new Date(activeResumption.resumed_at);
+
+            // Calculate duration in seconds (rounded)
+            const durationMs = endedAt.getTime() - resumedAt.getTime();
+            const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
+
+            // Update the resumption with end time, transcript index, and duration
+            const { data, error } = await supabase
+                .from("interview_resumptions")
+                .update({
+                    ended_at: endedAt.toISOString(),
+                    end_transcript_index: endTranscriptIndex,
+                    duration_seconds: durationSeconds,
+                })
+                .eq("id", activeResumption.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            console.log("✓ Interview resumption ended:", data.id, "Duration:", durationSeconds, "seconds");
+
+            // Update the total duration in the interview_sessions table
+            const session = await this.getSessionById(sessionId);
+            if (session) {
+                const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
+                await this.updateSession(sessionId, {
+                    duration_seconds: newTotalDuration
+                });
+                console.log("✓ Session total duration updated:", newTotalDuration, "seconds");
+
+                // Track usage in subscription
+                await subscriptionService.trackUsage(session.user_id, durationSeconds);
+            }
+
+            return data;
+        } catch (error) {
+            console.error("Error ending interview resumption:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Get all resumptions for a session
+     */
+    async getResumptionHistory(sessionId: string): Promise<InterviewResumption[]> {
+        try {
+            const { data, error } = await supabase
+                .from("interview_resumptions")
+                .select("*")
+                .eq("interview_session_id", sessionId)
+                .order("resumed_at", { ascending: true });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching resumption history:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Get the current active resumption (not ended)
+     */
+    async getCurrentResumption(sessionId: string): Promise<InterviewResumption | null> {
+        try {
+            const { data, error } = await supabase
+                .from("interview_resumptions")
+                .select("*")
+                .eq("interview_session_id", sessionId)
+                .is("ended_at", null)
+                .order("resumed_at", { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error) {
+                // If no rows found, that's okay - return null
+                if (error.code === 'PGRST116') return null;
+                throw error;
+            }
+
+            return data;
+        } catch (error) {
+            console.error("Error fetching current resumption:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Get transcript count for a session
+     */
+    async getTranscriptCount(sessionId: string): Promise<number> {
+        try {
+            const transcripts = await this.getTranscripts(sessionId);
+            return Array.isArray(transcripts) ? transcripts.length : 0;
+        } catch (error) {
+            console.error("Error getting transcript count:", error);
+            return 0;
+        }
+    },
+
+    /**
+     * Get a slice of the transcript array
+     */
+    async getTranscriptSlice(sessionId: string, startIndex: number, endIndex: number): Promise<any[]> {
+        try {
+            const transcripts = await this.getTranscripts(sessionId);
+            if (!Array.isArray(transcripts)) return [];
+
+            return transcripts.slice(startIndex, endIndex);
+        } catch (error) {
+            console.error("Error getting transcript slice:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Generate feedback for all resumptions (called only at interview completion)
+     */
+    async generateAllResumptionFeedback(sessionId: string): Promise<boolean> {
+        try {
+            // Get session and resumptions
+            const session = await this.getSessionById(sessionId);
+            if (!session || session.status !== 'completed') {
+                console.log("Session must be completed to generate resumption feedback");
+                return false;
+            }
+
+            const resumptions = await this.getResumptionHistory(sessionId);
+            if (resumptions.length === 0) {
+                console.log("No resumptions found for session:", sessionId);
+                return false;
+            }
+
+            // Generate feedback for each resumption
+            const resumptionFeedbacks = [];
+
+            for (let i = 0; i < resumptions.length; i++) {
+                const resumption = resumptions[i];
+                const startIndex = resumption.start_transcript_index;
+                const endIndex = resumption.end_transcript_index || await this.getTranscriptCount(sessionId);
+
+                // Get transcript slice for this resumption
+                const transcriptSlice = await this.getTranscriptSlice(sessionId, startIndex, endIndex);
+
+                if (transcriptSlice.length > 0) {
+                    // Call Gemini API to generate feedback for this specific session
+                    // For now, we'll import the feedback generator
+                    const { generateFeedback } = await import('@/lib/gemini-feedback');
+
+                    const sessionData = {
+                        id: sessionId,
+                        interview_type: session.interview_type,
+                        position: session.position,
+                        config: (session.config as any) || {},
+                    };
+
+                    const feedback = await generateFeedback(transcriptSlice, sessionData);
+
+                    resumptionFeedbacks.push({
+                        resumption_id: resumption.id,
+                        session_number: i + 1,
+                        score: Math.round(
+                            (feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / feedback.overallSkills.length)
+                        ),
+                        executiveSummary: feedback.executiveSummary,
+                        strengths: feedback.strengths,
+                        improvements: feedback.improvements,
+                        overallSkills: feedback.overallSkills,
+                        technicalSkills: feedback.technicalSkills,
+                    });
+                }
+            }
+
+            // Calculate overall session score (average of resumption scores)
+            let sessionScore = 0;
+            if (resumptionFeedbacks.length > 0) {
+                const totalScore = resumptionFeedbacks.reduce((sum, r) => sum + (r.score || 0), 0);
+                sessionScore = Math.round(totalScore / resumptionFeedbacks.length);
+            }
+
+            // Simplified feedback structure:
+            // If only 1 resumption (most common case), store feedback directly at root
+            // If multiple resumptions, use the complex structure with overall + resumptions
+            let updatedFeedback: any;
+
+            if (resumptionFeedbacks.length === 1) {
+                // Single resumption - flatten structure (simple and clean)
+                const feedback = resumptionFeedbacks[0];
+                updatedFeedback = {
+                    score: feedback.score,
+                    executiveSummary: feedback.executiveSummary,
+                    strengths: feedback.strengths,
+                    improvements: feedback.improvements,
+                    overallSkills: feedback.overallSkills,
+                    technicalSkills: feedback.technicalSkills,
+                    generatedAt: new Date().toISOString(),
+                };
+            } else {
+                // Multiple resumptions - use nested structure
+                updatedFeedback = {
+                    overall: {
+                        score: sessionScore,
+                        generatedAt: new Date().toISOString(),
+                    },
+                    resumptions: resumptionFeedbacks,
+                };
+            }
+
+            await this.updateSession(sessionId, {
+                feedback: updatedFeedback as any,
+                score: sessionScore, // Save the calculated score
+            });
+
+            console.log(`✅ Generated feedback for ${resumptionFeedbacks.length} resumptions`);
+            return true;
+        } catch (error) {
+            console.error("Error generating resumption feedback:", error);
+            return false;
         }
     },
 };

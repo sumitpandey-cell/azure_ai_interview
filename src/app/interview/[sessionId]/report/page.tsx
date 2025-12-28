@@ -36,7 +36,7 @@ interface InterviewSession {
     score: number | null;
     status: string;
     created_at: string;
-    duration_minutes: number | null;
+    duration_seconds: number | null;
     config?: any; // JSONB field for storing interview configuration
     feedback: any;
     transcript: any;
@@ -72,6 +72,7 @@ export default function InterviewReport() {
     const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError } = useInterviewStore();
     const { fetchSessionDetail, isCached, deleteInterviewSession } = useOptimizedQueries();
     const [session, setSession] = useState<InterviewSession | null>(null);
+    const [feedbackTimeout, setFeedbackTimeout] = useState(false);
 
     useEffect(() => {
         if (sessionId) {
@@ -99,6 +100,44 @@ export default function InterviewReport() {
             setLoading(false);
         }
     };
+
+    // Poll for feedback if it's being generated
+    const isFeedbackGenerating = session?.status === 'completed' &&
+        !session?.feedback &&
+        (!instantFeedback || !instantFeedback.skills || instantFeedback.skills.length === 0);
+
+    useEffect(() => {
+        if (!isFeedbackGenerating || !sessionId) return;
+
+        let pollCount = 0;
+        const MAX_POLLS = 20; // 20 polls × 3 seconds = 60 seconds timeout
+
+        const pollInterval = setInterval(async () => {
+            pollCount++;
+
+            try {
+                const data = await fetchSessionDetail(sessionId);
+                if (data?.feedback) {
+                    // Feedback is ready!
+                    setSession(data as InterviewSession);
+                    clearInterval(pollInterval);
+                    toast.success("Feedback report is ready!");
+                    return;
+                }
+            } catch (error) {
+                console.error("Error polling for feedback:", error);
+            }
+
+            // Timeout after 60 seconds
+            if (pollCount >= MAX_POLLS) {
+                clearInterval(pollInterval);
+                setFeedbackTimeout(true);
+                toast.error("Feedback generation is taking longer than expected.");
+            }
+        }, 3000); // Poll every 3 seconds
+
+        return () => clearInterval(pollInterval);
+    }, [isFeedbackGenerating, sessionId]);
 
     const copyTranscriptToClipboard = async () => {
         try {
@@ -268,13 +307,8 @@ export default function InterviewReport() {
         );
     }
 
-    // Check if feedback is being generated (session is completed but no feedback yet)
-    const isFeedbackGenerating = session.status === 'completed' &&
-        !session.feedback &&
-        (!instantFeedback || !instantFeedback.skills || instantFeedback.skills.length === 0);
-
     // Beautiful loading state for feedback generation
-    if (isFeedbackGenerating) {
+    if (isFeedbackGenerating && !feedbackTimeout) {
         return (
             <DashboardLayout>
                 <div className="min-h-[80vh] flex items-center justify-center p-4">
@@ -364,8 +398,46 @@ export default function InterviewReport() {
         );
     }
 
-    // Merge DB feedback and in-memory (instant) feedback using generatedAt timestamps.
-    // If instant feedback is newer, prefer its fields; otherwise use DB feedback.
+    // Timeout error state
+    if (feedbackTimeout) {
+        return (
+            <DashboardLayout>
+                <div className="min-h-[80vh] flex items-center justify-center p-4">
+                    <Card className="max-w-2xl w-full border-none shadow-2xl">
+                        <CardContent className="p-8 md:p-12">
+                            <div className="flex flex-col items-center text-center space-y-6">
+                                <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+                                    <XCircle className="h-8 w-8 text-red-600" />
+                                </div>
+                                <div className="space-y-3">
+                                    <h2 className="text-3xl font-bold text-red-600">
+                                        Feedback Generation Delayed
+                                    </h2>
+                                    <p className="text-slate-600 dark:text-slate-400 text-lg">
+                                        Feedback generation is taking longer than usual. This might be due to:
+                                    </p>
+                                </div>
+                                <ul className="text-left text-sm text-slate-600 dark:text-slate-400 space-y-2 bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
+                                    <li>• High server load or API rate limits</li>
+                                    <li>• Complex interview requiring detailed analysis</li>
+                                    <li>• Temporary service issue</li>
+                                </ul>
+                                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                                    <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90">
+                                        Refresh Page
+                                    </Button>
+                                    <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                                        Back to Dashboard
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     const mergeFeedback = (dbFeedback: any, instant: any) => {
         if (!dbFeedback && !instant) return {};
         if (!dbFeedback) return instant;
@@ -388,7 +460,19 @@ export default function InterviewReport() {
         return dbFeedback;
     };
 
-    const feedbackData = mergeFeedback(session?.feedback, instantFeedback);
+    // Handle feedback structure - check if it has resumptions array
+    let rawFeedback = session?.feedback;
+    if (rawFeedback && rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
+        // If overall is empty but resumptions exist, use first resumption
+        if (!rawFeedback.overall || Object.keys(rawFeedback.overall).length === 0) {
+            console.log('📊 Using resumption data as overall is empty');
+            rawFeedback = rawFeedback.resumptions[0];
+        } else {
+            rawFeedback = rawFeedback.overall;
+        }
+    }
+
+    const feedbackData = mergeFeedback(rawFeedback, instantFeedback);
 
     // Use instant transcript if available (more up-to-date), fallback to DB transcript
     let dbTranscript = session?.transcript || [];
