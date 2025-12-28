@@ -308,8 +308,10 @@ export default function InterviewReport() {
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <Button
                                         onClick={() => {
-                                            const stage = (session.config as any)?.currentStage || 'avatar';
-                                            router.push(`/interview/${sessionId}/${stage}`);
+                                            if (sessionId) {
+                                                const stage = (session.config as any)?.currentStage || 'avatar';
+                                                router.push(`/interview/${sessionId}/${stage}`);
+                                            }
                                         }}
                                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                     >
@@ -574,10 +576,12 @@ export default function InterviewReport() {
                                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                                     <Button
                                         onClick={() => {
-                                            setFeedbackTimeout(false);
-                                            generateFeedbackInBackground(sessionId);
-                                            // Re-trigger polling by reloading or just setting pollCount=0 if we were in useEffect
-                                            window.location.reload();
+                                            if (sessionId) {
+                                                setFeedbackTimeout(false);
+                                                generateFeedbackInBackground(sessionId);
+                                                // Re-trigger polling by reloading or just setting pollCount=0 if we were in useEffect
+                                                window.location.reload();
+                                            }
                                         }}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                                     >
