@@ -20,16 +20,27 @@ The **AI Interviewer Platform** is a Next.js-based web application designed to c
     - Real-time voice interaction with an AI interviewer (Google Gemini).
     - Transcription of both user and AI speech.
     - Ability to end the interview at any time.
-- **Resumption**: Ability to resume interrupted sessions (if applicable).
+- **Resumption**: Ability to resume interrupted sessions (if applicable), subject to the same subscription requirements as new interviews.
+- **Entry Guards**:
+    - Users must have a minimum of **2 minutes (120 seconds)** of subscription time to initiate or resume an interview.
+    - Real-time balance verification must occur before session creation or redirection.
 
 #### 2.4 Feedback & Reporting
 - **Instant Report**: Detailed report generated immediately after the interview.
 - **Scoring**: Quantitative scores on technical accuracy, communication clarity, and other metrics.
 - **Qualitative Feedback**: Specific strengths, weaknesses, and actionable tips for improvement.
+- **Data Integrity Thresholds**:
+    - Reports are only generated for sessions with a minimum duration of **2 minutes** AND at least **2 user turns**.
+    - Insufficient data cases must be clearly communicated to the user without triggering error states.
 
 #### 2.5 Gamification
 - **Leaderboards**: Global ranking of users based on interview performance.
 - **Badges**: Achievements unlocked by completing milestones (e.g., "7-Day Streak").
+
+#### 2.6 Public Profiles
+- **Visibility Control**: Users can toggle their profile visibility to allow public access via a unique URL.
+- **Credential Verification**: Shareable dashboards that provide proof of technical performance scores and platform ranking.
+- **Public Ledger**: Displays a history of verified interview sessions without exposing private transcript data.
 
 ### 3. Non-Functional Requirements
 #### 3.1 Performance & Latency

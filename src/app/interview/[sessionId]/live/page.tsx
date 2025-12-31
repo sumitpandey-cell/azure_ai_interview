@@ -194,35 +194,58 @@ export default function LiveInterview() {
         try {
             console.log("🚀 Ending session intentionally:", currentSessionId);
 
-            // Calculate duration of final segment (don't create resumption record)
+            let totalDuration = 0;
+            const session = await interviewService.getSessionById(currentSessionId);
+            if (session) {
+                totalDuration = session.duration_seconds || 0;
+            }
+
+            // Calculate duration of final segment
             if (sessionSegmentStart.current) {
                 const endTime = new Date();
                 const startTime = sessionSegmentStart.current;
                 const durationMs = endTime.getTime() - startTime.getTime();
-                const durationSeconds = Math.max(1, Math.round(durationMs / 1000)); // Store exact seconds
+                const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
+
+                totalDuration += durationSeconds;
 
                 // Update session total duration
-                const session = await interviewService.getSessionById(currentSessionId);
                 if (session) {
-                    const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
                     await interviewService.updateSession(currentSessionId, {
-                        duration_seconds: newTotalDuration
+                        duration_seconds: totalDuration
                     });
 
                     // Track usage in subscription for final segment
                     await subscriptionService.trackUsage(session.user_id, durationSeconds);
-                    console.log(`✅ Final segment duration: ${durationSeconds} seconds, Total: ${newTotalDuration} seconds`);
+                    console.log(`✅ Final segment duration: ${durationSeconds} seconds, Total: ${totalDuration} seconds`);
                 }
             }
 
-            // Complete the session (no resumption record created)
-            await interviewService.completeSession(currentSessionId, {});
-            console.log("✅ Session completed");
+            // Check thresholds: 120s duration and 2 user turns
+            const userTurns = await interviewService.getUserTurnCount(currentSessionId);
+            const metThreshold = totalDuration >= 120 && userTurns >= 2;
 
-            // 3. Trigger BACKGROUND feedback generation
-            generateFeedbackInBackground(currentSessionId);
+            if (metThreshold) {
+                // Complete the session normally
+                await interviewService.completeSession(currentSessionId, {});
+                console.log("✅ Session completed with threshold met");
 
-            // 4. Redirect immediately
+                // Trigger BACKGROUND feedback generation
+                generateFeedbackInBackground(currentSessionId);
+                toast.success("Interview ending. Generating your report...");
+            } else {
+                // Complete but mark as insufficient
+                await interviewService.completeSession(currentSessionId, {
+                    feedback: {
+                        note: "Insufficient data for report generation",
+                        reason: totalDuration < 120 ? "duration_too_short" : "too_few_responses"
+                    }
+                });
+                console.log("⚠️ Session completed but threshold NOT met");
+                toast.warning("Session too short for report generation (Min 2 mins & 2 responses required).");
+            }
+
+            // Redirect immediately
             router.replace(`/dashboard`);
 
         } catch (err) {

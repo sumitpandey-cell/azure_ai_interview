@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
     '/about',
     '/contact',
     '/site.webmanifest',
+    '/p',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated

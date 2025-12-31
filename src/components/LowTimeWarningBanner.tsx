@@ -23,23 +23,30 @@ export function LowTimeWarningBanner({
         onDismiss?.();
     };
 
-    const isCritical = remainingMinutes <= 2;
+    const isBlocked = remainingMinutes < 2;
+    const isCritical = remainingMinutes <= 2 && remainingMinutes >= 2; // Keep for safety, but isBlocked will take precedence
     const isWarning = remainingMinutes <= 5 && remainingMinutes > 2;
+
+    const getBannerStyles = () => {
+        if (isBlocked) return 'bg-red-500/20 border-red-500 dark:bg-red-950/40 dark:border-red-400';
+        if (remainingMinutes <= 2) return 'bg-red-500/10 border-red-500/50 dark:bg-red-950/20 dark:border-red-500/30';
+        return 'bg-amber-500/10 border-amber-500/50 dark:bg-amber-950/20 dark:border-amber-500/30';
+    };
+
+    const getIconColor = () => {
+        if (isBlocked) return 'text-red-600 dark:text-red-400';
+        if (remainingMinutes <= 2) return 'text-red-500';
+        return 'text-amber-500';
+    };
 
     return (
         <div
-            className={`relative overflow-hidden rounded-lg border p-4 ${isCritical
-                ? 'bg-red-500/10 border-red-500/50 dark:bg-red-950/20 dark:border-red-500/30'
-                : 'bg-amber-500/10 border-amber-500/50 dark:bg-amber-950/20 dark:border-amber-500/30'
-                } ${variant === 'live' ? 'backdrop-blur-md' : ''}`}
+            className={`relative overflow-hidden rounded-lg border p-4 ${getBannerStyles()} ${variant === 'live' ? 'backdrop-blur-md' : ''}`}
         >
             <div className="flex items-start gap-3">
-                <div
-                    className={`mt-0.5 ${isCritical ? 'text-red-500' : 'text-amber-500'
-                        }`}
-                >
-                    {isCritical ? (
-                        <AlertTriangle className="h-5 w-5 animate-pulse" />
+                <div className={`mt-0.5 ${getIconColor()}`}>
+                    {remainingMinutes <= 2 ? (
+                        <AlertTriangle className={`h-5 w-5 ${isBlocked ? '' : 'animate-pulse'}`} />
                     ) : (
                         <Zap className="h-5 w-5" />
                     )}
@@ -47,7 +54,11 @@ export function LowTimeWarningBanner({
 
                 <div className="flex-1">
                     <h3 className="font-semibold text-sm mb-1">
-                        {isCritical ? (
+                        {isBlocked ? (
+                            <span className="text-red-600 dark:text-red-400">
+                                Entry Blocked: Insufficient Balance
+                            </span>
+                        ) : remainingMinutes <= 2 ? (
                             <span className="text-red-600 dark:text-red-400">
                                 Critical: Only {remainingMinutes} {remainingMinutes === 1 ? 'minute' : 'minutes'} remaining!
                             </span>
@@ -58,15 +69,17 @@ export function LowTimeWarningBanner({
                         )}
                     </h3>
                     <p className="text-xs text-muted-foreground mb-2">
-                        {isCritical
-                            ? 'Your session will end very soon. Upgrade now to continue practicing.'
-                            : 'You\'re running low on time. Upgrade to a premium plan for unlimited practice.'}
+                        {isBlocked
+                            ? 'A minimum of 2 minutes is required to start an interview. Please upgrade your plan to continue.'
+                            : remainingMinutes <= 2
+                                ? 'Your session will end very soon. Upgrade now to continue practicing.'
+                                : 'You\'re running low on time. Upgrade to a premium plan for unlimited practice.'}
                     </p>
                     <div className="flex gap-2">
                         <Link href="/pricing">
                             <Button
                                 size="sm"
-                                className={`h-7 text-xs ${isCritical
+                                className={`h-7 text-xs ${remainingMinutes <= 2
                                     ? 'bg-red-600 hover:bg-red-700 text-white'
                                     : 'bg-amber-600 hover:bg-amber-700 text-white'
                                     }`}

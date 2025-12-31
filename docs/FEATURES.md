@@ -23,6 +23,9 @@ This document tracks all features of the application, ranging from core capabili
 
 #### 3. Analytics & Feedback Engine
 - **Instant Reports**: Detailed feedback generated immediately after session completion.
+- **Report Thresholds**:
+    - **Minimum Requirements**: AI reports are only generated if a session lasts at least **2 minutes** AND contains at least **2 user turns**.
+    - **Insufficient Data Handling**: Sessions below the threshold are marked as "Insufficient Data" on the dashboard. The report page displays a helpful guide instead of an empty report.
 - **Scoring System**: Quantitative scores (0-100) for Technical Accuracy, Communication, and Problem Solving.
 - **Progress Tracking**:
     - **Streak Counter**: Tracks consecutive days of practice.
@@ -32,6 +35,30 @@ This document tracks all features of the application, ranging from core capabili
 #### 4. Subscription & Quota System
 - **Usage Tracking**: Tracks "seconds used" per user (visible on dashboard).
 - **Plan Limits**: Visual progress bar showing monthly minutes consumed vs. limit.
+- **Interview Entry Guard**:
+    - **Minimum Balance**: Users must have at least **2 minutes (120 seconds)** of remaining time to start any interview (General, Template, or Resume).
+    - **Real-time Blocking**: If balance is too low, entry is blocked with a toast notification containing an "Upgrade" call-to-action.
+
+#### 5. Personalized Learning Roadmap
+- **AI-Generated Roadmap**: Creates customized learning paths based on interview history and performance.
+- **Eligibility Check**: Requires minimum 3 completed interviews with feedback.
+- **Payment Integration**: Free for first roadmap, ₹99 for subsequent generations.
+- **Structured Learning Path**:
+    - **Phases**: Multi-phase progression (Foundation → Advanced → Mastery).
+    - **Milestones**: Specific goals with practice interviews and resources.
+    - **Progress Tracking**: Visual indicators for completed items.
+- **Smart Recommendations**: Analyzes weak areas, strong areas, and performance trends to suggest targeted improvements.
+- **Payment Status Handling**: Pending payment modal with Razorpay integration for seamless checkout.
+
+#### 6. Public Verification Profiles
+- **Shareable Professional Dashboards**: Candidates can set their profiles to public (`/p/[id]`) to showcase their skills to recruiters or peers.
+- **Verified Achievements**: Displays platform-verified stats including World Rank, Precision (Avg. Score), and Experience level.
+- **Performance Visualization**: Interactive Area Charts (via Recharts) showing interview score trends over time.
+- **Live Verification Ledger**: A public log of recent interviews with "Verified" badges to prove authenticity.
+- **Custom Branding**: Professional dashboard-style layout with premium glassmorphic UI, high-end animations, and platform branding.
+- **Lead Generation/Conversion**:
+    - **"Claim Profile" CTA**: Encourages visitors to join the platform.
+    - **Consistency Tracking**: Showcases the candidate's streak to prove dedication.
 
 ### ✨ Small / UI Features (Delight Details)
 
@@ -40,6 +67,10 @@ This document tracks all features of the application, ranging from core capabili
 - **Mobile Menu**: Responsive hamburger menu for small screens.
 - **Active State Highlighting**: Current nav item glows blue/white.
 - **Streak Flame**: Animated flame icon showing current streak count.
+- **Subscription Display**:
+    - **Flash Prevention**: Initial subscription state uses a safe default to prevent the "0 min" warning banner from flickering on page load.
+    - **Loading States**: Remaining time displays a pulse/shimmer animation while fresh data is being fetched from the server.
+- **Low Time Warning Banner**: Appears when remaining time is below 5 minutes, showing "Critical" status if below 2 minutes.
 
 #### Interview Setup (`/start-interview`)
 - **Skill Tags**:

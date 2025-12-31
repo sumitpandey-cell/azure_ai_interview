@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { CompanyTemplate } from "@/types/company-types";
 import { toast } from "sonner";
+import { interviewService, subscriptionService } from "@/services";
+import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
 import {
   Search,
   Code2,
@@ -42,6 +44,9 @@ export default function Templates() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { createInterviewSession, profile, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+  const [conflictSession, setConflictSession] = useState<any>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: 'general' | 'company', data: any } | null>(null);
 
   // Fetch general templates on mount
   useEffect(() => {
@@ -132,6 +137,45 @@ export default function Templates() {
     setLoadingTemplate(template.id);
 
     try {
+      // Check balance before creating session
+      const { remainingMinutes } = await subscriptionService.checkUsageLimit(user.id);
+      if (remainingMinutes < 120) {
+        toast.error("Insufficient balance", {
+          description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
+          action: {
+            label: "Upgrade",
+            onClick: () => router.push("/pricing")
+          }
+        });
+        return;
+      }
+
+      // Check for existing sessions
+      const existingSessions = await interviewService.getInProgressSessions(user.id);
+      const sameDomainSession = existingSessions?.find(s =>
+        s.position.toLowerCase() === template.title.toLowerCase() &&
+        s.interview_type.toLowerCase() === template.interview_type.toLowerCase()
+      );
+
+      if (sameDomainSession) {
+        setConflictSession(sameDomainSession);
+        setPendingAction({ type: 'general', data: template });
+        setConflictDialogOpen(true);
+        setLoadingTemplate(null);
+        return;
+      }
+
+      await executeStartGeneralInterview(template);
+    } catch (error: any) {
+      console.error('Error starting interview:', error);
+      toast.error(error.message || "Failed to start interview");
+      setLoadingTemplate(null);
+    }
+  };
+
+  const executeStartGeneralInterview = async (template: Template) => {
+    try {
+      setLoadingTemplate(template.id);
       // Create a new interview session using optimized method
       const session = await createInterviewSession({
         position: template.title,
@@ -140,23 +184,18 @@ export default function Templates() {
         config: {
           skills: template.skills,
           difficulty: template.difficulty,
+          currentStage: 'setup'
         }
       });
 
       if (!session) {
         throw new Error('Failed to create interview session');
       }
-      if (session.id) {
-        console.log("Session created", session)
-      }
 
       toast.success(`Starting ${template.title} interview...`);
-
-      // Navigate to avatar selection page first
       router.push(`/interview/${session.id}/setup`);
-
     } catch (error: any) {
-      console.error('Error starting interview:', error);
+      console.error('Error in executeStartGeneralInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
       setLoadingTemplate(null);
@@ -184,6 +223,47 @@ export default function Templates() {
     setLoadingTemplate(templateKey);
 
     try {
+      // Check balance before creating session
+      const { remainingMinutes } = await subscriptionService.checkUsageLimit(user.id);
+      if (remainingMinutes < 120) {
+        toast.error("Insufficient balance", {
+          description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
+          action: {
+            label: "Upgrade",
+            onClick: () => router.push("/pricing")
+          }
+        });
+        return;
+      }
+
+      // Check for existing sessions
+      const existingSessions = await interviewService.getInProgressSessions(user.id);
+      const sameDomainSession = existingSessions?.find(s =>
+        s.position.toLowerCase() === role.toLowerCase() &&
+        s.interview_type.toLowerCase() === "technical"
+      );
+
+      if (sameDomainSession) {
+        setConflictSession(sameDomainSession);
+        setPendingAction({ type: 'company', data: { company, role } });
+        setConflictDialogOpen(true);
+        setLoadingTemplate(null);
+        return;
+      }
+
+      await executeStartCompanyInterview(company, role);
+    } catch (error: any) {
+      console.error('Error starting company interview:', error);
+      toast.error(error.message || "Failed to start interview");
+      setLoadingTemplate(null);
+    }
+  };
+
+  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string) => {
+    try {
+      const templateKey = `${company.id}-${role}`;
+      setLoadingTemplate(templateKey);
+
       // Create interview session directly with 30-minute duration
       const session = await createInterviewSession({
         position: role,
@@ -195,7 +275,8 @@ export default function Templates() {
             companyName: company.name,
             role: role,
             experienceLevel: 'Mid'
-          }
+          },
+          currentStage: 'setup'
         }
       });
 
@@ -205,12 +286,44 @@ export default function Templates() {
 
       toast.success(`Starting ${role} interview at ${company.name}...`);
       router.push(`/interview/${session.id}/setup`);
-
     } catch (error: any) {
-      console.error('Error starting company interview:', error);
+      console.error('Error in executeStartCompanyInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
       setLoadingTemplate(null);
+    }
+  };
+
+  const handleContinuePrevious = () => {
+    if (!conflictSession) return;
+    toast.info("Redirecting to previous interview...");
+    const stage = (conflictSession.config as any)?.currentStage || 'setup';
+    router.push(`/interview/${conflictSession.id}/${stage}`);
+    setConflictDialogOpen(false);
+  };
+
+  const handleStartNewAfterAbandon = async () => {
+    if (!conflictSession || !pendingAction) return;
+
+    setConflictDialogOpen(false);
+
+    try {
+      // Abandon previous session using service
+      const abandoned = await interviewService.abandonSession(conflictSession.id);
+
+      if (abandoned) {
+        toast.success("Previous interview abandoned. Starting new session...");
+        if (pendingAction.type === 'general') {
+          await executeStartGeneralInterview(pendingAction.data);
+        } else {
+          await executeStartCompanyInterview(pendingAction.data.company, pendingAction.data.role);
+        }
+      } else {
+        toast.error("Failed to abandon previous session. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error abandoning session:", error);
+      toast.error("An error occurred. Please try again.");
     }
   };
 
@@ -572,6 +685,17 @@ export default function Templates() {
           </TabsContent>
         </Tabs>
       </div >
+      <InterviewConflictDialog
+        isOpen={conflictDialogOpen}
+        onClose={() => setConflictDialogOpen(false)}
+        onContinue={handleContinuePrevious}
+        onStartNew={handleStartNewAfterAbandon}
+        sessionDetails={conflictSession ? {
+          position: conflictSession.position,
+          type: conflictSession.interview_type,
+          startedAt: new Date(conflictSession.created_at).toLocaleString()
+        } : null}
+      />
     </DashboardLayout >
   );
 }

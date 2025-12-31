@@ -205,7 +205,7 @@ function AuthContent() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-transparent backdrop-blur-[2px] p-4 relative z-10">
       <div className="mb-8 flex items-center gap-3">
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 blur-2xl rounded-full"></div>

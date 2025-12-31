@@ -57,8 +57,23 @@ These database functions are called via the Supabase Client SDK (`supabase.rpc(.
 Increments usage counters for the user within a transaction.
 - **Params**:
     - `user_id_param` (UUID)
-    - `minutes_param` (Integer)
+    - `seconds_param` (Integer)
 
 #### `check_and_reset_monthly_usage`
 Checks if the user's billing cycle has rolled over and resets counters if necessary.
 - **Params**: None (Uses internal logic based on `subscriptions` table)
+
+### 5. Services (Internal Data Layer)
+For complex operations, the application uses specialized service classes.
+
+#### `profileService.getPublicProfile(profileId)`
+Fetches basic profile information if the profile is marked as public.
+- **Protection**: Only returns `id`, `full_name`, `avatar_url`, and `streak_count`. Sensitive data like `email` or `subscription_id` is excluded.
+
+#### `interviewService.getPublicSessionStats(userId)`
+Aggregates performance data for public display.
+- **Output**: Returns total completed sessions and average score.
+
+#### `interviewService.getPublicRecentInterviews(userId, limit)`
+Fetches a list of completed interview metadata for public validation.
+- **Data Exposed**: Roles, difficulties, scores, and completion dates. Transcripts and private feedback are **never** returned.

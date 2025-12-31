@@ -51,6 +51,9 @@ export default function Settings() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
+    // Privacy settings
+    const [isPublic, setIsPublic] = useState(false);
+
     const router = useRouter();
 
     // Sync state with user data when it loads
@@ -60,6 +63,11 @@ export default function Settings() {
             setGender(user.user_metadata?.gender || "");
             setEmail(user.email || "");
             setAvatarUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture);
+
+            // Fetch profile for additional fields (like isPublic)
+            profileService.getProfile(user.id).then(profile => {
+                if (profile) setIsPublic(profile.is_public);
+            });
         }
     }, [user]);
 
@@ -150,6 +158,26 @@ export default function Settings() {
         } catch (error: any) {
             console.error("Error updating profile:", error);
             toast.error(error.message || "Failed to update profile");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTogglePrivacy = async (checked: boolean) => {
+        if (!user?.id) return;
+
+        try {
+            setLoading(true);
+            const success = await profileService.setProfileVisibility(user.id, checked);
+            if (success) {
+                setIsPublic(checked);
+                toast.success(`Profile is now ${checked ? 'Public' : 'Private'}`);
+            } else {
+                throw new Error("Failed to update visibility");
+            }
+        } catch (error: any) {
+            console.error("Error toggling privacy:", error);
+            toast.error(error.message || "Failed to update privacy settings");
         } finally {
             setLoading(false);
         }
@@ -371,6 +399,62 @@ export default function Settings() {
                                                 This language will be used for speech recognition and AI communication during interviews.
                                             </p>
                                         </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    {/* Privacy Settings */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-sm font-medium">Privacy & Public Profile</h3>
+                                            <p className="text-xs text-muted-foreground">
+                                                Control who can see your interview achievements.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                                            <div className="space-y-0.5">
+                                                <Label htmlFor="public-profile" className="text-sm font-semibold">Make Profile Public</Label>
+                                                <p className="text-[10px] text-muted-foreground max-w-[250px]">
+                                                    Allow anyone with the link to view your rank, scores, and badges.
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                id="public-profile"
+                                                checked={isPublic}
+                                                onCheckedChange={handleTogglePrivacy}
+                                                disabled={loading}
+                                            />
+                                        </div>
+
+                                        {isPublic && (
+                                            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex flex-col gap-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Your Public Link</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-[10px]"
+                                                        onClick={() => {
+                                                            const url = `${window.location.origin}/p/${user?.id}`;
+                                                            navigator.clipboard.writeText(url);
+                                                            toast.success("Link copied!");
+                                                        }}
+                                                    >
+                                                        Copy Link
+                                                    </Button>
+                                                </div>
+                                                <div className="text-xs font-mono bg-white dark:bg-black/40 p-2 rounded border truncate text-muted-foreground">
+                                                    {window.location.origin}/p/{user?.id}
+                                                </div>
+                                                <Button
+                                                    variant="link"
+                                                    className="text-xs p-0 h-auto justify-start text-primary"
+                                                    onClick={() => window.open(`/p/${user?.id}`, '_blank')}
+                                                >
+                                                    View Live Profile →
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="pt-2">

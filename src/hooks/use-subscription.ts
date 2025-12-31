@@ -30,7 +30,7 @@ export function useSubscription() {
         return {
             type: 'free',
             allowed: true,
-            remaining_minutes: 0,
+            remaining_minutes: 3600, // Initialize to 1 hour (seconds) to prevent "Low Time" flash
             loading: true
         };
     };

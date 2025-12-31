@@ -4,7 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Award, TrendingUp, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BADGE_DEFINITIONS, getRarityColor } from "@/config/badges";
+import { BADGE_DEFINITIONS, getRarityColor, getRarityGlowColor } from "@/config/badges";
+import { motion, AnimatePresence } from "framer-motion";
+import { Zap } from "lucide-react";
 
 interface BadgeProgressWidgetProps {
     earnedBadges: string[];
@@ -39,8 +41,13 @@ export function BadgeProgressWidget({
         return score + (rarityPoints[badge.rarity] || 0);
     }, 0);
 
-    // Get recently earned badges (mock - would come from database)
-    const recentlyEarned = BADGE_DEFINITIONS.filter((b) => earnedBadges.includes(b.id)).slice(0, 3);
+    // Get recently earned badges from real data
+    // We sort the definitions by those that are in the earnedBadges list
+    // Ideally we'd have the 'awarded_at' date, but we can at least show the ones the user HAS.
+    const recentlyEarned = BADGE_DEFINITIONS
+        .filter((b) => earnedBadges.includes(b.id))
+        .slice(-2) // Get the "last" ones in the definition list (higher tier usually) or just reverse
+        .reverse();
 
     // Get next achievable badges
     const mockUserData = {
@@ -157,22 +164,31 @@ export function BadgeProgressWidget({
                                 <h4 className="text-xs font-semibold text-foreground">Recently Earned</h4>
                             </div>
                             <div className="flex lg:flex-col gap-2">
-                                {recentlyEarned.map((badge) => (
-                                    <div
-                                        key={badge.id}
-                                        className={`flex-1 bg-gradient-to-br ${getRarityColor(badge.rarity)} rounded-lg p-2 text-center`}
-                                    >
-                                        <div className="text-2xl mb-0.5">{badge.icon}</div>
-                                        <div className="text-[10px] font-medium text-white truncate">{badge.name}</div>
-                                    </div>
-                                ))}
+                                <AnimatePresence>
+                                    {recentlyEarned.map((badge, idx) => (
+                                        <motion.div
+                                            key={badge.id}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className={`flex-1 bg-gradient-to-br ${getRarityColor(badge.rarity)} ${getRarityGlowColor(badge.rarity)} rounded-lg p-2 text-center shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-pointer`}
+                                            onClick={() => router.push('/badges')}
+                                        >
+                                            <div className="text-2xl mb-0.5 group-hover:scale-110 transition-transform">{badge.icon}</div>
+                                            <div className="text-[10px] font-bold text-white truncate">{badge.name}</div>
+                                            <div className="absolute top-0 right-0 p-0.5">
+                                                <Zap className="h-2 w-2 text-white/50" />
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <div className="text-center py-2">
-                                <Award className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
-                                <p className="text-xs text-muted-foreground">No badges yet</p>
+                        <div className="flex items-center justify-center h-full border border-dashed border-border rounded-lg py-4">
+                            <div className="text-center">
+                                <Award className="h-6 w-6 text-muted-foreground/30 mx-auto mb-1" />
+                                <p className="text-[10px] text-muted-foreground">None yet</p>
                             </div>
                         </div>
                     )}

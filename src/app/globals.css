@@ -149,102 +149,71 @@
     scrollbar-width: none;
   }
 
-  .animate-scroll-vertical {
-    animation: scroll-vertical 30s linear infinite;
-  }
-
-  .animate-scroll-vertical-reverse {
-    animation: scroll-vertical-reverse 30s linear infinite;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-float-delayed {
-    animation: float 6s ease-in-out 3s infinite;
-  }
-
-  @keyframes scroll-vertical {
+  @keyframes blob {
     0% {
-      transform: translateY(0);
+      transform: translate(0px, 0px) scale(1);
     }
-
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
     100% {
-      transform: translateY(-50%);
+      transform: translate(0px, 0px) scale(1);
     }
   }
 
-  @keyframes scroll-vertical-reverse {
-    0% {
-      transform: translateY(-50%);
-    }
-
-    100% {
-      transform: translateY(0);
-    }
+  .animate-blob {
+    animation: blob 7s infinite;
   }
 
-  @keyframes float {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
 
-    0%,
-    100% {
-      transform: translateY(0);
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 0.1;
     }
-
     50% {
-      transform: translateY(-20px);
+      opacity: 0.2;
     }
   }
 
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 3s ease infinite;
+  .animate-pulse-subtle {
+    animation: pulse-subtle 4s ease-in-out infinite;
   }
 
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
+  @keyframes gradient-xy {
+    0%, 100% {
+      background-size: 400% 400%;
+      background-position: left center;
     }
-
     50% {
-      background-position: 100% 50%;
-    }
-
-    100% {
-      background-position: 0% 50%;
+      background-size: 200% 200%;
+      background-position: right center;
     }
   }
 
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-    background-color: var(--muted);
+  .animate-gradient-xy {
+    animation: gradient-xy 15s ease infinite;
   }
 
-  .shimmer::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background-image: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.05),
-        transparent);
-    animation: shimmer-animation 2s infinite;
-  }
-
-  /* Light mode adjustments for shimmer */
-  :root:not(.dark) .shimmer::after {
-    background-image: linear-gradient(90deg,
-        transparent,
-        rgba(0, 0, 0, 0.02),
-        transparent);
-  }
-
-  @keyframes shimmer-animation {
-    100% {
-      transform: translateX(100%);
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
     }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
   }
 }

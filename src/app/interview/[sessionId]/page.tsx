@@ -33,6 +33,7 @@ import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code
 import { CompanyTemplate } from "@/types/company-types";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
+import { subscriptionService } from "@/services";
 
 const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
@@ -118,6 +119,19 @@ export default function StartInterview() {
 
         setIsLoading(true);
         try {
+            // Check usage limit before starting
+            const usageCheck = await subscriptionService.checkUsageLimit(user.id);
+            if (usageCheck.hasLimit || usageCheck.remainingMinutes < 120) {
+                toast.error("Insufficient balance. Minimum 2 minutes required to start an interview.", {
+                    action: {
+                        label: "Upgrade",
+                        onClick: () => router.push("/pricing")
+                    }
+                });
+                setIsLoading(false);
+                return;
+            }
+
             const config: any = {
                 interviewMode: values.interviewMode,
                 skills: skillsList,

@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { GlobalBackground } from "@/components/GlobalBackground";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <GlobalBackground />
+          {children}
+        </Providers>
       </body>
     </html>
   );

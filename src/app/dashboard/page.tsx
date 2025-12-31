@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
-import { interviewService, profileService, subscriptionService } from "@/services";
+import { interviewService, profileService, subscriptionService, badgeService } from "@/services";
 import type { InterviewSession } from "@/services/interview.service";
 import { useFeedback } from "@/context/FeedbackContext";
 import { MiniBarChart } from "@/components/MiniBarChart";
@@ -42,6 +42,7 @@ import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
 import { Timer, Zap } from "lucide-react";
 import { formatDuration, formatDurationShort } from "@/lib/format-duration";
+import { toast } from "sonner";
 
 // Type for user metadata
 interface UserMetadata {
@@ -65,10 +66,11 @@ export default function Dashboard() {
     rank: 0,
     averageScore: 0,
   });
+  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
-  const [remainingMinutes, setRemainingMinutes] = useState<number>(15);
+  const [remainingMinutes, setRemainingMinutes] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
   const [loading, setLoading] = useState(true);
 
   // Use analytics hook for cached data
@@ -122,11 +124,15 @@ export default function Dashboard() {
       setScoreHistory(scores.length > 0 ? scores : [30, 50, 40, 70, 60]); // Default values if no scores
 
       // Load statistics
-      const sessionStats = await interviewService.getSessionStats(user.id);
+      const [sessionStats, rank] = await Promise.all([
+        interviewService.getSessionStats(user.id),
+        interviewService.calculateUserRank(user.id)
+      ]);
+
       setStats({
         totalInterviews: sessionStats.completed,
         timePracticed: sessionStats.totalDuration,
-        rank: 0, // TODO: Implement leaderboard
+        rank: rank,
         averageScore: sessionStats.averageScore,
       });
 
@@ -141,6 +147,23 @@ export default function Dashboard() {
       // Load remaining minutes
       const remaining = await subscriptionService.getRemainingMinutes(user.id);
       setRemainingMinutes(remaining);
+
+      // Load badges
+      const userBadges = await badgeService.getUserBadges(user.id);
+      const earnedSlugs = userBadges.map((ub: any) => ub.badge.slug);
+      setEarnedBadges(earnedSlugs);
+
+      // Trigger catch-up check for badges (especially if they just finished an interview)
+      const newlyAwarded = await badgeService.checkAndAwardBadges(user.id);
+      if (newlyAwarded.length > 0) {
+        setEarnedBadges(prev => [...prev, ...newlyAwarded.map(b => b.slug)]);
+        newlyAwarded.forEach(b => {
+          toast.success(`Achievement Unlocked!`, {
+            description: `You've earned the ${b.name} badge!`,
+            icon: b.icon_name,
+          });
+        });
+      }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     } finally {
@@ -164,9 +187,22 @@ export default function Dashboard() {
     }
   }, [shouldRefreshDashboard]);
 
-  const { allowed, loading: subscriptionLoading, invalidateCache } = useSubscription();
+  const { allowed, loading: subscriptionLoading, invalidateCache, remaining_minutes: hookRemainingMinutes } = useSubscription();
 
-  const startInterview = () => {
+  const startInterview = async () => {
+    // Check balance before proceeding
+    const { remainingMinutes } = await subscriptionService.checkUsageLimit(user?.id || '');
+    if (remainingMinutes < 120) {
+      toast.error("Insufficient balance", {
+        description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
+        duration: 5000,
+        action: {
+          label: "Upgrade",
+          onClick: () => router.push("/pricing")
+        }
+      });
+      return;
+    }
     router.push('/start-interview');
   };
 
@@ -278,9 +314,9 @@ export default function Dashboard() {
           </div>
 
           {/* Low Time Warning Banner */}
-          {remainingMinutes < 5 && remainingMinutes > 0 && (
+          {!subscriptionLoading && !loading && (hookRemainingMinutes ?? remainingMinutes) < 300 && (hookRemainingMinutes ?? remainingMinutes) >= 0 && (
             <LowTimeWarningBanner
-              remainingMinutes={remainingMinutes}
+              remainingMinutes={Math.floor((hookRemainingMinutes ?? remainingMinutes) / 60)}
               variant="dashboard"
             />
           )}
@@ -340,7 +376,7 @@ export default function Dashboard() {
 
           {/* Badge Progress Section */}
           <BadgeProgressWidget
-            earnedBadges={[]}
+            earnedBadges={earnedBadges}
             totalInterviews={stats.totalInterviews}
             currentStreak={currentStreak}
             averageScore={stats.averageScore}
@@ -448,15 +484,19 @@ export default function Dashboard() {
                               </div>
                             ) : (
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.status === 'completed'
-                                ? session.score !== null
-                                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
-                                  : 'bg-amber-500/10 text-amber-500 border border-amber-200/50'
+                                ? (session.feedback as any)?.note === 'Insufficient data for report generation'
+                                  ? 'bg-gray-500/10 text-gray-500 border border-gray-200/50'
+                                  : session.score !== null
+                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
+                                    : 'bg-amber-500/10 text-amber-500 border border-amber-200/50'
                                 : 'bg-yellow-500/10 text-yellow-500 border border-yellow-200/50'
                                 }`}>
                                 {session.status === 'completed'
-                                  ? session.score !== null
-                                    ? 'Completed'
-                                    : 'Report Pending'
+                                  ? (session.feedback as any)?.note === 'Insufficient data for report generation'
+                                    ? 'Insufficient Data'
+                                    : session.score !== null
+                                      ? 'Completed'
+                                      : 'Report Pending'
                                   : 'In Progress'}
                               </div>
                             )}
@@ -492,7 +532,19 @@ export default function Dashboard() {
                                   variant="default"
                                   size="sm"
                                   disabled={isGeneratingFeedback}
-                                  onClick={() => {
+                                  onClick={async () => {
+                                    // Check balance before continuing
+                                    const { remainingMinutes: bal } = await subscriptionService.checkUsageLimit(user?.id || '');
+                                    if (bal < 120) {
+                                      toast.error("Low Balance", {
+                                        description: "You need at least 2 minutes of balance to continue this interview.",
+                                        action: {
+                                          label: "Upgrade",
+                                          onClick: () => router.push("/pricing")
+                                        }
+                                      });
+                                      return;
+                                    }
                                     const stage = (session.config as any)?.currentStage || 'setup';
                                     router.push(`/interview/${session.id}/${stage}`);
                                   }}
@@ -500,6 +552,16 @@ export default function Dashboard() {
                                 >
                                   <Play className="h-3.5 w-3.5" />
                                   Continue
+                                </Button>
+                              ) : (session.feedback as any)?.note === 'Insufficient data for report generation' ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => router.push(`/interview/${session.id}/report`)}
+                                  className="h-8 px-4 text-xs font-medium text-muted-foreground flex items-center gap-1.5 hover:bg-muted"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  No Report
                                 </Button>
                               ) : (
                                 <Button

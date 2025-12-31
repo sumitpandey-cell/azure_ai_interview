@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw } from "lucide-react";
+import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw, AlertTriangle } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -257,6 +257,66 @@ export default function InterviewReport() {
                     <Button onClick={() => router.push("/dashboard")} className="mt-4">
                         Back to Dashboard
                     </Button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // Check for insufficient data
+    if ((session.feedback as any)?.note === 'Insufficient data for report generation') {
+        return (
+            <DashboardLayout>
+                <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">
+                    <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-800">
+                        <CardContent className="p-8 text-center space-y-6">
+                            <div className="h-16 w-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+                                <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                                    Report Not Available
+                                </h2>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                    This interview was too short or had insufficient interaction to generate a meaningful AI feedback report.
+                                </p>
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl text-left space-y-3">
+                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Requirements for report generation:</p>
+                                <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                                    <li className="flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                        Minimum 2 minutes of duration
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                        At least 2 unique user responses
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <Button
+                                onClick={() => router.push("/dashboard")}
+                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl"
+                            >
+                                Return to Dashboard
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {session.transcript && Array.isArray(session.transcript) && session.transcript.length > 0 && (
+                        <div className="mt-8 w-full max-w-md">
+                            <p className="text-xs text-center text-slate-500 mb-4 uppercase tracking-widest font-bold">Session Transcript</p>
+                            <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 p-4 max-h-60 overflow-y-auto space-y-3">
+                                {(session.transcript as any[]).map((msg: any, idx: number) => (
+                                    <div key={idx} className="text-xs">
+                                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase mr-2">{msg.sender === 'ai' ? 'AI' : 'You'}:</span>
+                                        <span className="text-slate-600 dark:text-slate-400">{msg.text}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </DashboardLayout>
         );

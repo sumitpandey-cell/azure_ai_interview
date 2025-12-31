@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy } from "lucide-react";
+import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy, Map } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
@@ -72,9 +72,9 @@ export default function Landing() {
       gradient: "from-purple-500 to-pink-500",
     },
     {
-      icon: TrendingUp,
-      title: "Track Progress",
-      description: "Monitor your performance metrics and see measurable improvement over time",
+      icon: Map,
+      title: "Adaptive AI Roadmap",
+      description: "AI-generated learning paths tailored to your interview performance and career goals",
       gradient: "from-pink-500 to-rose-500",
     },
     {
@@ -842,13 +842,63 @@ export default function Landing() {
                 </div>
               </div>
             </motion.div>
+
+            {/* Feature 6: AI-Powered Learning Roadmaps */}
+            <motion.div variants={fadeInUp} className="md:col-span-3 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/10 shadow-indigo-500/20 shadow-2xl">
+              {/* Decorative Background Elements */}
+              <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Map className="h-64 w-64 text-white" />
+              </div>
+              <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+
+              <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+                <div className="flex-1 space-y-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-indigo-100 text-xs font-medium backdrop-blur-md">
+                    <Sparkles className="h-3 w-3" />
+                    <span>Personalized Experience</span>
+                  </div>
+                  <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                    Your Personal <br />
+                    <span className="text-indigo-200">AI Learning Roadmap.</span>
+                  </h3>
+                  <p className="text-indigo-100/80 text-lg md:text-xl leading-relaxed max-w-xl">
+                    Our AI synthesizes your performance from every session to build a custom-tailored path to success. Target your weaknesses and double down on your strengths.
+                  </p>
+                  <Button className="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_-5px_rgba(255,255,255,0.4)] transition-all hover:scale-105" asChild>
+                    <Link href="/auth">
+                      Get Your Master Plan <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                </div>
+
+                <div className="w-full md:w-1/3 flex flex-col gap-4">
+                  {[
+                    { step: "01", text: "Skill Baseline Analysis", completed: true, delay: 0 },
+                    { step: "02", text: "Gap Identification", active: true, delay: 0.2 },
+                    { step: "03", text: "Custom Learning Path", future: true, delay: 0.4 },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: item.delay }}
+                      className={`p-5 rounded-2xl border ${item.active ? 'bg-white/20 border-white/40 shadow-xl' : 'bg-white/5 border-white/10'} backdrop-blur-md flex items-center gap-4 transition-all hover:translate-x-2`}
+                    >
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${item.completed ? 'bg-green-400 text-green-900 shadow-[0_0_15px_-3px_rgba(74,222,128,0.5)]' : item.active ? 'bg-white text-indigo-600 animate-pulse' : 'bg-white/10 text-white'}`}>
+                        {item.step}
+                      </div>
+                      <span className={`font-semibold ${item.active ? 'text-white' : 'text-indigo-100/70'}`}>{item.text}</span>
+                      {item.completed && <CheckCircle2 className="ml-auto h-5 w-5 text-green-400" />}
+                      {item.active && <Sparkles className="ml-auto h-4 w-4 text-indigo-200 animate-spin-slow" />}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </SectionWrapper>
 
-
-
-      {/* Testimonials Section */}
       {/* Company Templates Section - Creative Redesign */}
       <SectionWrapper className="pt-32 pb-12 bg-[#0A0A0B] relative overflow-hidden">
         {/* Background Gradients */}
@@ -1325,8 +1375,11 @@ export default function Landing() {
                     variant="outline"
                     size="lg"
                     className="h-16 px-10 text-lg border-white/10 text-white bg-transparent hover:bg-white/5 hover:text-white hover:border-indigo-500/50 hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] rounded-full font-medium backdrop-blur-sm transition-all duration-300"
+                    asChild
                   >
-                    View Sample Report
+                    <Link href="/sample-report">
+                      View Sample Report
+                    </Link>
                   </Button>
                 </div>
 
@@ -1379,7 +1432,7 @@ export default function Landing() {
               <Link href="/" className="flex items-center gap-2 text-xl font-bold mb-6">
                 <div className="relative">
                   <img
-                    src="/arjuna-logo.png"
+                    src="/arjuna-icon.png"
                     alt="Arjuna AI"
                     className="h-9 w-9 object-contain drop-shadow-lg"
                   />
@@ -1404,9 +1457,14 @@ export default function Landing() {
             <div>
               <h4 className="text-white font-semibold mb-6">Product</h4>
               <ul className="space-y-4">
-                {['Features', 'Pricing', 'Testimonials', 'FAQ'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-slate-400 hover:text-indigo-400 transition-colors">{item}</a>
+                {[
+                  { name: 'Features', href: '#features' },
+                  { name: 'Pricing', href: '/pricing' },
+                  { name: 'Testimonials', href: '#testimonials' },
+                  { name: 'FAQ', href: '/faq' }
+                ].map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -1415,9 +1473,14 @@ export default function Landing() {
             <div>
               <h4 className="text-white font-semibold mb-6">Company</h4>
               <ul className="space-y-4">
-                {['About Us', 'Careers', 'Blog', 'Contact'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-slate-400 hover:text-indigo-400 transition-colors">{item}</a>
+                {[
+                  { name: 'About Us', href: '/about' },
+                  { name: 'Careers', href: '#' },
+                  { name: 'Blog', href: '#' },
+                  { name: 'Contact', href: '/contact' }
+                ].map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -1426,9 +1489,14 @@ export default function Landing() {
             <div>
               <h4 className="text-white font-semibold mb-6">Resources</h4>
               <ul className="space-y-4">
-                {['Community', 'Help Center', 'Terms of Service', 'Privacy Policy'].map((item) => (
-                  <li key={item}>
-                    <a href="#" className="text-slate-400 hover:text-indigo-400 transition-colors">{item}</a>
+                {[
+                  { name: 'Community', href: '#' },
+                  { name: 'Help Center', href: '/faq' },
+                  { name: 'Terms of Service', href: '/terms' },
+                  { name: 'Privacy Policy', href: '/privacy' }
+                ].map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -1459,9 +1527,9 @@ export default function Landing() {
               © 2025 Arjuna AI. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm text-slate-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="#" className="hover:text-white transition-colors">Cookie Policy</Link>
             </div>
           </div>
         </div>

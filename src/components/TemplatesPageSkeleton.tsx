@@ -4,34 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export function TemplatesPageSkeleton() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header Section Skeleton */}
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-3">
-                    <div className="h-9 w-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                    <div className="h-4 w-80 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                </div>
-            </div>
-
-            {/* Tabs Skeleton */}
             <div className="space-y-8">
-                <div className="h-10 w-80 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-
-                {/* Category Tabs and Search Bar Skeleton */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    {/* Category Tabs */}
-                    <div className="flex gap-2 items-center overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div
-                                key={i}
-                                className="h-10 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer"
-                            />
-                        ))}
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="h-10 w-full md:w-80 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                </div>
-
                 {/* Template Cards Grid Skeleton */}
                 <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                     {[1, 2, 3, 4, 5, 6].map((card) => (

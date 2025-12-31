@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown } from "lucide-react";
+import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -161,7 +161,7 @@ const Leaderboard = () => {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 24px Inter, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Aura', cardX + 40, cardY + 50);
+      ctx.fillText('ArjunaAI', cardX + 40, cardY + 50);
 
       // Verified Badge
       ctx.textAlign = 'right';
@@ -300,7 +300,7 @@ const Leaderboard = () => {
       ctx.fillStyle = '#64748b'; // slate-500
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Verified by Aura Platform', width / 2, height - 30);
+      ctx.fillText('Verified by ArjunaAI Platform', width / 2, height - 30);
 
       // Convert to blob and download
       canvas.toBlob((blob) => {
@@ -308,7 +308,7 @@ const Leaderboard = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `aura-profile-${selectedUser?.fullName?.replace(/\s+/g, '-').toLowerCase()}.png`;
+        a.download = `arjuna-profile-${selectedUser?.fullName?.replace(/\s+/g, '-').toLowerCase()}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -332,9 +332,9 @@ const Leaderboard = () => {
   const handleNativeShare = async () => {
     try {
       const shareData = {
-        title: `${selectedUser?.fullName || 'Candidate'} - Aura Interview Profile`,
-        text: `Check out this interview profile on Aura! Global Rank #${selectedRank} with a score of ${selectedUser?.bayesianScore.toFixed(0)}%`,
-        url: `${window.location.origin}/leaderboard?user=${selectedUser?.userId}`,
+        title: `${selectedUser?.fullName || 'Candidate'} - ArjunaAI Interview Profile`,
+        text: `Check out this interview profile on ArjunaAI! Global Rank #${selectedRank} with a score of ${selectedUser?.bayesianScore.toFixed(0)}%`,
+        url: `${window.location.origin}/p/${selectedUser?.userId}`,
       };
 
       if (navigator.share && navigator.canShare(shareData)) {
@@ -364,7 +364,7 @@ const Leaderboard = () => {
   };
 
   const handleCopyLink = () => {
-    const shareUrl = `${window.location.origin}/leaderboard?user=${selectedUser?.userId}`;
+    const shareUrl = `${window.location.origin}/p/${selectedUser?.userId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       toast({
@@ -481,12 +481,13 @@ const Leaderboard = () => {
             <button
               onClick={() => handleShare(user, rank)}
               className={cn(
-                "w-full py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium transition-all duration-300 border",
+                "w-full py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium transition-all duration-300 border flex items-center justify-center gap-1 sm:gap-2",
                 rank === 1 ? "bg-yellow-100 border-yellow-200 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/50 dark:text-yellow-400 dark:hover:bg-yellow-500 dark:hover:text-black" :
                   "bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
               )}
             >
-              View
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              View Profile
             </button>
           </div>
         </div>
@@ -693,8 +694,8 @@ const Leaderboard = () => {
                                 onClick={() => handleShare(leaderboardUser, actualRank)}
                                 className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 ml-auto"
                               >
-                                <Share2 className="h-4 w-4" />
-                                Share
+                                <Users className="h-4 w-4" />
+                                View Profile
                               </button>
                             </TableCell>
                           </TableRow>
@@ -793,49 +794,51 @@ const Leaderboard = () => {
 
         {/* Share Modal */}
         <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
-          <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
-            <DialogHeader className="p-6 pb-4">
+          <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden bg-slate-950 border-white/10">
+            <DialogHeader className="p-6 pb-2 sr-only">
               <DialogTitle>Share Interview Profile</DialogTitle>
               <DialogDescription>
                 Download or share this professional card showcasing interview achievements.
               </DialogDescription>
             </DialogHeader>
 
-            {/* Share Card Preview */}
-            <div id="share-card" className="relative w-full bg-slate-950 p-3 sm:p-6 overflow-hidden">
-              {/* Ambient Glows */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+            <div id="share-card" className="relative w-full h-auto min-h-[600px] sm:min-h-0 sm:aspect-[1.4/1] bg-[#020617] overflow-hidden flex flex-col justify-between p-6 sm:p-10">
+              {/* Decorative Background Elements */}
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-purple-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
 
-              {/* Aura Logo Header */}
-              <div className="relative z-10 flex items-center justify-between mb-4 sm:mb-8">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <span className="text-white font-bold text-lg sm:text-xl">A</span>
+              {/* Card Header: Platform Branding */}
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 ring-1 ring-white/20">
+                    <span className="text-white font-extrabold text-xl sm:text-2xl">A</span>
                   </div>
                   <div>
-                    <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                      Aura
-                    </h1>
-                    <p className="text-[10px] sm:text-xs text-slate-400">Elevate Your Hiring</p>
+                    <h2 className="text-lg sm:text-xl font-black text-white tracking-tight leading-none mb-1">
+                      ArjunaAI
+                    </h2>
+                    <p className="text-[10px] sm:text-xs font-medium text-indigo-300/60 tracking-widest uppercase">Interview AI</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1 sm:gap-1.5 bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-500/20">
-                    <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-500" />
-                    <span className="text-[10px] sm:text-xs font-semibold text-emerald-500">Verified Profile</span>
-                  </div>
+
+                <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 backdrop-blur-md">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wider">Verified Profile</span>
                 </div>
               </div>
 
-              {/* Main Content Card */}
-              <div className="relative z-10 bg-slate-900/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-white/10 shadow-2xl">
-                <div className="flex flex-col md:flex-row gap-4 sm:gap-8 items-center md:items-start">
-                  {/* Left Column: Avatar */}
-                  <div className="flex flex-col items-center">
+              {/* Profile Main Content */}
+              <div className="relative z-10 my-6">
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6 sm:gap-10 items-center">
+                  {/* Left Column: Avatar & Rank */}
+                  <div className="flex flex-col items-center gap-4">
                     <div className="relative group">
-                      <div className="absolute -inset-0.5 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full opacity-75 blur group-hover:opacity-100 transition duration-1000"></div>
-                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-slate-900 overflow-hidden bg-slate-800">
+                      {/* Animated Glow Rings */}
+                      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full opacity-60 blur-md group-hover:opacity-100 transition duration-1000"></div>
+                      <div className="absolute -inset-4 bg-indigo-500/10 rounded-full blur-2xl"></div>
+
+                      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-slate-900 overflow-hidden shadow-2xl bg-slate-800">
                         <Avatar className="h-full w-full">
                           <AvatarImage
                             src={getAvatarUrl(
@@ -846,109 +849,119 @@ const Leaderboard = () => {
                             )}
                             className="object-cover"
                           />
-                          <AvatarFallback className="text-3xl sm:text-4xl font-bold bg-slate-800 text-slate-400">
+                          <AvatarFallback className="text-4xl sm:text-5xl font-black bg-slate-800 text-slate-400">
                             {selectedUser?.fullName?.charAt(0) || "U"}
                           </AvatarFallback>
                         </Avatar>
                       </div>
-                    </div>
 
-                    <div className="mt-3 sm:mt-4 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] sm:text-xs font-bold shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-                      Global Rank #{selectedRank}
+                      {/* Rank Overlay Badge */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-amber-600 text-black text-[10px] sm:text-xs font-black px-4 py-1 rounded-full shadow-lg border border-white/20 whitespace-nowrap uppercase tracking-tighter">
+                        Rank #{selectedRank}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right Column: Stats */}
-                  <div className="flex-1 w-full text-center md:text-left">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1 tracking-tight">
-                      {selectedUser?.fullName || "Anonymous"}
-                    </h2>
-                    <p className="text-slate-400 text-xs sm:text-sm mb-4 sm:mb-6 font-medium">
-                      Interview Candidate
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-4 sm:mb-6">
-                      <div>
-                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Score</p>
-                        <p className="text-3xl font-black text-white">
-                          {selectedUser?.bayesianScore.toFixed(0)}<span className="text-lg text-slate-500 font-medium">%</span>
-                        </p>
+                  {/* Right Column: Name & Stats */}
+                  <div className="text-center md:text-left">
+                    <div className="mb-6">
+                      <h1 className="text-3xl sm:text-5xl font-black text-white mb-2 leading-tight tracking-tighter drop-shadow-sm">
+                        {selectedUser?.fullName || "Anonymous"}
+                      </h1>
+                      <div className="flex flex-wrap justify-center md:justify-start items-center gap-2">
+                        <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border-indigo-500/20 text-[10px] uppercase font-bold tracking-widest">
+                          Elite Talent
+                        </Badge>
+                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/20 text-[10px] uppercase font-bold tracking-widest">
+                          Interview Candidate
+                        </Badge>
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 sm:gap-6 bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-inner">
                       <div>
-                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Interviews</p>
-                        <p className="text-3xl font-black text-white">
+                        <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">Score</p>
+                        <div className="flex items-baseline gap-0.5">
+                          <span className="text-2xl sm:text-3xl font-black text-white leading-none">
+                            {selectedUser?.bayesianScore.toFixed(0)}
+                          </span>
+                          <span className="text-sm sm:text-lg text-slate-500 font-bold">%</span>
+                        </div>
+                      </div>
+                      <div className="border-x border-white/10 px-3 sm:px-6">
+                        <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">Interviews</p>
+                        <p className="text-2xl sm:text-3xl font-black text-white leading-none">
                           {selectedUser?.interviewCount}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Skills</p>
-                        <p className="text-3xl font-black text-white">3</p>
+                        <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">Skills</p>
+                        <p className="text-2xl sm:text-3xl font-black text-white leading-none">3</p>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Hire Recommendation Banner */}
-                <div className="mt-4 sm:mt-6 bg-gradient-to-r from-emerald-500/20 to-emerald-500/5 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-emerald-500/20 flex items-center justify-between">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] sm:text-xs font-medium text-emerald-400 mb-0.5">Hire Recommendation</p>
-                      <p className="text-sm sm:text-lg font-bold text-white">
-                        {selectedUser?.bayesianScore && selectedUser.bayesianScore >= 80
-                          ? "Highly Recommended"
-                          : selectedUser?.bayesianScore && selectedUser.bayesianScore >= 60
-                            ? "Recommended"
-                            : "Under Review"}
-                      </p>
-                    </div>
+              {/* Bottom Section: Footer & Recommendation */}
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
+                <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-500/20 to-transparent px-4 py-2 rounded-xl border-l-4 border-emerald-500">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Recommendation</span>
+                    <span className="text-sm sm:text-base font-bold text-white">
+                      {selectedUser?.bayesianScore && selectedUser.bayesianScore >= 80
+                        ? "🚀 Highly Recommended"
+                        : selectedUser?.bayesianScore && selectedUser.bayesianScore >= 60
+                          ? "✅ Recommended"
+                          : "🕒 Under Review"}
+                    </span>
                   </div>
                 </div>
 
-                {/* CTA Button */}
-                <div className="mt-4 sm:mt-8 text-center">
-                  <button className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-2.5 sm:py-3.5 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all shadow-lg shadow-indigo-500/25 border border-indigo-400/20 text-sm sm:text-base">
-                    View Full Profile on Aura
-                  </button>
+                <div className="flex flex-col items-center sm:items-end text-[10px] font-medium text-slate-500">
+                  <span>ArjunaAi Professional Interview Profile</span>
+                  <span className="text-slate-600">ID: {selectedUser?.userId.slice(0, 12).toUpperCase()}</span>
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="mt-4 sm:mt-6 text-center">
-                <p className="text-xs font-medium text-slate-500">
-                  Verified by <span className="text-slate-400">Aura Platform</span>
-                </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 p-6 pt-0">
+            {/* Modal Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-6 bg-slate-900 border-t border-white/5">
               <Button
                 onClick={handleDownloadCard}
-                className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+                className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-xl shadow-indigo-500/20 font-bold h-12 rounded-xl border border-white/10"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Download Card
+                <Download className="h-5 w-5 mr-3" />
+                Get Premium Card
               </Button>
               <Button
                 onClick={handleCopyLink}
                 variant="outline"
-                className="flex-1 border-2"
+                className="w-full border-white/10 bg-slate-800/50 hover:bg-slate-800 text-slate-200 h-12 rounded-xl font-bold"
               >
                 {copied ? (
                   <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Copied!
+                    <Check className="h-5 w-5 mr-3 text-emerald-500" />
+                    Link Copied!
                   </>
                 ) : (
                   <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Link
+                    <Copy className="h-5 w-5 mr-3" />
+                    Share Profile Link
                   </>
                 )}
               </Button>
+            </div>
+
+            {/* View Full Profile on ArjunaAi Button (Outside the share-card div so it's not in the export) */}
+            <div className="px-6 pb-6 bg-slate-900 border-t border-white/5">
+              <button
+                className="w-full bg-white hover:bg-slate-200 text-black font-black py-4 rounded-xl transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2"
+                onClick={() => window.open(`/p/${selectedUser?.userId}`, '_blank')}
+              >
+                View Professional Profile Page
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
           </DialogContent>
         </Dialog>

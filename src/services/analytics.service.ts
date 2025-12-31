@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 // Interface for feedback structure
 interface FeedbackData {
@@ -267,6 +269,100 @@ export const analyticsService = {
         } catch (error) {
             console.error('Error fetching performance analysis:', error);
             return [];
+        }
+    },
+
+    /**
+     * Get user interview history for roadmap generation
+     * Returns recent 15 completed sessions + aggregate stats
+     * @param supabaseClient - Optional Supabase client (for server-side calls)
+     */
+    async getUserInterviewHistory(userId: string, supabaseClient?: SupabaseClient<Database>) {
+        try {
+            const client = supabaseClient || supabase;
+            // Fetch last 15 completed interviews
+            const { data: sessions, error } = await client
+                .from('interview_sessions')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('status', 'completed')
+                .not('feedback', 'is', null)
+                .order('completed_at', { ascending: false })
+                .limit(15);
+
+            if (error) throw error;
+
+            // Calculate aggregate stats
+            const { count: totalCount } = await client
+                .from('interview_sessions')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('status', 'completed');
+
+            const { count: completedCount } = await client
+                .from('interview_sessions')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId);
+
+            // Calculate average score
+            const averageScore = sessions && sessions.length > 0
+                ? sessions.reduce((sum, s) => sum + (s.score || 0), 0) / sessions.length
+                : 0;
+
+            // Calculate completion rate
+            const completionRate = completedCount && completedCount > 0
+                ? ((totalCount || 0) / completedCount) * 100
+                : 0;
+
+            // Extract weak and strong areas from feedback
+            const weakAreas = new Set<string>();
+            const strongAreas = new Set<string>();
+
+            sessions?.forEach(session => {
+                const feedback = session.feedback as any;
+                if (feedback?.weaknesses) {
+                    feedback.weaknesses.forEach((w: string) => weakAreas.add(w));
+                }
+                if (feedback?.strengths) {
+                    feedback.strengths.forEach((s: string) => strongAreas.add(s));
+                }
+            });
+
+            // Determine trend
+            let trend: 'improving' | 'stable' | 'declining' = 'stable';
+            if (sessions && sessions.length >= 3) {
+                const recent = sessions.slice(0, 3).reduce((sum, s) => sum + (s.score || 0), 0) / 3;
+                const older = sessions.slice(3, 6).reduce((sum, s) => sum + (s.score || 0), 0) / 3;
+                if (recent > older + 5) trend = 'improving';
+                else if (recent < older - 5) trend = 'declining';
+            }
+
+            return {
+                interviews: sessions || [],
+                completed: sessions || [],
+                stats: {
+                    total_interviews: totalCount || 0,
+                    average_score: Math.round(averageScore),
+                    completion_rate: Math.round(completionRate),
+                    weak_areas: Array.from(weakAreas),
+                    strong_areas: Array.from(strongAreas),
+                    trend
+                }
+            };
+        } catch (error) {
+            console.error('Error fetching interview history:', error);
+            return {
+                interviews: [],
+                completed: [],
+                stats: {
+                    total_interviews: 0,
+                    average_score: 0,
+                    completion_rate: 0,
+                    weak_areas: [],
+                    strong_areas: [],
+                    trend: 'stable' as const
+                }
+            };
         }
     }
 };

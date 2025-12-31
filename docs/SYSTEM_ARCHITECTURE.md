@@ -25,6 +25,8 @@ graph TD
     end
 ```
 
+![alt text](diagram/image.png)
+
 ### 3. Component Details
 #### 3.1 Frontend (Next.js 15)
 - **Framework**: React 18 with Next.js App Router.

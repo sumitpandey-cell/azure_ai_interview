@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { BADGE_DEFINITIONS } from "@/config/badges";
+import { UserBadgeData } from "@/types/badge-types";
+import { analyticsService } from "./analytics.service";
 
 export type Badge = Tables<"badges">;
 export type UserBadge = Tables<"user_badges">;
@@ -53,27 +56,37 @@ export const badgeService = {
     /**
      * Award a badge to a user
      */
-    async awardBadge(userId: string, badgeSlug: string): Promise<UserBadge | null> {
+    async awardBadge(userId: string, badgeSlug: string): Promise<(UserBadge & { badge: Badge }) | null> {
         try {
-            // First, get the badge ID from slug
+            console.log(`[BadgeService] Attempting to award badge: ${badgeSlug} to user: ${userId}`);
+
+            // First, get the badge details from slug
             const { data: badge, error: badgeError } = await supabase
                 .from("badges")
-                .select("id")
+                .select("*")
                 .eq("slug", badgeSlug)
-                .single();
+                .maybeSingle();
 
-            if (badgeError) throw badgeError;
+            if (badgeError) {
+                console.error(`[BadgeService] Error finding badge ${badgeSlug}:`, badgeError.message, badgeError.code);
+                return null;
+            }
+
+            if (!badge) {
+                console.error(`[BadgeService] Badge with slug ${badgeSlug} not found. Ensure you ran the SQL seed script.`);
+                return null;
+            }
 
             // Check if user already has this badge
-            const { data: existing, } = await supabase
+            const { data: existing } = await supabase
                 .from("user_badges")
                 .select("id")
                 .eq("user_id", userId)
                 .eq("badge_id", badge.id)
-                .single();
+                .maybeSingle();
 
             if (existing) {
-                console.log("⚠️ User already has badge:", badgeSlug);
+                console.log(`[BadgeService] User already has badge: ${badgeSlug}`);
                 return null;
             }
 
@@ -85,15 +98,155 @@ export const badgeService = {
                     badge_id: badge.id,
                     awarded_at: new Date().toISOString(),
                 })
-                .select()
+                .select("*, badge:badges(*)")
+                .maybeSingle();
+
+            if (error) {
+                // If it's a duplicate key error, it means we hit a race condition 
+                // but the end result is the same: the user has the badge.
+                if (error.code === '23505') {
+                    console.log(`[BadgeService] Race condition handled: Badge ${badgeSlug} was already awarded.`);
+                    // Fetch the existing record to return it
+                    const { data: existingRecord } = await supabase
+                        .from("user_badges")
+                        .select("*, badge:badges(*)")
+                        .eq("user_id", userId)
+                        .eq("badge_id", badge.id)
+                        .maybeSingle();
+                    return existingRecord as any;
+                }
+
+                console.error(`[BadgeService] Failed to insert badge achievement (${badgeSlug}):`, error.message, error.code, error.hint);
+                return null;
+            }
+
+            console.log(`✓ [BadgeService] Successfully awarded badge: ${badgeSlug}`);
+            return data as any;
+        } catch (error) {
+            console.error("[BadgeService] Unexpected error in awardBadge:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Get user statistics needed for badge evaluation
+     */
+    async getUserBadgeData(userId: string): Promise<UserBadgeData> {
+        try {
+            // Get user's profile for last activity date
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("last_activity_date")
+                .eq("id", userId)
                 .single();
 
-            if (error) throw error;
-            console.log("✓ Badge awarded:", badgeSlug, "to user:", userId);
+            // Calculate streak dynamically using the same logic as the dashboard
+            const streakData = await analyticsService.calculateStreak(userId);
+            const currentStreak = streakData.currentStreak;
+
+            console.log(`Badge Service: Calculated streak for user ${userId} is ${currentStreak}`);
+
+            // Get user's completed sessions
+            const { data: sessions } = await supabase
+                .from("interview_sessions")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("status", "completed");
+
+            const completedSessions = sessions || [];
+            const totalInterviews = completedSessions.length;
+
+            // Get currently earned badges
+            const { data: userBadges } = await supabase
+                .from("user_badges")
+                .select(`
+                    badge:badges(slug)
+                `)
+                .eq("user_id", userId);
+
+            const earnedBadgesSlugs = (userBadges || []).map((ub: any) => ub.badge.slug);
+
+            // Calculate aggregate stats
+            let highestScore = 0;
+            let totalScore = 0;
+            let fastestTime = Infinity;
+            const uniqueTypes = new Set();
+            let morningInterviews = 0;
+            let nightInterviews = 0;
+            let totalCommScore = 0;
+            let commScoreCount = 0;
+            let totalTechScore = 0;
+            let techScoreCount = 0;
+
+            completedSessions.forEach(s => {
+                const score = s.score || 0;
+                if (score > highestScore) highestScore = score;
+                totalScore += score;
+
+                const durationMinutes = (s.duration_seconds || 0) / 60;
+                if (durationMinutes > 0 && durationMinutes < fastestTime) fastestTime = durationMinutes;
+
+                if (s.interview_type) uniqueTypes.add(s.interview_type);
+
+                // Time of day
+                const hour = new Date(s.created_at).getHours();
+                if (hour >= 6 && hour < 10) morningInterviews++;
+                if (hour >= 22 || hour < 2) nightInterviews++;
+
+                // Extract granular scores if available in feedback
+                const feedback = s.feedback as any;
+                if (feedback && feedback.scores) {
+                    if (feedback.scores.communication !== undefined) {
+                        totalCommScore += feedback.scores.communication;
+                        commScoreCount++;
+                    }
+                    if (feedback.scores.technical !== undefined) {
+                        totalTechScore += feedback.scores.technical;
+                        techScoreCount++;
+                    }
+                }
+            });
+
+            // Fallback for communication/technical scores if not in feedback
+            const avgCommScore = commScoreCount > 0 ? totalCommScore / commScoreCount : (totalInterviews > 0 ? totalScore / totalInterviews : 0);
+            const avgTechScore = techScoreCount > 0 ? totalTechScore / techScoreCount : (totalInterviews > 0 ? totalScore / totalInterviews : 0);
+
+            // Build UserBadgeData
+            const data: UserBadgeData = {
+                streak: currentStreak,
+                totalInterviews,
+                weeklyRank: null, // To be implemented with leaderboard logic
+                monthlyRank: null, // To be implemented with leaderboard logic
+                totalWeeklyUsers: 0,
+                lastActiveDate: profile?.last_activity_date || null,
+                currentStreak: currentStreak,
+                wasInactive: false, // Could be calculated based on lastActiveDate
+                earnedBadges: earnedBadgesSlugs,
+                highestScore,
+                averageScore: totalInterviews > 0 ? Math.round(totalScore / totalInterviews) : 0,
+                communicationScore: Math.round(avgCommScore),
+                technicalScore: Math.round(avgTechScore),
+                skillMastery: Math.round(avgTechScore), // Using tech score as proxy
+                fastestTime: fastestTime === Infinity ? 0 : fastestTime,
+                interviewTypes: uniqueTypes.size,
+                morningInterviews,
+                nightInterviews,
+            };
+
             return data;
         } catch (error) {
-            console.error("Error awarding badge:", error);
-            return null;
+            console.error("Error fetching user badge data:", error);
+            return {
+                streak: 0,
+                totalInterviews: 0,
+                weeklyRank: null,
+                monthlyRank: null,
+                totalWeeklyUsers: 0,
+                lastActiveDate: null,
+                currentStreak: 0,
+                wasInactive: false,
+                earnedBadges: [],
+            };
         }
     },
 
@@ -105,67 +258,34 @@ export const badgeService = {
         const newlyAwarded: Badge[] = [];
 
         try {
-            // Get user's interview stats
-            const { data: sessions, error: sessionsError } = await supabase
-                .from("interview_sessions")
-                .select("*")
-                .eq("user_id", userId);
+            // Get user's current badge statistics
+            const userData = await this.getUserBadgeData(userId);
+            const earnedSlugs = new Set(userData.earnedBadges);
 
-            if (sessionsError) throw sessionsError;
+            console.log(`[BadgeService] Checking eligibility for ${BADGE_DEFINITIONS.length} defined badges. User has ${earnedSlugs.size} earned.`);
 
-            const completedSessions = sessions.filter(s => s.status === "completed");
-            const totalSessions = completedSessions.length;
+            // Iterate through all badge definitions
+            for (const definition of BADGE_DEFINITIONS) {
+                // Skip if already earned
+                if (earnedSlugs.has(definition.id)) continue;
 
-            // Get user's current badges
-            const userBadges = await this.getUserBadges(userId);
-            const earnedSlugs = new Set(userBadges.map(ub => (ub.badge as any).slug));
-
-            // Check "First Interview" badge (1 completed interview)
-            if (totalSessions >= 1 && !earnedSlugs.has("first-interview")) {
-                const awarded = await this.awardBadge(userId, "first-interview");
-                if (awarded) {
-                    const badge = await this.getBadgeBySlug("first-interview");
-                    if (badge) newlyAwarded.push(badge);
+                // Check condition
+                if (definition.checkCondition(userData)) {
+                    console.log(`[BadgeService] User eligible for badge: ${definition.id}`);
+                    const awarded = await this.awardBadge(userId, definition.id);
+                    if (awarded && awarded.badge) {
+                        newlyAwarded.push(awarded.badge);
+                    }
                 }
             }
 
-            // Check "5 Interview Milestone" badge
-            if (totalSessions >= 5 && !earnedSlugs.has("five-interviews")) {
-                const awarded = await this.awardBadge(userId, "five-interviews");
-                if (awarded) {
-                    const badge = await this.getBadgeBySlug("five-interviews");
-                    if (badge) newlyAwarded.push(badge);
-                }
-            }
-
-            // Check "Perfect Score" badge (any session with score >= 95)
-            const hasPerfectScore = completedSessions.some(s => s.score && s.score >= 95);
-            if (hasPerfectScore && !earnedSlugs.has("perfect-score")) {
-                const awarded = await this.awardBadge(userId, "perfect-score");
-                if (awarded) {
-                    const badge = await this.getBadgeBySlug("perfect-score");
-                    if (badge) newlyAwarded.push(badge);
-                }
-            }
-
-            // Check "10 Day Streak" badge
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("streak_count")
-                .eq("id", userId)
-                .single();
-
-            if (profile && profile.streak_count >= 10 && !earnedSlugs.has("ten-day-streak")) {
-                const awarded = await this.awardBadge(userId, "ten-day-streak");
-                if (awarded) {
-                    const badge = await this.getBadgeBySlug("ten-day-streak");
-                    if (badge) newlyAwarded.push(badge);
-                }
+            if (newlyAwarded.length > 0) {
+                console.log(`[BadgeService] Awarded ${newlyAwarded.length} new badges in this check cycle.`);
             }
 
             return newlyAwarded;
         } catch (error) {
-            console.error("Error checking badge eligibility:", error);
+            console.error("[BadgeService] Error in checkAndAwardBadges chain:", error);
             return newlyAwarded;
         }
     },
@@ -187,5 +307,5 @@ export const badgeService = {
             console.error("Error fetching badge:", error);
             return null;
         }
-    },
+    }
 };

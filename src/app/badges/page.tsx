@@ -5,11 +5,15 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Medal, Lock, Trophy, Award, Zap, Target } from "lucide-react";
-import { badgeService } from "@/services";
+import { badgeService } from "@/services/badge.service";
 import type { Badge as BadgeType } from "@/services/badge.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { BADGE_DEFINITIONS, getRarityColor, getRarityBorderColor, getRarityGlowColor } from "@/config/badges";
+import { UserBadgeData } from "@/types/badge-types";
 import type { BadgeCategory } from "@/types/badge-types";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import { triggerSuccessConfetti } from "@/lib/confetti-utils";
 
 const CATEGORY_ICONS: Record<BadgeCategory, any> = {
   streak: "🔥",
@@ -39,6 +43,8 @@ export default function Badges() {
   const { user } = useAuth();
   const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<Set<string>>(new Set());
+  const [userBadgesData, setUserBadgesData] = useState<any[]>([]);
+  const [userData, setUserData] = useState<UserBadgeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | "all">("all");
 
@@ -49,14 +55,36 @@ export default function Badges() {
       try {
         setLoading(true);
 
-        // Load all available badges
+        // Load all available badges from DB
         const badges = await badgeService.getBadges();
         setAllBadges(badges);
 
-        // Load user's earned badges
+        // Load user's earned badges (using slugs for easier lookup)
         const userBadges = await badgeService.getUserBadges(user.id);
-        const earnedIds = new Set(userBadges.map((ub) => ub.badge_id));
-        setEarnedBadges(earnedIds);
+        setUserBadgesData(userBadges);
+        const earnedSlugs = new Set(userBadges.map((ub: any) => ub.badge.slug));
+        setEarnedBadges(earnedSlugs);
+
+        // Load real user stats for progress
+        const stats = await badgeService.getUserBadgeData(user.id);
+        setUserData(stats);
+
+        // Trigger catch-up awarding for any badges that reached 100%
+        const newlyAwarded = await badgeService.checkAndAwardBadges(user.id);
+        if (newlyAwarded.length > 0) {
+          // Trigger celebration!
+          triggerSuccessConfetti();
+
+          // If new badges were awarded, update the earned set
+          newlyAwarded.forEach(b => {
+            earnedSlugs.add(b.slug);
+            toast.success(`Achievement Unlocked!`, {
+              description: `You've earned the ${b.name} badge!`,
+              icon: b.icon_name,
+            });
+          });
+          setEarnedBadges(new Set(earnedSlugs));
+        }
       } catch (error) {
         console.error("Error loading badges:", error);
       } finally {
@@ -73,22 +101,22 @@ export default function Badges() {
 
   const getBadgeProgress = (badgeId: string) => {
     const definition = BADGE_DEFINITIONS.find((b) => b.id === badgeId);
-    if (!definition?.getProgress) return null;
+    if (!definition?.getProgress || !userData) return null;
 
-    // Mock user data - in production, this would come from actual user stats
-    const mockUserData = {
-      streak: 2,
-      totalInterviews: 3,
-      weeklyRank: null,
-      monthlyRank: null,
-      totalWeeklyUsers: 0,
-      lastActiveDate: null,
-      currentStreak: 2,
-      wasInactive: false,
-      earnedBadges: Array.from(earnedBadges),
-    };
+    return definition.getProgress(userData);
+  };
 
-    return definition.getProgress(mockUserData);
+  const handleShareBadge = (badgeName: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: "Achievement Unlocked!",
+        text: `I just earned the ${badgeName} badge on Arjuna AI! Check it out!`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(`I just earned the ${badgeName} badge on Arjuna AI!`);
+      toast.success("Link copied to clipboard!");
+    }
   };
 
   if (loading) {
@@ -170,6 +198,7 @@ export default function Badges() {
 
   // Calculate badge score (weighted by rarity)
   const badgeScore = BADGE_DEFINITIONS.reduce((score, badge) => {
+    // Standardizing on badge.id (slug) for consistency
     if (!earnedBadges.has(badge.id)) return score;
     const rarityPoints = {
       bronze: 10,
@@ -181,8 +210,9 @@ export default function Badges() {
     return score + (rarityPoints[badge.rarity] || 0);
   }, 0);
 
-  // Get latest earned badge
-  const latestBadge = BADGE_DEFINITIONS.find((b) => earnedBadges.has(b.id));
+  // Get latest earned badge (true latest by date)
+  const latestUserBadge = userBadgesData[0]; // Already sorted by awarded_at DESC in service
+  const latestBadge = latestUserBadge ? BADGE_DEFINITIONS.find(b => b.id === latestUserBadge.badge.slug) : null;
 
   // Filter badges by category
   const filteredBadges = selectedCategory === "all"
@@ -282,99 +312,144 @@ export default function Badges() {
 
         {/* Badges Grid */}
         {filteredBadges.length === 0 ? (
-          <Card className="border-none shadow-sm bg-card p-12 text-center">
-            <Medal className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2 text-foreground">No Badges Available</h3>
-            <p className="text-muted-foreground mb-6">
-              Badges will appear here once they are added to the system.
-            </p>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="border-none shadow-sm bg-card p-12 text-center">
+              <Medal className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-foreground">No Badges Available</h3>
+              <p className="text-muted-foreground mb-6">
+                Badges will appear here once they are added to the system.
+              </p>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {filteredBadges.map((badge) => {
-              const isEarned = earnedBadges.has(badge.id);
-              const progress = getBadgeProgress(badge.id);
-              const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;
+          <motion.div
+            layout
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredBadges.map((badge, index) => {
+                const isEarned = earnedBadges.has(badge.id);
+                const progress = getBadgeProgress(badge.id);
+                const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;
 
-              return (
-                <Card
-                  key={badge.id}
-                  className={`border-none shadow-md transition-all hover:scale-105 hover:shadow-lg relative overflow-hidden ${isEarned
-                    ? `bg-gradient-to-br ${getRarityColor(badge.rarity)} ${getRarityGlowColor(badge.rarity)} shadow-xl`
-                    : "bg-card opacity-70 hover:opacity-90"
-                    }`}
-                >
-                  {/* Rarity Border */}
-                  {isEarned && (
-                    <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${getRarityColor(badge.rarity)}`} />
-                  )}
+                // Industry level visual effects
+                const rarityShadow = {
+                  bronze: "hover:shadow-orange-500/20",
+                  silver: "hover:shadow-slate-400/20",
+                  gold: "hover:shadow-yellow-500/30",
+                  platinum: "hover:shadow-indigo-500/40",
+                  special: "hover:shadow-purple-500/30",
+                };
 
-                  <div className="p-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <h4 className={`text-sm font-bold ${isEarned ? "text-white" : "text-foreground"}`}>
-                            {badge.name}
-                          </h4>
-                          {!isEarned && <Lock className="h-3 w-3 text-muted-foreground" />}
-                        </div>
-                        <p className={`text-xs ${isEarned ? "text-white/80" : "text-muted-foreground"}`}>
-                          {badge.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Icon */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className={`text-4xl ${!isEarned && "grayscale opacity-50"}`}>
-                        {getBadgeIcon(badge.icon)}
-                      </div>
+                return (
+                  <motion.div
+                    key={badge.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                  >
+                    <Card
+                      className={`border-none shadow-md transition-all duration-300 hover:scale-[1.03] relative overflow-hidden h-full flex flex-col ${rarityShadow[badge.rarity]} ${isEarned
+                        ? `bg-gradient-to-br ${getRarityColor(badge.rarity)} ${getRarityGlowColor(badge.rarity)} shadow-xl ring-1 ring-white/20`
+                        : "bg-card opacity-80 hover:opacity-100 grayscale-[0.5] hover:grayscale-0 border border-border/50"
+                        }`}
+                    >
+                      {/* Rarity Border */}
                       {isEarned && (
-                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs">
-                          Earned
-                        </Badge>
+                        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${getRarityColor(badge.rarity)} brightness-125`} />
                       )}
-                    </div>
 
-                    {/* Requirement */}
-                    <div className={`text-xs ${isEarned ? "text-white/70" : "text-muted-foreground"} mb-2`}>
-                      {badge.requirement}
-                    </div>
-
-                    {/* Progress Bar (for unearned badges with progress) */}
-                    {!isEarned && progress && (
-                      <div className="mt-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">Progress</span>
-                          <span className="text-xs font-medium text-foreground">
-                            {progress.current}/{progress.max}
-                          </span>
+                      <div className="p-3 flex flex-col h-full">
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <h4 className={`text-sm font-bold ${isEarned ? "text-white" : "text-foreground"}`}>
+                                {badge.name}
+                              </h4>
+                              {!isEarned && <Lock className="h-3 w-3 text-muted-foreground/60" />}
+                            </div>
+                            <p className={`text-[10px] leading-tight ${isEarned ? "text-white/80" : "text-muted-foreground"}`}>
+                              {badge.description}
+                            </p>
+                          </div>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`bg-gradient-to-r ${getRarityColor(badge.rarity)} h-full transition-all duration-500`}
-                            style={{ width: `${progressPercent}%` }}
-                          />
+
+                        {/* Icon Container */}
+                        <div className="flex items-center justify-between mb-3 mt-auto">
+                          <div className={`text-4xl filter drop-shadow-sm transition-transform duration-500 ${isEarned ? "hover:rotate-12 scale-110" : "grayscale opacity-40"}`}>
+                            {getBadgeIcon(badge.icon)}
+                          </div>
+                          {isEarned ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleShareBadge(badge.name)}
+                                className="text-[10px] text-white/40 hover:text-white/90 transition-colors underline decoration-white/20"
+                              >
+                                Share
+                              </button>
+                              <Badge className="bg-white/20 hover:bg-white/30 text-white border-white/30 text-[9px] h-5">
+                                Unlocked
+                              </Badge>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] h-5 opacity-60">
+                              Locked
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="mt-auto space-y-2">
+                          {/* Requirement Label */}
+                          <div className={`text-[9px] font-medium uppercase tracking-wider ${isEarned ? "text-white/60" : "text-muted-foreground/70"}`}>
+                            {badge.requirement}
+                          </div>
+
+                          {/* Progress Bar (for unearned badges with progress) */}
+                          {!isEarned && progress && (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="text-muted-foreground">Progress</span>
+                                <span className="font-bold text-foreground">
+                                  {progress.current}/{progress.max}
+                                </span>
+                              </div>
+                              <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden border border-border/50">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${progressPercent}%` }}
+                                  transition={{ duration: 0.8, ease: "easeOut" }}
+                                  className={`bg-gradient-to-r ${getRarityColor(badge.rarity)} h-full shadow-[0_0_5px_rgba(0,0,0,0.1)]`}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Rarity Label */}
+                          <div className="pt-1">
+                            <Badge
+                              variant="outline"
+                              className={`text-[9px] capitalize px-2 py-0 border-none rounded-sm ${isEarned
+                                ? "bg-white/10 text-white"
+                                : "bg-muted text-muted-foreground"
+                                }`}
+                            >
+                              {badge.rarity}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-                    )}
-
-                    {/* Rarity Badge */}
-                    <div className="mt-2">
-                      <Badge
-                        variant="outline"
-                        className={`text-xs capitalize ${isEarned ? "border-white/30 text-white" : "border-border text-muted-foreground"
-                          }`}
-                      >
-                        {badge.rarity}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </DashboardLayout>

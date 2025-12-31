@@ -359,6 +359,8 @@ export type Database = {
           updated_at: string
           streak_count: number
           last_activity_date: string | null
+          is_public: boolean
+          profile_slug: string | null
         }
         Insert: {
           id: string
@@ -369,6 +371,8 @@ export type Database = {
           updated_at?: string
           streak_count?: number
           last_activity_date?: string | null
+          is_public?: boolean
+          profile_slug?: string | null
         }
         Update: {
           id?: string
@@ -379,6 +383,8 @@ export type Database = {
           updated_at?: string
           streak_count?: number
           last_activity_date?: string | null
+          is_public?: boolean
+          profile_slug?: string | null
         }
         Relationships: []
       }
@@ -560,6 +566,151 @@ export type Database = {
             columns: ["domain_id"]
             isOneToOne: false
             referencedRelation: "domains"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      learning_roadmaps: {
+        Row: {
+          id: string
+          user_id: string
+          version: number
+          overall_level: 'Beginner' | 'Intermediate' | 'Advanced' | null
+          roadmap_data: Json
+          is_paid: boolean
+          payment_amount: number
+          payment_id: string | null
+          payment_status: 'free' | 'pending' | 'completed' | 'failed'
+          generated_at: string
+          expires_at: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          version?: number
+          overall_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null
+          roadmap_data: Json
+          is_paid?: boolean
+          payment_amount?: number
+          payment_id?: string | null
+          payment_status?: 'free' | 'pending' | 'completed' | 'failed'
+          generated_at?: string
+          expires_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          version?: number
+          overall_level?: 'Beginner' | 'Intermediate' | 'Advanced' | null
+          roadmap_data?: Json
+          is_paid?: boolean
+          payment_amount?: number
+          payment_id?: string | null
+          payment_status?: 'free' | 'pending' | 'completed' | 'failed'
+          generated_at?: string
+          expires_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      roadmap_progress: {
+        Row: {
+          id: string
+          roadmap_id: string
+          user_id: string
+          phase_number: number | null
+          milestone_id: string | null
+          item_type: 'phase' | 'milestone' | 'goal' | 'interview' | 'resource' | null
+          completed_at: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          roadmap_id: string
+          user_id: string
+          phase_number?: number | null
+          milestone_id?: string | null
+          item_type?: 'phase' | 'milestone' | 'goal' | 'interview' | 'resource' | null
+          completed_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          roadmap_id?: string
+          user_id?: string
+          phase_number?: number | null
+          milestone_id?: string | null
+          item_type?: 'phase' | 'milestone' | 'goal' | 'interview' | 'resource' | null
+          completed_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_progress_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "learning_roadmaps"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      roadmap_purchases: {
+        Row: {
+          id: string
+          user_id: string
+          roadmap_id: string | null
+          amount: number
+          currency: string
+          payment_gateway: string
+          payment_id: string
+          payment_status: 'pending' | 'completed' | 'failed' | 'refunded'
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          roadmap_id?: string | null
+          amount: number
+          currency?: string
+          payment_gateway?: string
+          payment_id: string
+          payment_status?: 'pending' | 'completed' | 'failed' | 'refunded'
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          roadmap_id?: string | null
+          amount?: number
+          currency?: string
+          payment_gateway?: string
+          payment_id?: string
+          payment_status?: 'pending' | 'completed' | 'failed' | 'refunded'
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_purchases_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "learning_roadmaps"
             referencedColumns: ["id"]
           }
         ]

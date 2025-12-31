@@ -1,4 +1,5 @@
-'use client'
+'use client';
+
 import { ReactNode, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import {
   Trophy,
   BellRing,
   Medal,
+  Map,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -34,7 +36,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { remaining_minutes, plan_name, invalidateCache } = useSubscription();
+  const { remaining_minutes, plan_name, invalidateCache, loading: subscriptionLoading } = useSubscription();
   const { currentSession } = useInterviewStore();
   const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
 
@@ -74,6 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Roadmap", href: "/roadmap", icon: Map },
     { name: "Reports", href: "/reports", icon: BarChart3 },
     { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { name: "Badges", href: "/badges", icon: Medal },
@@ -281,30 +284,41 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl mb-3 h-10"
                 onClick={() => router.push("/pricing")}
+                disabled={subscriptionLoading}
               >
                 Upgrade
               </Button>
               <div className="text-xs text-sidebar-foreground/70 font-medium">
-                Plan : {plan_name}
-                <div className={`text-lg font-bold mt-1 font-mono transition-colors ${remaining_minutes <= 120
-                  ? 'text-red-500'
-                  : remaining_minutes < 300
-                    ? 'text-amber-500'
-                    : 'text-sidebar-foreground'
-                  }`}>
-                  {Math.ceil(remaining_minutes / 60)} min
-                  <span className="text-xs text-sidebar-foreground/50 ml-1">/ 100</span>
-                </div>
+                {subscriptionLoading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-3 w-16 bg-sidebar-foreground/10 rounded animate-pulse" />
+                    <div className="h-6 w-24 bg-sidebar-foreground/20 rounded animate-pulse mt-1" />
+                  </div>
+                ) : (
+                  <>
+                    Plan : {plan_name}
+                    <div className={`text-lg font-bold mt-1 font-mono transition-colors ${remaining_minutes <= 120
+                      ? 'text-red-500'
+                      : remaining_minutes < 300
+                        ? 'text-amber-500'
+                        : 'text-sidebar-foreground'
+                      }`}>
+                      {Math.ceil(remaining_minutes / 60)} min
+                      <span className="text-xs text-sidebar-foreground/50 ml-1">/ 100</span>
+                    </div>
+                  </>
+                )}
                 {/* Progress bar */}
                 <div className="mt-2 h-1.5 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-500 ${remaining_minutes <= 120
-                      ? 'bg-red-500'
-                      : remaining_minutes < 300
-                        ? 'bg-amber-500'
-                        : 'bg-blue-500'
+                    className={`h-full transition-all duration-500 ${subscriptionLoading ? 'bg-sidebar-foreground/10' :
+                      remaining_minutes <= 120
+                        ? 'bg-red-500'
+                        : remaining_minutes < 300
+                          ? 'bg-amber-500'
+                          : 'bg-blue-500'
                       }`}
-                    style={{ width: `${Math.min((remaining_minutes / 6000) * 100, 100)}%` }}
+                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_minutes / 6000) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -332,9 +346,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </button>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen">
+      <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto bg-background pt-16 lg:pt-8">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto bg-background/30 dark:bg-background/10 backdrop-blur-[2px] pt-16 lg:pt-8 relative z-10">
           <div
             key={pathname}
             className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"

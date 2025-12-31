@@ -1,6 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, publicSupabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { subscriptionService } from "./subscription.service";
+import { badgeService } from "./badge.service";
 
 export type InterviewSession = Tables<"interview_sessions">;
 export type InterviewSessionInsert = TablesInsert<"interview_sessions">;
@@ -111,6 +112,14 @@ export const interviewService = {
 
             if (error) throw error;
             console.log("✓ Interview session completed:", sessionId);
+
+            // Check and award badges after completion
+            try {
+                await badgeService.checkAndAwardBadges(data.user_id);
+            } catch (badgeError) {
+                console.error("Error checking badges after completion:", badgeError);
+            }
+
             return data;
         } catch (error) {
             console.error("Error completing interview session:", error);
@@ -732,6 +741,21 @@ export const interviewService = {
     },
 
     /**
+     * Get the count of user turns in a transcript
+     */
+    async getUserTurnCount(sessionId: string): Promise<number> {
+        try {
+            const transcripts = await this.getTranscripts(sessionId);
+            if (!Array.isArray(transcripts)) return 0;
+
+            return transcripts.filter((t: any) => t.speaker === 'user' || t.role === 'user').length;
+        } catch (error) {
+            console.error("Error getting user turn count:", error);
+            return 0;
+        }
+    },
+
+    /**
      * Generate feedback for all resumptions (called only at interview completion)
      */
     async generateAllResumptionFeedback(sessionId: string): Promise<boolean> {
@@ -854,4 +878,63 @@ export const interviewService = {
             return false;
         }
     },
+
+    /**
+     * Get safe statistics for a public profile
+     */
+    async getPublicSessionStats(userId: string): Promise<{
+        completedCount: number;
+        averageScore: number;
+        totalDurationMinutes: number;
+    }> {
+        try {
+            const { data, error } = await publicSupabase!
+                .from("interview_sessions")
+                .select("score, duration_seconds")
+                .eq("user_id", userId)
+                .eq("status", "completed");
+
+            if (error) throw error;
+
+            const completedCount = data.length;
+            let averageScore = 0;
+            let totalDurationSeconds = 0;
+
+            if (completedCount > 0) {
+                const totalScore = data.reduce((sum, s) => sum + (s.score || 0), 0);
+                averageScore = Math.round(totalScore / completedCount);
+                totalDurationSeconds = data.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+            }
+
+            return {
+                completedCount,
+                averageScore,
+                totalDurationMinutes: Math.round(totalDurationSeconds / 60),
+            };
+        } catch (error) {
+            console.error("Error fetching public session stats:", error);
+            return { completedCount: 0, averageScore: 0, totalDurationMinutes: 0 };
+        }
+    },
+
+    /**
+     * Get safe recent interviews for a public profile
+     */
+    async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<any[]> {
+        try {
+            const { data, error } = await publicSupabase!
+                .from("interview_sessions")
+                .select("position, interview_type, score, completed_at, difficulty")
+                .eq("user_id", userId)
+                .eq("status", "completed")
+                .order("completed_at", { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching public recent interviews:", error);
+            return [];
+        }
+    }
 };

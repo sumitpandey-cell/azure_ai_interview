@@ -34,7 +34,8 @@ import { CompanyTemplate } from "@/types/company-types";
 import { useCompanyQuestions } from "@/hooks/use-company-questions";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
-import { interviewService } from "@/services/interview.service";
+import { interviewService, subscriptionService } from "@/services";
+import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
 
 const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
@@ -63,6 +64,9 @@ function StartInterviewContent() {
     const { fetchCompanyTemplates, createInterviewSession } = useOptimizedQueries();
     const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
     const { setCurrentSession } = useInterviewStore();
+    const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+    const [conflictSession, setConflictSession] = useState<any>(null);
+    const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -120,6 +124,20 @@ function StartInterviewContent() {
 
         setIsLoading(true);
         try {
+            // Check message threshold (min 2 minutes)
+            const usage = await subscriptionService.checkUsageLimit(user.id);
+            if (usage.remainingMinutes < 120) {
+                toast.error("Insufficient balance", {
+                    description: "You need at least 2 minutes of interview time to start a new session.",
+                    action: {
+                        label: "Upgrade",
+                        onClick: () => router.push("/pricing")
+                    }
+                });
+                setIsLoading(false);
+                return;
+            }
+
             // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
             const existingSessions = await interviewService.getInProgressSessions(user.id);
 
@@ -131,50 +149,55 @@ function StartInterviewContent() {
 
             // If there is an in-progress session of the SAME DOMAIN, show dialog
             if (sameDomainSession) {
-                const userChoice = window.confirm(
-                    `⚠️ You have an incomplete interview for this role!\n\n` +
-                    `Position: ${sameDomainSession.position}\n` +
-                    `Type: ${sameDomainSession.interview_type}\n` +
-                    `Started: ${new Date(sameDomainSession.created_at).toLocaleString()}\n\n` +
-                    `Would you like to:\n\n` +
-                    `• Click "OK" to CONTINUE this interview\n` +
-                    `• Click "Cancel" to START NEW (will abandon previous)`
-                );
-
-                if (userChoice) {
-                    // User wants to continue previous interview
-                    toast.info("Redirecting to previous interview...");
-                    // Resume from the correct stage
-                    const stage = (sameDomainSession.config as any)?.currentStage || 'setup';
-                    router.push(`/interview/${sameDomainSession.id}/${stage}`);
-                    setIsLoading(false);
-                    return;
-                } else {
-                    // User wants to start new - mark old session as abandoned
-                    const abandonConfirm = window.confirm(
-                        `⚠️ Are you sure you want to abandon the previous ${sameDomainSession.position} interview?\n\n` +
-                        `This action cannot be undone. The previous interview will be marked as incomplete.`
-                    );
-
-                    if (!abandonConfirm) {
-                        // User changed their mind
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    // Abandon previous session using service
-                    const abandoned = await interviewService.abandonSession(sameDomainSession.id);
-
-                    if (abandoned) {
-                        toast.success("Previous interview abandoned. Starting new session...");
-                    } else {
-                        toast.error("Failed to abandon previous session. Please try again.");
-                        setIsLoading(false);
-                        return;
-                    }
-                }
+                setConflictSession(sameDomainSession);
+                setPendingValues(values);
+                setConflictDialogOpen(true);
+                setIsLoading(false);
+                return;
             }
 
+            await executeStartInterview(values);
+        } catch (error) {
+            console.error("Error in onSubmit:", error);
+            toast.error("Failed to start interview");
+            setIsLoading(false);
+        }
+    };
+
+    const handleContinuePrevious = () => {
+        if (!conflictSession) return;
+        toast.info("Redirecting to previous interview...");
+        const stage = (conflictSession.config as any)?.currentStage || 'setup';
+        router.push(`/interview/${conflictSession.id}/${stage}`);
+        setConflictDialogOpen(false);
+    };
+
+    const handleStartNewAfterAbandon = async () => {
+        if (!conflictSession || !pendingValues) return;
+
+        setConflictDialogOpen(false);
+        setIsLoading(true);
+
+        try {
+            // Abandon previous session using service
+            const abandoned = await interviewService.abandonSession(conflictSession.id);
+
+            if (abandoned) {
+                toast.success("Previous interview abandoned. Starting new session...");
+                await executeStartInterview(pendingValues);
+            } else {
+                toast.error("Failed to abandon previous session. Please try again.");
+                setIsLoading(false);
+            }
+        } catch (error) {
+            console.error("Error abandoning session:", error);
+            toast.error("An error occurred. Please try again.");
+            setIsLoading(false);
+        }
+    };
+
+    const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
+        try {
             // Continue with creating new session
             const config: any = {
                 skills: skillsList,
@@ -615,6 +638,17 @@ function StartInterviewContent() {
                     </CardContent>
                 </Card>
             </div>
+            <InterviewConflictDialog
+                isOpen={conflictDialogOpen}
+                onClose={() => setConflictDialogOpen(false)}
+                onContinue={handleContinuePrevious}
+                onStartNew={handleStartNewAfterAbandon}
+                sessionDetails={conflictSession ? {
+                    position: conflictSession.position,
+                    type: conflictSession.interview_type,
+                    startedAt: new Date(conflictSession.created_at).toLocaleString()
+                } : null}
+            />
         </DashboardLayout>
     );
 }
