@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test-session": "node test-session-setup.js"
@@ -63,6 +63,7 @@
     "input-otp": "^1.4.2",
     "livekit-client": "^2.16.0",
     "livekit-server-sdk": "^2.14.2",
+    "lru-cache": "^11.2.4",
     "lucide-react": "^0.462.0",
     "next": "^15.1.0",
     "next-themes": "^0.3.0",

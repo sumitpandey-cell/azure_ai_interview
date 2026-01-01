@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { interviewService } from "@/services";
+import { limiters } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    try {
+      await limiters.supabase.check(null, 5, `fix-sessions-${ip}`);
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const { userId } = await request.json();
 
     if (!userId) {
@@ -10,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("🔧 Fixing stuck sessions for user:", userId);
-    
+
     // Fix stuck sessions
     const result = await interviewService.fixStuckSessions(userId);
 
@@ -25,9 +37,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("❌ Error fixing stuck sessions:", error);
     return NextResponse.json(
-      { 
-        error: "Failed to fix stuck sessions", 
-        details: error instanceof Error ? error.message : String(error) 
+      {
+        error: "Failed to fix stuck sessions",
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

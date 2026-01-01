@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { roadmapService } from '@/services/roadmap.service';
+import { limiters } from '@/lib/rate-limit';
 
 async function createClient() {
     const cookieStore = await cookies();
@@ -25,6 +26,17 @@ async function createClient() {
 
 export async function POST(request: NextRequest) {
     try {
+        // Rate Limiting
+        const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+        try {
+            await limiters.supabase.check(null, 3, `roadmap-gen-${ip}`);
+        } catch (e) {
+            return NextResponse.json(
+                { error: 'Too many requests. Roadmap generation is limited to 3 per 5 minutes.' },
+                { status: 429 }
+            );
+        }
+
         const supabase = await createClient();
 
         // Get authenticated user

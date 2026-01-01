@@ -367,6 +367,7 @@ export default function LiveInterview() {
             ) : (
                 <LiveInterviewSession
                     sessionId={currentSessionId}
+                    sessionData={session}
                     initialTranscripts={(session?.transcript as any) || []}
                     onEndSession={handleEndSession}
                     remainingMinutes={subscriptionTimer.remainingMinutes}

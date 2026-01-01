@@ -2,9 +2,22 @@ import { NextResponse } from "next/server";
 import { AccessToken, RoomServiceClient, AgentDispatchClient } from "livekit-server-sdk";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { limiters } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   try {
+    // Rate Limiting Protection
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    try {
+      // 5 requests per minute per IP to prevent token spamming
+      await limiters.livekit.check(null, 5, ip);
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Too many requests for LiveKit tokens. Please try again in a minute.' },
+        { status: 429 }
+      );
+    }
+
     // Get session ID from query params
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
@@ -35,16 +48,14 @@ export async function GET(request: Request) {
                   cookieStore.set(name, value, options)
                 )
               } catch {
-                // The `setAll` method was called from a Server Component.
-                // This can be ignored if you have middleware refreshing
-                // user sessions.
+                // Ignore setAll in Server Components
               }
             },
           },
         }
       );
 
-      // Fetch full session data directly using authenticated client
+      // Fetch full session data
       const { data: session, error } = await supabase
         .from('interview_sessions')
         .select('*')
@@ -58,27 +69,17 @@ export async function GET(request: Request) {
           const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
           if (supportedVoices.includes(config.selectedVoice)) {
             selectedVoice = config.selectedVoice;
-            console.log(`✓ Using voice from session config: ${selectedVoice}`);
-          } else {
-            console.warn(`⚠️ Invalid voice '${config.selectedVoice}' in config. Falling back to default 'alloy'.`);
-            selectedVoice = 'alloy';
           }
         }
 
-        // Extract selected avatar ID
         if (config.selectedAvatar) {
           selectedAvatar = config.selectedAvatar;
-          console.log(`✓ Using avatar from session config: ${selectedAvatar}`);
         }
 
-        // Prepare session context for the AI agent
-        // Check if this is a company-specific interview
         const isCompanyInterview = config.companyInterviewConfig != null;
-
         sessionContext = {
           position: session.position,
           interviewType: session.interview_type,
-          // For company interviews, use companyInterviewConfig; otherwise fallback to direct config
           companyName: isCompanyInterview
             ? config.companyInterviewConfig.companyName
             : (config.companyName || config.company?.name || null),
@@ -93,87 +94,55 @@ export async function GET(request: Request) {
           duration: config.duration || 30
         };
 
-        // If this is a company-specific interview, fetch questions from DB
         const companyId = config.companyInterviewConfig?.companyId || config.companyInterviewConfig?.companyTemplateId;
-
         if (isCompanyInterview && companyId) {
-          const difficulty = sessionContext.difficulty || 'Medium';
-          console.log(`Fetching questions for company: ${companyId}, difficulty: ${difficulty}`);
-
-          // Fetch questions for this company from Supabase
-          const { data: questions, error: questionsError } = await supabase
+          const { data: questions } = await supabase
             .from('company_questions')
             .select('question_text')
             .eq('company_id', companyId)
-            //.eq('difficulty', difficulty) // Optional: strict difficulty matching, or fallback
             .limit(5);
 
-          if (!questionsError && questions && questions.length > 0) {
-            const questionTexts = questions.map(q => q.question_text);
-            sessionContext.questions = questionTexts;
+          if (questions && questions.length > 0) {
+            sessionContext.questions = questions.map(q => q.question_text);
             sessionContext.isCompanySpecific = true;
-            console.log(`✓ Fetched ${questions.length} company-specific questions`);
-          } else {
-            console.warn("Could not fetch company questions", questionsError);
           }
-        } else if (isCompanyInterview && !companyId) {
-          console.warn("⚠️ Company interview detected but no companyId/companyTemplateId found in config");
         }
-
-
-        console.log("✅ Session context prepared for agent:", sessionContext);
-      } else {
-        console.warn(`⚠️ Session not found for ID: ${sessionId}`, error);
       }
     }
-    console.log("✅ Session context prepared for agent:", sessionContext);
 
-    // Create or update room with agent dispatch configuration
     const roomName = sessionId || "interview-room";
-    const roomClient = new RoomServiceClient(
-      process.env.LIVEKIT_URL!,
-      process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!
-    );
+    const lkUrl = process.env.LIVEKIT_URL?.trim().replace('wss://', 'https://').replace('ws://', 'http://');
+    const lkKey = process.env.LIVEKIT_API_KEY?.trim();
+    const lkSecret = process.env.LIVEKIT_API_SECRET?.trim();
 
+    if (!lkUrl || !lkKey || !lkSecret) {
+      throw new Error("Missing LiveKit configuration");
+    }
+
+    const roomClient = new RoomServiceClient(lkUrl!, lkKey!, lkSecret!);
     try {
-      // Try to create room with agent dispatch enabled
       await roomClient.createRoom({
         name: roomName,
-        emptyTimeout: 300, // 5 minutes
+        emptyTimeout: 300,
         maxParticipants: 10,
-        metadata: JSON.stringify({
-          sessionId,
-          createdAt: new Date().toISOString()
-        })
+        metadata: JSON.stringify({ sessionId, createdAt: new Date().toISOString() })
       });
-      console.log(`✅ Room created: ${roomName}`);
     } catch (err: any) {
-      // Room might already exist, that's okay
-      if (err.message?.includes('already exists')) {
-        console.log(`Room already exists: ${roomName}`);
-      } else {
-        console.warn(`Room creation warning:`, err.message);
+      if (!err.message?.includes('already exists')) {
+        console.warn(`Room creation warning:`, err);
       }
     }
 
-    // Always dispatch agent (whether room is new or existing)
     try {
-      const dispatchClient = new AgentDispatchClient(
-        process.env.LIVEKIT_URL!,
-        process.env.LIVEKIT_API_KEY!,
-        process.env.LIVEKIT_API_SECRET!
-      );
-
+      const dispatchClient = new AgentDispatchClient(lkUrl!, lkKey!, lkSecret!);
       await dispatchClient.createDispatch(roomName, 'Arjuna-Interview-AI');
-      console.log(`✅ Agent dispatched to room: ${roomName}`);
     } catch (dispatchErr: any) {
-      console.warn(`⚠️ Could not dispatch agent:`, dispatchErr.message || dispatchErr);
+      console.warn(`Agent dispatch warning:`, dispatchErr);
     }
 
     const token = new AccessToken(
-      process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!,
+      lkKey!,
+      lkSecret!,
       {
         identity: candidateIdentity,
         metadata: JSON.stringify({
@@ -193,15 +162,14 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
-      url: process.env.LIVEKIT_URL!,
+      url: lkUrl!,
       token: await token.toJwt(),
     });
   } catch (error) {
-    console.error('Error generating LiveKit token:', error);
+    console.error('Error in livekit_token route:', error);
     return NextResponse.json(
       { error: 'Failed to generate token' },
       { status: 500 }
     );
   }
 }
-
