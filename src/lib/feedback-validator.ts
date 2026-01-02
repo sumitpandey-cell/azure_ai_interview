@@ -32,6 +32,17 @@ export const FeedbackSchema = z.object({
     actionPlan: z.array(z.string().min(5))  // Reduced from 10
         .min(1, "At least one action item required")
         .max(10, "Too many action items"),
+    comparisons: z.array(z.object({
+        question: z.string().min(1),
+        actualAnswer: z.string().min(1),
+        eliteAnswer: z.string().min(1),
+        explanation: z.string().min(1)
+    })).optional().default([]),
+    confidenceFlow: z.array(z.object({
+        segment: z.string().min(1),
+        score: z.number().min(0).max(100),
+        sentiment: z.string().min(1)
+    })).optional().default([]),
     // Deprecated: kept for backward compatibility
     skills: z.array(SkillSchema).optional()
 });

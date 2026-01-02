@@ -48,7 +48,7 @@ export default function LiveInterview() {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     // Will be assigned after being defined
-    let handleEndSession: () => void;
+    let handleEndSession: (hintsUsed?: number) => void;
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
@@ -185,7 +185,7 @@ export default function LiveInterview() {
     const { generateFeedbackInBackground } = useFeedback();
 
     // Handle Session End
-    handleEndSession = useCallback(async () => {
+    handleEndSession = useCallback(async (hintsUsed: number = 0) => {
         // Prevent duplicate calls
         if (isEndingSession.current) return;
         isEndingSession.current = true;
@@ -226,9 +226,11 @@ export default function LiveInterview() {
             const metThreshold = totalDuration >= 120 && userTurns >= 2;
 
             if (metThreshold) {
-                // Complete the session normally
-                await interviewService.completeSession(currentSessionId, {});
-                console.log("✅ Session completed with threshold met");
+                // Com plete the session normally
+                await interviewService.completeSession(currentSessionId, {
+                    totalHintsUsed: hintsUsed
+                });
+                console.log(`✅ Session completed with threshold met, hints used: ${hintsUsed}`);
 
                 // Trigger BACKGROUND feedback generation
                 generateFeedbackInBackground(currentSessionId);

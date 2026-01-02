@@ -139,9 +139,8 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                             </div>
 
                             <Card className={cn(
-                                "border-none shadow-sm ring-1 transition-all duration-300 overflow-hidden",
-                                !isUnlocked ? "opacity-50 pointer-events-none ring-black/5 dark:ring-white/5" :
-                                    "ring-black/10 dark:ring-white/10 hover:ring-primary/20 hover:shadow-md"
+                                "border-none shadow-sm transition-all duration-300 overflow-hidden glass-card hover-lift",
+                                !isUnlocked ? "opacity-50 pointer-events-none grayscale" : "hover:neon-glow-primary"
                             )}>
                                 <CardHeader
                                     className="cursor-pointer select-none bg-gradient-to-r from-accent/10 to-transparent transition-colors hover:from-accent/20"
@@ -249,7 +248,7 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                         </div>
                                                         <Button
                                                             size="sm"
-                                                            className="rounded-xl shadow-sm hover:translate-x-0.5 transition-transform"
+                                                            className="rounded-xl shadow-sm hover-lift active-scale"
                                                             onClick={() => router.push('/dashboard')}
                                                         >
                                                             Start session

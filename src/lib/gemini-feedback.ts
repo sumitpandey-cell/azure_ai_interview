@@ -49,6 +49,19 @@ export interface FeedbackData {
         feedback: string;
     }[];
     actionPlan: string[];
+    // What you said vs. What you should have said
+    comparisons?: {
+        question: string;
+        actualAnswer: string;
+        eliteAnswer: string;
+        explanation: string;
+    }[];
+    // Confidence analysis over time
+    confidenceFlow?: {
+        segment: string;
+        score: number;
+        sentiment: string;
+    }[];
     // Deprecated: kept for backward compatibility
     skills?: {
         name: string;
@@ -360,6 +373,21 @@ OUTPUT (JSON only):
   "executiveSummary": "2-3 sentences with specific examples and scores justification",
   "strengths": ["Specific examples from transcript"],
   "improvements": ["Specific gaps with examples"],
+  "comparisons": [
+    {
+      "question": "Interviewer's prompt",
+      "actualAnswer": "Candidate's exact response",
+      "eliteAnswer": "A high-quality, professional, and deep technical answer they SHOULD have given",
+      "explanation": "Why this elite answer is superior"
+    }
+  ],
+  "confidenceFlow": [
+    {
+      "segment": "Phase (e.g. Intro, DB Deep-dive)",
+      "score": 0-100,
+      "sentiment": "Emotional state description"
+    }
+  ],
   "overallSkills": [
     {"name": "Technical Knowledge", "score": 0-100, "feedback": "Evidence-based, match score"},
     {"name": "Communication", "score": 0-100, "feedback": "Evidence-based"},
@@ -369,6 +397,12 @@ OUTPUT (JSON only):
   "technicalSkills": [${skills.length > 0 ? `{"name": "SKILL", "score": 0-100, "feedback": "Evidence only"}` : ''}],
   "actionPlan": ["Specific, actionable steps"]
 }
+
+MANDATORY FEATURE: 'comparisons'
+Identify 3-5 most impactful exchanges where the candidate's answer was weak or could be significantly improved. For EACH, provide a gold-standard 'eliteAnswer'. This is the most valued part of the report.
+
+MANDATORY FEATURE: 'confidenceFlow'
+Analyze the psychological momentum. Divide the interview into 5-8 logical segments.
 
 Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.`;
 
@@ -380,7 +414,7 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
 
     const cleanApiKey = API_KEY.replace(/[^a-zA-Z0-9_\-]/g, '');
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -388,7 +422,13 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
             body: JSON.stringify({
                 contents: [{
                     parts: [{ text: prompt }]
-                }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.95,
+                    topK: 40,
+                    maxOutputTokens: 8192,
+                }
             })
         });
 

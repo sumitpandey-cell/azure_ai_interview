@@ -70,8 +70,8 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        // Start the process without awaiting it
-        processFeedback();
+        // Start the process and await it
+        await processFeedback();
 
     }, []);
 

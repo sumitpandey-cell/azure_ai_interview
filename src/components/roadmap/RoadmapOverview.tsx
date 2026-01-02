@@ -80,7 +80,7 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
                         customValueClass: `capitalize ${getTrendLabelColor()}`
                     }
                 ].map((stat, i) => (
-                    <Card key={i} className={`relative overflow-hidden border-none bg-gradient-to-br ${stat.gradient} backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 ring-1 ring-black/5 dark:ring-white/5`}>
+                    <Card key={i} className={`glass-card hover-lift relative overflow-hidden border-none bg-gradient-to-br ${stat.gradient} backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 ring-1 ring-black/5 dark:ring-white/5`}>
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</span>
@@ -106,7 +106,7 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
             {/* Analysis Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
                 {/* Strengths */}
-                <Card className="border-none shadow-sm ring-1 ring-black/5 dark:ring-white/5 bg-emerald-50/30 dark:bg-emerald-950/10">
+                <Card className="glass-card hover-lift border-none shadow-sm ring-1 ring-black/5 dark:ring-white/5 bg-emerald-50/30 dark:bg-emerald-950/10">
                     <CardHeader className="border-b border-emerald-100/50 dark:border-emerald-900/50">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">

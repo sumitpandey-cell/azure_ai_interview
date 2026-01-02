@@ -1,5 +1,5 @@
 "use client";
-
+import { cn } from "@/lib/utils";
 import {
     useConnectionState,
     useLocalParticipant,
@@ -19,6 +19,8 @@ import {
     User,
     Brain,
     AlertTriangle,
+    Zap,
+    LifeBuoy,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
@@ -30,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArjunaLoader, BowLoader } from "@/components/ArjunaLoader";
 import { TranscriptProvider, TranscriptEntry } from "@/contexts/TranscriptContext";
+import { HintDialog } from "./HintDialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,7 +47,7 @@ import "@/styles/arjuna-animations.css";
 
 interface LiveInterviewSessionProps {
     sessionId: string;
-    onEndSession: () => void;
+    onEndSession: (hintsUsed?: number) => void;
     remainingMinutes: number;
     remainingSeconds: number;
     isLowTime: boolean;
@@ -116,11 +119,102 @@ export function LiveInterviewSession({
     };
 
     const confirmEndCall = () => {
-        onEndSession();
+        // Pass hints used to the end session handler
+        onEndSession(hintsUsed);
         setTimeout(() => {
             room.disconnect();
         }, 100);
         setIsEndCallDialogOpen(false);
+    };
+
+    const [isHintLoading, setIsHintLoading] = useState(false);
+    const [hintsUsed, setHintsUsed] = useState(0);
+    const [currentHint, setCurrentHint] = useState<string | null>(null);
+    const [showHintDialog, setShowHintDialog] = useState(false);
+    const [hintCooldown, setHintCooldown] = useState(false);
+    const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+    // Listen for hint responses from the agent
+    useEffect(() => {
+        if (!room) return;
+
+        const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic?: string) => {
+            console.log("🔔 [HINT DEBUG] Data received - Topic:", topic, "Participant:", participant);
+
+            if (topic === "hint_response") {
+                try {
+                    const decoder = new TextDecoder();
+                    const message = decoder.decode(payload);
+                    console.log("📨 [HINT DEBUG] Raw message:", message);
+                    const data = JSON.parse(message);
+
+                    console.log("💡 Hint response received:", data);
+
+                    if (data.type === "hint_response" && data.hint) {
+                        console.log("✅ [HINT DEBUG] Setting hint and showing dialog");
+                        setCurrentHint(data.hint);
+                        setShowHintDialog(true);
+                        setIsHintLoading(false);
+                    } else {
+                        console.warn("⚠️ [HINT DEBUG] Data missing type or hint:", data);
+                    }
+                } catch (error) {
+                    console.error("❌ [HINT DEBUG] Failed to parse hint response:", error);
+                    setIsHintLoading(false);
+                }
+            } else {
+                console.log("ℹ️ [HINT DEBUG] Ignoring data with topic:", topic);
+            }
+        };
+
+        room.on("dataReceived", handleDataReceived);
+
+        return () => {
+            room.off("dataReceived", handleDataReceived);
+        };
+    }, [room]);
+
+    // Cooldown timer effect
+    useEffect(() => {
+        if (hintCooldown && cooldownSeconds > 0) {
+            const timer = setTimeout(() => {
+                setCooldownSeconds(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        } else if (cooldownSeconds === 0 && hintCooldown) {
+            setHintCooldown(false);
+        }
+    }, [hintCooldown, cooldownSeconds]);
+
+    const requestHint = async () => {
+        if (isHintLoading || hintCooldown) return;
+
+        setIsHintLoading(true);
+        setHintsUsed(prev => prev + 1);
+
+        try {
+            // Encode data message
+            const encoder = new TextEncoder();
+            const data = encoder.encode(JSON.stringify({ type: "hint_request" }));
+
+            // Send reliable data message to all participants (agent)
+            await localParticipant.publishData(data, {
+                reliable: true,
+                topic: "hint_request"
+            });
+
+            // Start cooldown timer (30 seconds)
+            setHintCooldown(true);
+            setCooldownSeconds(30);
+
+            // Auto-clear loading state after 10 seconds if no response
+            setTimeout(() => {
+                setIsHintLoading(false);
+            }, 10000);
+        } catch (error) {
+            console.error("Failed to request hint:", error);
+            setIsHintLoading(false);
+        }
     };
 
     const isAISpeaking = agentState === "speaking";
@@ -331,6 +425,30 @@ export function LiveInterviewSession({
                                 >
                                     <MessageSquare className="h-5 w-5" />
                                 </button>
+
+                                <button
+                                    onClick={requestHint}
+                                    disabled={isHintLoading || hintCooldown}
+                                    title={hintCooldown ? `Cooldown: ${cooldownSeconds}s` : "Request a hint"}
+                                    className={cn(
+                                        "relative flex items-center gap-2 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest transition-all border group",
+                                        isHintLoading
+                                            ? "bg-amber-500/20 border-amber-500/50 text-amber-500 animate-pulse cursor-wait"
+                                            : hintCooldown
+                                                ? "bg-gray-500/10 border-gray-500/20 text-gray-500 cursor-not-allowed opacity-50"
+                                                : "bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                                    )}
+                                >
+                                    <Zap className={cn("h-3.5 w-3.5", isHintLoading ? "animate-bounce" : "group-hover:scale-125")} />
+                                    <span className="hidden sm:inline">
+                                        {hintCooldown ? `${cooldownSeconds}s` : "Lifeline"}
+                                    </span>
+                                    {hintsUsed > 0 && !hintCooldown && (
+                                        <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-amber-500 text-black flex items-center justify-center text-[8px] font-black border-2 border-card animate-in zoom-in-50">
+                                            {hintsUsed}
+                                        </div>
+                                    )}
+                                </button>
                             </div>
 
                             {/* Branding Footer */}
@@ -434,6 +552,16 @@ export function LiveInterviewSession({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Hint Dialog */}
+            {currentHint && (
+                <HintDialog
+                    open={showHintDialog}
+                    onOpenChange={setShowHintDialog}
+                    hintText={currentHint}
+                    hintsUsed={hintsUsed}
+                />
+            )}
         </TranscriptProvider>
     );
 }

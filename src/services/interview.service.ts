@@ -90,18 +90,34 @@ export const interviewService = {
      */
     async completeSession(sessionId: string, completionData: CompleteSessionData): Promise<InterviewSession | null> {
         try {
-            const { durationMinutes, ...otherData } = completionData;
+            console.log("🔧 [completeSession] Starting completion for:", sessionId);
+            console.log("🔧 [completeSession] Completion data:", completionData);
 
-            const updateData: InterviewSessionUpdate = {
+            const {
+                durationMinutes,
+                totalHintsUsed,
+                averagePerformanceScore,
+                ...otherData
+            } = completionData;
+
+            const updateData: any = {
                 status: "completed",
                 completed_at: new Date().toISOString(),
                 ...otherData,
             };
 
-            // Only include duration_seconds if explicitly provided
+            // Map frontend camelCase to backend snake_case
             if (durationMinutes !== undefined) {
                 updateData.duration_seconds = durationMinutes;
             }
+            if (totalHintsUsed !== undefined) {
+                updateData.total_hints_used = totalHintsUsed;
+            }
+            if (averagePerformanceScore !== undefined) {
+                updateData.average_performance_score = averagePerformanceScore;
+            }
+
+            console.log("🔧 [completeSession] Update data (mapped):", updateData);
 
             const { data, error } = await supabase
                 .from("interview_sessions")
@@ -110,7 +126,11 @@ export const interviewService = {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error("❌ [completeSession] Supabase error:", error);
+                throw error;
+            }
+
             console.log("✓ Interview session completed:", sessionId);
 
             // Check and award badges after completion
@@ -122,7 +142,8 @@ export const interviewService = {
 
             return data;
         } catch (error) {
-            console.error("Error completing interview session:", error);
+            console.error("❌ [completeSession] Error completing interview session:", error);
+            console.error("❌ [completeSession] Error details:", JSON.stringify(error, null, 2));
             return null;
         }
     },
@@ -826,6 +847,8 @@ export const interviewService = {
                         improvements: feedback.improvements,
                         overallSkills: feedback.overallSkills,
                         technicalSkills: feedback.technicalSkills,
+                        comparisons: feedback.comparisons || [],
+                        confidenceFlow: feedback.confidenceFlow || [],
                     });
                 }
             }
@@ -852,6 +875,8 @@ export const interviewService = {
                     improvements: feedback.improvements,
                     overallSkills: feedback.overallSkills,
                     technicalSkills: feedback.technicalSkills,
+                    comparisons: feedback.comparisons || [],
+                    confidenceFlow: feedback.confidenceFlow || [],
                     generatedAt: new Date().toISOString(),
                 };
             } else {
@@ -880,6 +905,13 @@ export const interviewService = {
                                 feedback: occurrences[0].technicalSkills.find((ts: any) => ts.name === name)?.feedback || ""
                             };
                         }),
+                        comparisons: resumptionFeedbacks.flatMap(r => r.comparisons || []),
+                        confidenceFlow: resumptionFeedbacks.flatMap((r, idx) =>
+                            (r.confidenceFlow || []).map((cf: any) => ({
+                                ...cf,
+                                segment: resumptionFeedbacks.length > 1 ? `[S${idx + 1}] ${cf.segment}` : cf.segment
+                            }))
+                        ),
                         generatedAt: new Date().toISOString(),
                     },
                     resumptions: resumptionFeedbacks,

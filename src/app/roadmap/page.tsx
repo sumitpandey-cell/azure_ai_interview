@@ -12,6 +12,8 @@ import { RoadmapPhases } from '@/components/roadmap/RoadmapPhases';
 import { RoadmapMilestones } from '@/components/roadmap/RoadmapMilestones';
 import { RoadmapSkeleton } from '@/components/roadmap/RoadmapSkeleton';
 import { PaymentPendingModal } from '@/components/roadmap/PaymentPendingModal';
+import { SkillTree } from '@/components/roadmap/SkillTree';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function RoadmapPage() {
     const router = useRouter();
@@ -343,11 +345,31 @@ export default function RoadmapPage() {
 
                     {/* Roadmap Content Grid */}
                     <div className="space-y-16">
-                        <section className="relative">
-                            <RoadmapOverview data={roadmap.roadmap_data?.analysis} />
+                        <section className="relative glass-card rounded-[2rem] p-4 sm:p-6 overflow-hidden">
+                            <Tabs defaultValue="visual" className="w-full">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
+                                    <div className="space-y-1">
+                                        <h2 className="text-2xl font-bold">Path Visualization</h2>
+                                        <p className="text-sm text-muted-foreground">Toggle between visual tree and technical overview</p>
+                                    </div>
+                                    <TabsList className="bg-background/50 border border-border/50 p-1 rounded-xl">
+                                        <TabsTrigger value="visual" className="rounded-lg font-bold px-4 sm:px-6">Skill Tree</TabsTrigger>
+                                        <TabsTrigger value="analysis" className="rounded-lg font-bold px-4 sm:px-6">Detailed Analysis</TabsTrigger>
+                                    </TabsList>
+                                </div>
+                                <TabsContent value="visual" className="mt-0 px-0">
+                                    <SkillTree phases={roadmap.roadmap_data?.phases || []} progress={progress} />
+                                </TabsContent>
+                                <TabsContent value="analysis" className="mt-4 px-2 sm:px-4">
+                                    <RoadmapOverview data={roadmap.roadmap_data?.analysis} />
+                                </TabsContent>
+                            </Tabs>
                         </section>
 
                         <section className="relative">
+                            <div className="flex items-center gap-2 mb-8 border-l-3 border-primary pl-4 py-1">
+                                <h2 className="text-2xl font-bold">Execution Plan</h2>
+                            </div>
                             <RoadmapPhases
                                 phases={roadmap.roadmap_data?.phases || []}
                                 progress={progress}

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw, AlertTriangle, TrendingUp, Target, Shield, Award, Activity, FileText, Share2, Sparkles, Star, ChevronRight, Timer } from "lucide-react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
@@ -80,9 +80,9 @@ export default function InterviewReport() {
     const { user } = useAuth();
     const userMetadata = user?.user_metadata as UserMetadata | undefined;
     const [loading, setLoading] = useState(true);
-    const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError } = useInterviewStore();
+    const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError, clearFeedback } = useInterviewStore();
     const { fetchSessionDetail, deleteInterviewSession } = useOptimizedQueries();
-    const { generateFeedbackInBackground } = useFeedback();
+    const { generateFeedbackInBackground, isGenerating } = useFeedback();
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
     const [errorState, setErrorState] = useState<FeedbackError | null>(null);
@@ -95,11 +95,11 @@ export default function InterviewReport() {
         }
     }, [sessionId]);
 
-    const fetchSession = async () => {
+    const fetchSession = async (forceRefresh = false) => {
         try {
             setLoading(true);
             if (sessionId) {
-                const data = await fetchSessionDetail(sessionId);
+                const data = await fetchSessionDetail(sessionId, forceRefresh);
                 if (data) {
                     setSession(data as InterviewSession);
                     // Automatically trigger generation if report is missing
@@ -644,12 +644,14 @@ export default function InterviewReport() {
                                 </ul>
                                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                                     <Button
-                                        onClick={() => {
+                                        onClick={async () => {
                                             if (sessionId) {
                                                 setFeedbackTimeout(false);
-                                                generateFeedbackInBackground(sessionId);
-                                                // Re-trigger polling by reloading or just setting pollCount=0 if we were in useEffect
-                                                window.location.reload();
+                                                // Clear instant feedback to force fresh DB read
+                                                clearFeedback();
+                                                await generateFeedbackInBackground(sessionId);
+                                                // Force fetch fresh session from DB
+                                                await fetchSession(true);
                                             }
                                         }}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -679,9 +681,12 @@ export default function InterviewReport() {
 
         if (instTs >= dbTs) {
             // Instant is newer: shallow-merge, preferring instant fields when present
+            // but ONLY if the instant fields are not empty/placeholders
             return {
                 ...dbFeedback,
                 ...instant,
+                comparisons: (instant.comparisons && instant.comparisons.length > 0) ? instant.comparisons : dbFeedback.comparisons,
+                confidenceFlow: (instant.confidenceFlow && instant.confidenceFlow.length > 0) ? instant.confidenceFlow : dbFeedback.confidenceFlow,
                 // ensure generatedAt is set to the latest
                 generatedAt: instant.generatedAt || dbFeedback.generatedAt,
             };
@@ -779,7 +784,9 @@ export default function InterviewReport() {
                 .filter((msg: any) => msg.text.trim()) // Remove messages that became empty after filtering
             : [
                 { id: 1, sender: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
-            ]
+            ],
+        comparisons: feedbackData.comparisons || [],
+        confidenceFlow: feedbackData.confidenceFlow || []
     };
 
     return (
@@ -818,16 +825,23 @@ export default function InterviewReport() {
                                 Export Intel
                             </Button>
                             <Button
-                                onClick={() => {
+                                onClick={async () => {
                                     if (sessionId) {
-                                        generateFeedbackInBackground(sessionId);
-                                        window.location.reload();
+                                        toast.info("Recalibrating intelligence model... please wait.", {
+                                            icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+                                        });
+                                        // Clear instant feedback to force fresh DB read
+                                        clearFeedback();
+                                        await generateFeedbackInBackground(sessionId);
+                                        // Force fetch fresh session from DB bypassing the cache
+                                        await fetchSession(true);
                                     }
                                 }}
-                                className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary text-black hover:bg-primary/90 font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-xl shadow-primary/20 group/btn"
+                                disabled={isGenerating}
+                                className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary text-black hover:bg-primary/90 font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-xl shadow-primary/20 group/btn disabled:opacity-50"
                             >
-                                <RefreshCw className="h-4 w-4 mr-2 group-hover:rotate-180 transition-transform duration-700" />
-                                Recalibrate
+                                <RefreshCw className={cn("h-4 w-4 mr-2 transition-transform duration-700", isGenerating ? "animate-spin" : "group-hover:rotate-180")} />
+                                {isGenerating ? 'Recalibrating...' : 'Recalibrate'}
                             </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -956,11 +970,105 @@ export default function InterviewReport() {
                 <Tabs defaultValue="insights" className="w-full">
                     <TabsList className="bg-white/5 p-1 sm:p-1.5 rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 md:h-16 mb-6 sm:mb-8 md:mb-12 inline-flex border border-white/10 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
                         <TabsTrigger value="insights" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Insights</TabsTrigger>
+                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[10px] sm:text-[11px] h-full transition-all duration-500 flex items-center gap-2">
+                            <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
+                            Elite Mode
+                        </TabsTrigger>
                         <TabsTrigger value="skills" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Competencies</TabsTrigger>
                         <TabsTrigger value="transcript" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Transcript</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="insights" className="space-y-4 sm:space-y-6 md:space-y-8 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
+                        {/* Confidence Flow Graph */}
+                        {reportData.confidenceFlow && reportData.confidenceFlow.length > 0 && (
+                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/confidence">
+                                <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
+                                <CardHeader className="p-6 sm:p-8 md:p-10 pb-0 relative z-10">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-foreground flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                    <Activity className="h-5 w-5 text-primary" />
+                                                </div>
+                                                Confidence <span className="text-primary italic">Flow</span>
+                                            </h3>
+                                            <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-1">Emotional Intelligence Matrix • Performance Momentum</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Live Feedback Loop</span>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-6 sm:p-8 md:p-10 pt-8 sm:pt-12 relative z-10">
+                                    <div className="h-[300px] w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={reportData.confidenceFlow} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#A855F7" stopOpacity={0.3} />
+                                                        <stop offset="95%" stopColor="#A855F7" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                                <XAxis
+                                                    dataKey="segment"
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 900 }}
+                                                    dy={10}
+                                                />
+                                                <YAxis
+                                                    domain={[0, 100]}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 900 }}
+                                                    dx={-10}
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{
+                                                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                                        borderColor: 'rgba(168, 85, 247, 0.2)',
+                                                        borderRadius: '16px',
+                                                        backdropFilter: 'blur(12px)',
+                                                        borderWidth: '2px',
+                                                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                                                    }}
+                                                    itemStyle={{ color: '#A855F7', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                                                    labelStyle={{ color: 'white', fontWeight: 900, marginBottom: '4px', textTransform: 'uppercase', fontSize: '11px' }}
+                                                    cursor={{ stroke: 'rgba(168, 85, 247, 0.5)', strokeWidth: 2 }}
+                                                />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="score"
+                                                    stroke="#A855F7"
+                                                    strokeWidth={4}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorConfidence)"
+                                                    animationDuration={2000}
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Sentiment Markers */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 mt-8">
+                                        {reportData.confidenceFlow.map((item: any, i: number) => (
+                                            <div key={i} className="space-y-2 text-center group/marker">
+                                                <div className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest line-clamp-1 group-hover/marker:text-primary transition-colors">{item.segment}</div>
+                                                <div className={cn(
+                                                    "h-1.5 w-full rounded-full transition-all duration-500",
+                                                    item.score >= 80 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
+                                                        item.score >= 60 ? "bg-primary shadow-[0_0_10px_rgba(168,85,247,0.3)]" : "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                                )} />
+                                                <div className="text-[9px] font-black text-foreground/60 uppercase group-hover/marker:text-foreground transition-colors">{item.score}%</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                             {/* Strengths Card */}
                             <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/strengths">
@@ -1070,6 +1178,123 @@ export default function InterviewReport() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="elite" className="space-y-10 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div className="flex flex-col gap-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight uppercase text-foreground flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                            <Sparkles className="h-5 w-5 text-primary" />
+                                        </div>
+                                        Elite <span className="text-primary italic">Answers</span>
+                                    </h3>
+                                    <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-1">What You Said vs. What You Should Have Said</p>
+                                </div>
+                                <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10">
+                                    <Bot className="h-4 w-4 text-primary" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/80">AI Enhanced Analysis</span>
+                                </div>
+                            </div>
+
+                            {reportData.comparisons && reportData.comparisons.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-12">
+                                    {reportData.comparisons.map((item: any, i: number) => (
+                                        <div key={i} className="group/elite relative">
+                                            {/* Decorative Number */}
+                                            <div className="absolute -top-6 -left-4 text-8xl font-black text-white/[0.02] pointer-events-none group-hover/elite:text-primary/[0.05] transition-colors duration-1000">0{i + 1}</div>
+
+                                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden transition-all duration-700 hover:border-primary/20">
+                                                <CardContent className="p-0">
+                                                    <div className="grid grid-cols-1 xl:grid-cols-2">
+                                                        {/* Actual Side */}
+                                                        <div className="p-8 sm:p-10 border-b xl:border-b-0 xl:border-r border-white/5 space-y-6">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="h-8 w-8 rounded-lg bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-500">
+                                                                    <MessageSquare className="h-4 w-4" />
+                                                                </div>
+                                                                <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-500/60">Actual Production</span>
+                                                            </div>
+
+                                                            <div className="space-y-4">
+                                                                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 italic text-xs font-medium text-muted-foreground">
+                                                                    Q: {item.question}
+                                                                </div>
+                                                                <p className="text-sm sm:text-base font-bold text-foreground/80 leading-relaxed italic">
+                                                                    "{item.actualAnswer}"
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Elite Side */}
+                                                        <div className="p-8 sm:p-10 space-y-6 bg-primary/[0.02] relative group-hover/elite:bg-primary/[0.04] transition-colors duration-700">
+                                                            <div className="absolute inset-0 bg-grid-primary/[0.02] pointer-events-none" />
+                                                            <div className="relative z-10 flex items-center justify-between">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/40 text-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                                                                        <Target className="h-4 w-4" />
+                                                                    </div>
+                                                                    <span className="text-xs font-black uppercase tracking-[0.3em] text-primary">Elite Version</span>
+                                                                </div>
+                                                                <Badge className="bg-primary hover:bg-primary text-black font-black text-[9px] tracking-widest uppercase px-3 py-1">Top Tier</Badge>
+                                                            </div>
+
+                                                            <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-primary text-black shadow-2xl shadow-primary/20">
+                                                                <p className="text-sm sm:text-base font-black leading-relaxed">
+                                                                    {item.eliteAnswer}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Explanation Box */}
+                                                            <div className="relative z-10 flex gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 group-hover/elite:border-primary/20 transition-all">
+                                                                <Bot className="h-5 w-5 text-primary shrink-0 mt-1" />
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Analytical Insight</p>
+                                                                    <p className="text-xs font-bold text-foreground/70 leading-relaxed">{item.explanation}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] p-12 text-center">
+                                    <div className="flex flex-col items-center gap-6">
+                                        <div className="h-20 w-20 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10">
+                                            <AlertTriangle className="h-10 w-10 text-muted-foreground/40" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="text-xl font-bold text-foreground uppercase tracking-tight">No Comparatives Available</h4>
+                                            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                                                This interview may not have had enough technical depth or exchanges to generate detailed competitive comparisons.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={async () => {
+                                                if (sessionId) {
+                                                    toast.info("Recalibrating comparisons... please wait.", {
+                                                        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+                                                    });
+                                                    // Clear instant feedback to force fresh DB read
+                                                    clearFeedback();
+                                                    await generateFeedbackInBackground(sessionId);
+                                                    // Force fetch fresh session from DB
+                                                    await fetchSession(true);
+                                                }
+                                            }}
+                                            variant="outline"
+                                            className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] border-white/10 hover:bg-white/5"
+                                        >
+                                            Try Regenerating Analysis
+                                        </Button>
+                                    </div>
+                                </Card>
+                            )}
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="skills" className="space-y-10 outline-none animate-in fade-in slide-in-from-top-4 duration-500">
