@@ -52,8 +52,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [invalidateCache]);
 
   // Get streak data from analytics cache
-  const { streakData } = useAnalytics(user?.id);
+  const { streakData, refetch: refetchAnalytics } = useAnalytics(user?.id);
   const streak = streakData?.currentStreak || 0;
+
+  // Force refresh analytical data when returning to dashboard or mounting
+  useEffect(() => {
+    if (user?.id) {
+      refetchAnalytics();
+    }
+  }, [user?.id, refetchAnalytics]);
 
   // Initialize sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -100,8 +107,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`
-        fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen border-none
-        transition-all duration-300 ease-in-out
+          fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
+          transition-all duration-300 ease-in-out
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         ${sidebarCollapsed ? "lg:w-20" : "lg:w-72"}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
@@ -109,38 +116,43 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       `}
       >
         {/* Logo Section */}
-        <div className={`h-20 flex items-center flex-shrink-0 ${sidebarCollapsed ? "px-2 justify-center" : "px-6"}`}>
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-3">
+        <div className={`h-24 flex items-center flex-shrink-0 transition-all duration-500 ${sidebarCollapsed ? "px-2 justify-center" : "px-8"}`}>
+          {!sidebarCollapsed ? (
+            <div className="flex items-center gap-4 group cursor-default">
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full"></div>
+                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-all duration-700 animate-pulse"></div>
+                <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-2xl">
+                  <img
+                    src="/favicon.ico"
+                    alt="Arjuna AI"
+                    className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-black text-foreground tracking-tighter leading-tight">
+                  ARJUNA<span className="text-primary italic">AI</span>
+                </span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] -mt-0.5">Tactical Interface</span>
+              </div>
+            </div>
+          ) : (
+            <div className="relative flex-shrink-0 group">
+              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
+              <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
                 <img
                   src="/favicon.ico"
                   alt="Arjuna AI"
-                  className="relative h-10 w-10 object-contain drop-shadow-lg"
+                  className="h-full w-full object-contain"
                 />
               </div>
-              <span className="text-xl font-bold text-white tracking-tight">
-                Arjuna AI
-              </span>
-            </div>
-          )}
-
-          {sidebarCollapsed && (
-            <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl rounded-full"></div>
-              <img
-                src="/arjuna-logo.png"
-                alt="Arjuna AI"
-                className="relative h-10 w-10 object-contain drop-shadow-lg"
-              />
             </div>
           )}
 
           {/* Mobile Close */}
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden ml-auto p-2 hover:bg-white/10 rounded-lg text-white"
+            className="lg:hidden ml-auto p-2 hover:bg-sidebar-accent rounded-lg text-sidebar-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -148,37 +160,59 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Collapse Toggle */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`hidden lg:flex p-2 hover:bg-white/10 rounded-lg text-white transition-colors ${sidebarCollapsed ? "" : "ml-auto"}`}
+            className={`hidden lg:flex items-center justify-center h-10 w-10 border border-sidebar-border/50 hover:bg-sidebar-accent hover:border-sidebar-border rounded-xl text-muted-foreground hover:text-foreground transition-all duration-300 ${sidebarCollapsed ? "" : "ml-auto"}`}
           >
             {sidebarCollapsed ? (
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             )}
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-2 py-4 overflow-y-auto scrollbar-hide">
+        <nav className="flex-1 px-4 space-y-3 py-6 overflow-y-auto scrollbar-hide">
+          <div className={`${sidebarCollapsed ? "hidden" : "block"} px-4 mb-4`}>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Operational Menu</p>
+          </div>
           {navigation.map((item) => (
             <Link
               key={item.name}
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={`
-                group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150
+                group relative flex items-center gap-4 rounded-[1.25rem] transition-all duration-500
                 ${isActive(item.href)
-                  ? "bg-white/10 text-white shadow-lg shadow-black/20"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white active:scale-95"
+                  ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] border border-primary/20"
+                  : "text-sidebar-foreground/60 hover:text-foreground hover:bg-sidebar-accent border border-transparent"
                 }
-                ${sidebarCollapsed ? "justify-center px-2" : ""}
+                ${sidebarCollapsed ? "w-12 h-12 justify-center mx-auto p-0" : "px-5 py-3.5"}
               `}
               title={sidebarCollapsed ? item.name : undefined}
             >
+              {/* Active Indicator Glow */}
+              {isActive(item.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[4px_0_12px_rgba(168,85,247,0.8)]" />
+              )}
+
               <item.icon
-                className={`h-5 w-5 flex-shrink-0 transition-colors ${isActive(item.href) ? "text-blue-400" : ""}`}
+                className={`h-5 w-5 flex-shrink-0 transition-all duration-500 
+                  ${isActive(item.href)
+                    ? "text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] scale-110"
+                    : "group-hover:text-primary group-hover:scale-110"
+                  }`}
               />
-              {!sidebarCollapsed && <span>{item.name}</span>}
+
+              {!sidebarCollapsed && (
+                <span className={`text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive(item.href) ? "translate-x-1" : "group-hover:translate-x-1"}`}>
+                  {item.name}
+                </span>
+              )}
+
+              {/* Hover Ambient Detail */}
+              {!sidebarCollapsed && !isActive(item.href) && (
+                <ChevronRight className="h-3 w-3 ml-auto opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+              )}
             </Link>
           ))}
         </nav>
@@ -187,21 +221,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="p-4 space-y-4 mt-auto">
           {/* Streak Card */}
           {!sidebarCollapsed ? (
-            <div className="bg-sidebar-accent rounded-2xl p-4 border border-sidebar-border shadow-lg relative overflow-hidden group">
-              <div className="flex items-center gap-3 relative z-10">
-                <div className="p-2 bg-transparent rounded-lg">
-                  <Flame className="h-6 w-6 text-orange-500 fill-orange-500" />
+            <div className="bg-sidebar-accent/50 backdrop-blur-2xl rounded-3xl p-5 border border-sidebar-border shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-710" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500/20 blur-lg rounded-full animate-pulse"></div>
+                  <div className="relative h-12 w-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 shadow-inner">
+                    <Flame className="h-6 w-6 text-orange-500 fill-orange-500 animate-bounce transition-all duration-1000" />
+                  </div>
                 </div>
                 <div>
-                  <p className="text-sidebar-foreground font-bold text-sm">Streak</p>
-                  <p className="text-xs text-sidebar-foreground/70">{streak} Day Streak</p>
+                  <p className="text-[10px] font-black text-foreground/50 uppercase tracking-widest leading-none mb-1">Vitality Streak</p>
+                  <p className="text-2xl font-black text-foreground tracking-tighter">{streak} <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-normal italic">Days</span></p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex justify-center" title={`${streak} Day Streak`}>
-              <div className="p-2 bg-sidebar-accent rounded-lg border border-sidebar-border">
-                <Flame className="h-5 w-5 text-orange-500 fill-orange-500" />
+            <div className="flex justify-center group" title={`${streak} Day Streak`}>
+              <div className="relative h-12 w-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 transition-all duration-300 group-hover:scale-110 group-hover:bg-orange-500/20">
+                <Flame className="h-6 w-6 text-orange-500 fill-orange-500" />
+                <div className="absolute -top-1 -right-1 bg-orange-500 text-[8px] font-black text-white px-1.5 rounded-full border border-sidebar shadow-[0_0_10px_rgba(249,115,22,0.4)]">
+                  {streak}
+                </div>
               </div>
             </div>
           )}
@@ -212,8 +253,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-400" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-left">
                     <p className="text-sidebar-foreground font-bold text-sm truncate w-32">{currentSession?.position || "Latest Interview"}</p>
@@ -222,11 +263,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
 
                 <Button
-                  className={`w-full h-9 text-xs font-semibold rounded-xl shadow-sm transition-all active:scale-95 ${isCurrentSessionGenerating
-                    ? 'bg-blue-500/20 text-blue-400 cursor-not-allowed hover:bg-blue-500/20'
+                  className={`w-full h-10 text-[10px] uppercase tracking-widest font-bold rounded-xl shadow-lg transition-all active:scale-95 ${isCurrentSessionGenerating
+                    ? 'bg-primary/20 text-primary cursor-not-allowed hover:bg-primary/20'
                     : hasFeedback
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      ? 'bg-primary hover:opacity-90 text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                      : 'bg-emerald-500 hover:bg-emerald-600 text-white'
                     }`}
                   disabled={isCurrentSessionGenerating}
                   onClick={() => {
@@ -264,10 +305,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 }}
                 disabled={isCurrentSessionGenerating}
                 className={`p-2.5 rounded-xl border transition-all active:scale-95 relative ${isCurrentSessionGenerating
-                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 animate-pulse'
+                  ? 'bg-primary/10 border-primary/20 text-primary animate-pulse'
                   : hasFeedback
-                    ? 'bg-blue-600/10 border-blue-600/20 text-blue-400 hover:bg-blue-600/20'
-                    : 'bg-emerald-600/10 border-emerald-600/20 text-emerald-400 hover:bg-emerald-600/20'
+                    ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                   }`}
               >
                 <FileText className="h-5 w-5" />
@@ -280,13 +321,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Upgrade Card */}
           {!sidebarCollapsed ? (
-            <div className="bg-sidebar-accent rounded-2xl p-4 border border-sidebar-border shadow-lg text-center relative overflow-hidden">
+            <div className="bg-sidebar-accent/50 rounded-2xl p-4 border border-sidebar-border shadow-xl text-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl mb-3 h-10"
+                className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest rounded-xl mb-3 h-10 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                 onClick={() => router.push("/pricing")}
                 disabled={subscriptionLoading}
               >
-                Upgrade
+                Upgrade Plan
               </Button>
               <div className="text-xs text-sidebar-foreground/70 font-medium">
                 {subscriptionLoading ? (
@@ -311,12 +353,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {/* Progress bar */}
                 <div className="mt-2 h-1.5 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-500 ${subscriptionLoading ? 'bg-sidebar-foreground/10' :
+                    className={`h-full transition-all duration-700 ${subscriptionLoading ? 'bg-primary/10' :
                       remaining_minutes <= 120
-                        ? 'bg-red-500'
+                        ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                         : remaining_minutes < 300
-                          ? 'bg-amber-500'
-                          : 'bg-blue-500'
+                          ? 'bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]'
+                          : 'bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]'
                       }`}
                     style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_minutes / 6000) * 100, 100)}%` }}
                   />
@@ -327,7 +369,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex justify-center">
               <Button
                 size="icon"
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg"
+                className="bg-primary hover:opacity-90 text-primary-foreground rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.4)]"
                 onClick={() => router.push("/pricing")}
               >
                 <Sparkles className="h-5 w-5" />
@@ -337,26 +379,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Floating Mobile Toggle */}
+      {/* Tactical Mobile Toggle */}
       <button
         onClick={() => setMobileMenuOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-background/80 backdrop-blur-md border border-border/40 rounded-xl shadow-sm"
+        className="lg:hidden fixed top-5 left-5 z-40 h-10 w-10 flex items-center justify-center bg-white/5 backdrop-blur-2xl border border-white/10 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.15)] group active:scale-90 transition-all duration-300"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+        <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
       </button>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto bg-background/30 dark:bg-background/10 backdrop-blur-[2px] pt-16 lg:pt-8 relative z-10">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-8 relative z-10 w-full">
           <div
             key={pathname}
-            className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
+            className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
           >
             {children}
           </div>
-        </main>
-      </div>
-    </div>
+        </main >
+      </div >
+    </div >
   );
 }

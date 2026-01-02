@@ -9,17 +9,45 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     if (!profile || !profile.is_public) {
         return {
             title: "Private Profile - Arjuna AI",
-            description: "This interview profile is private."
+            description: "This interview profile is private.",
+            robots: {
+                index: false,
+                follow: false
+            }
         }
     }
 
     return {
         title: `${profile.full_name} - AI Interview Profile | Arjuna AI`,
         description: `Check out ${profile.full_name}'s interview achievements and global rank on Arjuna AI, the world's most advanced AI interviewer.`,
+        keywords: ['AI Interview', 'Technical Interview', 'Interview Profile', 'Arjuna AI', profile.full_name],
+        authors: [{ name: 'Arjuna AI' }],
+        viewport: {
+            width: 'device-width',
+            initialScale: 1,
+            maximumScale: 5,
+            userScalable: true,
+        },
         openGraph: {
             title: `${profile.full_name} - Professional Interview Profile`,
             description: `View rank, scores, and technical skills verified by Arjuna AI.`,
-            images: [profile.avatar_url || ''],
+            images: [profile.avatar_url || '/favicon.ico'],
+            type: 'profile',
+            siteName: 'Arjuna AI',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: `${profile.full_name} - AI Interview Profile`,
+            description: `Professional interview achievements verified by Arjuna AI`,
+            images: [profile.avatar_url || '/favicon.ico'],
+        },
+        robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+            }
         }
     }
 }

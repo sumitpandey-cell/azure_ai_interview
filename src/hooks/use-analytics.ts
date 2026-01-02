@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCacheStore } from '@/stores/use-cache-store';
 import { analyticsService } from '@/services/analytics.service';
 import type { SkillData, WeeklyActivityData, PerformanceData, StreakData } from '@/services/analytics.service';
@@ -37,59 +37,34 @@ export function useAnalytics(userId: string | undefined): UseAnalyticsReturn {
         setPerformanceData,
     } = useCacheStore();
 
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = useCallback(async (force = false) => {
         if (!userId) return;
 
         try {
             setLoading(true);
             setError(null);
 
-            // Check which data needs to be fetched
-            const needsSkillProgress = !isSkillProgressCacheValid();
-            const needsWeeklyActivity = !isWeeklyActivityCacheValid();
-            const needsStreakData = !isStreakDataCacheValid();
-            const needsPerformanceData = !isPerformanceDataCacheValid();
+            // Check which data needs to be fetched (or force it)
+            const needsSkillProgress = force || !isSkillProgressCacheValid();
+            const needsWeeklyActivity = force || !isWeeklyActivityCacheValid();
+            const needsStreakData = force || !isStreakDataCacheValid();
+            const needsPerformanceData = force || !isPerformanceDataCacheValid();
 
-            // Only fetch data that's not cached or expired
             const promises: Promise<any>[] = [];
 
             if (needsSkillProgress) {
-                promises.push(
-                    analyticsService.getSkillProgress(userId).then((data) => {
-                        setSkillProgress(data);
-                        return data;
-                    })
-                );
+                promises.push(analyticsService.getSkillProgress(userId).then(setSkillProgress));
             }
-
             if (needsWeeklyActivity) {
-                promises.push(
-                    analyticsService.getWeeklyActivity(userId).then((data) => {
-                        setWeeklyActivity(data);
-                        return data;
-                    })
-                );
+                promises.push(analyticsService.getWeeklyActivity(userId).then(setWeeklyActivity));
             }
-
             if (needsStreakData) {
-                promises.push(
-                    analyticsService.calculateStreak(userId).then((data) => {
-                        setStreakData(data);
-                        return data;
-                    })
-                );
+                promises.push(analyticsService.calculateStreak(userId).then(setStreakData));
             }
-
             if (needsPerformanceData) {
-                promises.push(
-                    analyticsService.getPerformanceAnalysis(userId).then((data) => {
-                        setPerformanceData(data);
-                        return data;
-                    })
-                );
+                promises.push(analyticsService.getPerformanceAnalysis(userId).then(setPerformanceData));
             }
 
-            // Wait for all fetches to complete
             if (promises.length > 0) {
                 await Promise.all(promises);
             }
@@ -99,12 +74,24 @@ export function useAnalytics(userId: string | undefined): UseAnalyticsReturn {
         } finally {
             setLoading(false);
         }
-    };
+    }, [
+        userId,
+        isSkillProgressCacheValid,
+        isWeeklyActivityCacheValid,
+        isStreakDataCacheValid,
+        isPerformanceDataCacheValid,
+        setSkillProgress,
+        setWeeklyActivity,
+        setStreakData,
+        setPerformanceData
+    ]);
 
     // Fetch analytics on mount and when userId changes
     useEffect(() => {
         fetchAnalytics();
-    }, [userId]);
+    }, [fetchAnalytics]);
+
+    const refetch = useCallback(() => fetchAnalytics(true), [fetchAnalytics]);
 
     return {
         skillProgress,
@@ -113,6 +100,6 @@ export function useAnalytics(userId: string | undefined): UseAnalyticsReturn {
         performanceData,
         loading,
         error,
-        refetch: fetchAnalytics,
+        refetch,
     };
 }

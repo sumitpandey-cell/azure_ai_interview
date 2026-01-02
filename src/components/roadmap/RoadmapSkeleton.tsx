@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export function RoadmapSkeleton() {
     return (
-        <div className="container max-w-6xl mx-auto px-4 py-12">
+        <div className="container mx-auto px-1 py-12">
             {/* Header Skeleton */}
             <div className="mb-12">
                 <Skeleton className="h-4 w-32 mb-4" />

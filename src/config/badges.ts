@@ -348,50 +348,50 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 export const getRarityColor = (rarity: string): string => {
     switch (rarity) {
         case 'bronze':
-            return 'from-amber-600 to-orange-700';
+            return 'from-[#CD7F32] via-[#B87333] to-[#8B4513]';
         case 'silver':
-            return 'from-slate-400 to-slate-600';
+            return 'from-[#C0C0C0] via-[#A9A9A9] to-[#808080]';
         case 'gold':
-            return 'from-yellow-400 to-yellow-600';
+            return 'from-[#FFD700] via-[#FDB931] to-[#B8860B]';
         case 'platinum':
-            return 'from-purple-400 to-purple-600';
+            return 'from-[#E5E4E2] via-[#B4C1D9] to-[#738291]';
         case 'special':
-            return 'from-blue-500 to-cyan-500';
+            return 'from-[#6366f1] via-[#a855f7] to-[#ec4899]';
         default:
-            return 'from-gray-400 to-gray-600';
+            return 'from-slate-400 to-slate-600';
     }
 };
 
 export const getRarityBorderColor = (rarity: string): string => {
     switch (rarity) {
         case 'bronze':
-            return 'border-amber-600';
+            return 'border-[#CD7F32]/50';
         case 'silver':
-            return 'border-slate-400';
+            return 'border-[#C0C0C0]/50';
         case 'gold':
-            return 'border-yellow-400';
+            return 'border-[#FFD700]/50';
         case 'platinum':
-            return 'border-purple-400';
+            return 'border-[#E5E4E2]/50';
         case 'special':
-            return 'border-blue-500';
+            return 'border-[#a855f7]/50';
         default:
-            return 'border-gray-400';
+            return 'border-slate-400/50';
     }
 };
 
 export const getRarityGlowColor = (rarity: string): string => {
     switch (rarity) {
         case 'bronze':
-            return 'shadow-amber-500/50';
+            return 'shadow-[#CD7F32]/20 hover:shadow-[#CD7F32]/40';
         case 'silver':
-            return 'shadow-slate-400/50';
+            return 'shadow-[#C0C0C0]/20 hover:shadow-[#C0C0C0]/40';
         case 'gold':
-            return 'shadow-yellow-400/50';
+            return 'shadow-[#FFD700]/30 hover:shadow-[#FFD700]/50';
         case 'platinum':
-            return 'shadow-purple-400/50';
+            return 'shadow-[#E5E4E2]/40 hover:shadow-[#E5E4E2]/60';
         case 'special':
-            return 'shadow-blue-500/50';
+            return 'shadow-[#a855f7]/40 hover:shadow-[#a855f7]/60';
         default:
-            return 'shadow-gray-400/50';
+            return 'shadow-slate-400/20';
     }
 };

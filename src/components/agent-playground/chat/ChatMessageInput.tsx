@@ -58,13 +58,13 @@ export const ChatMessageInput = ({
 
     return (
         <div
-            className="flex flex-col gap-2 border-t border-t-gray-800"
+            className="flex flex-col gap-2 border-t border-white/5"
             style={{ height: height }}
         >
             <div className="flex flex-row pt-3 gap-2 items-center relative">
                 <div
-                    className={`w-2 h-4 bg-${inputHasFocus ? accentColor : "gray"}-${inputHasFocus ? 500 : 800
-                        } ${inputHasFocus ? "shadow-" + accentColor : ""} absolute left-2 ${!isTyping && inputHasFocus ? "cursor-animation" : ""
+                    className={`w-1.5 h-4 bg-primary transition-all duration-300 absolute left-2 ${inputHasFocus ? "opacity-100 shadow-[0_0_8px_rgba(168,85,247,0.5)]" : "opacity-20"
+                        } ${!isTyping && inputHasFocus ? "cursor-animation" : ""
                         }`}
                     style={{
                         transform:
@@ -77,10 +77,9 @@ export const ChatMessageInput = ({
                 ></div>
                 <input
                     ref={inputRef}
-                    className={`w-full text-xs caret-transparent bg-transparent opacity-25 text-gray-300 p-2 pr-6 rounded-sm focus:opacity-100 focus:outline-none focus:border-${accentColor}-700 focus:ring-1 focus:ring-${accentColor}-700`}
+                    className={`w-full text-xs font-medium caret-transparent bg-transparent text-white p-2 pr-10 rounded-lg border border-transparent focus:outline-none transition-all placeholder:text-white/20`}
                     style={{
                         paddingLeft: message.length > 0 ? "12px" : "24px",
-                        caretShape: "block",
                     }}
                     placeholder={placeholder}
                     value={message}
@@ -101,15 +100,15 @@ export const ChatMessageInput = ({
                 ></input>
                 <span
                     ref={hiddenInputRef}
-                    className="absolute top-0 left-0 text-xs pl-3 text-amber-500 pointer-events-none opacity-0"
+                    className="absolute top-0 left-0 text-xs pl-3 text-primary pointer-events-none opacity-0"
                 >
                     {message.replaceAll(" ", "\u00a0")}
                 </span>
                 <button
                     disabled={message.length === 0 || !onSend}
                     onClick={handleSend}
-                    className={`text-xs uppercase text-${accentColor}-500 hover:bg-${accentColor}-950 p-2 rounded-md opacity-${message.length > 0 ? 100 : 25
-                        } pointer-events-${message.length > 0 ? "auto" : "none"}`}
+                    className={`text-[10px] font-bold uppercase tracking-widest text-primary hover:text-white transition-all pr-2 ${message.length > 0 ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                        }`}
                 >
                     Send
                 </button>

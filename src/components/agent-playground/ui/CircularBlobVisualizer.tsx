@@ -111,7 +111,7 @@ export function CircularBlobVisualizer({
             // Background Glow
             const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size / 2);
             const glowOpacity = 0.05 + normalizedVolume * 0.2;
-            const glowColor = agentVolume > localVolume ? "rgba(59, 130, 246," : "rgba(168, 85, 247,"; // Blue for AI, Purple for User
+            const glowColor = agentVolume > localVolume ? "rgba(168, 85, 247," : "rgba(255, 195, 77,"; // Purple for AI, Amber for User
 
             glowGradient.addColorStop(0, `${glowColor}${glowOpacity})`);
             glowGradient.addColorStop(1, `${glowColor}0)`);
@@ -144,16 +144,16 @@ export function CircularBlobVisualizer({
             // Blob Styling
             const blobGradient = ctx.createRadialGradient(centerX - 10, centerY - 10, 0, centerX, centerY, baseRadius * 2);
             if (agentVolume > localVolume || (agentVolume === 0 && localVolume === 0 && state === "speaking")) {
-                blobGradient.addColorStop(0, "#60a5fa"); // blue-400
-                blobGradient.addColorStop(0.5, "#3b82f6"); // blue-500
-                blobGradient.addColorStop(1, "#1d4ed8"); // blue-700
+                blobGradient.addColorStop(0, "#C084FC"); // purple-400
+                blobGradient.addColorStop(0.5, "#A855F7"); // purple-500
+                blobGradient.addColorStop(1, "#7E22CE"); // purple-700
             } else if (localVolume > 0) {
-                blobGradient.addColorStop(0, "#c084fc"); // purple-400
-                blobGradient.addColorStop(0.5, "#a855f7"); // purple-500
-                blobGradient.addColorStop(1, "#7e22ce"); // purple-700
+                blobGradient.addColorStop(0, "#FCD34D"); // amber-300
+                blobGradient.addColorStop(0.5, "#FBBF24"); // amber-400
+                blobGradient.addColorStop(1, "#D97706"); // amber-600
             } else {
-                blobGradient.addColorStop(0, "#1e293b"); // slate-800
-                blobGradient.addColorStop(1, "#0f172a"); // slate-900
+                blobGradient.addColorStop(0, "#1F2937"); // gray-800
+                blobGradient.addColorStop(1, "#111827"); // gray-900
             }
 
             ctx.fillStyle = blobGradient;

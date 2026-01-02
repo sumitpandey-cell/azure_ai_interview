@@ -25,11 +25,13 @@ import {
   Clock,
   Briefcase,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 import { TemplatesPageSkeleton, CompanyTemplatesPageSkeleton } from "@/components/TemplatesPageSkeleton";
 import { Template } from "@/services/template.service";
 import * as LucideIcons from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -336,38 +338,53 @@ export default function Templates() {
   );
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pb-12 pt-10 sm:pt-0">
         {/* Header Section with Controls */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="mb-2 text-3xl font-bold text-foreground">Templates</h2>
-            <p className="text-muted-foreground text-sm">
-              Unlock Efficiency with Ready-Made Automation.
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="text-left space-y-1 sm:space-y-2">
+            <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary border border-primary/20 mb-1 sm:mb-2">
+              <Sparkles className="mr-2 h-3 w-3" />
+              Ready-to-use Scenarios
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-foreground tracking-tight">
+              Interview <span className="text-primary italic">Vault</span>
+            </h2>
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base font-medium max-w-lg leading-relaxed">
+              Unlock precision-engineered automation templates for high-impact practice.
             </p>
           </div>
-
-          {/* Header Controls */}
-
         </div>
 
         <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-8">
-            <TabsTrigger value="general">General Templates</TabsTrigger>
-            <TabsTrigger value="company">Company Templates</TabsTrigger>
+          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl sm:rounded-2xl border border-border/50 mb-6 sm:mb-10 w-full sm:w-auto h-11 sm:h-14">
+            <TabsTrigger
+              value="general"
+              className="flex-1 sm:flex-none px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg h-full"
+            >
+              General Tracks
+            </TabsTrigger>
+            <TabsTrigger
+              value="company"
+              className="flex-1 sm:flex-none px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg h-full"
+            >
+              Industry Giants
+            </TabsTrigger>
           </TabsList>
 
           {/* Category Tabs and Search Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-12">
             {/* Category Tabs */}
-            <div className="flex gap-2 items-center overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
+            <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 no-scrollbar px-1">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setActiveCategory(category)}
-                  className={`px-6 py-2 rounded-full font-medium text-sm transition-all whitespace-nowrap ${activeCategory === category
-                    ? "bg-black dark:bg-primary text-white dark:text-primary-foreground shadow-md"
-                    : "bg-white dark:bg-card text-gray-700 dark:text-foreground border border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-muted-foreground hover:bg-gray-50 dark:hover:bg-accent"
-                    }`}
+                  className={cn(
+                    "px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-[9px] sm:text-[11px] uppercase tracking-widest transition-all whitespace-nowrap border-2",
+                    activeCategory === category
+                      ? "bg-primary border-primary text-primary-foreground shadow-xl shadow-primary/20 scale-105"
+                      : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-primary"
+                  )}
                 >
                   {category}
                 </button>
@@ -375,11 +392,11 @@ export default function Templates() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative w-full md:w-auto">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative w-full lg:w-96 group">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="Search by title, skills, or description..."
-                className="pl-10 w-full md:w-80 bg-background"
+                placeholder="Search tracks, skills..."
+                className="pl-11 h-12 w-full bg-card/50 border-2 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -397,89 +414,93 @@ export default function Templates() {
                   </p>
                 )}
 
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {filteredTemplates.map((template) => {
                     const IconComponent = getIconComponent(template.icon_name);
                     return (
-                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        {/* Decorative gradient background at top */}
-                        <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-slate-50/80 to-transparent dark:from-slate-900/50 dark:to-transparent opacity-50 pointer-events-none`} />
+                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-2xl sm:rounded-3xl">
+                        {/* Status Glow */}
+                        <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
 
-                        <CardContent className="p-6 flex flex-col h-full relative z-10">
-                          {/* Header */}
-                          <div className="flex justify-between items-start mb-5">
-                            <div className="flex gap-4">
-                              {/* Icon */}
-                              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 p-2.5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300">
-                                <IconComponent className={`h-7 w-7 ${template.color} dark:opacity-90`} />
+                        <CardContent className="p-5 sm:p-8 flex flex-col h-full relative z-10">
+                          {/* Top Section */}
+                          <div className="flex justify-between items-start mb-4 sm:mb-6">
+                            <div className="flex gap-3 sm:gap-4">
+                              {/* Icon Wrapper */}
+                              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-muted p-2 sm:p-3.5 flex items-center justify-center shrink-0 group-hover:bg-primary/10 group-hover:rotate-6 transition-all duration-500">
+                                <IconComponent className={cn("h-5 w-5 sm:h-7 sm:w-7 transition-colors", template.color)} />
                               </div>
 
-                              <div>
-                                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 leading-tight mb-1 group-hover:text-primary transition-colors">
+                              <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                                <h3 className="font-black text-base sm:text-xl text-foreground leading-tight group-hover:text-primary transition-colors truncate">
                                   {template.title}
                                 </h3>
-                                <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium">
+                                <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 py-0.5 rounded-md bg-muted/50 inline-block">
                                   {template.interview_type}
-                                </Badge>
+                                </div>
                               </div>
                             </div>
 
-                            <Badge className={`text-[10px] px-2 py-0.5 border ${getDifficultyColor(template.difficulty)}`}>
+                            <div className={cn(
+                              "text-[8px] sm:text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border-2 whitespace-nowrap",
+                              template.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                                template.difficulty === "Intermediate" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                  "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                            )}>
                               {template.difficulty}
-                            </Badge>
+                            </div>
                           </div>
 
                           {/* Description */}
-                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-6 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-6 sm:mb-8 font-medium leading-relaxed">
                             {template.description}
                           </p>
 
-                          {/* Skills */}
-                          <div className="mt-auto">
-                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider">
-                              Key Skills
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {template.skills.slice(0, 3).map((skill, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent dark:border-slate-800 font-normal"
-                                >
-                                  {skill}
-                                </Badge>
-                              ))}
-                              {template.skills.length > 3 && (
-                                <span className="text-xs px-1.5 py-0.5 text-slate-400 dark:text-slate-500 font-medium">
-                                  +{template.skills.length - 3}
-                                </span>
-                              )}
+                          {/* Key Specs */}
+                          <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                            <div className="space-y-1.5 sm:space-y-2">
+                              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                                Technical Stack
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                                {template.skills.slice(0, 3).map((skill, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-muted px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] font-bold text-foreground border border-transparent group-hover:border-primary/30 group-hover:bg-primary/5 transition-all"
+                                  >
+                                    {skill}
+                                  </div>
+                                ))}
+                                {template.skills.length > 3 && (
+                                  <div className="text-[9px] sm:text-[10px] px-2 py-1 sm:py-1.5 text-muted-foreground font-black bg-muted/30 rounded-lg">
+                                    +{template.skills.length - 3}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Footer / Button */}
-                          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="font-medium">Verified Template</span>
+                          {/* Bottom Action */}
+                          <div className="mt-auto pt-4 sm:pt-6 border-t border-border/50 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500" />
+                              </div>
+                              <span className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest">PRO Ready</span>
                             </div>
 
                             <Button
-                              size="sm"
-                              className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white/90 shadow-sm hover:shadow transition-all rounded-lg px-4"
                               onClick={() => startInterviewWithTemplate(template)}
                               disabled={loadingTemplate === template.id}
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-[9px] sm:text-[10px] h-9 sm:h-10 px-4 sm:px-6 rounded-lg sm:rounded-xl shadow-lg shadow-primary/10 group-hover:shadow-primary/20 transition-all"
                             >
                               {loadingTemplate === template.id ? (
-                                <>
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                                  Starting...
-                                </>
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                <>
-                                  Use Template
-                                  <ArrowRight className="h-3.5 w-3.5 ml-2 opacity-70" />
-                                </>
+                                <div className="flex items-center gap-2">
+                                  Launch
+                                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
+                                </div>
                               )}
                             </Button>
                           </div>
@@ -569,24 +590,24 @@ export default function Templates() {
             ) : (
               <>
                 {/* Step 2: Select Role for Selected Company - Redesigned */}
-                <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
                   <button
                     onClick={() => setSelectedCompany(null)}
-                    className="group flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-6"
+                    className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-all mb-8"
                   >
-                    <div className="h-8 w-8 rounded-full bg-card border border-border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                      <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                    <div className="h-10 w-10 rounded-xl bg-card border-2 border-border/50 flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all">
+                      <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                     </div>
-                    Back to companies
+                    Back to Ecosystem
                   </button>
 
-                  <div className="relative overflow-hidden rounded-3xl bg-slate-900 dark:bg-slate-950 text-white p-8 shadow-2xl">
-                    {/* Decorative background elements */}
-                    <div className="absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
-                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+                  <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2.5rem] bg-slate-900 dark:bg-card border-2 border-border/50 p-6 sm:p-10 md:p-14 shadow-2xl">
+                    {/* Glowing Mesh Background */}
+                    <div className="absolute top-0 right-0 -mt-20 -mr-20 h-96 w-96 rounded-full bg-primary/20 blur-[100px] animate-pulse" />
+                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                      <div className="h-24 w-24 rounded-2xl bg-white p-4 shadow-lg flex items-center justify-center shrink-0">
+                    <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-10 items-center md:items-center text-center md:text-left">
+                      <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl sm:rounded-[2rem] bg-white p-3 sm:p-5 shadow-2xl flex items-center justify-center shrink-0 border-4 border-white/10 group-hover:scale-105 transition-transform">
                         {selectedCompany.logo_url ? (
                           <img
                             src={selectedCompany.logo_url}
@@ -594,25 +615,25 @@ export default function Templates() {
                             className="w-full h-full object-contain"
                           />
                         ) : (
-                          <Briefcase className="h-10 w-10 text-slate-900" />
+                          <Briefcase className="h-8 w-8 sm:h-12 sm:w-12 text-slate-900" />
                         )}
                       </div>
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h3 className="text-3xl md:text-4xl font-bold tracking-tight text-white">{selectedCompany.name}</h3>
-                          <Badge className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
+                      <div className="flex-1 space-y-2 sm:space-y-4">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-4">
+                          <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white">{selectedCompany.name}</h3>
+                          <div className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/20 text-primary border border-primary/20 text-[8px] sm:text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
                             {selectedCompany.industry}
-                          </Badge>
+                          </div>
                         </div>
-                        <p className="text-slate-300 text-lg max-w-2xl leading-relaxed">
-                          {selectedCompany.description || `Prepare for your interview at ${selectedCompany.name} with our curated role-specific templates.`}
+                        <p className="text-slate-300 text-xs sm:text-base md:text-lg max-w-3xl leading-relaxed font-medium">
+                          {selectedCompany.description || `Prepare for your high-stakes interview at ${selectedCompany.name} with our curated, role-specific automation tracks.`}
                         </p>
                       </div>
 
-                      <div className="hidden md:block text-right bg-white/5 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
-                        <div className="text-3xl font-bold mb-1 text-white">{selectedCompany.common_roles.length}</div>
-                        <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Available Roles</div>
+                      <div className="hidden xl:flex flex-col items-end gap-2 bg-white/5 rounded-3xl p-6 backdrop-blur-md border border-white/10">
+                        <div className="text-5xl font-black text-white tracking-tighter">{selectedCompany.common_roles.length}</div>
+                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Live Tracks</div>
                       </div>
                     </div>
                   </div>
@@ -620,60 +641,68 @@ export default function Templates() {
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {selectedCompany.common_roles.map((role, index) => (
-                    <Card key={index} className="group relative overflow-hidden border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-6">
-                          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                            <Briefcase className="h-6 w-6" />
+                    <Card key={index} className="group relative overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-3xl">
+                      <CardContent className="p-8">
+                        <div className="flex justify-between items-start mb-8">
+                          <div className="h-16 w-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                            <Briefcase className="h-8 w-8" />
                           </div>
-                          <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                            Mid-Senior
-                          </Badge>
+                          <div className="px-3 py-1.5 rounded-xl bg-muted text-muted-foreground text-[10px] font-black uppercase tracking-widest border border-border/50">
+                            Professional
+                          </div>
                         </div>
 
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 group-hover:text-primary transition-colors">
+                        <h4 className="text-2xl font-black text-foreground mb-3 group-hover:text-primary transition-colors tracking-tight">
                           {role}
                         </h4>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 line-clamp-2">
-                          Comprehensive interview assessment for {role} position at {selectedCompany.name}.
+                        <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">
+                          Tailored performance assessment designed specifically for the {role} track at {selectedCompany.name}.
                         </p>
 
-                        <div className="space-y-3 mb-8">
-                          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                              <Code className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                        <div className="space-y-4 mb-10">
+                          <div className="flex items-center gap-4 group/item">
+                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
+                              <Code className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
                             </div>
-                            <span>Technical & Behavioral</span>
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Focus</p>
+                              <p className="text-sm font-bold text-foreground">Tech & Behavioral</p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                              <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+
+                          <div className="flex items-center gap-4 group/item">
+                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
+                              <Clock className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
                             </div>
-                            <span>~45 Minutes Duration</span>
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Duration</p>
+                              <p className="text-sm font-bold text-foreground">~45 Minutes</p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                              <CheckCircle2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+
+                          <div className="flex items-center gap-4 group/item">
+                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
+                              <CheckCircle2 className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
                             </div>
-                            <span>AI Performance Analysis</span>
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Analysis</p>
+                              <p className="text-sm font-bold text-foreground">Deep AI Metrics</p>
+                            </div>
                           </div>
                         </div>
 
                         <Button
-                          className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/90"
+                          className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-primary/10 group-hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95"
                           onClick={() => startCompanyRoleInterview(selectedCompany, role)}
                           disabled={loadingTemplate === `${selectedCompany.id}-${role}`}
                         >
                           {loadingTemplate === `${selectedCompany.id}-${role}` ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              Starting...
-                            </>
+                            <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
-                            <>
-                              Start Interview
-                              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </>
+                            <div className="flex items-center gap-2">
+                              Start Track
+                              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
                           )}
                         </Button>
                       </CardContent>

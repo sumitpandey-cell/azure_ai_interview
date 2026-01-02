@@ -10,7 +10,24 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { User, Bell, Shield, Trash2, Upload, CreditCard } from "lucide-react";
+import {
+    User,
+    Bell,
+    Shield,
+    Trash2,
+    Upload,
+    CreditCard,
+    Palette,
+    Settings as SettingsIcon,
+    ChevronRight,
+    Sparkles,
+    Lock,
+    Mail,
+    Globe,
+    ExternalLink,
+    Copy
+} from "lucide-react";
+import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import imageCompression from 'browser-image-compression';
@@ -23,7 +40,7 @@ import { profileService } from "@/services/profile.service";
 import { interviewService } from "@/services/interview.service";
 import { useRouter } from "next/navigation";
 
-type SettingsSection = "general" | "notifications" | "security" | "billing";
+type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
 
 export default function Settings() {
     const { user } = useAuth();
@@ -263,254 +280,294 @@ export default function Settings() {
     };
 
     const tabs = [
-        { id: "general", label: "General", icon: User },
-        { id: "notifications", label: "Notifications", icon: Bell },
-        { id: "security", label: "Security", icon: Shield },
-        { id: "billing", label: "Billing", icon: CreditCard },
+        { id: "general", label: "General", icon: User, desc: "Personal info & profile" },
+        { id: "appearance", label: "Appearance", icon: Palette, desc: "Theme & customization" },
+        { id: "notifications", label: "Notifications", icon: Bell, desc: "Alerts & updates" },
+        { id: "security", label: "Security", icon: Shield, desc: "Password & privacy" },
+        { id: "billing", label: "Billing", icon: CreditCard, desc: "Plans & payments" },
     ];
 
     return (
         <DashboardLayout>
-            <div className="w-full space-y-4 pb-10">
-                {/* Header */}
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Settings</h1>
-                    <p className="text-muted-foreground text-xs">
-                        Manage your account settings and preferences.
-                    </p>
+            <div className="w-full space-y-6 sm:space-y-10 pb-12 mx-auto pt-10 sm:pt-0">
+                {/* Modern Header */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary border border-primary/20 mb-2">
+                            <SettingsIcon className="mr-2 h-3 w-3" />
+                            Control Center
+                        </div>
+                        <h2 className="text-4xl sm:text-5xl font-black text-foreground tracking-tight">
+                            Account <span className="text-primary italic">Settings</span>
+                        </h2>
+                        <p className="text-muted-foreground text-sm sm:text-base font-medium max-w-lg">
+                            Fine-tune your experience and manage your global preferences.
+                        </p>
+                    </div>
                 </div>
 
-                {/* Top Bar Navigation */}
-                <div className="border-b border-border bg-card rounded-t-xl">
-                    <nav className="flex overflow-x-auto scrollbar-hide">
-                        {tabs.map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = activeSection === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveSection(tab.id as SettingsSection)}
-                                    className={cn(
-                                        "flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap transition-all border-b-2 relative",
-                                        isActive
-                                            ? "text-primary border-primary bg-primary/5"
-                                            : "text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/50"
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    <span className="hidden sm:inline">{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </nav>
+                {/* Horizontal Tab Navigation */}
+                <div className="flex gap-3 overflow-x-auto pb-4 scroll-smooth scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+                    {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = activeSection === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveSection(tab.id as SettingsSection)}
+                                className={cn(
+                                    "px-5 py-3 rounded-2xl transition-all duration-500 border flex items-center gap-3 relative overflow-hidden shrink-0 group",
+                                    isActive
+                                        ? "bg-primary/20 border-primary text-primary shadow-[0_0_20px_rgba(var(--primary),0.2)]"
+                                        : "bg-white/5 border-white/5 text-muted-foreground/60 hover:border-white/20 hover:bg-white/10"
+                                )}
+                            >
+                                <div className={cn(
+                                    "h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-500",
+                                    isActive ? "bg-primary/20" : "bg-white/5 group-hover:bg-primary/10"
+                                )}>
+                                    <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "group-hover:text-primary")} />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                    <span className="text-xs font-black uppercase tracking-widest leading-none whitespace-nowrap">
+                                        {tab.label}
+                                    </span>
+                                    <span className={cn(
+                                        "text-[9px] font-medium leading-none opacity-60 mt-0.5 whitespace-nowrap hidden sm:block",
+                                        isActive ? "text-primary" : "text-muted-foreground"
+                                    )}>
+                                        {tab.desc}
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Content Area */}
-                <div className="space-y-4">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {activeSection === "general" && (
-                        <Card className="border-none shadow-sm bg-card">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">Profile Information</CardTitle>
-                                <CardDescription className="text-xs">Update your photo and personal details.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex flex-col sm:flex-row items-center gap-6">
-                                    <div className="relative group">
-                                        <Label htmlFor="avatar-upload" className="cursor-pointer block relative">
-                                            <Avatar className="h-20 w-20 border-4 border-background shadow-xl group-hover:opacity-90 transition-all">
-                                                <AvatarImage src={getAvatarUrl(avatarUrl, user?.id || 'user', 'avataaars', null, gender)} />
-                                                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                                                    {getInitials(fullName) || "U"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
-                                                <Upload className="h-5 w-5 text-white" />
-                                            </div>
-                                        </Label>
-                                        <Input
-                                            id="avatar-upload"
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={handleImageChange}
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                    <div className="space-y-0.5 text-center sm:text-left">
-                                        <h3 className="font-bold text-lg text-foreground">{fullName || "User"}</h3>
-                                        <p className="text-xs text-muted-foreground">{email}</p>
-                                        <p className="text-xs text-primary font-medium mt-1">Free Plan</p>
-                                    </div>
+                        <div className="space-y-8">
+                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+                                <div className="h-20 sm:h-32 bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative">
+                                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
                                 </div>
-
-                                <Separator />
-
-                                <div className="grid gap-4 max-w-xl">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="fullName" className="text-sm">Full Name</Label>
-                                        <Input
-                                            id="fullName"
-                                            value={fullName}
-                                            onChange={(e) => setFullName(e.target.value)}
-                                            className="max-w-md"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="gender" className="text-sm">Gender</Label>
-                                        <Select value={gender} onValueChange={setGender}>
-                                            <SelectTrigger className="max-w-md">
-                                                <SelectValue placeholder="Select your gender" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="male">Male</SelectItem>
-                                                <SelectItem value="female">Female</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email" className="text-sm">Email Address</Label>
-                                        <Input
-                                            id="email"
-                                            value={email}
-                                            disabled
-                                            className="max-w-md bg-muted"
-                                        />
-                                    </div>
-
-                                    <Separator />
-
-                                    {/* Language Preferences */}
-                                    <div className="space-y-3">
-                                        <div>
-                                            <h3 className="text-sm font-medium">Language Preferences</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Choose your preferred language for interviews
-                                            </p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm">Interview Language</Label>
-                                            <LanguageSelector
-                                                selectedLanguage={selectedLanguage}
-                                                onLanguageChange={handleLanguageChange}
-                                                className="max-w-md"
+                                <CardContent className="p-4 sm:p-10 -mt-12 sm:-mt-16 relative">
+                                    <div className="flex flex-col md:flex-row items-center md:items-end gap-4 sm:gap-8 mb-6 sm:mb-10">
+                                        <div className="relative group">
+                                            <Label htmlFor="avatar-upload" className="cursor-pointer block relative">
+                                                <Avatar className="h-24 w-24 sm:h-40 sm:w-40 border-4 sm:border-8 border-card shadow-[0_0_50px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-all duration-500">
+                                                    <AvatarImage src={getAvatarUrl(avatarUrl, user?.id || 'user', 'avataaars', null, gender)} />
+                                                    <AvatarFallback className="text-3xl sm:text-5xl font-black bg-primary/10 text-primary uppercase">
+                                                        {getInitials(fullName) || "U"}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="absolute inset-4 rounded-full flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-md">
+                                                    <Upload className="h-8 w-8 text-white animate-bounce" />
+                                                </div>
+                                            </Label>
+                                            <Input
+                                                id="avatar-upload"
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={handleImageChange}
+                                                disabled={loading}
                                             />
-                                            <p className="text-xs text-muted-foreground">
-                                                This language will be used for speech recognition and AI communication during interviews.
-                                            </p>
+                                        </div>
+                                        <div className="flex-1 text-center md:text-left space-y-3">
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest">
+                                                <Sparkles className="h-3 w-3" />
+                                                Verified Candidate
+                                            </div>
+                                            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">{fullName || "User Identity"}</h1>
+                                            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                                <div className="flex items-center gap-2 text-muted-foreground font-medium text-xs sm:text-sm">
+                                                    <Mail className="h-4 w-4 text-primary" />
+                                                    {email}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-muted-foreground font-medium text-xs sm:text-sm">
+                                                    <Globe className="h-4 w-4 text-primary" />
+                                                    Neutral AI Mode
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <Separator />
+                                    <Separator className="mb-6 sm:mb-10 opacity-50" />
 
-                                    {/* Privacy Settings */}
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h3 className="text-sm font-medium">Privacy & Public Profile</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Control who can see your interview achievements.
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 max-w-4xl">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Account Name</Label>
+                                                <Input
+                                                    id="fullName"
+                                                    value={fullName}
+                                                    onChange={(e) => setFullName(e.target.value)}
+                                                    className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm focus:ring-primary focus:border-primary transition-all"
+                                                    placeholder="John Doe"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Candidate Profile</Label>
+                                                <Select value={gender} onValueChange={setGender}>
+                                                    <SelectTrigger className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm focus:ring-primary transition-all">
+                                                        <SelectValue placeholder="Identification" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-2xl border-2 border-border/50 shadow-2xl">
+                                                        <SelectItem value="male" className="rounded-xl font-bold">Male</SelectItem>
+                                                        <SelectItem value="female" className="rounded-xl font-bold">Female</SelectItem>
+                                                        <SelectItem value="other" className="rounded-xl font-bold">Other / Undisclosed</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Secure Email</Label>
+                                                <div className="relative group/input">
+                                                    <Input
+                                                        id="email"
+                                                        value={email}
+                                                        disabled
+                                                        className="h-10 sm:h-14 bg-muted/10 border-2 border-border/30 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm text-muted-foreground/50 cursor-not-allowed"
+                                                    />
+                                                    <Lock className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Global Language</Label>
+                                                <LanguageSelector
+                                                    selectedLanguage={selectedLanguage}
+                                                    onLanguageChange={handleLanguageChange}
+                                                    className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm focus:ring-primary transition-all w-full"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 sm:mt-12 flex justify-end">
+                                        <Button
+                                            onClick={handleUpdateProfile}
+                                            disabled={loading}
+                                            className="h-10 sm:h-14 px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] sm:text-xs rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                                        >
+                                            {loading ? "Syncing..." : "Publish Updates"}
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-2 border-border/50 shadow-xl bg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+                                <CardContent className="p-4 sm:p-10 space-y-6 sm:space-y-8">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl sm:text-2xl font-black tracking-tight">Public Presence</h3>
+                                            <p className="text-sm text-muted-foreground font-medium max-w-md">
+                                                Showcase your achievements and metrics to the professional community.
                                             </p>
                                         </div>
-                                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
-                                            <div className="space-y-0.5">
-                                                <Label htmlFor="public-profile" className="text-sm font-semibold">Make Profile Public</Label>
-                                                <p className="text-[10px] text-muted-foreground max-w-[250px]">
-                                                    Allow anyone with the link to view your rank, scores, and badges.
-                                                </p>
-                                            </div>
+                                        <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-3xl border-2 border-border/50">
+                                            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Privacy Mode</span>
                                             <Switch
                                                 id="public-profile"
                                                 checked={isPublic}
                                                 onCheckedChange={handleTogglePrivacy}
                                                 disabled={loading}
+                                                className="data-[state=checked]:bg-primary"
                                             />
                                         </div>
+                                    </div>
 
-                                        {isPublic && (
-                                            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex flex-col gap-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Your Public Link</span>
+                                    {isPublic && (
+                                        <div className="space-y-6 p-8 bg-primary/5 rounded-[2rem] border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
+                                            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                                                <div className="space-y-1 flex-1">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Live Profile URL</p>
+                                                    <div className="text-sm font-mono font-bold break-all opacity-60">
+                                                        {window.location.origin}/p/{user?.id}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-3 shrink-0">
                                                     <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 text-[10px]"
+                                                        variant="outline"
+                                                        className="rounded-xl border-2 font-bold gap-2"
                                                         onClick={() => {
                                                             const url = `${window.location.origin}/p/${user?.id}`;
                                                             navigator.clipboard.writeText(url);
-                                                            toast.success("Link copied!");
+                                                            toast.success("Identity URL copied!");
                                                         }}
                                                     >
+                                                        <Copy className="h-4 w-4" />
                                                         Copy Link
                                                     </Button>
+                                                    <Button
+                                                        className="rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/10 gap-2"
+                                                        onClick={() => window.open(`/p/${user?.id}`, '_blank')}
+                                                    >
+                                                        Preview Page
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
-                                                <div className="text-xs font-mono bg-white dark:bg-black/40 p-2 rounded border truncate text-muted-foreground">
-                                                    {window.location.origin}/p/{user?.id}
-                                                </div>
-                                                <Button
-                                                    variant="link"
-                                                    className="text-xs p-0 h-auto justify-start text-primary"
-                                                    onClick={() => window.open(`/p/${user?.id}`, '_blank')}
-                                                >
-                                                    View Live Profile →
-                                                </Button>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
-                                    <div className="pt-2">
-                                        <Button onClick={handleUpdateProfile} disabled={loading} size="sm">
-                                            {loading ? "Saving..." : "Save Changes"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                    {activeSection === "appearance" && (
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+                            <AppearanceSettings />
+                        </div>
                     )}
 
                     {activeSection === "notifications" && (
-                        <Card className="border-none shadow-sm bg-card">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">Notification Preferences</CardTitle>
-                                <CardDescription className="text-xs">Choose what we communicate to you.</CardDescription>
+                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10">
+                            <CardHeader className="p-0 mb-6 sm:mb-10">
+                                <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight">Broadcast Center</CardTitle>
+                                <CardDescription className="text-sm font-medium">Control the frequency and type of incoming intel.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="p-0 space-y-6">
                                 {[
                                     {
                                         id: "email-notifications",
-                                        label: "Email Notifications",
-                                        desc: "Receive emails about your account activity.",
+                                        label: "Master Broadcast",
+                                        desc: "Global toggle for all email security and activity alerts.",
                                         checked: emailNotifications,
                                         onChange: setEmailNotifications
                                     },
                                     {
                                         id: "interview-reminders",
-                                        label: "Interview Reminders",
-                                        desc: "Get reminded 1 hour before your sessions.",
+                                        label: "T-Minus Reminders",
+                                        desc: "High-priority alerts 1 hour before scheduled sessions.",
                                         checked: interviewReminders,
                                         onChange: setInterviewReminders
                                     },
                                     {
                                         id: "weekly-reports",
-                                        label: "Weekly Reports",
-                                        desc: "A weekly summary of your progress.",
+                                        label: "Analytics Reports",
+                                        desc: "Deep-dive summary of your performance metrics every week.",
                                         checked: weeklyReports,
                                         onChange: setWeeklyReports
                                     },
                                     {
                                         id: "marketing-emails",
-                                        label: "Product Updates",
-                                        desc: "News about new features and improvements.",
+                                        label: "System Pulse",
+                                        desc: "Real-time updates on new experimental features and AI modules.",
                                         checked: marketingEmails,
                                         onChange: setMarketingEmails
                                     }
                                 ].map((item, i) => (
-                                    <div key={item.id}>
-                                        <div className="flex items-center justify-between py-2">
-                                            <div className="space-y-0.5">
-                                                <Label htmlFor={item.id} className="text-sm font-medium">
+                                    <div key={item.id} className="group">
+                                        <div className="flex items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-muted/20 border-2 border-transparent hover:border-border/50 hover:bg-muted/30 transition-all duration-300">
+                                            <div className="space-y-1">
+                                                <Label htmlFor={item.id} className="text-base sm:text-lg font-black tracking-tight">
                                                     {item.label}
                                                 </Label>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">
                                                     {item.desc}
                                                 </p>
                                             </div>
@@ -518,134 +575,161 @@ export default function Settings() {
                                                 id={item.id}
                                                 checked={item.checked}
                                                 onCheckedChange={item.onChange}
+                                                className="data-[state=checked]:bg-primary"
                                             />
                                         </div>
-                                        {i < 3 && <Separator className="mt-3" />}
+                                        {i < 3 && <div className="h-px bg-border/30 my-2 mx-10" />}
                                     </div>
                                 ))}
-                                <div className="pt-2">
-                                    <Button onClick={handleSaveNotifications} size="sm">Save Preferences</Button>
+                                <div className="pt-6 sm:pt-10 flex justify-end">
+                                    <Button
+                                        onClick={handleSaveNotifications}
+                                        className="h-10 sm:h-14 px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] sm:text-xs rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95"
+                                    >
+                                        Save Protocol
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
                     )}
 
                     {activeSection === "security" && (
-                        <div className="space-y-4">
-                            <Card className="border-none shadow-sm bg-card">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base">
-                                        {user?.app_metadata?.provider !== 'email' ? 'Set Password' : 'Change Password'}
-                                    </CardTitle>
-                                    <CardDescription className="text-xs">
+                        <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700">
+                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10">
+                                <CardHeader className="p-0 mb-6 sm:mb-10">
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                            <Shield className="h-6 w-6" />
+                                        </div>
+                                        <CardTitle className="text-3xl font-black tracking-tight">
+                                            {user?.app_metadata?.provider !== 'email' ? 'Vault Access' : 'Security Clearance'}
+                                        </CardTitle>
+                                    </div>
+                                    <CardDescription className="text-sm font-medium">
                                         {user?.app_metadata?.provider !== 'email'
-                                            ? 'Set a password to enable email/password login in addition to your social login.'
-                                            : 'Change your password to keep your account secure.'
+                                            ? 'Configure a permanent password for direct email authentication.'
+                                            : 'Secure your identity with a high-entropy password rotation.'
                                         }
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-4 max-w-xl">
-                                    {/* Show provider info for OAuth users */}
+                                <CardContent className="p-0 space-y-8">
                                     {user?.app_metadata?.provider !== 'email' && (
-                                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-                                            <div className="flex items-start gap-2">
-                                                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                                                <div>
-                                                    <p className="text-xs font-medium text-blue-900 dark:text-blue-100">
-                                                        Signed in with {user?.app_metadata?.provider ? user.app_metadata.provider.charAt(0).toUpperCase() + user.app_metadata.provider.slice(1) : 'OAuth'}
-                                                    </p>
-                                                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                                                        Setting a password will allow you to login with your email and password as well.
-                                                    </p>
-                                                </div>
+                                        <div className="bg-primary/5 border-2 border-primary/20 rounded-[2rem] p-6 mb-8 flex items-start gap-4">
+                                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1">
+                                                <Lock className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black uppercase tracking-widest text-primary mb-1">Authenticated via {user?.app_metadata?.provider || 'Auth Hub'}</p>
+                                                <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                                                    Establishing a password allows you to bridge your social identity with direct platform login.
+                                                </p>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Only show current password for email/password users */}
-                                    {user?.app_metadata?.provider === 'email' && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="current-password" className="text-sm">Current Password</Label>
-                                            <Input
-                                                id="current-password"
-                                                type="password"
-                                                value={currentPassword}
-                                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                                placeholder="Enter your current password"
-                                            />
-                                        </div>
-                                    )}
+                                    <div className="space-y-6 max-w-2xl">
+                                        {user?.app_metadata?.provider === 'email' && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="current-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Current Password</Label>
+                                                <Input
+                                                    id="current-password"
+                                                    type="password"
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                    className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm"
+                                                    placeholder="Verify existing credentials"
+                                                />
+                                            </div>
+                                        )}
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="new-password" className="text-sm">
-                                            {user?.app_metadata?.provider !== 'email' ? 'Password' : 'New Password'}
-                                        </Label>
-                                        <Input
-                                            id="new-password"
-                                            type="password"
-                                            value={newPassword}
-                                            onChange={(e) => setNewPassword(e.target.value)}
-                                            placeholder="Enter new password (min. 6 characters)"
-                                        />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                                                    {user?.app_metadata?.provider !== 'email' ? 'New Security Key' : 'Replacement Password'}
+                                                </Label>
+                                                <Input
+                                                    id="new-password"
+                                                    type="password"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm"
+                                                    placeholder="Minimum 6 characters"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="confirm-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Confirm Identity Key</Label>
+                                                <Input
+                                                    id="confirm-password"
+                                                    type="password"
+                                                    value={confirmPassword}
+                                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    className="h-10 sm:h-14 bg-muted/30 border-2 border-border/50 rounded-xl sm:rounded-2xl px-4 sm:px-5 font-bold text-sm"
+                                                    placeholder="Must match exactly"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="confirm-password" className="text-sm">Confirm Password</Label>
-                                        <Input
-                                            id="confirm-password"
-                                            type="password"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="Confirm your new password"
-                                        />
-                                    </div>
-                                    <div className="pt-2">
-                                        <Button onClick={handleUpdatePassword} disabled={loading} size="sm">
-                                            {loading ? "Saving..." : (user?.app_metadata?.provider !== 'email' ? 'Set Password' : 'Update Password')}
+
+                                    <div className="pt-6 sm:pt-10 flex justify-end">
+                                        <Button
+                                            onClick={handleUpdatePassword}
+                                            disabled={loading}
+                                            className="h-10 sm:h-14 px-6 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] sm:text-xs rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95"
+                                        >
+                                            {loading ? "Establishing..." : (user?.app_metadata?.provider !== 'email' ? 'Set Access Key' : 'Apply Security Update')}
                                         </Button>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-destructive flex items-center gap-2 text-base">
-                                        <Trash2 className="h-4 w-4" />
-                                        Delete Account
-                                    </CardTitle>
-                                    <CardDescription className="text-destructive/80 text-xs">
-                                        Permanently delete your account and all of your content.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <p className="text-xs text-destructive/80 max-w-md">
-                                            Once you delete your account, there is no going back. Please be certain.
+                            <Card className="border-2 border-destructive/20 bg-destructive/5 shadow-2xl rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10 overflow-hidden relative">
+                                <div className="absolute top-0 right-0 h-full w-32 bg-gradient-to-l from-destructive/10 to-transparent pointer-events-none" />
+                                <div className="relative z-10 space-y-6 sm:space-y-8">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3 text-destructive">
+                                            <Trash2 className="h-6 w-6 animate-pulse" />
+                                            <h3 className="text-2xl sm:text-3xl font-black tracking-tight">Self-Destruct Account</h3>
+                                        </div>
+                                        <p className="text-xs sm:text-sm font-medium text-destructive/70 max-w-2xl">
+                                            Permanent termination of your candidate identity, interview history, analytics, and all associated metadata. This operation is irreversible.
                                         </p>
-                                        <Button variant="destructive" onClick={handleDeleteAccount} size="sm">
-                                            Delete Account
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] bg-card/40 border-2 border-destructive/10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center text-destructive">
+                                                <Shield className="h-5 w-5" />
+                                            </div>
+                                            <p className="text-xs font-black uppercase tracking-widest text-destructive/80">Confirm Intent</p>
+                                        </div>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleDeleteAccount}
+                                            className="h-10 sm:h-12 px-6 sm:px-8 font-black uppercase tracking-widest text-[9px] sm:text-[10px] rounded-xl shadow-xl shadow-destructive/20 transition-all hover:scale-105"
+                                        >
+                                            Delete My Data
                                         </Button>
                                     </div>
-                                </CardContent>
+                                </div>
                             </Card>
                         </div>
                     )}
 
                     {activeSection === "billing" && (
-                        <Card className="border-none shadow-sm bg-card">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">Billing & Plans</CardTitle>
-                                <CardDescription className="text-xs">Manage your subscription and payment methods.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="py-8 text-center">
-                                <div className="mx-auto w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
-                                    <CreditCard className="h-7 w-7 text-muted-foreground" />
-                                </div>
-                                <h3 className="text-base font-semibold mb-1">No Active Subscription</h3>
-                                <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
-                                    You are currently on the free plan. Upgrade to unlock premium features like unlimited interviews and advanced analytics.
-                                </p>
-                                <Button onClick={() => router.push('/pricing')} variant="outline" size="sm">View Plans</Button>
-                            </CardContent>
+                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-700">
+                            <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[2.5rem] bg-muted/50 border-2 border-border/50 flex items-center justify-center mb-6 sm:mb-10 group-hover:rotate-12 transition-all duration-700">
+                                <CreditCard className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground opacity-30" />
+                            </div>
+                            <h3 className="text-2xl sm:text-4xl font-black tracking-tight mb-3 sm:mb-4">No Active License</h3>
+                            <p className="text-sm sm:text-base text-muted-foreground font-medium max-w-sm mb-8 sm:mb-12 leading-relaxed">
+                                You are currently operating on our base-tier plan. Unlock the full AI potential with a professional license.
+                            </p>
+                            <Button
+                                onClick={() => router.push('/pricing')}
+                                className="h-12 sm:h-16 px-8 sm:px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl sm:rounded-[2rem] shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95"
+                            >
+                                View Licensing Options
+                            </Button>
                         </Card>
                     )}
                 </div>
@@ -653,3 +737,4 @@ export default function Settings() {
         </DashboardLayout>
     );
 }
+

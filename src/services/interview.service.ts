@@ -792,7 +792,7 @@ export const interviewService = {
             console.log(`🤖 Processing feedback for ${resumptions.length} conversation segment(s)`);
 
             // Generate feedback for each resumption
-            const resumptionFeedbacks = [];
+            const resumptionFeedbacks: any[] = [];
 
             for (let i = 0; i < resumptions.length; i++) {
                 const resumption = resumptions[i];
@@ -804,7 +804,6 @@ export const interviewService = {
 
                 if (transcriptSlice.length > 0) {
                     // Call Gemini API to generate feedback for this specific session
-                    // For now, we'll import the feedback generator
                     const { generateFeedback } = await import('@/lib/gemini-feedback');
 
                     const sessionData = {
@@ -820,7 +819,7 @@ export const interviewService = {
                         resumption_id: resumption.id,
                         session_number: i + 1,
                         score: Math.round(
-                            (feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / feedback.overallSkills.length)
+                            (feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / (feedback.overallSkills.length || 1))
                         ),
                         executiveSummary: feedback.executiveSummary,
                         strengths: feedback.strengths,
@@ -856,10 +855,31 @@ export const interviewService = {
                     generatedAt: new Date().toISOString(),
                 };
             } else {
-                // Multiple resumptions - use nested structure
+                // Multiple resumptions - use nested structure with aggregated overall feedback
                 updatedFeedback = {
                     overall: {
                         score: sessionScore,
+                        executiveSummary: resumptionFeedbacks[0]?.executiveSummary || "Summary aggregated from multiple session segments.",
+                        strengths: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.strengths))),
+                        improvements: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.improvements))),
+                        overallSkills: resumptionFeedbacks[0]?.overallSkills.map((skill: any) => ({
+                            ...skill,
+                            score: Math.round(resumptionFeedbacks.reduce((sum, r) => {
+                                const s = r.overallSkills.find((os: any) => os.name === skill.name);
+                                return sum + (s?.score || 0);
+                            }, 0) / resumptionFeedbacks.length)
+                        })),
+                        technicalSkills: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.technicalSkills.map((s: any) => s.name)))).map(name => {
+                            const occurrences = resumptionFeedbacks.filter(r => r.technicalSkills.some((ts: any) => ts.name === name));
+                            return {
+                                name,
+                                score: Math.round(occurrences.reduce((sum, r) => {
+                                    const s = r.technicalSkills.find((ts: any) => ts.name === name);
+                                    return sum + (s?.score || 0);
+                                }, 0) / (occurrences.length || 1)),
+                                feedback: occurrences[0].technicalSkills.find((ts: any) => ts.name === name)?.feedback || ""
+                            };
+                        }),
                         generatedAt: new Date().toISOString(),
                     },
                     resumptions: resumptionFeedbacks,

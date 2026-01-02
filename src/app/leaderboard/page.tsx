@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown, ArrowRight } from "lucide-react";
+import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown, ArrowRight, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -388,107 +388,107 @@ const Leaderboard = () => {
 
     return (
       <div className={cn(
-        "relative flex flex-col items-center transition-all duration-500",
-        isFirst ? "scale-100 sm:scale-110 z-20 mb-4 sm:mb-8" : "scale-95 z-10 hover:scale-100",
+        "relative flex flex-col items-center transition-all duration-700",
+        isFirst ? "scale-100 lg:scale-110 z-20 mb-8" : "scale-90 lg:scale-100 z-10 opacity-80 hover:opacity-100 hover:scale-105",
         className
       )}>
-        {/* Crown for 1st Place - Moved inside to center relative to card */}
-        {isFirst && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-bounce duration-1000">
-            <Crown className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400 fill-yellow-400/20 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-          </div>
-        )}
-
-        <div className={cn(
-          "relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border backdrop-blur-md transition-all duration-300",
-          rank === 1 ? "bg-gradient-to-b from-yellow-50 to-white border-yellow-200 shadow-xl shadow-yellow-500/10 dark:from-yellow-500/10 dark:to-black/60 dark:border-yellow-500/50 dark:shadow-[0_0_30px_rgba(234,179,8,0.2)]" :
-            rank === 2 ? "bg-gradient-to-b from-slate-50 to-white border-slate-200 shadow-xl shadow-slate-500/10 dark:from-slate-400/10 dark:to-black/60 dark:border-slate-400/50 dark:shadow-[0_0_30px_rgba(148,163,184,0.2)]" :
-              "bg-gradient-to-b from-orange-50 to-white border-orange-200 shadow-xl shadow-orange-500/10 dark:from-amber-700/10 dark:to-black/60 dark:border-amber-700/50 dark:shadow-[0_0_30px_rgba(180,83,9,0.2)]"
-        )}>
-          {/* Glow Effect */}
-          <div className={cn(
-            "absolute top-0 left-0 w-full h-1 bg-gradient-to-r",
-            rank === 1 ? "from-transparent via-yellow-500 to-transparent" :
-              rank === 2 ? "from-transparent via-slate-400 to-transparent" :
-                "from-transparent via-amber-700 to-transparent"
-          )} />
-
-          <div className="p-3 sm:p-6 flex flex-col items-center pt-6 sm:pt-8">
-            {/* Rank Badge */}
+        {/* Visual Rank Indicator */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
+          {rank === 1 ? (
+            <div className="relative">
+              <div className="absolute inset-0 bg-yellow-500 blur-lg opacity-50 animate-pulse" />
+              <div className="relative h-12 w-12 bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-2xl flex items-center justify-center shadow-xl border border-yellow-200/50">
+                <Crown className="w-6 h-6 text-black fill-black/20" />
+              </div>
+            </div>
+          ) : (
             <div className={cn(
-              "absolute top-2 right-2 sm:top-4 sm:right-4 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold border",
-              rank === 1 ? "bg-yellow-100 border-yellow-200 text-yellow-700 dark:bg-yellow-500/20 dark:border-yellow-500 dark:text-yellow-400" :
-                rank === 2 ? "bg-slate-100 border-slate-200 text-slate-700 dark:bg-slate-400/20 dark:border-slate-400 dark:text-slate-300" :
-                  "bg-orange-100 border-orange-200 text-orange-700 dark:bg-amber-700/20 dark:border-amber-700 dark:text-amber-500"
+              "h-10 w-10 rounded-2xl flex items-center justify-center font-black text-sm border shadow-lg backdrop-blur-md",
+              rank === 2 ? "bg-slate-300 border-slate-100 text-slate-800" : "bg-amber-600 border-amber-400 text-white"
             )}>
               #{rank}
             </div>
+          )}
+        </div>
 
-            {/* Avatar Ring */}
-            <div className="relative mb-1.5 sm:mb-4 mt-1 sm:mt-2">
+        <div className={cn(
+          "relative w-full rounded-[2.5rem] overflow-hidden border-2 transition-all duration-500 bg-card/40 backdrop-blur-xl group/podium",
+          rank === 1 ? "border-yellow-500/30 shadow-[0_0_50px_rgba(234,179,8,0.1)]" :
+            rank === 2 ? "border-slate-400/30" : "border-amber-700/30"
+        )}>
+          {/* Animated Background Mesh */}
+          <div className={cn(
+            "absolute inset-0 opacity-10 pointer-events-none group-hover/podium:opacity-20 transition-opacity duration-700",
+            rank === 1 ? "bg-[radial-gradient(circle_at_50%_0%,rgba(234,179,8,0.4),transparent_70%)]" :
+              rank === 2 ? "bg-[radial-gradient(circle_at_50%_0%,rgba(148,163,184,0.4),transparent_70%)]" :
+                "bg-[radial-gradient(circle_at_50%_0%,rgba(180,83,9,0.4),transparent_70%)]"
+          )} />
+
+          <div className="p-6 sm:p-8 flex flex-col items-center pt-10 sm:pt-12 relative z-10">
+            {/* Avatar Cluster */}
+            <div className="relative mb-6">
               <div className={cn(
-                "w-12 h-12 sm:w-24 sm:h-24 rounded-full p-1 border-2",
-                rank === 1 ? "border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.3)]" :
-                  rank === 2 ? "border-slate-400 shadow-[0_0_20px_rgba(148,163,184,0.3)]" :
-                    "border-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.3)]"
+                "w-20 h-20 sm:w-28 sm:h-28 rounded-full p-1.5 border-2 relative",
+                rank === 1 ? "border-yellow-500 ring-8 ring-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.4)]" :
+                  rank === 2 ? "border-slate-400 ring-8 ring-slate-400/10" :
+                    "border-amber-700 ring-8 ring-amber-700/10"
               )}>
-                <Avatar className="w-full h-full rounded-full">
+                <Avatar className="w-full h-full rounded-full border-2 border-background shadow-inner">
                   <AvatarImage
-                    src={getAvatarUrl(
-                      user.avatarUrl,
-                      user.userId || user.fullName || 'user',
-                      'avataaars',
-                      user.oauthPicture,
-                      user.gender
-                    )}
+                    src={getAvatarUrl(user.avatarUrl, user.userId, 'avataaars', user.oauthPicture, user.gender)}
                     className="object-cover"
                   />
-                  <AvatarFallback className="text-xs sm:text-xl font-bold bg-muted">
-                    {user.fullName?.charAt(0) || "U"}
+                  <AvatarFallback className="text-2xl font-black bg-muted uppercase">
+                    {user.fullName?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
               </div>
               {isFirst && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  Top 1 🔥
+                <div className="absolute -bottom-1 -right-1 h-8 w-8 bg-black border-2 border-yellow-500 rounded-xl flex items-center justify-center animate-bounce">
+                  <TrendingUp className="h-4 w-4 text-yellow-500" />
                 </div>
               )}
             </div>
 
-            {/* Name */}
-            <h3 className="text-gray-900 dark:text-white font-bold text-xs sm:text-lg text-center mb-1 truncate w-full px-1">
-              {user.fullName || "Anonymous"}
-            </h3>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-1 sm:gap-4 w-full my-1.5 sm:my-4 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-lg sm:rounded-xl p-1.5 sm:p-3">
-              <div className="text-center border-r border-gray-200 dark:border-white/10">
-                <p className="text-[7px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</p>
-                <p className="text-gray-900 dark:text-white font-bold text-xs sm:text-lg">{user.interviewCount}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[7px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Score</p>
-                <div className={cn(
-                  "font-bold text-xs sm:text-lg",
-                  rank === 1 ? "text-yellow-600 dark:text-yellow-400" : "text-gray-900 dark:text-white"
-                )}>
-                  {user.bayesianScore.toFixed(0)}
-                </div>
+            {/* Intel Display */}
+            <div className="text-center space-y-2 w-full">
+              <h3 className="text-foreground font-black text-lg sm:text-xl uppercase tracking-tighter truncate w-full">
+                {user.fullName || "Archive Lost"}
+              </h3>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", rank === 1 ? "bg-yellow-500" : rank === 2 ? "bg-slate-400" : "bg-amber-600")} />
+                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{rank === 1 ? "Alpha Protocol" : rank === 2 ? "Beta Sector" : "Gamma Tier"}</span>
               </div>
             </div>
 
-            {/* Button */}
-            <button
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full mt-6 sm:mt-8">
+              <div className="bg-background/50 rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-border/50 text-center space-y-0.5 sm:space-y-1">
+                <p className="text-[7px] sm:text-[8px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">Mastery</p>
+                <p className={cn("text-lg sm:text-xl font-black tracking-tight", rank === 1 ? "text-yellow-500" : "text-foreground")}>
+                  {user.bayesianScore.toFixed(0)}%
+                </p>
+              </div>
+              <div className="bg-background/50 rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-border/50 text-center space-y-0.5 sm:space-y-1">
+                <p className="text-[7px] sm:text-[8px] font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">Sessions</p>
+                <p className="text-lg sm:text-xl font-black tracking-tight text-foreground">{user.interviewCount}</p>
+              </div>
+            </div>
+
+            {/* Action Module */}
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handleShare(user, rank)}
               className={cn(
-                "w-full py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-sm font-medium transition-all duration-300 border flex items-center justify-center gap-1 sm:gap-2",
-                rank === 1 ? "bg-yellow-100 border-yellow-200 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/50 dark:text-yellow-400 dark:hover:bg-yellow-500 dark:hover:text-black" :
-                  "bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
+                "w-full mt-4 sm:mt-6 h-10 sm:h-11 rounded-xl bg-transparent font-black uppercase tracking-widest text-[8px] sm:text-[9px] transition-all duration-300",
+                rank === 1 ? "border-yellow-500/30 text-yellow-600 hover:bg-yellow-500 hover:text-black hover:border-yellow-500" :
+                  "border-border/50 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30"
               )}
             >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-              View Profile
-            </button>
+              <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2" />
+              <span className="truncate">Access Dossier</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -497,62 +497,65 @@ const Leaderboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-8">
+      <div className="space-y-8 sm:space-y-12 pb-12 pt-10 sm:pt-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-          <div className="flex flex-col items-start justify-start text-left space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Global Standings
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl">
-              Compete, grow, and see where you rank among the best.
-            </p>
-            {!loading && users.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Total Candidates: <span className="font-semibold text-foreground">{users.length}</span>
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 relative">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+              <Trophy className="h-3 w-3" />
+              Global Arena
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground">
+                Executive <span className="text-primary italic">Standings</span>
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-lg font-medium mt-2 max-w-2xl leading-relaxed">
+                Compete with the elite, track your trajectory, and dominate the global hierarchy.
               </p>
+            </div>
+            {!loading && users.length > 0 && (
+              <div className="flex items-center gap-3 mt-4">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Active Protocols: <span className="text-foreground">{users.length} Candidates</span>
+                </p>
+              </div>
             )}
           </div>
+
           {user && users.find(u => u.userId === user.id) && (() => {
             const userRank = users.findIndex(u => u.userId === user.id) + 1;
-            const userScore = users.find(u => u.userId === user.id)?.bayesianScore.toFixed(1);
-
-            // Debug logging
-            console.log('Leaderboard Debug:', {
-              totalUsers: users.length,
-              currentUserId: user.id,
-              userRank,
-              userScore,
-              allUsers: users.map((u, idx) => ({
-                rank: idx + 1,
-                userId: u.userId,
-                name: u.fullName,
-                score: u.bayesianScore,
-                interviews: u.interviewCount
-              }))
-            });
+            const userScore = users.find(u => u.userId === user.id)?.bayesianScore.toFixed(0);
 
             return (
-              <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl px-6 py-4 shadow-lg">
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Your Rank</p>
-                  <p className="text-3xl font-black text-foreground">
-                    #{userRank}
-                  </p>
-                </div>
-                <div className="h-12 w-px bg-indigo-500/20"></div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Your Score</p>
-                  <p className="text-3xl font-black text-foreground">
-                    {userScore}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-white" />
+              <div className="relative group/user-stat overflow-hidden w-full sm:w-auto">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-accent/50 rounded-3xl blur opacity-20 group-hover/user-stat:opacity-40 transition duration-500" />
+                <div className="relative flex flex-row items-center justify-around sm:justify-start gap-3 sm:gap-6 bg-card/50 backdrop-blur-xl border-2 border-border/50 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 shadow-2xl">
+                  <div className="space-y-0.5 sm:space-y-1 text-center sm:text-left">
+                    <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Current Rank</p>
+                    <div className="flex items-baseline justify-center sm:justify-start gap-1">
+                      <span className="text-2xl sm:text-4xl font-black tracking-tighter text-foreground">#{userRank}</span>
+                      <span className="text-[10px] sm:text-xs font-bold text-primary">/{users.length}</span>
+                    </div>
+                  </div>
+                  <div className="h-10 sm:h-12 w-px bg-border/50" />
+                  <div className="space-y-0.5 sm:space-y-1 text-center sm:text-left">
+                    <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Mastery Score</p>
+                    <div className="flex items-baseline justify-center sm:justify-start gap-1">
+                      <span className="text-2xl sm:text-4xl font-black tracking-tighter text-foreground">{userScore}</span>
+                      <span className="text-[10px] sm:text-xs font-bold text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                  <div className="hidden md:flex h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 items-center justify-center text-primary shadow-inner">
+                    <Award className="h-7 w-7" />
+                  </div>
                 </div>
               </div>
             );
           })()}
+
+          {/* Decorative Mesh Background */}
+          <div className="absolute -top-24 -right-24 h-96 w-96 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
         </div>
 
         {loading ? (
@@ -568,60 +571,97 @@ const Leaderboard = () => {
           </Card>
         ) : (
           <>
-            {/* Podium Section */}
+            {/* Podium Section - Redesigned for Mobile */}
             <div className="w-full mt-8">
-              <div className="flex flex-row items-end justify-center gap-3 sm:gap-8 md:gap-12 h-full pb-4 px-2">
-                {users[1] && <TopPlayerCard user={users[1]} rank={2} className="w-[30%] sm:w-[260px]" />}
-                <TopPlayerCard user={users[0]} rank={1} className="w-[30%] sm:w-[260px]" />
-                {users[2] && <TopPlayerCard user={users[2]} rank={3} className="w-[30%] sm:w-[260px]" />}
+              <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-6 md:gap-8 lg:gap-12 pb-4">
+                {/* Mobile Rank 1 stays middle in desktop but shows first on stacking if not careful */}
+                {/* On mobile: 1, then 2 & 3 side by side? Or stack 1, 2, 3? */}
+                {/* Let's do: Rank 1 big on top, Rank 2 & 3 smaller below on mobile */}
+                <div className="w-full md:hidden space-y-8">
+                  <TopPlayerCard user={users[0]} rank={1} className="w-full max-w-[280px] mx-auto" />
+                  <div className="flex gap-4 px-2">
+                    {users[1] && <TopPlayerCard user={users[1]} rank={2} className="flex-1" />}
+                    {users[2] && <TopPlayerCard user={users[2]} rank={3} className="flex-1" />}
+                  </div>
+                </div>
+
+                {/* Desktop Podium: 2 - 1 - 3 */}
+                <div className="hidden md:flex flex-row items-end justify-center gap-8 lg:gap-12 w-full">
+                  {users[1] && <TopPlayerCard user={users[1]} rank={2} className="w-[260px]" />}
+                  <TopPlayerCard user={users[0]} rank={1} className="w-[260px]" />
+                  {users[2] && <TopPlayerCard user={users[2]} rank={3} className="w-[260px]" />}
+                </div>
               </div>
             </div>
 
-            {/* Filters & Search */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-card p-2 rounded-xl shadow-sm border border-border">
-              <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar px-2">
-                <Select>
-                  <SelectTrigger className="w-[160px] bg-muted border-none text-foreground font-medium h-9">
-                    <SelectValue placeholder="Filter by Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="frontend">Frontend Dev</SelectItem>
-                    <SelectItem value="backend">Backend Dev</SelectItem>
-                    <SelectItem value="fullstack">Full Stack</SelectItem>
-                  </SelectContent>
-                </Select>
-                <button className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-lg hover:bg-muted/80 whitespace-nowrap">
-                  Timeframe (Monthly)
-                </button>
+            {/* Filters & Search Station */}
+            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden p-4 sm:p-6 relative">
+              <div className="absolute top-0 right-0 h-full w-40 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+              <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start xl:items-center relative z-10">
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Candidate Lookup</span>
+                </div>
+
+                <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                      placeholder="Locate Dossier..."
+                      className="pl-12 h-11 sm:h-12 w-full bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold focus:ring-primary focus:border-primary transition-all duration-300 outline-none text-xs sm:text-sm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <Select>
+                    <SelectTrigger className="h-11 sm:h-12 bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm">
+                      <div className="flex items-center gap-2">
+                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Protocol Sector" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-border shadow-2xl">
+                      <SelectItem value="all" className="font-bold py-3">All Sectors</SelectItem>
+                      <SelectItem value="frontend" className="font-bold py-3">Frontend Architecture</SelectItem>
+                      <SelectItem value="backend" className="font-bold py-3">Backend Core</SelectItem>
+                      <SelectItem value="fullstack" className="font-bold py-3">Universal Stack</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" className="h-11 sm:h-12 flex-1 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-[8px] sm:text-[9px] border-border/50 bg-background/50 text-muted-foreground hover:bg-muted transition-all">
+                      Temporal (Monthly)
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+            {/* Rankings Intel */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-xl sm:text-2xl font-black tracking-tight text-foreground uppercase">
+                  Global <span className="text-primary italic">Hierarchy</span>
+                </h3>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                  <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-primary" />
+                  Live Sync
+                </div>
               </div>
 
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Sort by (Score-High to Low)"
-                  className="pl-10 bg-muted border-none text-foreground placeholder:text-muted-foreground"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Full Rankings List */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-foreground px-2">All Rankings</h3>
-
-              <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-                <div className="overflow-x-auto">
+              <Card className="border-2 border-border/50 shadow-2xl bg-card/30 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+                <div className="overflow-x-auto no-scrollbar">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border">
-                        <TableHead className="w-[80px] text-center font-semibold text-muted-foreground">Rank</TableHead>
-                        <TableHead className="font-semibold text-muted-foreground">User</TableHead>
-                        <TableHead className="text-center font-semibold text-muted-foreground">Score</TableHead>
-                        <TableHead className="text-center font-semibold text-muted-foreground">Interviews</TableHead>
-                        <TableHead className="text-center font-semibold text-muted-foreground">Badge</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground pr-6">Action</TableHead>
+                      <TableRow className="border-b-2 border-border/50 hover:bg-transparent">
+                        <TableHead className="w-[60px] sm:w-[100px] py-4 sm:py-6 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Rank</TableHead>
+                        <TableHead className="py-4 sm:py-6 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Candidate Profile</TableHead>
+                        <TableHead className="py-4 sm:py-6 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Mastery</TableHead>
+                        <TableHead className="py-4 sm:py-6 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sessions</TableHead>
+                        <TableHead className="py-4 sm:py-6 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Status</TableHead>
+                        <TableHead className="py-4 sm:py-6 text-right pr-6 sm:pr-12 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Protocol</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -634,69 +674,83 @@ const Leaderboard = () => {
                           <TableRow
                             key={leaderboardUser.userId}
                             className={cn(
-                              "hover:bg-muted/50 transition-colors border-b border-border last:border-none",
-                              isCurrentUser && "bg-indigo-50/60 dark:bg-indigo-900/20 border-l-4 border-l-indigo-500"
+                              "group/row transition-all duration-300 border-b border-border/30 hover:bg-primary/[0.02]",
+                              isCurrentUser && "bg-primary/[0.05] border-l-4 border-l-primary"
                             )}
                           >
-                            <TableCell className="text-center py-4">
+                            <TableCell className="py-6 text-center">
                               <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center mx-auto font-bold text-sm",
-                                actualRank === 1 ? "bg-yellow-100 text-yellow-700" :
-                                  actualRank === 2 ? "bg-slate-100 text-slate-700" :
-                                    actualRank === 3 ? "bg-amber-100 text-amber-700" :
+                                "h-10 w-10 rounded-xl flex items-center justify-center mx-auto text-sm font-black transition-transform group-hover/row:scale-110",
+                                actualRank === 1 ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20" :
+                                  actualRank === 2 ? "bg-slate-400 text-black" :
+                                    actualRank === 3 ? "bg-amber-700 text-white" :
                                       "bg-muted text-muted-foreground"
                               )}>
                                 {actualRank}
                               </div>
                             </TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                                  <AvatarImage src={getAvatarUrl(
-                                    leaderboardUser.avatarUrl,
-                                    leaderboardUser.userId || leaderboardUser.fullName || 'user',
-                                    'avataaars',
-                                    leaderboardUser.oauthPicture,
-                                    leaderboardUser.gender
-                                  )} />
-                                  <AvatarFallback>{getInitials(leaderboardUser.fullName)}</AvatarFallback>
-                                </Avatar>
+                            <TableCell className="py-6">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <Avatar className="h-12 w-12 border-2 border-background shadow-xl rounded-xl">
+                                    <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
+                                    <AvatarFallback className="rounded-xl font-black">{leaderboardUser.fullName?.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  {isTop3 && (
+                                    <div className="absolute -top-1 -right-1 h-4 w-4 bg-primary rounded-full border-2 border-background flex items-center justify-center">
+                                      <Star className="h-2 w-2 text-white fill-current" />
+                                    </div>
+                                  )}
+                                </div>
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-foreground">{leaderboardUser.fullName}</span>
-                                  <span className="text-xs text-muted-foreground">ID: {leaderboardUser.userId.slice(0, 8)}</span>
+                                  <span className="font-black text-sm uppercase tracking-tight text-foreground group-hover/row:text-primary transition-colors">
+                                    {leaderboardUser.fullName}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                                    ID: {leaderboardUser.userId.slice(0, 8)}
+                                  </span>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center font-bold text-foreground py-4 text-lg">
-                              {leaderboardUser.bayesianScore.toFixed(0)}
+                            <TableCell className="py-6 text-center">
+                              <div className="inline-flex flex-col">
+                                <span className="text-lg font-black tracking-tighter text-foreground">
+                                  {leaderboardUser.bayesianScore.toFixed(0)}
+                                </span>
+                                <span className="text-[8px] font-black uppercase text-primary tracking-widest opacity-70">Mastery</span>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-center text-muted-foreground py-4">
-                              {leaderboardUser.interviewCount} Interviews
+                            <TableCell className="py-6 text-center">
+                              <span className="text-sm font-bold text-muted-foreground tabular-nums">
+                                {leaderboardUser.interviewCount}
+                              </span>
                             </TableCell>
-                            <TableCell className="text-center py-4">
+                            <TableCell className="py-6 text-center">
                               {isTop3 ? (
-                                <Badge variant="secondary" className={cn(
-                                  "mx-auto",
-                                  actualRank === 1 ? "bg-yellow-100 text-yellow-700" :
-                                    actualRank === 2 ? "bg-slate-100 text-slate-700" :
-                                      "bg-amber-100 text-amber-700"
+                                <Badge className={cn(
+                                  "h-6 rounded-md border-none px-3 text-[8px] font-black uppercase tracking-[0.1em]",
+                                  actualRank === 1 ? "bg-yellow-500/20 text-yellow-600" :
+                                    actualRank === 2 ? "bg-slate-500/20 text-slate-600" :
+                                      "bg-amber-700/20 text-amber-700"
                                 )}>
-                                  Top {actualRank}
+                                  Elite Rank
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="mx-auto text-muted-foreground border-border">
-                                  Mentor
+                                <Badge variant="outline" className="h-6 rounded-md px-3 text-[8px] font-black uppercase tracking-[0.1em] border-border text-muted-foreground">
+                                  Active
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="text-right py-4 pr-6">
-                              <button
+                            <TableCell className="py-6 text-right pr-12">
+                              <Button
+                                size="sm"
+                                variant="ghost"
                                 onClick={() => handleShare(leaderboardUser, actualRank)}
-                                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 ml-auto"
+                                className="h-10 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-primary hover:text-white transition-all duration-300"
                               >
-                                <Users className="h-4 w-4" />
-                                View Profile
-                              </button>
+                                View Dossier
+                                <ArrowRight className="h-3 w-3 ml-2" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -711,80 +765,72 @@ const Leaderboard = () => {
                     </TableBody>
                   </Table>
                 </div>
-              </div>
+              </Card>
             </div>
           </>
         )}
 
         {/* Scoring Information Footer */}
         {!loading && users.length > 0 && (
-          <Card className="bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200/50 dark:border-indigo-800/50">
-            <CardContent className="p-6 md:p-8">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="h-10 w-10 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                  <Award className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-foreground mb-1">How Rankings Are Calculated</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Our fair ranking system rewards both performance and experience
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Formula Explanation */}
-                <div className="space-y-3">
-                  <div className="bg-white/60 dark:bg-black/20 rounded-lg p-4 border border-indigo-200/50 dark:border-indigo-800/30">
-                    <h4 className="text-sm font-semibold text-foreground mb-2">📊 Weighted Score Formula</h4>
-                    <code className="text-xs bg-indigo-100 dark:bg-indigo-900/30 px-2 py-1 rounded text-indigo-700 dark:text-indigo-300 block mb-2">
-                      Score = Avg Score × (1 + log₁₀(interviews) / 10)
-                    </code>
-                    <p className="text-xs text-muted-foreground">
-                      Your average interview score is multiplied by an experience bonus based on the number of interviews you've completed.
+          <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/formula">
+            <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none transition-opacity group-hover/formula:opacity-20" />
+            <CardContent className="p-6 sm:p-8 md:p-12">
+              <div className="flex flex-col lg:flex-row gap-12 items-start">
+                <div className="lg:w-1/3 space-y-6">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                    <Award className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-black tracking-tight text-foreground uppercase">Ranking <span className="text-primary italic">Mechanics</span></h3>
+                    <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                      Our proprietary algorithm synthesizes raw performance metrics with operational experience to generate a fair, battle-tested standing.
                     </p>
                   </div>
-
-                  <div className="bg-white/60 dark:bg-black/20 rounded-lg p-4 border border-indigo-200/50 dark:border-indigo-800/30">
-                    <h4 className="text-sm font-semibold text-foreground mb-2">🎯 Why This System?</h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• <strong>Performance First:</strong> Your actual scores matter most</li>
-                      <li>• <strong>Experience Bonus:</strong> More interviews = more reliable ranking</li>
-                      <li>• <strong>Fair to All:</strong> New users aren't artificially boosted</li>
-                      <li>• <strong>Anti-Gaming:</strong> Diminishing returns prevent spam</li>
-                    </ul>
-                  </div>
                 </div>
 
-                {/* Examples */}
-                <div className="space-y-3">
-                  <div className="bg-white/60 dark:bg-black/20 rounded-lg p-4 border border-indigo-200/50 dark:border-indigo-800/30">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">💡 Example Calculations</h4>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded">
-                        <span className="text-muted-foreground">1 interview @ 70%</span>
-                        <span className="font-bold text-foreground">70.0</span>
+                <div className="flex-1 grid sm:grid-cols-2 gap-8 w-full">
+                  <div className="space-y-6">
+                    <div className="bg-background/50 rounded-2xl p-6 border border-border/50 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-foreground">Weighted Protocol</h4>
                       </div>
-                      <div className="flex justify-between items-center p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded">
-                        <span className="text-muted-foreground">5 interviews @ 70%</span>
-                        <span className="font-bold text-foreground">74.9</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded">
-                        <span className="text-muted-foreground">10 interviews @ 70%</span>
-                        <span className="font-bold text-foreground">77.0</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded">
-                        <span className="text-muted-foreground">21 interviews @ 70%</span>
-                        <span className="font-bold text-foreground">79.1</span>
-                      </div>
+                      <code className="text-[10px] font-black bg-primary/10 px-3 py-2 rounded-lg text-primary block w-fit">
+                        Score = Avg × (1 + log₁₀(n) / 10)
+                      </code>
+                      <p className="text-[10px] text-muted-foreground font-bold leading-relaxed uppercase tracking-wide">
+                        Your performance is amplified by a reliability bonus derived from cumulative field experience.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { label: "Performance", value: "Primary" },
+                        { label: "Experience", value: "Log Scale" },
+                        { label: "Integrity", value: "Verified" },
+                        { label: "Volatility", value: "Balanced" }
+                      ].map((stat, i) => (
+                        <div key={i} className="bg-background/30 rounded-xl p-3 border border-border/30">
+                          <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
+                          <p className="text-[10px] font-black text-foreground uppercase tracking-tight">{stat.value}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-lg p-4 border border-green-200/50 dark:border-green-800/30">
-                    <h4 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-1">✨ Pro Tip</h4>
-                    <p className="text-xs text-green-600 dark:text-green-300">
-                      Focus on improving your average score! A 90% average with 5 interviews (96.3) beats a 70% average with 50 interviews (81.9).
-                    </p>
+                  <div className="bg-primary/5 rounded-[2rem] p-8 border border-primary/20 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-primary">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Operational Pro-Tip</span>
+                      </div>
+                      <p className="text-xs font-bold text-foreground leading-relaxed italic">
+                        "Precision over Persistence. High-caliber performance in fewer sessions outweighs high attrition rates."
+                      </p>
+                    </div>
+                    <div className="mt-8 pt-8 border-t border-primary/10">
+                      <p className="text-[9px] font-black text-primary/60 uppercase tracking-[0.2em]">Tier 1 Requirement: 90%+ Mastery</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -965,8 +1011,8 @@ const Leaderboard = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </DashboardLayout>
+      </div >
+    </DashboardLayout >
   );
 };
 

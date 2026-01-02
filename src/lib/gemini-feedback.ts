@@ -380,7 +380,7 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
 
     const cleanApiKey = API_KEY.replace(/[^a-zA-Z0-9_\-]/g, '');
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${cleanApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

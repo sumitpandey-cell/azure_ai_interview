@@ -18,6 +18,7 @@ import {
     X,
     User,
     Brain,
+    AlertTriangle,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
@@ -29,6 +30,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArjunaLoader, BowLoader } from "@/components/ArjunaLoader";
 import { TranscriptProvider, TranscriptEntry } from "@/contexts/TranscriptContext";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import "@/styles/arjuna-animations.css";
 
 interface LiveInterviewSessionProps {
@@ -67,6 +78,7 @@ export function LiveInterviewSession({
     const [isMuted, setIsMuted] = useState(!initialMicEnabled);
     const [cameraEnabled, setCameraEnabled] = useState(initialCameraEnabled);
     const [showTranscript, setShowTranscript] = useState(true);
+    const [isEndCallDialogOpen, setIsEndCallDialogOpen] = useState(false);
 
     // Set initial mic/camera state
     useEffect(() => {
@@ -100,12 +112,15 @@ export function LiveInterviewSession({
     };
 
     const handleEndCall = () => {
-        if (confirm("Are you sure you want to end the interview?")) {
-            onEndSession();
-            setTimeout(() => {
-                room.disconnect();
-            }, 100);
-        }
+        setIsEndCallDialogOpen(true);
+    };
+
+    const confirmEndCall = () => {
+        onEndSession();
+        setTimeout(() => {
+            room.disconnect();
+        }, 100);
+        setIsEndCallDialogOpen(false);
     };
 
     const isAISpeaking = agentState === "speaking";
@@ -141,12 +156,12 @@ export function LiveInterviewSession({
         <TranscriptProvider initialTranscripts={initialTranscripts}>
             <TranscriptTracker sessionId={sessionId} agentAudioTrack={agentAudioTrack} />
 
-            <div className="min-h-screen lg:h-screen w-screen bg-[#0A0A0B] text-slate-400 flex flex-col p-3 lg:p-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden font-sans select-none relative">
+            <div className="min-h-screen lg:h-screen w-screen bg-background text-muted-foreground flex flex-col p-3 lg:p-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden font-sans select-none relative">
 
                 {/* Background Ambient Glows */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px]" />
+                    <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px]" />
                 </div>
 
                 {/* Main Content Area */}
@@ -156,10 +171,10 @@ export function LiveInterviewSession({
                     <div className="w-full lg:w-[320px] flex flex-col gap-4 order-2 lg:order-1">
 
                         {/* Visual Input Card */}
-                        <div className="bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+                        <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
                             <div className="px-4 py-3 flex items-center gap-2 border-b border-white/5">
-                                <Video className="h-4 w-4 text-blue-400" />
-                                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Visual Input</span>
+                                <Video className="h-4 w-4 text-primary" />
+                                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Visual Input</span>
                             </div>
                             <div className="relative aspect-video bg-black">
                                 <video
@@ -181,18 +196,18 @@ export function LiveInterviewSession({
                         </div>
 
                         {/* Interview Details Card */}
-                        <div className="bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col gap-5 shadow-2xl">
+                        <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl p-5 flex flex-col gap-5 shadow-2xl">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Brain className="h-4 w-4 text-blue-400" />
-                                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Interview Details</span>
+                                    <Brain className="h-4 w-4 text-primary" />
+                                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Interview Details</span>
                                 </div>
-                                <div className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[8px] font-bold text-blue-400 uppercase tracking-wider">Active</div>
+                                <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[8px] font-bold text-primary uppercase tracking-wider">Active</div>
                             </div>
 
                             <div className="space-y-5">
                                 <div className="space-y-1.5">
-                                    <span className="text-[9px] uppercase tracking-[0.1em] text-slate-500 font-bold">Target Position</span>
+                                    <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60 font-bold">Target Position</span>
                                     <div className="text-sm font-semibold text-white/90 bg-white/5 p-3 rounded-xl border border-white/5">
                                         {sessionData?.position || "Software Engineer"}
                                     </div>
@@ -200,14 +215,14 @@ export function LiveInterviewSession({
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
-                                        <span className="text-[9px] uppercase tracking-[0.1em] text-slate-500 font-bold">Difficulty</span>
-                                        <div className="text-[11px] font-medium text-blue-400 bg-blue-400/5 p-2.5 rounded-lg border border-blue-400/10 text-center">
+                                        <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60 font-bold">Difficulty</span>
+                                        <div className="text-[11px] font-medium text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/10 text-center">
                                             {sessionData?.difficulty || "Intermediate"}
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <span className="text-[9px] uppercase tracking-[0.1em] text-slate-500 font-bold">Type</span>
-                                        <div className="text-[11px] font-medium text-purple-400 bg-purple-400/5 p-2.5 rounded-lg border border-purple-400/10 text-center">
+                                        <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60 font-bold">Type</span>
+                                        <div className="text-[11px] font-medium text-accent bg-accent/5 p-2.5 rounded-lg border border-accent/10 text-center">
                                             {sessionData?.interview_type || "Technical"}
                                         </div>
                                     </div>
@@ -215,12 +230,12 @@ export function LiveInterviewSession({
 
                                 <div className="pt-4 border-t border-white/5">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[9px] uppercase tracking-[0.1em] text-slate-500 font-bold">Uplink Quality</span>
-                                        <span className="text-[10px] text-green-400 font-mono">EXCELLENT</span>
+                                        <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60 font-bold">Uplink Quality</span>
+                                        <span className="text-[10px] text-primary font-mono lowercase">optimized</span>
                                     </div>
                                     <div className="h-1 bg-white/5 rounded-full overflow-hidden flex gap-0.5">
                                         {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                                            <div key={i} className="h-full flex-1 bg-green-500/80 rounded-sm" />
+                                            <div key={i} className={`h-full flex-1 rounded-sm ${i <= 6 ? 'bg-primary/80 shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'bg-primary/20'}`} />
                                         ))}
                                     </div>
                                 </div>
@@ -239,7 +254,7 @@ export function LiveInterviewSession({
 
                     {/* Middle Column: Core System */}
                     <div className="flex-1 flex flex-col gap-6 relative order-1 lg:order-2 min-h-[500px] lg:min-h-0">
-                        <div className="flex-1 bg-[#0f1117]/40 backdrop-blur-md border border-white/10 rounded-[24px] lg:rounded-[32px] overflow-hidden relative shadow-2xl flex items-center justify-center min-h-[400px]">
+                        <div className="flex-1 bg-card/20 backdrop-blur-md border border-white/5 rounded-[24px] lg:rounded-[32px] overflow-hidden relative shadow-2xl flex items-center justify-center min-h-[400px]">
 
                             {/* Core Label */}
                             <div className="absolute top-8 left-10 flex items-center gap-2">
@@ -248,9 +263,9 @@ export function LiveInterviewSession({
 
                             {/* Timer Box */}
                             <div className="absolute top-8 right-10 flex items-center gap-3">
-                                <div className={`px-4 py-2 rounded-full border flex items-center gap-2 backdrop-blur-md ${isCriticalTime ? 'bg-red-500/20 border-red-500/50 text-red-500' : 'bg-white/5 border-white/10 text-white/70'
+                                <div className={`px-4 py-2 rounded-full border flex items-center gap-2 backdrop-blur-md ${isCriticalTime ? 'bg-destructive/20 border-destructive/50 text-destructive' : 'bg-white/5 border-white/10 text-white/70'
                                     }`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isCriticalTime ? 'bg-red-500 animate-pulse' : 'bg-blue-400'}`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isCriticalTime ? 'bg-destructive animate-pulse' : 'bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]'}`} />
                                     <span className="text-xs font-mono font-bold tracking-widest">{formatTime()}</span>
                                 </div>
                             </div>
@@ -258,7 +273,7 @@ export function LiveInterviewSession({
                             {/* Center AI Visualization */}
                             <div className="relative flex items-center justify-center w-full h-full">
                                 {/* Glowing Orbs */}
-                                <div className={`absolute w-[300px] h-[300px] rounded-full blur-[100px] transition-all duration-1000 ${isAISpeaking ? 'bg-blue-600/20 scale-110' : 'bg-white/5 scale-100'
+                                <div className={`absolute w-[300px] h-[300px] rounded-full blur-[100px] transition-all duration-1000 ${isAISpeaking ? 'bg-primary/10 scale-110' : 'bg-white/5 scale-100'
                                     }`} />
 
                                 {/* Inner Particle Sphere (SVG Implementation) */}
@@ -287,24 +302,24 @@ export function LiveInterviewSession({
                                     {/* Center Text Branding */}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <h2 className={`text-2xl font-black tracking-tighter transition-all duration-500 ${isAISpeaking ? 'scale-110' : 'scale-100'}`}>
-                                            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">ARJUNA</span>
+                                            <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">ARJUNA</span>
                                         </h2>
-                                        <span className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">Intelligence</span>
+                                        <span className="text-[8px] font-bold text-white/20 tracking-[0.4em] uppercase">Intelligence</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Floating Center Controls */}
-                            <div className="absolute bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 lg:gap-3 bg-[#0f1117]/80 backdrop-blur-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-[40px] border border-white/10 shadow-3xl w-[90%] lg:w-auto justify-center ring-1 ring-white/5">
-                                <button onClick={toggleCamera} className={`p-2 lg:p-3 rounded-full transition-all ${cameraEnabled ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-red-400 bg-red-500/10'}`}>
+                            <div className="absolute bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 lg:gap-3 bg-card/60 backdrop-blur-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-[40px] border border-white/5 shadow-3xl w-[90%] lg:w-auto justify-center ring-1 ring-white/5">
+                                <button onClick={toggleCamera} className={`p-2 lg:p-3 rounded-full transition-all ${cameraEnabled ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-destructive bg-destructive/10'}`}>
                                     {cameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                                 </button>
 
                                 <button
                                     onClick={toggleMute}
                                     className={`h-10 lg:h-12 px-6 lg:px-10 rounded-full font-bold text-[10px] lg:text-xs uppercase tracking-widest transition-all border ${isMuted
-                                        ? 'bg-red-500/10 border-red-500/50 text-red-500'
-                                        : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
+                                        ? 'bg-destructive/10 border-destructive/50 text-destructive'
+                                        : 'bg-primary border-primary text-black hover:opacity-90 shadow-[0_0_20px_rgba(168,85,247,0.4)] font-black'
                                         }`}
                                 >
                                     {isMuted ? 'Muted' : 'Speaking'}
@@ -312,7 +327,7 @@ export function LiveInterviewSession({
 
                                 <button
                                     onClick={() => setShowTranscript(!showTranscript)}
-                                    className={`p-2 lg:p-3 rounded-full transition-all ${showTranscript ? 'text-blue-400 bg-blue-500/10' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                                    className={`p-2 lg:p-3 rounded-full transition-all ${showTranscript ? 'text-primary bg-primary/10' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                                 >
                                     <MessageSquare className="h-5 w-5" />
                                 </button>
@@ -328,13 +343,13 @@ export function LiveInterviewSession({
                     {/* Right Column: Transcript */}
                     {showTranscript && (
                         <div className="w-full lg:w-[360px] flex flex-col gap-4 order-3 h-[500px] lg:h-auto animate-in slide-in-from-bottom lg:slide-in-from-right duration-500">
-                            <div className="flex-1 bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 rounded-3xl flex flex-col shadow-2xl overflow-hidden">
+                            <div className="flex-1 bg-card/40 backdrop-blur-xl border border-white/5 rounded-3xl flex flex-col shadow-2xl overflow-hidden">
                                 <div className="px-5 py-4 flex items-center justify-between border-b border-white/5">
                                     <div className="flex items-center gap-2">
-                                        <MessageSquare className="h-4 w-4 text-purple-400" />
-                                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Session Transcript</span>
+                                        <MessageSquare className="h-4 w-4 text-accent" />
+                                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Session Transcript</span>
                                     </div>
-                                    <X className="h-3 w-3 text-white/20 cursor-pointer hover:text-white transition-colors" onClick={() => setShowTranscript(false)} />
+                                    <X className="h-3 w-3 text-white/10 cursor-pointer hover:text-white transition-colors" onClick={() => setShowTranscript(false)} />
                                 </div>
 
                                 <div className="flex-1 overflow-hidden">
@@ -342,7 +357,7 @@ export function LiveInterviewSession({
                                         <div className="h-full w-full">
                                             <TranscriptionTile
                                                 agentAudioTrack={agentAudioTrack}
-                                                accentColor="blue"
+                                                accentColor="purple"
                                             />
                                         </div>
                                     ) : (
@@ -355,14 +370,14 @@ export function LiveInterviewSession({
                             </div>
 
                             {/* System Status */}
-                            <div className="bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between group">
+                            <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl px-5 py-4 flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] ${roomState === ConnectionState.Connected ? "bg-blue-500" : "bg-red-500 animate-pulse"}`} />
-                                    <span className="text-[10px] uppercase tracking-widest font-bold text-white/70">
+                                    <div className={`w-2 h-2 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] ${roomState === ConnectionState.Connected ? "bg-primary" : "bg-destructive animate-pulse"}`} />
+                                    <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/80">
                                         {roomState === ConnectionState.Connected ? "Link Stable" : "Connecting..."}
                                     </span>
                                 </div>
-                                <div className="text-[8px] font-bold text-white/30 uppercase tracking-tighter group-hover:text-white/50 transition-colors">
+                                <div className="text-[8px] font-bold text-white/10 uppercase tracking-tighter group-hover:text-white/30 transition-colors">
                                     ID: {sessionId.slice(0, 8)}
                                 </div>
                             </div>
@@ -373,28 +388,52 @@ export function LiveInterviewSession({
 
                 {/* Status Indicator Bar */}
                 <div className="h-auto lg:h-12 flex items-center justify-center mt-4 lg:mt-2 pb-4 lg:pb-0 relative">
-                    <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-8 px-8 py-3 bg-[#0f1117]/60 backdrop-blur-xl rounded-2xl lg:rounded-full border border-white/10 text-[8px] lg:text-[9px] uppercase tracking-[0.2em] font-bold text-white/40 max-w-[90%] shadow-2xl ring-1 ring-white/5">
+                    <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-8 px-8 py-3 bg-card/40 backdrop-blur-xl rounded-2xl lg:rounded-full border border-white/5 text-[8px] lg:text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/40 max-w-[90%] shadow-2xl ring-1 ring-white/5">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
                             <span className="hover:text-white/70 transition-colors cursor-default">Real-time Monitoring</span>
                         </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/10" />
+                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
                         <div className="flex items-center gap-2.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(255,195,77,0.4)]" />
                             <span className="hover:text-white/70 transition-colors cursor-default">Neural Engine Active</span>
                         </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/10" />
+                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
                         <div className="flex items-center gap-2.5">
-                            <span className="text-white/20">Security: <span className="text-green-500/60 lowercase">encrypted</span></span>
+                            <span className="text-white/10">Security: <span className="text-primary/60 lowercase">encrypted</span></span>
                         </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/10" />
+                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
                         <div className="flex items-center gap-2.5">
-                            <span className="text-white/30 hover:text-white/70 transition-colors cursor-default">Build 1.4.2</span>
+                            <span className="text-white/20 hover:text-white/70 transition-colors cursor-default">Build 1.4.2</span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <AlertDialog open={isEndCallDialogOpen} onOpenChange={setIsEndCallDialogOpen}>
+                <AlertDialogContent className="rounded-[2rem] p-8 border border-white/10 shadow-2xl bg-card/90 backdrop-blur-2xl animate-in zoom-in-95 max-w-sm mx-auto">
+                    <AlertDialogHeader className="space-y-4">
+                        <div className="h-14 w-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                            <AlertTriangle className="h-7 w-7 text-red-500" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-black tracking-tight uppercase text-center text-white">End Session?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground/80 text-center leading-relaxed">
+                            Are you certain you want to terminate this operational session? All unarchived progression may be lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
+                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white transition-all order-2 sm:order-1">
+                            Continue Mission
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmEndCall}
+                            className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[10px] bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all order-1 sm:order-2"
+                        >
+                            End Protocol
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </TranscriptProvider>
     );
 }

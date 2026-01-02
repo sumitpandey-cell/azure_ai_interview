@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Brain, Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Settings } from "lucide-react";
+import { Brain, Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Settings, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
@@ -111,12 +111,9 @@ export default function InterviewSetup() {
                 });
             }
 
-            // 3. Security check: Redirect if session is already completed or past the setup stage
-            if (sessionData.status === 'completed' || (sessionData.config as any)?.currentStage === 'live') {
-                const message = sessionData.status === 'completed'
-                    ? "This interview session has already been completed."
-                    : "This interview session is already in progress.";
-                toast.info(`${message} Redirecting to dashboard.`);
+            // 3. Security check: Redirect if session is already completed
+            if (sessionData.status === 'completed') {
+                toast.info("This interview session has already been completed. Redirecting to dashboard.");
                 router.replace('/dashboard');
                 return;
             }
@@ -138,6 +135,24 @@ export default function InterviewSetup() {
     const startCamera = async () => {
         try {
             setCameraError(null);
+
+            // Check if mediaDevices API is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const isHttps = window.location.protocol === 'https:';
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+                if (!isHttps && !isLocalhost) {
+                    setCameraError('HTTPS required for camera access on mobile devices');
+                    toast.error('Camera/Mic requires HTTPS. Please use ngrok or access via localhost.', {
+                        duration: 6000,
+                    });
+                } else {
+                    setCameraError('Camera API not supported in this browser');
+                    toast.error('Your browser does not support camera access.');
+                }
+                return;
+            }
+
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
@@ -148,10 +163,23 @@ export default function InterviewSetup() {
             }
             setIsCameraOn(true);
             setIsMicOn(true); // Also enable mic when camera starts
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error accessing camera:', error);
-            setCameraError('Unable to access camera. Please check permissions.');
-            toast.error('Camera access denied. Please allow camera permissions.');
+
+            // Provide specific error messages
+            if (error.name === 'NotAllowedError') {
+                setCameraError('Permission denied. Please allow camera access.');
+                toast.error('Camera access denied. Please allow camera permissions in your browser settings.');
+            } else if (error.name === 'NotFoundError') {
+                setCameraError('No camera found on this device.');
+                toast.error('No camera detected. Please connect a camera.');
+            } else if (error.name === 'NotReadableError') {
+                setCameraError('Camera is already in use by another application.');
+                toast.error('Camera is busy. Please close other apps using the camera.');
+            } else {
+                setCameraError('Unable to access camera. Please check permissions.');
+                toast.error('Camera access failed. Please check your browser settings.');
+            }
         }
     };
 
@@ -206,11 +234,6 @@ export default function InterviewSetup() {
     const proceedToStart = async () => {
         if (!isMicOn) {
             toast.error("Please turn on your microphone to continue");
-            return;
-        }
-
-        if (!isCameraOn) {
-            toast.error("Please turn on your camera to continue");
             return;
         }
 
@@ -269,253 +292,276 @@ export default function InterviewSetup() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex flex-col font-sans transition-colors duration-300">
+        <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-primary/30">
             {/* Header */}
-            <header className="h-16 border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50 flex items-center px-6 lg:px-12 justify-between">
-                <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-                    <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
-                    Arjuna AI
+            <header className="h-16 sm:h-20 border-b border-white/5 bg-background/80 backdrop-blur-2xl sticky top-0 z-50 flex items-center px-4 sm:px-8 lg:px-16 justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="relative group cursor-pointer" onClick={() => router.push('/dashboard')}>
+                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-all"></div>
+                        <img src="/favicon.ico" alt="Arjuna AI" className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-lg sm:text-xl font-black text-foreground tracking-tighter leading-none">
+                            ARJUNA<span className="text-primary italic">AI</span>
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Calibration Protocol</span>
+                    </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => router.replace('/dashboard')} className="text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Dashboard
+
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.replace('/dashboard')}
+                    className="group h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-white/5 hover:bg-white/5 transition-all"
+                >
+                    <ArrowLeft className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:-translate-x-1" />
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest pt-0.5 hidden sm:inline">Return to Hangar</span>
                 </Button>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8 lg:py-12 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <main className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-12 items-start justify-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
 
                 {/* Left Column: Video Preview */}
-                <div className="w-full max-w-3xl">
-                    <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-border/20 ring-1 ring-white/10">
-
+                <div className="lg:col-span-8 flex flex-col gap-4 sm:gap-8">
+                    <div className="relative aspect-video bg-black rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.1)] border border-white/10 group">
                         {/* Video Element */}
                         <video
                             ref={videoRef}
                             autoPlay
                             playsInline
                             muted
-                            className={`w-full h-full object-cover ${isCameraOn ? 'block' : 'hidden'} transform scale-x-[-1]`}
+                            className={`w-full h-full object-cover ${isCameraOn ? 'opacity-100' : 'opacity-0'} transition-opacity duration-700 transform scale-x-[-1]`}
                         />
 
-                        {/* User Label */}
-                        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-sm font-medium z-10 border border-white/10 flex items-center gap-2">
-                            <div className={`h-2 w-2 rounded-full ${isCameraOn ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                            {user?.user_metadata?.full_name || user?.email || "User"}
+                        {/* Scanline Effect */}
+                        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-20"></div>
+
+                        {/* Top Info Strip */}
+                        <div className="absolute top-3 sm:top-6 left-3 sm:left-6 right-3 sm:right-6 flex items-center justify-between z-10">
+                            <div className="bg-black/40 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-white/10 flex items-center gap-2 sm:gap-3">
+                                <span className="relative flex h-2 w-2">
+                                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isCameraOn ? 'bg-emerald-400' : 'bg-rose-400'} opacity-75`}></span>
+                                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isCameraOn ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                                </span>
+                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/90">
+                                    {isCameraOn ? "System Hot" : "Imaging Offline"}
+                                </span>
+                            </div>
+
+                            <div className="bg-primary/20 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-primary/30 flex items-center gap-1.5 sm:gap-2">
+                                <Sparkles className="h-3 w-3 text-primary" />
+                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-primary">Identity: {user?.user_metadata?.full_name?.split(' ')[0] || "Pilot"}</span>
+                            </div>
                         </div>
 
                         {/* Placeholder for Video Stream */}
                         {!isCameraOn && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-slate-400 pb-20">
-                                <div className="h-16 w-16 md:h-24 md:w-24 rounded-full bg-slate-800/50 flex items-center justify-center mb-4 border border-slate-700 shadow-inner">
-                                    <VideoOff className="h-8 w-8 md:h-10 md:w-10 opacity-50" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/10 backdrop-blur-sm overflow-hidden pb-12">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
+                                <div className="relative mb-8">
+                                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                                    <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-32 md:w-32 rounded-2xl sm:rounded-[2rem] bg-card border border-white/10 flex items-center justify-center relative shadow-2xl">
+                                        <VideoOff className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground/40" />
+                                    </div>
                                 </div>
-                                <p className="text-lg font-medium">Camera is turned off</p>
-                                {cameraError && (
-                                    <p className="text-red-400 text-sm text-center max-w-xs mt-2 bg-red-950/30 px-3 py-1 rounded-md border border-red-900/50">{cameraError}</p>
-                                )}
+                                <h3 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground/80">Optical Sensors Offline</h3>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-2">{cameraError || "Calibration Required"}</p>
                             </div>
                         )}
 
-                        {/* Controls Overlay */}
-                        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6 z-10">
+                        {/* Bottom Action Controls */}
+                        <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 flex justify-center gap-4 sm:gap-8 z-10 transition-transform duration-500 translate-y-2 group-hover:translate-y-0">
                             <button
                                 onClick={toggleMic}
-                                className={`h-12 w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-105 ${isMicOn
-                                    ? 'bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600'
-                                    : 'bg-red-500/90 hover:bg-red-600 text-white border border-red-400'
+                                className={`group h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-2xl border ${isMicOn
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.3)] animate-pulse'
                                     }`}
-                                title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
+                                title={isMicOn ? "Mute Audio" : "Unmute Audio"}
                             >
-                                {isMicOn ? <Mic className="h-5 w-5 md:h-6 md:w-6" /> : <MicOff className="h-5 w-5 md:h-6 md:w-6" />}
+                                {isMicOn ? <Mic className="h-5 w-5 sm:h-6 sm:w-6" /> : <MicOff className="h-5 w-5 sm:h-6 sm:w-6" />}
+                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{isMicOn ? "Audio On" : "Enable Mic"}</div>
                             </button>
+
                             <button
                                 onClick={toggleCamera}
-                                className={`h-12 w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-105 ${isCameraOn
-                                    ? 'bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600'
-                                    : 'bg-red-500/90 hover:bg-red-600 text-white border border-red-400'
+                                className={`group h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-2xl border ${isCameraOn
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.3)] animate-pulse'
                                     }`}
-                                title={isCameraOn ? "Turn Off Camera" : "Turn On Camera"}
+                                title={isCameraOn ? "Cut Vision" : "Launch Vision"}
                             >
-                                {isCameraOn ? <Video className="h-5 w-5 md:h-6 md:w-6" /> : <VideoOff className="h-5 w-5 md:h-6 md:w-6" />}
+                                {isCameraOn ? <Video className="h-5 w-5 sm:h-6 sm:w-6" /> : <VideoOff className="h-5 w-5 sm:h-6 sm:w-6" />}
+                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{isCameraOn ? "Vision Active" : "Enable View"}</div>
                             </button>
                         </div>
                     </div>
-                    <p className="text-center text-sm text-muted-foreground mt-4">
-                        Check your appearance and audio before joining the session.
-                    </p>
 
-                    {/* Avatar Selection */}
-                    <div className="mt-8 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-white/5 space-y-3 sm:space-y-4">
+                            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-primary" />
+                                Compliance Check
+                            </h3>
+                            <div className="space-y-3">
+                                {[
+                                    { label: "Environmental Audit", desc: "Minimal noise detected" },
+                                    { label: "Encryption Active", desc: "End-to-end tunnel active" }
+                                ].map((step, i) => (
+                                    <div key={i} className="flex flex-col gap-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-muted-foreground uppercase">{step.label}</span>
+                                            <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+                                        </div>
+                                        <p className="text-[9px] text-muted-foreground opacity-60 font-medium">{step.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-white/5 space-y-3 sm:space-y-4">
+                            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                Tactical Brief
+                            </h3>
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">
+                                Ensure clear diction and maintain visual contact with the AI node for optimal precision analysis.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Controls & AvatarSelection */}
+                <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+                    {session && (
+                        <Card className="rounded-2xl sm:rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50"></div>
+                            <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Operational Intel</span>
+                                    <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tighter uppercase">Session Config</h3>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {[
+                                        { label: "Modality", val: session.interview_type },
+                                        { label: "Target Position", val: session.position }
+                                    ].map((row, i) => (
+                                        <div key={i} className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 group/row hover:bg-white/[0.05] transition-all">
+                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest group-hover/row:text-primary transition-colors">{row.label}</span>
+                                            <span className="text-[11px] sm:text-[12px] font-bold text-foreground transition-all">{row.val}</span>
+                                        </div>
+                                    ))}
+
+                                    {session.config?.difficulty && (
+                                        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5">
+                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Calibration Tier</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className={`h-1.5 w-1.5 rounded-full ${session.config.difficulty === 'Beginner' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+                                                    session.config.difficulty === 'Intermediate' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
+                                                        'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                                                    }`}></div>
+                                                <span className="text-[12px] font-black text-foreground uppercase">{session.config.difficulty}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {session.config?.skills && session.config.skills.length > 0 && (
+                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5">
+                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Skill Nodes assessed</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {session.config.skills.map((skill, idx) => (
+                                                    <span key={idx} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-tight">
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Integrated Avatar Selection */}
+                    <Card className="rounded-2xl sm:rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden p-4 sm:p-6 relative">
                         <AvatarSelection
                             selectedAvatar={selectedAvatar}
                             onSelect={setSelectedAvatar}
+                            variant="compact"
                         />
-                    </div>
-                </div>
-
-                {/* Right Column: Controls & Instructions */}
-                <div className="w-full max-w-sm space-y-6">{session && (
-                    <Card className="border-none shadow-lg bg-card/50 backdrop-blur-sm">
-                        <CardContent className="p-5">
-                            <div className="flex items-center gap-2 mb-4 text-primary font-semibold">
-                                <Settings className="h-4 w-4" />
-                                <h3>Session Details</h3>
-                            </div>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                    <span className="text-muted-foreground">Type</span>
-                                    <span className="font-medium text-foreground">{session.interview_type}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                    <span className="text-muted-foreground">Position</span>
-                                    <span className="font-medium text-foreground">{session.position}</span>
-                                </div>
-                                {session.config?.companyInterviewConfig && (
-                                    <>
-                                        {/* Coming Soon Banner */}
-                                        <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/30 p-3 mb-2">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
-                                                <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                                                    Coming Soon
-                                                </span>
-                                                <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
-                                            </div>
-                                            <p className="text-xs text-center text-amber-700 dark:text-amber-300 mt-1">
-                                                Company-specific interviews are under development
-                                            </p>
-                                        </div>
-
-                                        <div className="flex justify-between items-center p-2 rounded-md bg-primary/10 border border-primary/20">
-                                            <span className="text-muted-foreground">Company</span>
-                                            <span className="font-semibold text-primary">{session.config.companyInterviewConfig.companyName}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground">Role</span>
-                                            <span className="font-medium text-foreground">{session.config.companyInterviewConfig.role}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                            <span className="text-muted-foreground">Experience Level</span>
-                                            <span className="font-medium text-foreground">{session.config.companyInterviewConfig.experienceLevel}</span>
-                                        </div>
-                                    </>
-                                )}
-                                {session.config?.difficulty && (
-                                    <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground">Difficulty</span>
-                                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${session.config.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
-                                            session.config.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' :
-                                                'bg-red-500/10 text-red-600 dark:text-red-400'
-                                            }`}>
-                                            {session.config.difficulty}
-                                        </span>
-                                    </div>
-                                )}
-                                {session.config?.skills && session.config.skills.length > 0 && (
-                                    <div className="p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground text-xs block mb-2">Skills to be assessed</span>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {session.config.skills.map((skill, idx) => (
-                                                <span key={idx} className="px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
-                                                    {skill}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {session.config?.jobDescription && (
-                                    <div className="p-2 rounded-md bg-muted/50">
-                                        <span className="text-muted-foreground text-xs block mb-2">Job Description</span>
-                                        <p className="text-xs text-foreground line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title={session.config.jobDescription}>
-                                            {session.config.jobDescription}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
                     </Card>
-                )}
 
-                    <div className="text-center space-y-6">
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-foreground">Ready to join?</h2>
-                            <p className="text-muted-foreground text-sm">The AI interviewer is waiting for you.</p>
-                        </div>
+                    <div className="space-y-6 pt-4">
+                        <div className="flex flex-col gap-6 text-center">
+                            <div className="space-y-2">
+                                <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tighter uppercase italic">Ready to engage?</h2>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">The AI Interviewer is primed for session</p>
+                            </div>
 
-                        <div className="space-y-3">
                             <Button
                                 size="lg"
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/25 transition-all hover:scale-[1.02]"
+                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 sm:h-16 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] rounded-2xl sm:rounded-[1.5rem] shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all hover:scale-[1.03] active:scale-[0.98] group relative overflow-hidden"
                                 onClick={handleStart}
                                 disabled={isLoading || subscriptionLoading || !allowed}
                             >
+                                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 {isLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                        Connecting...
-                                    </>
+                                    <div className="flex items-center gap-3">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                                        <span>Establishing Uplink...</span>
+                                    </div>
                                 ) : !allowed ? (
-                                    "Daily Limit Reached"
+                                    "Quota Exhausted"
                                 ) : (
-                                    <>
-                                        <Sparkles className="mr-2 h-5 w-5" />
-                                        Start Interview Now
-                                    </>
+                                    <div className="flex items-center justify-center gap-3">
+                                        <div className="p-1 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">
+                                            <Zap className="h-4 w-4 fill-white" />
+                                        </div>
+                                        <span>Initiate Sequence</span>
+                                    </div>
                                 )}
                             </Button>
 
-                            {!isMicOn && !isCameraOn && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable microphone and camera access</p>
-                            )}
-                            {(!isMicOn && isCameraOn) && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable microphone access</p>
-                            )}
-                            {(isMicOn && !isCameraOn) && (
-                                <p className="text-xs text-red-500 font-medium bg-red-500/10 py-2 rounded-md animate-pulse">Please enable camera access</p>
+                            {!isMicOn ? (
+                                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-rose-500/10 border border-rose-500/20">
+                                    <div className="h-1 w-1 rounded-full bg-rose-500 animate-pulse"></div>
+                                    <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest">Microphone Required</p>
+                                </div>
+                            ) : !isCameraOn && (
+                                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-blue-500/10 border border-blue-500/20">
+                                    <div className="h-1 w-1 rounded-full bg-blue-500 animate-pulse"></div>
+                                    <p className="text-[9px] text-blue-500 font-black uppercase tracking-widest">Camera Optional (Recommended)</p>
+                                </div>
                             )}
                         </div>
                     </div>
-
-
-
-                    <div className="space-y-4 pt-2">
-                        <h3 className="font-semibold text-foreground text-sm uppercase tracking-wider text-center">Instructions</h3>
-                        <ul className="space-y-3 bg-muted/30 p-4 rounded-xl border border-border/50">
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Enable camera and microphone permissions</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Find a quiet, well-lit environment</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Speak clearly and naturally</span>
-                            </li>
-                            <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span>Ensure stable internet connection</span>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
-
             </main>
 
+
             <AlertDialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Low Time Warning</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            You have only {Math.ceil(remaining_minutes / 60)} minutes remaining in your subscription.
-                            The interview will automatically end when your time runs out.
+                <AlertDialogContent className="bg-card/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8">
+                    <AlertDialogHeader className="space-y-4">
+                        <AlertDialogTitle className="text-2xl font-black text-foreground uppercase italic tracking-tighter">
+                            Tactical Alert: <span className="text-amber-500">Low Reserves</span>
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                            System indicates only <span className="text-amber-500">{Math.ceil(remaining_minutes / 60)} minutes</span> of operational uptime remaining.
+                            The engagement will terminate automatically upon depletion of chronological credits.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={proceedToStart}>Continue Anyway</AlertDialogAction>
+                    <AlertDialogFooter className="mt-8 flex gap-4">
+                        <AlertDialogCancel className="flex-1 h-12 rounded-xl border border-white/10 bg-white/5 font-black uppercase tracking-widest text-[10px] hover:bg-white/10">
+                            Abort
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={proceedToStart}
+                            className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                        >
+                            Proceed with Mission
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

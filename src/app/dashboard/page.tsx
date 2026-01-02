@@ -11,11 +11,24 @@ import {
   ThumbsDown,
   Clock,
   FileText,
+  Calendar,
   Settings,
   LogOut,
   Loader2,
-  Play
+  Play,
+  TrendingUp,
+  Building2,
+  Trash2,
+  ArrowRight,
+  ExternalLink,
+  MessageSquare,
+  Sparkles,
+  Award,
+  Zap,
+  Target,
+  ChevronRight
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,7 +53,7 @@ import { PerformanceAnalysisChart } from "@/components/PerformanceAnalysisChart"
 import { useAnalytics } from "@/hooks/use-analytics";
 import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
-import { Timer, Zap } from "lucide-react";
+import { Timer } from "lucide-react";
 import { formatDuration, formatDurationShort } from "@/lib/format-duration";
 import { toast } from "sonner";
 
@@ -248,9 +261,9 @@ export default function Dashboard() {
           background: linear-gradient(
             90deg,
             transparent 0%,
-            rgba(59, 130, 246, 0.1) 25%,
-            rgba(59, 130, 246, 0.2) 50%,
-            rgba(59, 130, 246, 0.1) 75%,
+            rgba(var(--primary-rgb), 0.05) 25%,
+            rgba(var(--primary-rgb), 0.15) 50%,
+            rgba(var(--primary-rgb), 0.05) 75%,
             transparent 100%
           );
           animation: shimmer 2s infinite;
@@ -260,56 +273,71 @@ export default function Dashboard() {
       `}</style>
 
       <DashboardLayout>
-        <div className="space-y-4">
-          {/* Header Section with Controls */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-0.5">
-                Good morning, {userMetadata?.full_name?.split(' ')[0] || "User"}!
+        <div className="space-y-4 pb-12 pt-10 sm:pt-0">
+          {/* Header Section with Top-Notch Tactical Design */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 pb-6 border-b border-white/5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">System Online</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-foreground tracking-tighter italic leading-tight">
+                {new Date().getHours() < 12 ? 'MORNING' : new Date().getHours() < 18 ? 'AFTERNOON' : 'EVENING'}, <span className="text-primary not-italic">{userMetadata?.full_name?.split(' ')[0]?.toUpperCase() || "OPERATOR"}</span>
               </h1>
-              <p className="text-muted-foreground text-xs">Arjuna AI: Your AI Voice Interviewer.</p>
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-primary" />
+                Arjuna AI Tactical Interface • Sector 7G
+              </p>
             </div>
 
-            {/* Header Controls */}
-            <div className="flex items-center gap-1.5 ">
-              <NotificationBell />
+            {/* Premium Header Controls Interface */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 p-1.5 sm:p-2 bg-card/30 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-[2rem] shadow-2xl w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 px-2 border-r border-white/10 mr-1">
+                <NotificationBell />
+                <ThemeToggle />
+              </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex bg-card items-center gap-1.5 hover:bg-accent border border-border rounded-full px-1.5 py-1 transition-colors">
-                    <Avatar className="h-7 w-7 border border-border">
-                      <AvatarImage src={getAvatarUrl(
-                        userMetadata?.avatar_url,
-                        user?.id || 'user',
-                        'avataaars',
-                        null,
-                        userMetadata?.gender
-                      )} />
-                      <AvatarFallback className="text-xs font-medium text-foreground">{getInitials(userMetadata?.full_name)}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium text-foreground hidden sm:block">
-                      {userMetadata?.full_name?.split(' ')[0] || "User"}
-                    </span>
-                    <svg className="h-3 w-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-500 hover:scale-[1.02] active:scale-95">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary/20 blur-md rounded-full group-hover:bg-primary/40 transition-all" />
+                      <Avatar className="h-9 w-9 border-2 border-primary/20 relative z-10">
+                        <AvatarImage src={getAvatarUrl(
+                          userMetadata?.avatar_url,
+                          user?.id || 'user',
+                          'avataaars',
+                          null,
+                          userMetadata?.gender
+                        )} />
+                        <AvatarFallback className="text-[10px] font-black text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#09090b] rounded-full z-20" />
+                    </div>
+
+                    <div className="flex flex-col items-start">
+                      <span className="text-[10px] sm:text-[11px] font-black text-foreground uppercase tracking-wider leading-none">
+                        {userMetadata?.full_name?.split(' ')[0] || "User"}
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-60">Verified Admin</span>
+                    </div>
+
+                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-xs">
-                    <Settings className="mr-1.5 h-3 w-3" />
-                    Settings
+                <DropdownMenuContent align="end" className="w-64 bg-card/80 backdrop-blur-3xl border-white/10 rounded-2xl p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/5" />
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
+                    <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
+                    Interface Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="text-destructive text-xs">
-                    <LogOut className="mr-1.5 h-3 w-3" />
-                    Log out
+                  <DropdownMenuItem onClick={signOut} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
+                    <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                    Terminate Session
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <ThemeToggle />
             </div>
           </div>
 
@@ -324,44 +352,59 @@ export default function Dashboard() {
 
 
           {/* Top Actions Section */}
-          <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
+          <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-6">
             <Button
-              className="h-auto w-full xl:w-auto px-6 xl:px-12 py-3 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-md transition-transform hover:scale-105 font-medium"
+              className="h-12 sm:h-14 md:h-16 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] font-black uppercase tracking-widest group"
               onClick={startInterview}
               disabled={subscriptionLoading || !allowed}
             >
-              Start Interview
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 fill-current group-hover:animate-pulse" />
+              Initialize Interview
             </Button>
 
-            <div className="grid grid-cols-2 gap-3 md:gap-0 md:flex md:divide-x md:divide-border xl:ml-auto bg-card rounded-xl p-3 md:px-6 md:py-3 shadow-sm border border-border">
-              <div className="flex flex-col md:pr-5">
-                <span className="text-[10px] text-muted-foreground mb-0.5 font-normal">Interviews:</span>
-                <span className="text-xl md:text-2xl font-bold text-foreground">{stats?.totalInterviews || 0}</span>
-              </div>
-
-              <div className="flex flex-col md:px-5">
-                <span className="text-[10px] text-muted-foreground mb-0.5 font-normal">Time:</span>
-                <span className="text-xl md:text-2xl font-bold text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
-              </div>
-
-              <div className="flex flex-col md:px-5">
-                <span className="text-[10px] text-muted-foreground mb-0.5 font-normal">Rank:</span>
-                <span className="text-xl md:text-2xl font-bold text-foreground">#{stats?.rank || 0}</span>
-              </div>
-
-              <div className="flex items-center gap-3 md:pl-5">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground mb-0.5 font-normal">Stats score:</span>
-                  <span className="text-xl md:text-2xl font-bold text-foreground">{stats?.averageScore || 0}%</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Play className="h-10 w-10 sm:h-12 sm:w-12" />
                 </div>
-                <div className="flex items-center">
-                  <MiniBarChart
-                    data={scoreHistory}
-                    height={32}
-                    barWidth={4}
-                    gap={3}
-                    color="hsl(var(--primary))"
-                  />
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Total Enactments</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{stats?.totalInterviews || 0}</span>
+              </div>
+
+              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-accent/30 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Clock className="h-10 w-10 sm:h-12 sm:w-12" />
+                </div>
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Practiced</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
+              </div>
+
+              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Award className="h-10 w-10 sm:h-12 sm:w-12" />
+                </div>
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Global Standing</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">#{stats?.rank || 0}</span>
+              </div>
+
+              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Target className="h-10 w-10 sm:h-12 sm:w-12" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Mean Accuracy</span>
+                    <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{stats?.averageScore || 0}%</span>
+                  </div>
+                  <div className="pt-2 hidden sm:block">
+                    <MiniBarChart
+                      data={scoreHistory}
+                      height={32}
+                      barWidth={4}
+                      gap={3}
+                      color="hsl(var(--primary))"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -383,220 +426,193 @@ export default function Dashboard() {
           />
 
           {/* Interview List Section */}
-          <div className="bg-card rounded-xl p-3 sm:p-4 shadow-sm border border-border">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-foreground">Recent Interviews</h3>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-tight">Recent Deployments</h3>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Archive of latest operational logs</p>
+                </div>
+              </div>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => router.push('/reports')}
-                className="text-muted-foreground hover:text-foreground"
+                className="h-9 sm:h-10 px-3 sm:px-5 rounded-lg sm:rounded-xl border-border font-black uppercase tracking-widest text-[8px] sm:text-[10px] group transition-all"
               >
-                View All →
+                Archive
+                <ArrowRight className="h-3 w-3 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
-                <thead>
-                  <tr className="text-left border-b border-border/50">
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs pl-4">Role</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Date</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Type</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Duration</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Status</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Score</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs">Feedback</th>
-                    <th className="pb-4 pt-2 font-medium text-muted-foreground text-xs text-right pr-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="flex flex-col gap-2 w-full">
-                            {[...Array(5)].map((_, index) => (
-                              <div key={index} className="relative overflow-hidden rounded-lg bg-muted/30 animate-pulse h-[50px] w-full">
-                                <div className="shimmer-overlay" />
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="h-40 sm:h-48 rounded-2xl sm:rounded-[2.5rem] bg-card border-2 border-border/50 animate-pulse relative overflow-hidden">
+                    <div className="shimmer-overlay" />
+                  </div>
+                ))}
+              </div>
+            ) : sessions?.length === 0 ? (
+              <div className="bg-card border-2 border-dashed border-border rounded-[2.5rem] py-16 text-center space-y-4">
+                <div className="h-16 w-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
+                  <FileText className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">No Archive Found</h3>
+                  <p className="text-sm text-muted-foreground font-medium">Initiate your first session to begin generating reports.</p>
+                </div>
+                <Button
+                  onClick={startInterview}
+                  className="rounded-xl h-12 px-8 font-black uppercase tracking-widest text-[10px]"
+                >
+                  Start New Journey
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sessions.map((session) => {
+                  const isGeneratingFeedback = isSessionGenerating(session.id);
+                  const isInsufficientData = (session.feedback as any)?.note === 'Insufficient data for report generation';
+                  const score = session.score;
+
+                  return (
+                    <div
+                      key={session.id}
+                      onClick={() => {
+                        if (session.status === 'in_progress') {
+                          router.push(`/interview/${session.id}/setup`);
+                        } else {
+                          router.push(`/interview/${session.id}/report`);
+                        }
+                      }}
+                      className="group relative overflow-hidden rounded-2xl sm:rounded-[2rem] border-2 border-border bg-card hover:border-primary/50 transition-all duration-500 cursor-pointer hover:shadow-2xl hover:shadow-primary/5"
+                    >
+                      {/* Top Bar Decoration */}
+                      <div className={cn(
+                        "absolute top-0 left-0 w-full h-1 bg-gradient-to-r",
+                        session.status === 'in_progress' ? "from-amber-500 to-amber-300" :
+                          score !== null ? (score >= 70 ? "from-emerald-500 to-emerald-300" : score >= 40 ? "from-primary to-accent" : "from-rose-500 to-rose-300") :
+                            "from-muted to-muted-foreground/30"
+                      )} />
+
+                      <div className="p-4 sm:p-6 h-full flex flex-col">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-black uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                              {session.position}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              {session.config && (session.config as any).companyId ? (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                  <Building2 className="h-2.5 w-2.5" />
+                                  Corporate Path
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 border border-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary">
+                                  <Play className="h-2.5 w-2.5" />
+                                  General Protocol
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Mini Gauge or Status */}
+                          <div className="relative h-12 w-12 flex items-center justify-center shrink-0">
+                            {score !== null ? (
+                              <>
+                                <svg className="h-full w-full rotate-[-90deg]">
+                                  <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
+                                    className="stroke-muted-foreground/10 fill-none"
+                                    strokeWidth="4"
+                                  />
+                                  <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
+                                    className={cn(
+                                      "fill-none transition-all duration-1000",
+                                      score >= 70 ? "stroke-emerald-500" : score >= 40 ? "stroke-primary" : "stroke-rose-500"
+                                    )}
+                                    strokeWidth="4"
+                                    strokeDasharray={125.6}
+                                    strokeDashoffset={125.6 - (125.6 * score) / 100}
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black italic">
+                                  {score}%
+                                </span>
+                              </>
+                            ) : (
+                              <div className="h-10 w-10 bg-muted/30 rounded-full flex items-center justify-center">
+                                {isGeneratingFeedback ? (
+                                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                ) : (
+                                  <Clock className="h-5 w-5 text-muted-foreground/30" />
+                                )}
                               </div>
-                            ))}
+                            )}
                           </div>
                         </div>
-                      </td>
-                    </tr>
-                  ) : sessions?.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                        <div className="flex flex-col items-center gap-2">
-                          <FileText className="h-6 w-6 text-muted-foreground/50" />
-                          <p className="text-xs">No interviews yet. Start your first interview to see results here!</p>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                          <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Timeline</span>
+                            <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              {new Date(session.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Uptime</span>
+                            <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              {session.duration_seconds ? formatDurationShort(session.duration_seconds) : '---'}
+                            </span>
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    sessions.map((session) => {
-                      const initials = session.position
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .substring(0, 2)
-                        .toUpperCase();
 
-                      const scoreColor = (session.score || 0) >= 70 ? "text-green-500" : (session.score || 0) >= 40 ? "text-yellow-500" : "text-red-500";
-                      const isGeneratingFeedback = isSessionGenerating(session.id);
+                        <div className="mt-auto flex items-center justify-between">
+                          <div className={cn(
+                            "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-2",
+                            session.status === 'in_progress' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                              score !== null ? (score >= 70 ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-primary/10 text-primary border border-primary/20") :
+                                "bg-muted text-muted-foreground/60 border border-border"
+                          )}>
+                            <div className={cn(
+                              "h-1.5 w-1.5 rounded-full shrink-0",
+                              session.status === 'in_progress' ? "bg-amber-500 animate-pulse" :
+                                score !== null ? (score >= 70 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]") :
+                                  "bg-muted-foreground"
+                            )} />
+                            {session.status === 'in_progress' ? "Live Session" :
+                              isInsufficientData ? "Null Archive" :
+                                score !== null ? "Archived" : "Processing"}
+                          </div>
 
-                      return (
-                        <tr key={session.id} className="group hover:bg-muted/30 transition-colors relative">
-                          <td className="py-3 pl-4 relative z-10">
-                            {/* Shimmer overlay for generating feedback - moved inside td for valid HTML */}
-                            {isGeneratingFeedback && (
-                              <div className="shimmer-overlay absolute inset-0 w-full h-full pointer-events-none z-0" />
-                            )}
-                            <div className="flex items-center gap-3 relative z-10">
-                              <div className="h-9 w-9 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center text-xs font-bold">
-                                {initials}
-                              </div>
-                              <span className="font-semibold text-foreground text-sm">{session.position}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 relative z-10">
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(session.created_at).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td className="py-3 relative z-10">
-                            <span className="text-sm font-medium text-foreground capitalize">
-                              {session.interview_type.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="py-3 relative z-10">
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Clock className="h-3.5 w-3.5" />
-                              {session.duration_seconds ? formatDuration(session.duration_seconds) : '0s'}
-                            </div>
-                          </td>
-                          <td className="py-3 relative z-10">
-                            {isGeneratingFeedback ? (
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 shadow-sm border border-blue-200/50">
-                                <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
-                                <span>Generating...</span>
-                              </div>
-                            ) : (
-                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${session.status === 'completed'
-                                ? (session.feedback as any)?.note === 'Insufficient data for report generation'
-                                  ? 'bg-gray-500/10 text-gray-500 border border-gray-200/50'
-                                  : session.score !== null
-                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-200/50'
-                                    : 'bg-amber-500/10 text-amber-500 border border-amber-200/50'
-                                : 'bg-yellow-500/10 text-yellow-500 border border-yellow-200/50'
-                                }`}>
-                                {session.status === 'completed'
-                                  ? (session.feedback as any)?.note === 'Insufficient data for report generation'
-                                    ? 'Insufficient Data'
-                                    : session.score !== null
-                                      ? 'Completed'
-                                      : 'Report Pending'
-                                  : 'In Progress'}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 relative z-10">
-                            <div className="flex items-center gap-3">
-                              <span className={`text-sm font-bold ${session.score !== null ? scoreColor : 'text-muted-foreground'}`}>
-                                {session.score !== null ? `${session.score}%` : '—'}
-                              </span>
-                              {renderStars(session.score)}
-                            </div>
-                          </td>
-                          <td className="py-3 relative z-10">
-                            <div className="flex items-center gap-2">
-                              {isGeneratingFeedback ? (
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic">
-                                  <span>Processing feedback...</span>
-                                </div>
-                              ) : session.score !== null ? (
-                                <>
-                                  <ThumbsUp className={`h-4 w-4 ${session.score >= 70 ? "text-green-500 fill-green-500/20" : "text-muted-foreground/30"}`} />
-                                  <ThumbsDown className={`h-4 w-4 ${session.score < 70 ? "text-red-500 fill-red-500/20" : "text-muted-foreground/30"}`} />
-                                </>
-                              ) : (
-                                <span className="text-xs text-muted-foreground italic">—</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 pr-4 text-right relative z-10">
-                            <div className="flex justify-end">
-                              {session.status === 'in_progress' ? (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  disabled={isGeneratingFeedback}
-                                  onClick={async () => {
-                                    // Check balance before continuing
-                                    const { remainingMinutes: bal } = await subscriptionService.checkUsageLimit(user?.id || '');
-                                    if (bal < 120) {
-                                      toast.error("Low Balance", {
-                                        description: "You need at least 2 minutes of balance to continue this interview.",
-                                        action: {
-                                          label: "Upgrade",
-                                          onClick: () => router.push("/pricing")
-                                        }
-                                      });
-                                      return;
-                                    }
-                                    const stage = (session.config as any)?.currentStage || 'setup';
-                                    router.push(`/interview/${session.id}/${stage}`);
-                                  }}
-                                  className="h-8 px-4 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm"
-                                >
-                                  <Play className="h-3.5 w-3.5" />
-                                  Continue
-                                </Button>
-                              ) : (session.feedback as any)?.note === 'Insufficient data for report generation' ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => router.push(`/interview/${session.id}/report`)}
-                                  className="h-8 px-4 text-xs font-medium text-muted-foreground flex items-center gap-1.5 hover:bg-muted"
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  No Report
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  disabled={isGeneratingFeedback}
-                                  onClick={() => {
-                                    if (session.score === null) {
-                                      generateFeedbackInBackground(session.id);
-                                    }
-                                    router.push(`/interview/${session.id}/report`);
-                                  }}
-                                  className={`h-8 px-4 text-xs font-medium flex items-center gap-1.5 shadow-sm ${isGeneratingFeedback
-                                    ? 'bg-blue-300 text-blue-700 pointer-events-none'
-                                    : session.score !== null
-                                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                    }`}
-                                >
-                                  {isGeneratingFeedback
-                                    ? 'Analyzing...'
-                                    : session.score !== null
-                                      ? 'Report'
-                                      : 'Generate Report'}
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full border border-border group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </DashboardLayout>

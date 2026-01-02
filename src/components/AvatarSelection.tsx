@@ -7,34 +7,24 @@ import { INTERVIEWER_AVATARS, type InterviewerAvatar } from '@/config/interviewe
 interface AvatarSelectionProps {
     selectedAvatar: InterviewerAvatar;
     onSelect: (avatar: InterviewerAvatar) => void;
+    variant?: 'default' | 'compact';
 }
 
-export function AvatarSelection({ selectedAvatar, onSelect }: AvatarSelectionProps) {
+export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' }: AvatarSelectionProps) {
     const getAvatarIcon = (avatar: InterviewerAvatar) => {
         switch (avatar.id) {
-            case 'kirti':
-                return Heart;
-            case 'partha':
-                return Brain;
-            case 'drona':
-                return Award;
-            case 'kunti':
-                return Target;
-            default:
-                return Sparkles;
+            case 'kirti': return Heart;
+            case 'partha': return Brain;
+            case 'drona': return Award;
+            case 'kunti': return Target;
+            default: return Sparkles;
         }
     };
 
     const getStrictness = (avatar: InterviewerAvatar) => {
-        if (avatar.description.toLowerCase().includes('empathetic') || avatar.description.toLowerCase().includes('encouraging')) {
-            return 'Moderate';
-        }
-        if (avatar.description.toLowerCase().includes('strategic') || avatar.description.toLowerCase().includes('analytical')) {
-            return 'High';
-        }
-        if (avatar.description.toLowerCase().includes('mentor') || avatar.description.toLowerCase().includes('expert')) {
-            return 'Very High';
-        }
+        if (avatar.description.toLowerCase().includes('empathetic')) return 'Moderate';
+        if (avatar.description.toLowerCase().includes('strategic')) return 'High';
+        if (avatar.description.toLowerCase().includes('mentor')) return 'Very High';
         return 'Adaptive';
     };
 
@@ -49,8 +39,64 @@ export function AvatarSelection({ selectedAvatar, onSelect }: AvatarSelectionPro
         return voiceMap[voice] || 'Professional';
     };
 
+    if (variant === 'compact') {
+        return (
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between px-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Interviewer Persona</span>
+                    <span className="text-[10px] font-bold text-primary flex items-center gap-1">
+                        <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                        AI Verified
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-2 bg-card/30 backdrop-blur-xl border border-border rounded-2xl">
+                    {INTERVIEWER_AVATARS.map((avatar) => {
+                        const isSelected = selectedAvatar.id === avatar.id;
+                        return (
+                            <button
+                                key={avatar.id}
+                                onClick={() => onSelect(avatar)}
+                                className={`relative h-12 w-12 rounded-xl flex items-center justify-center text-2xl transition-all duration-300 hover:scale-110 active:scale-95 group ${isSelected
+                                    ? `bg-gradient-to-br ${avatar.color} ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/20`
+                                    : 'bg-muted/50 grayscale hover:grayscale-0'
+                                    }`}
+                            >
+                                {avatar.avatar}
+                                {isSelected && (
+                                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border border-background flex items-center justify-center">
+                                        <div className="h-1 w-1 bg-white rounded-full" />
+                                    </div>
+                                )}
+
+                                {/* Tooltip-style name on hover */}
+                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-popover text-[8px] font-black uppercase rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-border">
+                                    {avatar.name}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Selection Details */}
+                <div className="px-2 flex items-center justify-between">
+                    <div>
+                        <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{selectedAvatar.name}</p>
+                        <p className="text-[9px] text-muted-foreground font-medium line-clamp-1">{selectedAvatar.description}</p>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-[9px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full">
+                            {getVoiceDescription(selectedAvatar.voice)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="relative w-full">
+            {/* ... rest of the existing default implementation remains same ... */}
             {/* Background Ambient Glow */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-indigo-900/10 rounded-full blur-3xl"></div>

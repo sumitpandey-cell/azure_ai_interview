@@ -122,16 +122,16 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
 }) => {
     if (variant === 'fullscreen') {
         return (
-            <div className="fixed inset-0 bg-[#0B0F19] text-white font-sans z-50 flex items-center justify-center overflow-hidden">
+            <div className="fixed inset-0 bg-background text-white font-sans z-50 flex items-center justify-center overflow-hidden">
                 {/* Background Ambience */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-arjuna-blob"></div>
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-violet-600/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:2s]"></div>
-                    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:4s]"></div>
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] animate-arjuna-blob"></div>
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:2s]"></div>
+                    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-primary/5 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:4s]"></div>
                 </div>
 
                 {/* Subtle Grid Pattern */}
-                <div className="absolute inset-0 opacity-20"
+                <div className="absolute inset-0 opacity-10"
                     style={{
                         backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)`,
                         backgroundSize: '40px 40px'
@@ -141,21 +141,21 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="relative">
                         {/* Energy Ripple Effect behind loader */}
-                        <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full animate-pulse-slow"></div>
+                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
                         <BowLoader size="large" />
                     </div>
 
                     <div className="mt-10 flex flex-col items-center text-center space-y-4">
-                        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-indigo-200 to-violet-300">
+                        <h1 className="text-5xl md:text-6xl font-black tracking-tighter">
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
                                 ARJUNA
                             </span>
-                            <span className="text-white/10 ml-2">AI</span>
+                            <span className="text-white/10 ml-1">AI</span>
                         </h1>
 
                         <div className="flex flex-col items-center space-y-2">
-                            <div className="h-px w-24 bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-50"></div>
-                            <p className="text-indigo-200/60 text-xs font-medium tracking-[0.2em] uppercase animate-pulse">
+                            <div className="h-px w-24 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
+                            <p className="text-primary/60 text-[10px] font-bold tracking-[0.3em] uppercase animate-pulse">
                                 {message}
                             </p>
                         </div>

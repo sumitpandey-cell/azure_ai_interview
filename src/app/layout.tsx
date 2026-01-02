@@ -29,6 +29,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'light';
+                  const colorTheme = localStorage.getItem('color-theme');
+                  const root = document.documentElement;
+                  
+                  root.classList.add(theme);
+                  if (colorTheme && colorTheme !== 'purple') {
+                    root.setAttribute('data-color-theme', colorTheme);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <Providers>
           <GlobalBackground />

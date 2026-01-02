@@ -14,18 +14,17 @@ export const ChatMessage = ({
     hideName,
 }: ChatMessageProps) => {
     return (
-        <div className={`flex flex-col gap-1 ${hideName ? "pt-0" : "pt-6"}`}>
+        <div className={`flex flex-col gap-1.5 ${hideName ? "pt-1" : "pt-6"}`}>
             {!hideName && (
                 <div
-                    className={`text-${isSelf ? "gray-700" : accentColor + "-800 text-ts-" + accentColor
-                        } uppercase text-xs`}
+                    className={`text-[9px] uppercase tracking-[0.2em] font-bold ${isSelf ? "text-muted-foreground/40" : "text-primary/70"
+                        }`}
                 >
                     {name}
                 </div>
             )}
             <div
-                className={`pr-4 text-${isSelf ? "gray-300" : accentColor + "-500"
-                    } text-sm ${isSelf ? "" : "drop-shadow-" + accentColor
+                className={`pr-4 text-sm font-medium leading-relaxed ${isSelf ? "text-muted-foreground/80" : "text-white/90"
                     } whitespace-pre-line`}
             >
                 {message}

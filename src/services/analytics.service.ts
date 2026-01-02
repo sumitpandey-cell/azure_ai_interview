@@ -94,7 +94,12 @@ export const analyticsService = {
                 .eq('user_id', userId)
                 .gte('created_at', sevenDaysAgo.toISOString());
 
-            if (error) throw error;
+            if (error) {
+                console.error('[WeeklyActivity] Supabase error:', error);
+                throw error;
+            }
+
+            console.log(`[WeeklyActivity] Sessions found for last 7 days: ${sessions?.length || 0}`);
 
             // Initialize all 7 days with 0 count
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -129,7 +134,7 @@ export const analyticsService = {
 
             return result;
         } catch (error) {
-            console.error('Error fetching weekly activity:', error);
+            console.error('[WeeklyActivity] Full error context:', error);
             return [];
         }
     },
@@ -139,69 +144,127 @@ export const analyticsService = {
      */
     async calculateStreak(userId: string): Promise<StreakData> {
         try {
-            const { data: sessions, error } = await supabase
+            console.log(`[StreakDebug] Starting calculation for user: ${userId}`);
+
+            // UTILITIES
+            const parseSafeDate = (dateStr: string | null) => {
+                if (!dateStr) return new Date(); // Return current date if string is null/empty
+                // Handle "2026-01-01 06:00:00+00" -> "2026-01-01T06:00:00+00"
+                const isoStr = dateStr.includes(' ') && !dateStr.includes('T')
+                    ? dateStr.replace(' ', 'T')
+                    : dateStr;
+                return new Date(isoStr);
+            };
+
+            const getLocalDateString = (date: Date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            // 1. Fetch official profile data
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('streak_count, last_activity_date')
+                .eq('id', userId)
+                .maybeSingle(); // Changed to maybeSingle as per instruction
+
+            if (profileError) console.error('[StreakDebug] Profile fetch error:', profileError);
+            console.log(`[StreakDebug] Raw Profile Data:`, profile);
+
+            // 2. Fetch session history
+            const { data: sessions, error: sessionError } = await supabase
                 .from('interview_sessions')
                 .select('created_at')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false });
+                .eq('user_id', userId); // Removed order as uniqueDates will handle sorting
 
-            if (error) throw error;
-            if (!sessions || sessions.length === 0) {
-                return { currentStreak: 0, longestStreak: 0 };
+            if (sessionError) console.error('[StreakDebug] Sessions fetch error:', sessionError);
+            console.log(`[StreakDebug] Sessions found: ${sessions?.length || 0}`);
+
+            const now = new Date();
+            const todayStr = getLocalDateString(now);
+            const yesterdayDate = new Date(now);
+            yesterdayDate.setDate(now.getDate() - 1);
+            const yesterdayStr = getLocalDateString(yesterdayDate);
+
+            console.log(`[StreakDebug] Reference - Today: ${todayStr}, Yesterday: ${yesterdayStr}`);
+
+            let currentStreak = 0;
+            let longestFromHistory = 0;
+
+            // 3. Current Streak Logic (Priority: Profile)
+            if (profile) {
+                const profileLastActivityDate = profile.last_activity_date ? parseSafeDate(profile.last_activity_date) : null;
+                const profileLastDay = profileLastActivityDate ? getLocalDateString(profileLastActivityDate) : null;
+                console.log(`[StreakDebug] Profile Last Activity Date (Raw): ${profile?.last_activity_date}, Parsed Day: ${profileLastDay}`);
+
+                if (profileLastDay === todayStr || profileLastDay === yesterdayStr) {
+                    currentStreak = profile.streak_count || 0;
+                    console.log(`[StreakDebug] Current Streak validated from Profile: ${currentStreak}`);
+                } else {
+                    console.log(`[StreakDebug] Profile streak not active for today/yesterday. Profile last day: ${profileLastDay}`);
+                }
             }
 
-            // Get unique dates (YYYY-MM-DD format)
-            const uniqueDates = new Set(
-                sessions.map(s => new Date(s.created_at).toISOString().split('T')[0])
-            );
-            const sortedDates = Array.from(uniqueDates).sort().reverse();
+            // 4. Verification/Fallback Logic (Sessions)
+            if (sessions && sessions.length > 0) {
+                const uniqueDates = Array.from(new Set(
+                    sessions.map(s => getLocalDateString(parseSafeDate(s.created_at)))
+                )).sort((a, b) => b.localeCompare(a)); // Sort descending for current streak calculation
 
-            // Calculate current streak
-            let currentStreak = 0;
-            const today = new Date().toISOString().split('T')[0];
-            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                console.log(`[StreakDebug] Unique Session Dates (most recent 5):`, uniqueDates.slice(0, 5));
 
-            // Check if there's activity today or yesterday
-            if (sortedDates[0] === today || sortedDates[0] === yesterday) {
-                currentStreak = 1;
-                let checkDate = new Date(sortedDates[0]);
+                const mostRecentSessionDate = uniqueDates[0];
 
-                for (let i = 1; i < sortedDates.length; i++) {
-                    const prevDate = new Date(checkDate);
-                    prevDate.setDate(prevDate.getDate() - 1);
-                    const expectedDate = prevDate.toISOString().split('T')[0];
+                // If profile failed or currentStreak is 0, but sessions exist and are recent
+                if (currentStreak === 0 && (mostRecentSessionDate === todayStr || mostRecentSessionDate === yesterdayStr)) {
+                    currentStreak = 1;
+                    let checkDate = parseSafeDate(mostRecentSessionDate); // Use parseSafeDate for consistency
+                    for (let i = 1; i < uniqueDates.length; i++) {
+                        const expected = new Date(checkDate);
+                        expected.setDate(expected.getDate() - 1);
+                        const expectedStr = getLocalDateString(expected);
 
-                    if (sortedDates[i] === expectedDate) {
-                        currentStreak++;
-                        checkDate = new Date(sortedDates[i]);
+                        if (uniqueDates[i] === expectedStr) {
+                            currentStreak++;
+                            checkDate = expected;
+                        } else break;
+                    }
+                    console.log(`[StreakDebug] Current Streak recalculated from Sessions: ${currentStreak}`);
+                } else if (currentStreak === 0) {
+                    console.log(`[StreakDebug] No active streak found from sessions (most recent: ${mostRecentSessionDate}).`);
+                }
+
+                // 5. Calculate Longest Streak from full history
+                const chronDates = [...uniqueDates].sort((a, b) => a.localeCompare(b)); // Sort ascending for longest streak
+                let temp = 1;
+                longestFromHistory = 1; // Initialize to 1 because a single session counts as a streak of 1
+                if (chronDates.length === 0) longestFromHistory = 0; // No sessions, no streak
+
+                for (let i = 1; i < chronDates.length; i++) {
+                    const c = parseSafeDate(chronDates[i]);
+                    const p = parseSafeDate(chronDates[i - 1]);
+                    // Calculate difference in days
+                    const diffTime = Math.abs(c.getTime() - p.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 1) {
+                        temp++;
+                        longestFromHistory = Math.max(longestFromHistory, temp);
                     } else {
-                        break;
+                        temp = 1;
                     }
                 }
+                console.log(`[StreakDebug] Longest streak calculated from sessions: ${longestFromHistory}`);
             }
 
-            // Calculate longest streak
-            let longestStreak = 0;
-            let tempStreak = 1;
+            const finalLongest = Math.max(profile?.streak_count || 0, longestFromHistory, currentStreak);
+            console.log(`[StreakDebug] Final Values -> Current: ${currentStreak}, Longest: ${finalLongest}`);
 
-            for (let i = 1; i < sortedDates.length; i++) {
-                const currentDate = new Date(sortedDates[i]);
-                const prevDate = new Date(sortedDates[i - 1]);
-                const diffDays = Math.round((prevDate.getTime() - currentDate.getTime()) / 86400000);
-
-                if (diffDays === 1) {
-                    tempStreak++;
-                    longestStreak = Math.max(longestStreak, tempStreak);
-                } else {
-                    tempStreak = 1;
-                }
-            }
-
-            longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
-
-            return { currentStreak, longestStreak };
+            return { currentStreak, longestStreak: finalLongest };
         } catch (error) {
-            console.error('Error calculating streak:', error);
+            console.error('[StreakDebug] Critical error in streak calculation:', error);
             return { currentStreak: 0, longestStreak: 0 };
         }
     },

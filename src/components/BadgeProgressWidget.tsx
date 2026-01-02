@@ -82,7 +82,7 @@ export function BadgeProgressWidget({
         .slice(0, 3);
 
     return (
-        <Card className="border-none shadow-sm bg-card p-3 sm:p-4">
+        <Card className="border shadow-sm bg-card p-3 sm:p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -102,13 +102,13 @@ export function BadgeProgressWidget({
             <div className="flex flex-col lg:flex-row gap-4">
                 {/* Left: Stats */}
                 <div className="flex gap-2 lg:w-1/4">
-                    <div className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg p-2">
-                        <div className="text-xs text-blue-700 dark:text-blue-300 mb-0.5">Earned</div>
-                        <div className="text-lg font-bold text-blue-900 dark:text-blue-100">{earnedCount}</div>
+                    <div className="flex-1 bg-primary/10 dark:bg-primary/20 rounded-lg p-2 border border-primary/20 dark:border-primary/10">
+                        <div className="text-xs text-primary mb-0.5">Earned</div>
+                        <div className="text-lg font-bold text-primary dark:text-primary-foreground">{earnedCount}</div>
                     </div>
-                    <div className="flex-1 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-lg p-2">
-                        <div className="text-xs text-purple-700 dark:text-purple-300 mb-0.5">Score</div>
-                        <div className="text-lg font-bold text-purple-900 dark:text-purple-100">{badgeScore}</div>
+                    <div className="flex-1 bg-accent/10 dark:bg-accent/20 rounded-lg p-2 border border-accent/20 dark:border-accent/10">
+                        <div className="text-xs text-accent-foreground dark:text-accent mb-0.5">Score</div>
+                        <div className="text-lg font-bold text-accent-foreground dark:text-accent">{badgeScore}</div>
                     </div>
                 </div>
 

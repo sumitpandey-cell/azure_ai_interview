@@ -19,58 +19,54 @@ export function TemplatesPageSkeleton() {
 // Template Card Skeleton Component
 function TemplateCardSkeleton() {
     return (
-        <Card className="group relative flex flex-col h-full overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-            {/* Decorative gradient background at top */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-slate-50/80 to-transparent dark:from-slate-900/50 dark:to-transparent opacity-50 pointer-events-none" />
-
-            <CardContent className="p-6 flex flex-col h-full relative z-10">
+        <Card className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card rounded-[2rem]">
+            <CardContent className="p-8 flex flex-col h-full relative z-10">
                 {/* Header */}
-                <div className="flex justify-between items-start mb-5">
+                <div className="flex justify-between items-start mb-6">
                     <div className="flex gap-4 flex-1">
                         {/* Icon */}
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-muted via-muted/50 to-muted shimmer shrink-0" />
+                        <div className="w-14 h-14 rounded-2xl bg-muted shrink-0 animate-pulse" />
 
                         <div className="flex-1 space-y-2">
                             {/* Title */}
-                            <div className="h-5 w-40 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
+                            <div className="h-6 w-40 bg-muted rounded-xl animate-pulse" />
                             {/* Badge */}
-                            <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer" />
+                            <div className="h-4 w-20 bg-muted rounded-lg animate-pulse" />
                         </div>
                     </div>
 
                     {/* Difficulty Badge */}
-                    <div className="h-5 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer" />
+                    <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
                 </div>
 
                 {/* Description */}
-                <div className="space-y-2 mb-6">
-                    <div className="h-4 w-full bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                    <div className="h-4 w-3/4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
+                <div className="space-y-3 mb-8">
+                    <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                    <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
                 </div>
 
                 {/* Skills Section */}
-                <div className="mt-auto">
-                    <div className="h-3 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer mb-3" />
+                <div className="mt-auto space-y-4">
+                    <div className="h-3 w-24 bg-muted rounded animate-pulse" />
 
                     <div className="flex flex-wrap gap-2">
                         {[1, 2, 3].map((skill) => (
                             <div
                                 key={skill}
-                                className="h-6 w-16 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer"
+                                className="h-8 w-16 bg-muted rounded-xl animate-pulse"
                             />
                         ))}
-                        <div className="h-6 w-8 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
                     </div>
                 </div>
 
                 {/* Footer / Button */}
-                <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-1.5">
-                        <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-r from-muted via-muted/50 to-muted shimmer" />
-                        <div className="h-3 w-28 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
+                <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
+                        <div className="h-3 w-24 bg-muted rounded animate-pulse" />
                     </div>
 
-                    <div className="h-8 w-32 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
+                    <div className="h-10 w-28 bg-muted rounded-xl animate-pulse" />
                 </div>
             </CardContent>
         </Card>
@@ -126,52 +122,41 @@ export function CompanyTemplatesPageSkeleton() {
 // Company Card Skeleton Component
 function CompanyCardSkeleton() {
     return (
-        <Card className="group relative overflow-hidden border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-            <CardContent className="p-6">
+        <Card className="group relative overflow-hidden border-2 border-border/50 bg-card rounded-[2rem]">
+            <CardContent className="p-8">
                 {/* Company Logo and Header */}
-                <div className="flex items-start gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-r from-muted via-muted/50 to-muted shimmer shrink-0" />
+                <div className="flex items-start gap-4 mb-8">
+                    <div className="h-16 w-16 rounded-[1.25rem] bg-muted animate-pulse shrink-0" />
 
-                    <div className="flex-1 space-y-2">
-                        <div className="h-6 w-40 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                        <div className="h-4 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer" />
+                    <div className="flex-1 space-y-3">
+                        <div className="h-7 w-40 bg-muted rounded-xl animate-pulse" />
+                        <div className="h-4 w-24 bg-muted rounded-lg animate-pulse" />
                     </div>
                 </div>
 
                 {/* Description */}
-                <div className="space-y-2 mb-6">
-                    <div className="h-4 w-full bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                    <div className="h-4 w-5/6 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                    <div className="h-4 w-2/3 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 rounded bg-gradient-to-r from-muted via-muted/50 to-muted shimmer" />
-                        <div className="h-4 w-16 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 rounded bg-gradient-to-r from-muted via-muted/50 to-muted shimmer" />
-                        <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                    </div>
+                <div className="space-y-3 mb-8">
+                    <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                    <div className="h-4 w-5/6 bg-muted rounded animate-pulse" />
                 </div>
 
                 {/* Roles */}
-                <div className="space-y-3 mb-6">
-                    <div className="h-4 w-32 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
+                <div className="space-y-4 mb-8">
+                    <div className="h-3 w-32 bg-muted rounded animate-pulse" />
                     <div className="flex flex-wrap gap-2">
                         {[1, 2, 3].map((role) => (
                             <div
                                 key={role}
-                                className="h-6 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer"
+                                className="h-8 w-24 bg-muted rounded-xl animate-pulse"
                             />
                         ))}
                     </div>
                 </div>
 
-                {/* Button */}
-                <div className="h-10 w-full bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
+                {/* Action CTA */}
+                <div className="pt-6 border-t border-border/50">
+                    <div className="h-12 w-full bg-muted rounded-2xl animate-pulse" />
+                </div>
             </CardContent>
         </Card>
     );
