@@ -22,6 +22,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SessionConfig {
     skills?: string[];
@@ -240,6 +241,17 @@ export default function InterviewSetup() {
         setIsLoading(true);
 
         try {
+            // Get fresh user to ensure we have the latest metadata (sentiment preference)
+            const { data: { user: freshUser } } = await supabase.auth.getUser();
+            const metadata = freshUser?.user_metadata || user?.user_metadata || {};
+
+            // Sync sentiment analysis preference from global settings
+            const isSentimentEnabled =
+                metadata.sentiment_analysis_enabled === true ||
+                metadata.sentimentAnalysisEnabled === true;
+
+            console.log("🛠️ Syncing sentiment preference to session:", isSentimentEnabled);
+
             // Update session config to track current stage and selected avatar
             if (sessionId && typeof sessionId === 'string') {
                 const currentConfig = (session?.config as Record<string, any>) || {};
@@ -248,7 +260,8 @@ export default function InterviewSetup() {
                         ...currentConfig,
                         selectedAvatar: selectedAvatar.id,
                         selectedVoice: selectedAvatar.voice,
-                        currentStage: 'live'
+                        currentStage: 'live',
+                        sentimentAnalysisEnabled: isSentimentEnabled
                     }
                 });
                 console.log("✓ Session stage updated to 'live', avatar:", selectedAvatar.name);

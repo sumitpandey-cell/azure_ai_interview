@@ -6,10 +6,16 @@ import { interviewService } from "@/services/interview.service";
 
 export function TranscriptTracker({
     sessionId,
-    agentAudioTrack
+    agentAudioTrack,
+    sentimentData
 }: {
     sessionId: string;
     agentAudioTrack?: TrackReferenceOrPlaceholder;
+    sentimentData?: {
+        sentiment: string;
+        confidence: number;
+        scores: { positive: number; neutral: number; negative: number };
+    } | null;
 }) {
     const { addOrUpdateTranscript } = useTranscriptContext();
     // Keep track of processed FINAL segments to avoid double-saving to DB
@@ -39,6 +45,10 @@ export function TranscriptTracker({
             message: s.final ? s.text : `${s.text} ...`,
             isSelf,
             timestamp: s.firstReceivedTime || Date.now(),
+            ...(isSelf && sentimentData ? {
+                sentiment: sentimentData.sentiment,
+                confidence: sentimentData.confidence
+            } : {})
         });
 
         // Save to DB (only final and new)
@@ -52,7 +62,11 @@ export function TranscriptTracker({
             interviewService.addTranscriptEntry(sessionId, {
                 speaker: isSelf ? 'user' : 'ai',
                 text: s.text,
-                timestamp: s.firstReceivedTime || Date.now()
+                timestamp: s.firstReceivedTime || Date.now(),
+                ...(isSelf && sentimentData ? {
+                    sentiment: sentimentData.sentiment,
+                    confidence: sentimentData.confidence
+                } : {})
             }).catch(err => console.error("Failed to save transcript:", err));
         }
     };

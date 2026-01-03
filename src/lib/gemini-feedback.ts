@@ -9,6 +9,8 @@ interface Message {
     speaker?: 'user' | 'ai';  // Database uses 'speaker' instead of 'sender'
     text: string;
     timestamp?: number;  // Database includes timestamp
+    sentiment?: string;
+    confidence?: number;
 }
 
 interface InterviewSessionData {
@@ -280,7 +282,8 @@ export async function generateFeedback(
         .map(msg => {
             // Handle both 'sender' and 'speaker' field names
             const speaker = (msg.sender || msg.speaker || 'unknown').toUpperCase();
-            return `${speaker}: ${msg.text}`;
+            const sentimentInfo = msg.sentiment ? ` [Sentiment: ${msg.sentiment}, Confidence: ${msg.confidence}%]` : '';
+            return `${speaker}${sentimentInfo}: ${msg.text}`;
         })
         .join('\n');
 
@@ -341,11 +344,11 @@ Technical Knowledge:
 - 0-4: No knowledge or refuses to answer
 
 Communication:
-- 90-100: Crystal clear, professional, well-structured
-- 70-89: Clear with minor issues
-- 50-69: Generally understandable
-- 30-49: Significant barriers
-- 0-29: Poor, hard to understand
+- 90-100: Crystal clear, professional, well-structured, high confidence
+- 70-89: Clear with minor issues, steady confidence
+- 50-69: Generally understandable, variable confidence
+- 30-49: Significant barriers, low confidence
+- 0-29: Poor, hard to understand, negative sentiment
 
 Problem Solving:
 - 90-100: Systematic, breaks down problems, multiple solutions
@@ -356,10 +359,16 @@ Problem Solving:
 
 Cultural Fit:
 - 90-100: Professional, positive attitude, great collaboration signals
-- 70-89: Good professionalism
+- 70-89: Good professionalism, generally positive/neutral
 - 50-69: Acceptable behavior
-- 30-49: Some concerns
+- 30-49: Some concerns, negative outbursts or frustration
 - 0-29: Unprofessional or poor attitude
+
+SENTIMENT ANALYSIS (MANDATORY):
+The transcript includes [Sentiment: X, Confidence: Y%] metadata for user responses. Use this to:
+- Identify psychological stressors: When did the candidate lose confidence? (e.g., specific technical questions)
+- Evaluate soft skills: Does their sentiment match the professional context?
+- Refine communication score: High confidence with clear speech is better than low confidence with hesitation.
 
 STRICT RULES:
 - Lists tech without explanation = Tech: 5-10%
@@ -370,9 +379,9 @@ STRICT RULES:
 
 OUTPUT (JSON only):
 {
-  "executiveSummary": "2-3 sentences with specific examples and scores justification",
-  "strengths": ["Specific examples from transcript"],
-  "improvements": ["Specific gaps with examples"],
+  "executiveSummary": "2-3 sentences with specific examples and scores justification. Incorporate psychological observations from sentiment data.",
+  "strengths": ["Specific examples from transcript including confidence highlights"],
+  "improvements": ["Specific gaps with examples including confidence drops"],
   "comparisons": [
     {
       "question": "Interviewer's prompt",
@@ -385,14 +394,14 @@ OUTPUT (JSON only):
     {
       "segment": "Phase (e.g. Intro, DB Deep-dive)",
       "score": 0-100,
-      "sentiment": "Emotional state description"
+      "sentiment": "Emotional state description based on provided metadata"
     }
   ],
   "overallSkills": [
     {"name": "Technical Knowledge", "score": 0-100, "feedback": "Evidence-based, match score"},
-    {"name": "Communication", "score": 0-100, "feedback": "Evidence-based"},
+    {"name": "Communication", "score": 0-100, "feedback": "Evidence-based, incorporating confidence level"},
     {"name": "Problem Solving", "score": 0-100, "feedback": "Evidence-based"},
-    {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based"}
+    {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based, incorporating sentiment signals"}
   ],
   "technicalSkills": [${skills.length > 0 ? `{"name": "SKILL", "score": 0-100, "feedback": "Evidence only"}` : ''}],
   "actionPlan": ["Specific, actionable steps"]
@@ -402,7 +411,7 @@ MANDATORY FEATURE: 'comparisons'
 Identify 3-5 most impactful exchanges where the candidate's answer was weak or could be significantly improved. For EACH, provide a gold-standard 'eliteAnswer'. This is the most valued part of the report.
 
 MANDATORY FEATURE: 'confidenceFlow'
-Analyze the psychological momentum. Divide the interview into 5-8 logical segments.
+Analyze the psychological momentum. Divide the interview into 5-8 logical segments. Use the Sentiment and Confidence metadata to provide accurate tracking of their emotional state throughout the session.
 
 Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.`;
 

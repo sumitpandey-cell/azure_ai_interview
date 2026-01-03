@@ -71,6 +71,9 @@ export default function Settings() {
     // Privacy settings
     const [isPublic, setIsPublic] = useState(false);
 
+    // AI Lab features
+    const [sentimentEnabled, setSentimentEnabled] = useState(user?.user_metadata?.sentiment_analysis_enabled || false);
+
     const router = useRouter();
 
     // Sync state with user data when it loads
@@ -85,6 +88,8 @@ export default function Settings() {
             profileService.getProfile(user.id).then(profile => {
                 if (profile) setIsPublic(profile.is_public);
             });
+
+            setSentimentEnabled(user.user_metadata?.sentiment_analysis_enabled || false);
         }
     }, [user]);
 
@@ -195,6 +200,26 @@ export default function Settings() {
         } catch (error: any) {
             console.error("Error toggling privacy:", error);
             toast.error(error.message || "Failed to update privacy settings");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleToggleSentiment = async (checked: boolean) => {
+        if (!user?.id) return;
+
+        try {
+            setLoading(true);
+            const { error } = await supabase.auth.updateUser({
+                data: { sentiment_analysis_enabled: checked }
+            });
+
+            if (error) throw error;
+            setSentimentEnabled(checked);
+            toast.success(`Confidence Analysis ${checked ? 'Enabled' : 'Disabled'}`);
+        } catch (error: any) {
+            console.error("Error toggling sentiment:", error);
+            toast.error(error.message || "Failed to update AI settings");
         } finally {
             setLoading(false);
         }
@@ -461,7 +486,7 @@ export default function Settings() {
 
                             <Card className="border-2 border-border/50 shadow-xl bg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
                                 <CardContent className="p-4 sm:p-10 space-y-6 sm:space-y-8">
-                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 sm:pb-8 border-b border-border/30">
                                         <div className="space-y-2">
                                             <h3 className="text-xl sm:text-2xl font-black tracking-tight">Public Presence</h3>
                                             <p className="text-sm text-muted-foreground font-medium max-w-md">
@@ -480,8 +505,31 @@ export default function Settings() {
                                         </div>
                                     </div>
 
+                                    {/* Sentiment Analysis Setting */}
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pt-2">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-xl sm:text-2xl font-black tracking-tight">AI Confidence Analysis</h3>
+                                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-primary border border-primary/20">Lab</span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground font-medium max-w-md">
+                                                Enable real-time sentiment and confidence tracking during your interviews.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-4 bg-primary/10 p-4 rounded-3xl border-2 border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.05)]">
+                                            <span className="text-xs font-black uppercase tracking-widest text-primary">Active Analysis</span>
+                                            <Switch
+                                                id="sentiment-analysis"
+                                                checked={sentimentEnabled}
+                                                onCheckedChange={handleToggleSentiment}
+                                                disabled={loading}
+                                                className="data-[state=checked]:bg-primary"
+                                            />
+                                        </div>
+                                    </div>
+
                                     {isPublic && (
-                                        <div className="space-y-6 p-8 bg-primary/5 rounded-[2rem] border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="mt-8 space-y-6 p-8 bg-primary/5 rounded-[2rem] border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
                                             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                                                 <div className="space-y-1 flex-1">
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Live Profile URL</p>

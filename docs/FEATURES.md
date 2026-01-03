@@ -13,7 +13,35 @@ This document tracks all features of the application, ranging from core capabili
     - **Company-Specific**: Practice with curated templates (e.g., Google, Amazon) and roles.
 - **Resume Capability**: If a network drop occurs, users can reload the page or "Resume" from the dashboard to continue exactly where they left off.
 
-#### 2. Smart Session Management
+#### 2. Real-Time Sentiment Analysis
+- **Live Confidence Tracking**: Monitors candidate's emotional state and confidence levels during the interview using Azure AI Text Analytics.
+- **Confidence Score Calculation**: 
+    - **Formula**: `(Positive × 100) + (Neutral × 40) - (Negative × 60)`, clamped to 0-100 range.
+    - **Real-time Updates**: Scores update as the candidate speaks, providing instant feedback on delivery confidence.
+- **User Control**: 
+    - **Opt-in Feature**: Users can enable/disable sentiment analysis in their settings.
+    - **Privacy First**: Sentiment data is processed in real-time and not stored permanently.
+- **Visual Feedback**: Live confidence meter displayed during the interview session with color-coded indicators (green for confident, yellow for neutral, red for low confidence).
+
+#### 3. Elite Answer Detection
+- **AI-Powered Answer Quality Assessment**: Automatically identifies exceptional answers during the interview.
+- **Elite Badge System**: 
+    - **Recognition**: Outstanding answers are marked with a special "Elite" badge in the transcript.
+    - **Criteria**: Answers are evaluated based on technical accuracy, clarity, depth, and relevance.
+- **Report Integration**: Elite answers are highlighted in the post-interview report with detailed analysis of what made them exceptional.
+- **Learning Tool**: Helps candidates understand what constitutes a high-quality response by showcasing their best moments.
+
+#### 4. Hint System (Lifeline)
+- **On-Demand Assistance**: Candidates can request hints during challenging questions without penalty.
+- **Smart Hint Generation**: 
+    - **Contextual Clues**: AI generates subtle hints based on the current question and conversation context.
+    - **Non-Revealing**: Hints guide thinking without giving away the answer directly.
+- **Usage Tracking**: 
+    - **Limited Uses**: Each interview session has a limited number of hints available.
+    - **Visual Counter**: Remaining hints displayed in the live interview interface.
+- **Report Transparency**: Hint usage is noted in the final report to provide honest feedback on areas needing improvement.
+
+#### 5. Smart Session Management
 - **Pending Interview Detection**:
     - *Logic*: Prevents starting a duplicate session if one is already `in_progress` for the same domain/role.
     - *User Choice*: Popup asks to "Resume Previous" or "Abandon & Start New".
@@ -21,7 +49,7 @@ This document tracks all features of the application, ranging from core capabili
 - **Auto-Completion**: Sessions without transcripts are automatically closed after a timeout to prevent cost leakage.
 - **Stuck Session Fixer**: "Fix Stuck Sessions" utility in settings/admin panel to clean up zombie states.
 
-#### 3. Analytics & Feedback Engine
+#### 6. Analytics & Feedback Engine
 - **Instant Reports**: Detailed feedback generated immediately after session completion.
 - **Report Thresholds**:
     - **Minimum Requirements**: AI reports are only generated if a session lasts at least **2 minutes** AND contains at least **2 user turns**.
@@ -32,14 +60,14 @@ This document tracks all features of the application, ranging from core capabili
     - **Leaderboard**: Global ranking based on weighted scores (considering experience/number of interviews).
 - **History View**: detailed list of all past interviews with quick access to reports.
 
-#### 4. Subscription & Quota System
+#### 7. Subscription & Quota System
 - **Usage Tracking**: Tracks "seconds used" per user (visible on dashboard).
 - **Plan Limits**: Visual progress bar showing monthly minutes consumed vs. limit.
 - **Interview Entry Guard**:
     - **Minimum Balance**: Users must have at least **2 minutes (120 seconds)** of remaining time to start any interview (General, Template, or Resume).
     - **Real-time Blocking**: If balance is too low, entry is blocked with a toast notification containing an "Upgrade" call-to-action.
 
-#### 5. Personalized Learning Roadmap
+#### 8. Personalized Learning Roadmap
 - **AI-Generated Roadmap**: Creates customized learning paths based on interview history and performance.
 - **Eligibility Check**: Requires minimum 3 completed interviews with feedback.
 - **Payment Integration**: Free for first roadmap, ₹99 for subsequent generations.
@@ -50,7 +78,7 @@ This document tracks all features of the application, ranging from core capabili
 - **Smart Recommendations**: Analyzes weak areas, strong areas, and performance trends to suggest targeted improvements.
 - **Payment Status Handling**: Pending payment modal with Razorpay integration for seamless checkout.
 
-#### 6. Public Verification Profiles
+#### 9. Public Verification Profiles
 - **Shareable Professional Dashboards**: Candidates can set their profiles to public (`/p/[id]`) to showcase their skills to recruiters or peers.
 - **Verified Achievements**: Displays platform-verified stats including World Rank, Precision (Avg. Score), and Experience level.
 - **Performance Visualization**: Interactive Area Charts (via Recharts) showing interview score trends over time.

@@ -294,7 +294,13 @@ export const interviewService = {
      */
     async addTranscriptEntry(
         sessionId: string,
-        entry: { speaker: "user" | "ai"; text: string; timestamp: number }
+        entry: {
+            speaker: "user" | "ai";
+            text: string;
+            timestamp: number;
+            sentiment?: string;
+            confidence?: number;
+        }
     ): Promise<boolean> {
         try {
             // Get current session

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -294,12 +295,24 @@ function StartInterviewContent() {
 
     const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
         try {
+            // Get fresh user to avoid stale metadata issues
+            const { data: { user: freshUser } } = await supabase.auth.getUser();
+            const metadata = freshUser?.user_metadata || user?.user_metadata || {};
+
+            // Sync sentiment analysis preference from global profile settings
+            const isSentimentEnabled =
+                metadata.sentiment_analysis_enabled === true ||
+                metadata.sentimentAnalysisEnabled === true;
+
             // Continue with creating new session
             const config: any = {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
                 difficulty: values.difficulty,
+                sentimentAnalysisEnabled: isSentimentEnabled,
             };
+
+            console.log("📝 Final Session Config:", config);
 
             // Add company-specific config if company interview
             if (values.interviewMode === 'company' && values.companyId) {
@@ -818,6 +831,7 @@ function StartInterviewContent() {
                                             />
                                         )}
                                     </div>
+
                                 </div>
 
                                 <Button

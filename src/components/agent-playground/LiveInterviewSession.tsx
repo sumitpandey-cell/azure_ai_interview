@@ -25,6 +25,7 @@ import {
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
 import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
+import { ConfidenceMeter } from "./ConfidenceMeter";
 import { LoadingSVG } from "./ui/LoadingSVG";
 import { CircularBlobVisualizer } from "./ui/CircularBlobVisualizer";
 import { interviewService, type InterviewSession } from "@/services/interview.service";
@@ -82,6 +83,11 @@ export function LiveInterviewSession({
     const [cameraEnabled, setCameraEnabled] = useState(initialCameraEnabled);
     const [showTranscript, setShowTranscript] = useState(true);
     const [isEndCallDialogOpen, setIsEndCallDialogOpen] = useState(false);
+    const [sentimentData, setSentimentData] = useState<{
+        sentiment: string;
+        confidence: number;
+        scores: { positive: number; neutral: number; negative: number };
+    } | null>(null);
 
     // Set initial mic/camera state
     useEffect(() => {
@@ -161,6 +167,21 @@ export function LiveInterviewSession({
                 } catch (error) {
                     console.error("❌ [HINT DEBUG] Failed to parse hint response:", error);
                     setIsHintLoading(false);
+                }
+            } else if (topic === "sentiment_update") {
+                try {
+                    const decoder = new TextDecoder();
+                    const message = decoder.decode(payload);
+                    const data = JSON.parse(message);
+                    if (data.type === "sentiment_update") {
+                        setSentimentData({
+                            sentiment: data.sentiment,
+                            confidence: data.confidence,
+                            scores: data.scores
+                        });
+                    }
+                } catch (error) {
+                    console.error("Failed to parse sentiment update:", error);
                 }
             } else {
                 console.log("ℹ️ [HINT DEBUG] Ignoring data with topic:", topic);
@@ -248,7 +269,11 @@ export function LiveInterviewSession({
 
     return (
         <TranscriptProvider initialTranscripts={initialTranscripts}>
-            <TranscriptTracker sessionId={sessionId} agentAudioTrack={agentAudioTrack} />
+            <TranscriptTracker
+                sessionId={sessionId}
+                agentAudioTrack={agentAudioTrack}
+                sentimentData={sentimentData}
+            />
 
             <div className="min-h-screen lg:h-screen w-screen bg-background text-muted-foreground flex flex-col p-3 lg:p-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden font-sans select-none relative">
 
@@ -335,6 +360,16 @@ export function LiveInterviewSession({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Confidence Meter (Only if enabled) */}
+                        {((sessionData?.config as any)?.sentimentAnalysisEnabled || sentimentData) && (
+                            <ConfidenceMeter
+                                sentiment={sentimentData?.sentiment || "analyzing"}
+                                confidence={sentimentData?.confidence || 0}
+                                scores={sentimentData?.scores || { positive: 0, neutral: 0, negative: 0 }}
+                                className="animate-in fade-in slide-in-from-left duration-500"
+                            />
+                        )}
 
                         {/* Status Footer */}
                         <button

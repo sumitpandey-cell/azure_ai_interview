@@ -7,6 +7,8 @@ export type ChatMessageType = {
     message: string;
     isSelf: boolean;
     timestamp: number;
+    sentiment?: string;
+    confidence?: number;
 };
 
 interface TranscriptContextType {
@@ -21,6 +23,8 @@ export type TranscriptEntry = {
     speaker: "user" | "ai";
     text: string;
     timestamp: number;
+    sentiment?: string;
+    confidence?: number;
 };
 
 export function TranscriptProvider({
@@ -38,7 +42,9 @@ export function TranscriptProvider({
                 name: t.speaker === 'user' ? 'You' : 'Agent',
                 message: t.text,
                 isSelf: t.speaker === 'user',
-                timestamp: t.timestamp
+                timestamp: t.timestamp,
+                sentiment: t.sentiment,
+                confidence: t.confidence,
             });
         });
         return map;

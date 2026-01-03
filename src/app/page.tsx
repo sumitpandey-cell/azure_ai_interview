@@ -184,7 +184,7 @@ export default function Landing() {
   });
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden max-w-[100vw]">
+    <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
       {/* Scroll Progress Bar - Disabled */}
       {/* <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]"
@@ -214,8 +214,8 @@ export default function Landing() {
               />
             </div>
             <span className={`bg-clip-text text-transparent transition-all duration-300 ${scrolled
-              ? "bg-gradient-to-r from-indigo-400 to-purple-400"
-              : "bg-gradient-to-r from-white to-indigo-200"
+              ? "bg-gradient-to-r from-orange-400 to-amber-400"
+              : "bg-gradient-to-r from-white to-orange-200"
               }`}>
               Arjuna AI
             </span>
@@ -241,7 +241,7 @@ export default function Landing() {
                 variant={scrolled ? "ghost" : "secondary"}
                 className={`transition-all duration-300 ${scrolled
                   ? "text-white hover:bg-white/10 rounded-full px-6"
-                  : "bg-white text-indigo-900 hover:bg-indigo-50 rounded-lg px-6"
+                  : "bg-white text-orange-900 hover:bg-orange-50 rounded-lg px-6"
                   } font-medium`}
                 asChild
               >
@@ -286,7 +286,7 @@ export default function Landing() {
               Testimonials
             </a>
             <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl"
+              className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl"
               asChild
             >
               <Link href="/auth">Get Started</Link>
@@ -297,11 +297,11 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
-        {/* Animated Background Effects */}
+        {/* Animated Background Effects - Orange Theme */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
-          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-purple-600/20 rounded-full blur-[120px] translate-x-1/4" />
-          <div className="absolute top-[20%] left-[50%] transform -translate-x-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-blue-900/10 rounded-full blur-[100px]"></div>
+          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-orange-600/15 rounded-full blur-[120px] -translate-x-1/4" />
+          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-amber-600/15 rounded-full blur-[120px] translate-x-1/4" />
+          <div className="absolute top-[20%] left-[50%] transform -translate-x-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-orange-900/8 rounded-full blur-[100px]"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
@@ -313,9 +313,9 @@ export default function Landing() {
           >
             {/* Badge */}
             <motion.div variants={fadeInUp} className="flex flex-col items-center gap-2 mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
-                <div className="h-2 w-2 rounded-full bg-green-400"></div>
-                <span className="text-sm font-medium text-indigo-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-orange-500/20 shadow-lg">
+                <div className="h-2 w-2 rounded-full bg-orange-400"></div>
+                <span className="text-sm font-medium text-orange-200">
                   New: AI Voice Intelligence 2.0
                 </span>
               </div>
@@ -328,7 +328,7 @@ export default function Landing() {
             <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-wide text-white mb-6">
               Ace Any Interview.
               <br />
-              <span className="bg-gradient-to-r from-indigo-400/90 via-purple-400/90 to-pink-400/90 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-orange-400/90 via-amber-400/90 to-yellow-400/90 bg-clip-text text-transparent">
                 Powered by AI.
               </span>
             </motion.h1>
@@ -355,8 +355,8 @@ export default function Landing() {
                   />
                 ))}
               </div>
-              <div className="flex items-center gap-2 text-sm text-indigo-200/80">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-green-400"></span>
+              <div className="flex items-center gap-2 text-sm text-orange-200/80">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-orange-400"></span>
                 Trusted by 20,000+ candidates
               </div>
             </motion.div>
@@ -366,7 +366,7 @@ export default function Landing() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-lg shadow-blue-500/25 transition-all"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-lg shadow-orange-500/25 transition-all"
                   asChild
                 >
                   <Link href="/auth">
@@ -379,7 +379,7 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-white/10 rounded-full px-8 h-14 text-lg font-semibold bg-transparent"
+                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-white/10 hover:border-orange-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent"
                   asChild
                 >
                   <Link href="#demo">
@@ -395,17 +395,17 @@ export default function Landing() {
               variants={scaleIn}
               className="relative mx-auto max-w-5xl"
             >
-              {/* Dynamic Glow Behind Mockup */}
+              {/* Dynamic Glow Behind Mockup - Orange Theme */}
               <div
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-50 blur-3xl"
                 style={{
-                  background: "radial-gradient(circle at 50% 50%, rgba(128, 90, 213, 0.35), transparent 70%)"
+                  background: "radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.25), transparent 70%)"
                 }}
               ></div>
 
-              {/* Strong Ambient Glow */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-1000"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+              {/* Strong Ambient Glow - Orange Theme */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 rounded-[2.5rem] blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
 
               <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
 
@@ -420,8 +420,8 @@ export default function Landing() {
                   <div className="ml-4 flex-1 flex justify-center">
                     <div className="h-6 w-64 bg-white/5 rounded-md flex items-center justify-center border border-white/5">
                       <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                        <div className="w-2 h-2 rounded-full bg-green-500/50"></div>
-                        aura-interview.ai
+                        <div className="w-2 h-2 rounded-full bg-orange-500/50"></div>
+                        arjuna-interview.ai
                       </div>
                     </div>
                   </div>
@@ -447,19 +447,19 @@ export default function Landing() {
       {/* Features Section */}
       {/* Features Section */}
       {/* Features Section */}
-      <SectionWrapper id="features" className="py-24 bg-slate-50 relative overflow-hidden">
+      <SectionWrapper id="features" className="py-24 bg-[#0f1117] relative overflow-hidden">
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-16">
             <motion.h2
               variants={fadeInUp}
-              className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
+              className="text-3xl md:text-5xl font-bold text-white mb-4"
             >
               Everything you need to ace the interview
             </motion.h2>
             <motion.p
               variants={fadeInUp}
-              className="text-slate-400 text-lg max-w-2xl mx-auto"
+              className="text-slate-500 text-lg max-w-2xl mx-auto"
             >
               Our AI-powered platform provides a comprehensive suite of tools to help you prepare, practice, and perform.
             </motion.p>
@@ -473,9 +473,9 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             {/* Feature 1: Voice-based AI Interviews (Large Card - Spans 2 cols on desktop) */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-[2.5rem] overflow-hidden border border-white/40 shadow-2xl group">
-              {/* Main Background Gradient - Ethereal Blue/Purple */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100"></div>
+            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group">
+              {/* Main Background Gradient - Dark Purple/Blue */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950"></div>
 
               {/* Decorative Wave Lines (SVG) */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 800 400" preserveAspectRatio="none">
@@ -506,11 +506,11 @@ export default function Landing() {
 
                 {/* Left Text Content */}
                 <div className="flex-1 text-left space-y-6">
-                  <h3 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+                  <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
                     Voice-based <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">AI Interviews.</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI Interviews.</span>
                   </h3>
-                  <p className="text-slate-600 text-lg leading-relaxed max-w-md">
+                  <p className="text-slate-400 text-lg leading-relaxed max-w-md">
                     Practice real-time scenarios with instant feedback. Our AI adapts to your responses just like a human interviewer.
                   </p>
                 </div>
@@ -521,18 +521,18 @@ export default function Landing() {
 
 
                   {/* Glassmorphism Phone Mockup */}
-                  <div className="relative w-[280px] h-[540px] rounded-[3rem] border-[6px] border-white/60 bg-white/20 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/50 transform rotate-[-6deg] group-hover:rotate-0 transition-transform duration-700">
+                  <div className="relative w-[280px] h-[540px] rounded-[3rem] border-[6px] border-white/20 bg-white/5 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 transform rotate-[-6deg] group-hover:rotate-0 transition-transform duration-700">
                     {/* Reflection */}
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/40 to-transparent pointer-events-none z-20"></div>
 
                     {/* Screen Content */}
-                    <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-white/40 to-white/10">
+                    <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-indigo-900/40 to-purple-900/20">
                       {/* Header */}
                       <div className="px-6 pt-10 pb-4 flex items-center gap-4 relative z-10">
-                        <div className="h-8 w-8 rounded-full bg-white/40 flex items-center justify-center backdrop-blur-md shadow-sm cursor-pointer hover:bg-white/60 transition-colors">
-                          <ArrowRight className="h-4 w-4 text-slate-700 rotate-180" />
+                        <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md shadow-sm cursor-pointer hover:bg-white/20 transition-colors">
+                          <ArrowRight className="h-4 w-4 text-white rotate-180" />
                         </div>
-                        <span className="font-medium text-slate-800">Start Interview</span>
+                        <span className="font-medium text-white">Start Interview</span>
                       </div>
 
                       {/* Central Visualization */}
@@ -569,7 +569,7 @@ export default function Landing() {
                           <div className="h-1.5 w-32 bg-slate-200/50 rounded-full mx-auto overflow-hidden backdrop-blur-sm">
                             <div className="h-full w-1/2 bg-indigo-500 rounded-full animate-[translateX_1.5s_ease-in-out_infinite]"></div>
                           </div>
-                          <p className="text-slate-700 text-sm font-medium">Listening now...</p>
+                          <p className="text-white text-sm font-medium">Listening now...</p>
                         </div>
                       </div>
 
@@ -593,15 +593,15 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 2: Instant Score + Feedback */}
-            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg transition-all duration-500">
+            <motion.div variants={fadeInUp} className="bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Instant Score + Feedback.</h3>
-              <p className="text-slate-600 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
+              <h3 className="text-xl font-bold text-white mb-2">Instant Score + Feedback.</h3>
+              <p className="text-slate-400 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
 
               {/* Original Score Visualization */}
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-md mb-6">
+              <div className="bg-[#1a1b26] rounded-2xl p-4 border border-white/10 shadow-md mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-slate-500">Recent Interview</span>
+                  <span className="text-sm text-slate-400">Recent Interview</span>
                   <div className="flex gap-0.5">
                     {[1, 2, 3].map(i => <Star key={i} className="h-3 w-3 text-yellow-500 fill-yellow-500" />)}
                   </div>
@@ -610,27 +610,27 @@ export default function Landing() {
                 <div className="flex items-center gap-4">
                   <div className="relative h-20 w-20 flex items-center justify-center">
                     <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                      <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                      <path className="text-slate-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                       <path className="text-emerald-500" strokeDasharray="64, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                     </svg>
-                    <span className="absolute text-xl font-bold text-slate-900">64%</span>
+                    <span className="absolute text-xl font-bold text-white">64%</span>
                   </div>
                   <div className="flex-1 space-y-2">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-500">Score</span>
-                        <span className="text-slate-900">64%</span>
+                        <span className="text-slate-400">Score</span>
+                        <span className="text-white">64%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                         <div className="h-full w-[64%] bg-gradient-to-r from-emerald-400 to-green-500"></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-500">Feedback</span>
-                        <span className="text-slate-900">8%</span>
+                        <span className="text-slate-400">Feedback</span>
+                        <span className="text-white">8%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                         <div className="h-full w-[8%] bg-red-500"></div>
                       </div>
                     </div>
@@ -639,22 +639,22 @@ export default function Landing() {
               </div>
 
               {/* New Skills Assessment Report */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-md space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="font-bold text-slate-900">Skills Assessment</h4>
+              <div className="bg-[#1a1b26] rounded-2xl p-5 border border-white/10 shadow-md space-y-5">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <h4 className="font-bold text-white">Skills Assessment</h4>
                   <span className="text-xs font-medium text-indigo-400">Report #2401</span>
                 </div>
 
                 {/* Technical Knowledge */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-slate-800">Technical Knowledge</span>
-                    <span className="text-indigo-600 font-bold">15%</span>
+                    <span className="font-semibold text-white">Technical Knowledge</span>
+                    <span className="text-indigo-400 font-bold">15%</span>
                   </div>
-                  <div className="h-2 bg-indigo-50 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <div className="h-full w-[15%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-400 leading-relaxed">
                     Superficial understanding of core concepts. Significant gaps in backend architecture.
                   </p>
                 </div>
@@ -662,13 +662,13 @@ export default function Landing() {
                 {/* Communication */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-slate-800">Communication</span>
-                    <span className="text-indigo-600 font-bold">60%</span>
+                    <span className="font-semibold text-white">Communication</span>
+                    <span className="text-indigo-400 font-bold">60%</span>
                   </div>
-                  <div className="h-2 bg-indigo-50 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <div className="h-full w-[60%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-400 leading-relaxed">
                     Clear and direct articulation. Good at admitting knowledge gaps.
                   </p>
                 </div>
@@ -676,13 +676,13 @@ export default function Landing() {
                 {/* Problem Solving */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-slate-800">Problem Solving</span>
-                    <span className="text-indigo-600 font-bold">10%</span>
+                    <span className="font-semibold text-white">Problem Solving</span>
+                    <span className="text-indigo-400 font-bold">10%</span>
                   </div>
-                  <div className="h-2 bg-indigo-50 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <div className="h-full w-[10%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-400 leading-relaxed">
                     Difficulty applying theory to practical scenarios. Needs improvement in diagnosis.
                   </p>
                 </div>
@@ -690,11 +690,11 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 3: Skill Templates */}
-            <motion.div variants={fadeInUp} className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg transition-all duration-500">
+            <motion.div variants={fadeInUp} className="md:col-span-3 bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Skill Templates.</h3>
-                  <p className="text-slate-600">Choose from a wide range of role-specific interview templates.</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">Skill Templates.</h3>
+                  <p className="text-slate-400">Choose from a wide range of role-specific interview templates.</p>
                 </div>
                 <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 mt-4 md:mt-0">
                   View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -708,15 +708,15 @@ export default function Landing() {
                   { id: "DI", title: "AI/ML Engineer", color: "bg-green-500" },
                   { id: "DE", title: "DevOps Engineer", color: "bg-orange-500" }
                 ].map((template, i) => (
-                  <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-indigo-500/50 hover:shadow-md transition-all cursor-pointer group/card relative overflow-hidden">
+                  <div key={i} className="bg-[#1a1b26] border border-white/10 rounded-xl p-5 hover:border-indigo-500/50 hover:shadow-md hover:shadow-indigo-500/20 transition-all cursor-pointer group/card relative overflow-hidden">
                     {/* Left Strip */}
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
 
                     <div className={`w-10 h-10 rounded-lg ${template.color}/10 flex items-center justify-center mb-4 text-${template.color.split('-')[1]}-600 font-bold ml-2`}>
                       {template.id}
                     </div>
-                    <h4 className="text-slate-900 font-medium mb-2 ml-2">{template.title}</h4>
-                    <p className="text-xs text-slate-500 mb-4 line-clamp-2 ml-2">Comprehensive assessment for {template.title} roles including technical and behavioral questions.</p>
+                    <h4 className="text-white font-medium mb-2 ml-2">{template.title}</h4>
+                    <p className="text-xs text-slate-400 mb-4 line-clamp-2 ml-2">Comprehensive assessment for {template.title} roles including technical and behavioral questions.</p>
                     <div className="text-xs font-medium text-indigo-400 group-hover/card:translate-x-1 transition-transform inline-flex items-center ml-2">
                       Learn more <ArrowRight className="ml-1 h-3 w-3" />
                     </div>
@@ -726,11 +726,11 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 4: Leaderboard Gamification */}
-            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg transition-all duration-500">
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Leaderboard Gamification.</h3>
-              <p className="text-slate-600 text-sm mb-6">Compete with others and climb the rankings.</p>
+            <motion.div variants={fadeInUp} className="bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
+              <h3 className="text-xl font-bold text-white mb-2">Leaderboard Gamification.</h3>
+              <p className="text-slate-400 text-sm mb-6">Compete with others and climb the rankings.</p>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-md relative overflow-hidden">
+              <div className="bg-[#1a1b26] rounded-2xl p-6 border border-white/10 shadow-md relative overflow-hidden">
                 <div className="flex justify-center items-end gap-4 mb-6">
                   {/* Rank 2 */}
                   <div className="flex flex-col items-center">
@@ -758,43 +758,43 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-3 flex items-center justify-between border border-slate-100 shadow-sm mt-4">
+                <div className="bg-[#0f1117] rounded-xl p-3 flex items-center justify-between border border-white/10 shadow-sm mt-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-400">4</span>
-                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-xs text-indigo-600 font-bold">You</div>
-                    <div className="text-xs text-slate-900 font-medium">Ujjawal</div>
+                    <span className="text-xs font-bold text-slate-500">4</span>
+                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs text-indigo-400 font-bold">You</div>
+                    <div className="text-xs text-white font-medium">Ujjawal</div>
                   </div>
-                  <span className="text-xs font-bold text-green-600">#1</span>
+                  <span className="text-xs font-bold text-green-400">#1</span>
                 </div>
               </div>
             </motion.div>
 
             {/* Feature 5: Smart Analytics Reports */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg transition-all duration-500">
+            <motion.div variants={fadeInUp} className="md:col-span-2 bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
               <div className="flex flex-col md:flex-row items-center gap-8 h-full">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Analytics Reports.</h3>
-                  <p className="text-slate-600 mb-6">Track your progress with real-time data visualization. Identify strengths and weaknesses to focus your preparation.</p>
+                  <h3 className="text-2xl font-bold text-white mb-3">Smart Analytics Reports.</h3>
+                  <p className="text-slate-400 mb-6">Track your progress with real-time data visualization. Identify strengths and weaknesses to focus your preparation.</p>
 
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="text-xs text-slate-500 mb-1">Interviews</div>
-                      <div className="text-xl font-bold text-slate-900">21</div>
+                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
+                      <div className="text-xs text-slate-400 mb-1">Interviews</div>
+                      <div className="text-xl font-bold text-white">21</div>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="text-xs text-slate-500 mb-1">Avg Score</div>
-                      <div className="text-xl font-bold text-slate-900">78%</div>
+                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
+                      <div className="text-xs text-slate-400 mb-1">Avg Score</div>
+                      <div className="text-xl font-bold text-white">78%</div>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="text-xs text-slate-500 mb-1">Rank</div>
-                      <div className="text-xl font-bold text-slate-900">Top 7%</div>
+                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
+                      <div className="text-xs text-slate-400 mb-1">Rank</div>
+                      <div className="text-xl font-bold text-white">Top 7%</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full md:w-1/2 bg-white rounded-2xl p-4 border border-slate-100 shadow-md relative overflow-hidden">
+                <div className="w-full md:w-1/2 bg-[#1a1b26] rounded-2xl p-4 border border-white/10 shadow-md relative overflow-hidden">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs font-medium text-slate-500">Average Score Trend</span>
+                    <span className="text-xs font-medium text-slate-400">Average Score Trend</span>
                     <div className="flex gap-2">
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
