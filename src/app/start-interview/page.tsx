@@ -506,12 +506,26 @@ function StartInterviewContent() {
                                                         <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                             Specific Role
                                                         </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative group">
-                                                                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                                                <Input placeholder="e.g. Frontend Specialist" className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus-visible:ring-primary text-xs sm:text-sm font-bold" {...field} />
-                                                            </div>
-                                                        </FormControl>
+                                                        <Select onValueChange={(value) => {
+                                                            field.onChange(value);
+                                                            handleRoleSelection(value);
+                                                        }} defaultValue={field.value}>
+                                                            <FormControl>
+                                                                <div className="relative group">
+                                                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground z-10 transition-colors group-focus-within:text-primary" />
+                                                                    <SelectTrigger className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary text-xs sm:text-sm font-bold">
+                                                                        <SelectValue placeholder="e.g. Frontend Developer" />
+                                                                    </SelectTrigger>
+                                                                </div>
+                                                            </FormControl>
+                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
+                                                                {COMMON_ROLES.map((role) => (
+                                                                    <SelectItem key={role} value={role} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
+                                                                        {role}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
                                                 )}
