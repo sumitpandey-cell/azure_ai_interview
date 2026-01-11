@@ -201,6 +201,7 @@ function AuthContent() {
       await signInWithGoogle();
     } catch (error) {
       // Error is handled in the context
+      console.error("Google sign-in error:", error);
     }
   };
 

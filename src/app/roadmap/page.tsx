@@ -345,7 +345,7 @@ export default function RoadmapPage() {
 
                     {/* Roadmap Content Grid */}
                     <div className="space-y-16">
-                        <section className="relative glass-card rounded-[2rem] p-4 sm:p-6 overflow-hidden">
+                        <section className="relative glass-card rounded-2xl p-4 sm:p-6 overflow-hidden">
                             <Tabs defaultValue="visual" className="w-full">
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
                                     <div className="space-y-1">
@@ -386,7 +386,7 @@ export default function RoadmapPage() {
                         </section>
 
                         {/* Career Call to Action */}
-                        <div className="mt-20 p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground shadow-2xl shadow-primary/20 relative overflow-hidden group">
+                        <div className="mt-20 p-8 md:p-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground shadow-2xl shadow-primary/20 relative overflow-hidden group">
                             <div className="relative z-10 max-w-2xl">
                                 <h3 className="text-3xl font-bold mb-4">Ready for your next challenge?</h3>
                                 <p className="text-primary-foreground/80 text-lg mb-8">

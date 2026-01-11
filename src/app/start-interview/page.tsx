@@ -379,7 +379,7 @@ function StartInterviewContent() {
                     </div>
                 </div>
 
-                <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden">
+                <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 rounded-[1.5rem] sm:rounded-2xl overflow-hidden">
                     <CardContent className="p-5 sm:p-10">
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

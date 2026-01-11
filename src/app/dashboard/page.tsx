@@ -281,7 +281,7 @@ export default function Dashboard() {
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">System Online</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-foreground tracking-tighter italic leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tighter italic leading-tight">
                 {new Date().getHours() < 12 ? 'MORNING' : new Date().getHours() < 18 ? 'AFTERNOON' : 'EVENING'}, <span className="text-primary not-italic">{userMetadata?.full_name?.split(' ')[0]?.toUpperCase() || "OPERATOR"}</span>
               </h1>
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -291,7 +291,7 @@ export default function Dashboard() {
             </div>
 
             {/* Premium Header Controls Interface */}
-            <div className="flex items-center justify-between sm:justify-end gap-3 p-1.5 sm:p-2 bg-card/30 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-[2rem] shadow-2xl w-full sm:w-auto">
+            <div className="flex items-center justify-between sm:justify-end gap-3 p-1.5 sm:p-2 bg-card/30 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-2xl shadow-2xl w-full sm:w-auto">
               <div className="flex items-center gap-1.5 px-2 border-r border-white/10 mr-1">
                 <NotificationBell />
                 <ThemeToggle />
@@ -354,7 +354,7 @@ export default function Dashboard() {
           {/* Top Actions Section */}
           <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-6">
             <Button
-              className="h-12 sm:h-14 md:h-16 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] font-black uppercase tracking-widest group"
+              className="h-11 sm:h-12 md:h-14 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] font-black uppercase tracking-widest group"
               onClick={startInterview}
               disabled={subscriptionLoading || !allowed}
             >
@@ -365,36 +365,36 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Play className="h-10 w-10 sm:h-12 sm:w-12" />
+                  <Play className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
                 <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Total Enactments</span>
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{stats?.totalInterviews || 0}</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.totalInterviews || 0}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-accent/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Clock className="h-10 w-10 sm:h-12 sm:w-12" />
+                  <Clock className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
                 <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Practiced</span>
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Award className="h-10 w-10 sm:h-12 sm:w-12" />
+                  <Award className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
                 <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Global Standing</span>
-                <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">#{stats?.rank || 0}</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">#{stats?.rank || 0}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Target className="h-10 w-10 sm:h-12 sm:w-12" />
+                  <Target className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Mean Accuracy</span>
-                    <span className="text-xl sm:text-2xl md:text-3xl font-black text-foreground">{stats?.averageScore || 0}%</span>
+                    <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.averageScore || 0}%</span>
                   </div>
                   <div className="pt-2 hidden sm:block">
                     <MiniBarChart
@@ -411,7 +411,7 @@ export default function Dashboard() {
           </div>
 
           {/* Analytics Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SkillProgressChart data={skillProgress} />
             <WeeklyActivityChart data={weeklyActivity} currentStreak={currentStreak} />
             <PerformanceAnalysisChart data={performanceData} />
@@ -426,7 +426,7 @@ export default function Dashboard() {
           />
 
           {/* Interview List Section */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center">
@@ -451,13 +451,13 @@ export default function Dashboard() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {[...Array(3)].map((_, index) => (
-                  <div key={index} className="h-40 sm:h-48 rounded-2xl sm:rounded-[2.5rem] bg-card border-2 border-border/50 animate-pulse relative overflow-hidden">
+                  <div key={index} className="h-40 sm:h-48 rounded-2xl sm:rounded-2xl bg-card border-2 border-border/50 animate-pulse relative overflow-hidden">
                     <div className="shimmer-overlay" />
                   </div>
                 ))}
               </div>
             ) : sessions?.length === 0 ? (
-              <div className="bg-card border-2 border-dashed border-border rounded-[2.5rem] py-16 text-center space-y-4">
+              <div className="bg-card border-2 border-dashed border-border rounded-2xl py-16 text-center space-y-4">
                 <div className="h-16 w-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
                   <FileText className="h-8 w-8 text-muted-foreground/30" />
                 </div>
@@ -489,7 +489,7 @@ export default function Dashboard() {
                           router.push(`/interview/${session.id}/report`);
                         }
                       }}
-                      className="group relative overflow-hidden rounded-2xl sm:rounded-[2rem] border-2 border-border bg-card hover:border-primary/50 transition-all duration-500 cursor-pointer hover:shadow-2xl hover:shadow-primary/5"
+                      className="group relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-border bg-card hover:border-primary/50 transition-all duration-500 cursor-pointer hover:shadow-2xl hover:shadow-primary/5"
                     >
                       {/* Top Bar Decoration */}
                       <div className={cn(

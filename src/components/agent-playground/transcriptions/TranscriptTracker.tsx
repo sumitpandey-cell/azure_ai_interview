@@ -83,5 +83,19 @@ export function TranscriptTracker({
         localMessages.segments.forEach(s => processSegment(s, localParticipant));
     }, [localMessages.segments, localParticipant]);
 
+    // Update recent local segments when sentiment arrives
+    useEffect(() => {
+        if (sentimentData && localMessages.segments.length > 0) {
+            // Find all recent local segments (within last 30s) and update them
+            const now = Date.now();
+            localMessages.segments.forEach(s => {
+                const isRecent = (s.firstReceivedTime || now) > now - 30000;
+                if (isRecent) {
+                    processSegment(s, localParticipant);
+                }
+            });
+        }
+    }, [sentimentData, localMessages.segments, localParticipant]);
+
     return null; // Invisible component
 }

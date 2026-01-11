@@ -92,7 +92,7 @@ export async function GET(request: Request) {
           skills: config.skills || [],
           difficulty: config.difficulty || 'Intermediate',
           duration: config.duration || 30,
-          sentimentAnalysisEnabled: config.sentimentAnalysisEnabled || false
+          sentimentAnalysisEnabled: config.sentimentAnalysisEnabled ?? true
         };
 
         const companyId = config.companyInterviewConfig?.companyId || config.companyInterviewConfig?.companyTemplateId;

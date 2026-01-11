@@ -412,7 +412,7 @@ const Leaderboard = () => {
         </div>
 
         <div className={cn(
-          "relative w-full rounded-[2.5rem] overflow-hidden border-2 transition-all duration-500 bg-card/40 backdrop-blur-xl group/podium",
+          "relative w-full rounded-2xl overflow-hidden border-2 transition-all duration-500 bg-card/40 backdrop-blur-xl group/podium",
           rank === 1 ? "border-yellow-500/30 shadow-[0_0_50px_rgba(234,179,8,0.1)]" :
             rank === 2 ? "border-slate-400/30" : "border-amber-700/30"
         )}>
@@ -530,7 +530,7 @@ const Leaderboard = () => {
             return (
               <div className="relative group/user-stat overflow-hidden w-full sm:w-auto">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-accent/50 rounded-3xl blur opacity-20 group-hover/user-stat:opacity-40 transition duration-500" />
-                <div className="relative flex flex-row items-center justify-around sm:justify-start gap-3 sm:gap-6 bg-card/50 backdrop-blur-xl border-2 border-border/50 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 shadow-2xl">
+                <div className="relative flex flex-row items-center justify-around sm:justify-start gap-3 sm:gap-6 bg-card/50 backdrop-blur-xl border-2 border-border/50 rounded-2xl sm:rounded-2xl p-4 sm:p-8 shadow-2xl">
                   <div className="space-y-0.5 sm:space-y-1 text-center sm:text-left">
                     <p className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Current Rank</p>
                     <div className="flex items-baseline justify-center sm:justify-start gap-1">
@@ -595,7 +595,7 @@ const Leaderboard = () => {
             </div>
 
             {/* Filters & Search Station */}
-            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden p-4 sm:p-6 relative">
+            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-2xl overflow-hidden p-4 sm:p-6 relative">
               <div className="absolute top-0 right-0 h-full w-40 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
               <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 items-start xl:items-center relative z-10">
                 <div className="flex items-center gap-3 shrink-0">
@@ -651,7 +651,7 @@ const Leaderboard = () => {
                 </div>
               </div>
 
-              <Card className="border-2 border-border/50 shadow-2xl bg-card/30 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+              <Card className="border-2 border-border/50 shadow-2xl bg-card/30 backdrop-blur-xl rounded-2xl sm:rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto no-scrollbar">
                   <Table>
                     <TableHeader>
@@ -772,7 +772,7 @@ const Leaderboard = () => {
 
         {/* Scoring Information Footer */}
         {!loading && users.length > 0 && (
-          <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/formula">
+          <Card className="border-2 border-border/50 bg-card/50 backdrop-blur-xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/formula">
             <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none transition-opacity group-hover/formula:opacity-20" />
             <CardContent className="p-6 sm:p-8 md:p-12">
               <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -818,7 +818,7 @@ const Leaderboard = () => {
                     </div>
                   </div>
 
-                  <div className="bg-primary/5 rounded-[2rem] p-8 border border-primary/20 flex flex-col justify-between">
+                  <div className="bg-primary/5 rounded-2xl p-8 border border-primary/20 flex flex-col justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-primary">
                         <Star className="h-4 w-4 fill-current" />

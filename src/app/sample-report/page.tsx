@@ -73,7 +73,7 @@ export default function SampleReport() {
             <main className="pt-24 pb-20">
                 <div className="container mx-auto px-4">
                     {/* Hero Header */}
-                    <div className="mb-8 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden group">
+                    <div className="mb-8 p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Bot className="h-40 w-40 text-indigo-500" />
                         </div>
@@ -104,7 +104,7 @@ export default function SampleReport() {
                         {/* Left Column - Summary & Insights */}
                         <div className="lg:col-span-2 space-y-8">
                             {/* Executive Summary */}
-                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-[2rem] overflow-hidden">
+                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden">
                                 <CardHeader className="border-b border-white/5 pb-6">
                                     <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
                                         <Sparkles className="h-5 w-5 text-yellow-400" />
@@ -120,7 +120,7 @@ export default function SampleReport() {
 
                             {/* Strengths & Improvements */}
                             <div className="grid md:grid-cols-2 gap-6">
-                                <Card className="bg-emerald-500/5 border-emerald-500/20 backdrop-blur-sm rounded-[2rem]">
+                                <Card className="bg-emerald-500/5 border-emerald-500/20 backdrop-blur-sm rounded-2xl">
                                     <CardHeader>
                                         <CardTitle className="text-lg font-bold text-emerald-400 flex items-center gap-2">
                                             <CheckCircle2 className="h-5 w-5" />
@@ -138,7 +138,7 @@ export default function SampleReport() {
                                         </ul>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-amber-500/5 border-amber-500/20 backdrop-blur-sm rounded-[2rem]">
+                                <Card className="bg-amber-500/5 border-amber-500/20 backdrop-blur-sm rounded-2xl">
                                     <CardHeader>
                                         <CardTitle className="text-lg font-bold text-amber-400 flex items-center gap-2">
                                             <TrendingUp className="h-5 w-5" />
@@ -179,7 +179,7 @@ export default function SampleReport() {
                         {/* Right Column - Visuals & Transcript */}
                         <div className="space-y-8">
                             {/* Skill Radar */}
-                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-[2rem] overflow-hidden">
+                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden">
                                 <CardHeader>
                                     <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                                         <Target className="h-5 w-5 text-indigo-400" />
@@ -204,7 +204,7 @@ export default function SampleReport() {
                             </Card>
 
                             {/* Transcript Preview */}
-                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-[2rem] overflow-hidden">
+                            <Card className="bg-white/5 border-white/10 backdrop-blur-sm rounded-2xl overflow-hidden">
                                 <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
                                     <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5 text-indigo-400" />

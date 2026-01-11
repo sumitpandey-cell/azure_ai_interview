@@ -414,7 +414,7 @@ export default function Reports() {
           <div className="relative group/stats animate-in fade-in slide-in-from-top-4 duration-1000 delay-100">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-[3rem] blur opacity-20 group-hover/stats:opacity-40 transition duration-1000" />
 
-            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-10 overflow-hidden relative">
+            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-2xl p-5 sm:p-8 md:p-10 overflow-hidden relative">
               <div className="absolute top-0 right-0 h-full w-1/3 bg-grid-white/5 mask-gradient-to-l pointer-events-none opacity-20" />
 
               <Tabs defaultValue="overall" className="w-full relative z-10">
@@ -488,7 +488,7 @@ export default function Reports() {
         {completedSessions.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
             {/* Performance Analysis */}
-            <Card className="col-span-1 lg:col-span-2 border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group/chart relative">
+            <Card className="col-span-1 lg:col-span-2 border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-2xl overflow-hidden group/chart relative">
               <div className="absolute top-0 right-0 h-32 w-32 bg-primary/5 blur-3xl rounded-full translate-x-16 -translate-y-16" />
               <CardContent className="p-5 sm:p-8 md:p-10 relative z-10">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
@@ -581,7 +581,7 @@ export default function Reports() {
             </Card>
 
             {/* Top Expertise Bar Chart */}
-            <Card className="col-span-1 border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group/top-skills relative">
+            <Card className="col-span-1 border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-2xl overflow-hidden group/top-skills relative">
               <div className="absolute top-0 right-0 h-full w-full bg-grid-white/5 opacity-10 pointer-events-none" />
               <CardContent className="p-5 sm:p-8 md:p-10 relative z-10">
                 <div className="mb-10">
@@ -647,11 +647,11 @@ export default function Reports() {
         {/* Reports Archive */}
         {sessions.length === 0 ? (
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden group/empty">
+            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-[1.5rem] sm:rounded-2xl overflow-hidden group/empty">
               <CardContent className="p-10 sm:p-20 text-center relative">
                 <div className="absolute inset-0 bg-grid-white/5 opacity-20 pointer-events-none" />
                 <div className="relative z-10 max-w-lg mx-auto space-y-8 px-4">
-                  <div className="h-20 w-20 sm:h-24 sm:w-24 bg-primary/10 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center mx-auto group-hover/empty:scale-110 group-hover/empty:rotate-6 transition-all duration-700">
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 bg-primary/10 rounded-[1.5rem] sm:rounded-2xl flex items-center justify-center mx-auto group-hover/empty:scale-110 group-hover/empty:rotate-6 transition-all duration-700">
                     <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                   </div>
                   <div className="space-y-4">
@@ -673,7 +673,7 @@ export default function Reports() {
         ) : (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             {/* Dynamic Filter Station */}
-            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden p-4 sm:p-6 relative">
+            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-[1.5rem] sm:rounded-2xl overflow-hidden p-4 sm:p-6 relative">
               <div className="absolute top-0 right-0 h-full w-40 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
               <CardContent className="p-0">
                 <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center">
@@ -785,7 +785,7 @@ export default function Reports() {
                     className="group relative animate-in fade-in slide-in-from-bottom-2 duration-500"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-[2rem] opacity-0 group-hover:opacity-10 blur-md transition duration-500" />
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-[1.5rem] sm:rounded-2xl opacity-0 group-hover:opacity-10 blur-md transition duration-500" />
 
                     <Card className="border-2 border-border/50 shadow-sm bg-card/80 hover:bg-card rounded-[1.5rem] sm:rounded-[1.5rem] transition-all duration-500 overflow-hidden cursor-pointer group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-1">
                       <CardContent className="p-0">
@@ -897,7 +897,7 @@ export default function Reports() {
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="rounded-[1.5rem] sm:rounded-[2.5rem] p-6 sm:p-10 border-2 border-border/50 shadow-2xl bg-card/95 backdrop-blur-xl animate-in zoom-in-95 max-w-[90vw] sm:max-w-lg">
+        <AlertDialogContent className="rounded-[1.5rem] sm:rounded-2xl p-6 sm:p-10 border-2 border-border/50 shadow-2xl bg-card/95 backdrop-blur-xl animate-in zoom-in-95 max-w-[90vw] sm:max-w-lg">
           <AlertDialogHeader>
             <div className="h-12 w-12 sm:h-16 sm:w-16 bg-rose-500/10 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
               <Trash2 className="h-6 w-6 sm:h-8 sm:w-8 text-rose-500" />

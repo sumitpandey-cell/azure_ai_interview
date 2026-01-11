@@ -337,7 +337,7 @@ export default function InterviewSetup() {
 
                 {/* Left Column: Video Preview */}
                 <div className="lg:col-span-8 flex flex-col gap-4 sm:gap-8">
-                    <div className="relative aspect-video bg-black rounded-2xl sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.1)] border border-white/10 group">
+                    <div className="relative aspect-video bg-black rounded-2xl sm:rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.1)] border border-white/10 group">
                         {/* Video Element */}
                         <video
                             ref={videoRef}
@@ -374,7 +374,7 @@ export default function InterviewSetup() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
                                 <div className="relative mb-8">
                                     <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                                    <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-32 md:w-32 rounded-2xl sm:rounded-[2rem] bg-card border border-white/10 flex items-center justify-center relative shadow-2xl">
+                                    <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-32 md:w-32 rounded-2xl sm:rounded-2xl bg-card border border-white/10 flex items-center justify-center relative shadow-2xl">
                                         <VideoOff className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground/40" />
                                     </div>
                                 </div>
@@ -412,7 +412,7 @@ export default function InterviewSetup() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-white/5 space-y-3 sm:space-y-4">
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-white/5 space-y-3 sm:space-y-4">
                             <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-primary" />
                                 Compliance Check
@@ -433,7 +433,7 @@ export default function InterviewSetup() {
                             </div>
                         </div>
 
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-white/5 space-y-3 sm:space-y-4">
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-white/5 space-y-3 sm:space-y-4">
                             <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-primary" />
                                 Tactical Brief
@@ -448,7 +448,7 @@ export default function InterviewSetup() {
                 {/* Right Column: Controls & AvatarSelection */}
                 <div className="lg:col-span-4 flex flex-col gap-6 w-full">
                     {session && (
-                        <Card className="rounded-2xl sm:rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden group">
+                        <Card className="rounded-2xl sm:rounded-2xl border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden group">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50"></div>
                             <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
                                 <div className="space-y-1">
@@ -498,7 +498,7 @@ export default function InterviewSetup() {
                     )}
 
                     {/* Integrated Avatar Selection */}
-                    <Card className="rounded-2xl sm:rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden p-4 sm:p-6 relative">
+                    <Card className="rounded-2xl sm:rounded-2xl border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden p-4 sm:p-6 relative">
                         <AvatarSelection
                             selectedAvatar={selectedAvatar}
                             onSelect={setSelectedAvatar}
@@ -555,7 +555,7 @@ export default function InterviewSetup() {
 
 
             <AlertDialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
-                <AlertDialogContent className="bg-card/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8">
+                <AlertDialogContent className="bg-card/70 backdrop-blur-3xl border border-white/10 rounded-2xl p-8">
                     <AlertDialogHeader className="space-y-4">
                         <AlertDialogTitle className="text-2xl font-black text-foreground uppercase italic tracking-tighter">
                             Tactical Alert: <span className="text-amber-500">Low Reserves</span>

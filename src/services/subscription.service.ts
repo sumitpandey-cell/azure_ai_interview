@@ -178,7 +178,7 @@ export const subscriptionService = {
             const subscription = await this.getSubscription(userId);
 
             if (!subscription) {
-                console.error('❌ No subscription found for user');
+                console.info('ℹ️ No active subscription found for user, using default limits');
                 // Return default free tier limits if no subscription exists
                 return {
                     hasLimit: false,

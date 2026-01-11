@@ -25,7 +25,6 @@ import {
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
 import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
-import { ConfidenceMeter } from "./ConfidenceMeter";
 import { LoadingSVG } from "./ui/LoadingSVG";
 import { CircularBlobVisualizer } from "./ui/CircularBlobVisualizer";
 import { interviewService, type InterviewSession } from "@/services/interview.service";
@@ -174,6 +173,7 @@ export function LiveInterviewSession({
                     const message = decoder.decode(payload);
                     const data = JSON.parse(message);
                     if (data.type === "sentiment_update") {
+                        console.log("📊 Sentiment Update Received:", data);
                         setSentimentData({
                             sentiment: data.sentiment,
                             confidence: data.confidence,
@@ -287,7 +287,7 @@ export function LiveInterviewSession({
                 <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-visible lg:overflow-hidden relative z-10">
 
                     {/* Left Column: Input & Details */}
-                    <div className="w-full lg:w-[320px] flex flex-col gap-4 order-2 lg:order-1">
+                    <div className="w-full lg:w-[380px] flex flex-col gap-4 order-2 lg:order-1">
 
                         {/* Visual Input Card */}
                         <div className="bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
@@ -295,7 +295,7 @@ export function LiveInterviewSession({
                                 <Video className="h-4 w-4 text-primary" />
                                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Visual Input</span>
                             </div>
-                            <div className="relative aspect-video bg-black">
+                            <div className="relative aspect-[4/3] bg-black">
                                 <video
                                     ref={videoRef}
                                     autoPlay
@@ -324,7 +324,7 @@ export function LiveInterviewSession({
                                 <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[8px] font-bold text-primary uppercase tracking-wider">Active</div>
                             </div>
 
-                            <div className="space-y-5">
+                            <div className="space-y-4">
                                 <div className="space-y-1.5">
                                     <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground/60 font-bold">Target Position</span>
                                     <div className="text-sm font-semibold text-white/90 bg-white/5 p-3 rounded-xl border border-white/5">
@@ -361,15 +361,6 @@ export function LiveInterviewSession({
                             </div>
                         </div>
 
-                        {/* Confidence Meter (Only if enabled) */}
-                        {((sessionData?.config as any)?.sentimentAnalysisEnabled || sentimentData) && (
-                            <ConfidenceMeter
-                                sentiment={sentimentData?.sentiment || "analyzing"}
-                                confidence={sentimentData?.confidence || 0}
-                                scores={sentimentData?.scores || { positive: 0, neutral: 0, negative: 0 }}
-                                className="animate-in fade-in slide-in-from-left duration-500"
-                            />
-                        )}
 
                         {/* Status Footer */}
                         <button
@@ -564,7 +555,7 @@ export function LiveInterviewSession({
             </div>
 
             <AlertDialog open={isEndCallDialogOpen} onOpenChange={setIsEndCallDialogOpen}>
-                <AlertDialogContent className="rounded-[2rem] p-8 border border-white/10 shadow-2xl bg-card/90 backdrop-blur-2xl animate-in zoom-in-95 max-w-sm mx-auto">
+                <AlertDialogContent className="rounded-2xl p-8 border border-white/10 shadow-2xl bg-card/90 backdrop-blur-2xl animate-in zoom-in-95 max-w-sm mx-auto">
                     <AlertDialogHeader className="space-y-4">
                         <div className="h-14 w-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-2">
                             <AlertTriangle className="h-7 w-7 text-red-500" />

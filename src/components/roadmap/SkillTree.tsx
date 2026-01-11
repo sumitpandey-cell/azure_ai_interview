@@ -155,7 +155,7 @@ function SkillNodeItem({ node }: { node: any }) {
         <motion.div
             whileHover={{ scale: 1.02, y: -2 }}
             className={cn(
-                "relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] border-2 transition-all duration-500 glass-card",
+                "relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-[1.5rem] sm:rounded-2xl border-2 transition-all duration-500 glass-card",
                 isPhase ? "w-full sm:w-64 min-h-[100px] sm:h-28" : "w-[90%] sm:w-52 min-h-[90px] sm:h-24",
                 isCompleted ? "border-emerald-500 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.1)]" :
                     isActive ? "border-amber-500 bg-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.1)]" :

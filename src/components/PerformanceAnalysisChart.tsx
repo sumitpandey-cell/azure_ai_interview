@@ -17,14 +17,14 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
 
     if (!hasData) {
         return (
-            <Card className="border-2 border-border/50 shadow-sm bg-card rounded-[2rem] h-full overflow-hidden">
+            <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden">
                 <CardHeader className="bg-muted/10 border-b border-border/50 p-6">
                     <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-primary" />
                         Operational Analysis
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center p-8 h-[240px]">
+                <CardContent className="flex items-center justify-center p-4 sm:p-6 h-[200px]">
                     <div className="text-center text-muted-foreground">
                         <div className="h-12 w-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
                             <TrendingUp className="h-6 w-6 opacity-30" />
@@ -37,15 +37,15 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
     }
 
     return (
-        <Card className="border-2 border-border/50 shadow-sm bg-card rounded-[2rem] h-full overflow-hidden transition-all hover:border-primary/30">
+        <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden transition-all hover:border-primary/30">
             <CardHeader className="bg-muted/10 border-b border-border/50 p-6">
                 <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
                     Operational Analysis
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-                <ResponsiveContainer width="100%" height={240}>
+            <CardContent className="p-4 sm:p-6">
+                <ResponsiveContainer width="100%" height={200}>
                     <ComposedChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                         <XAxis

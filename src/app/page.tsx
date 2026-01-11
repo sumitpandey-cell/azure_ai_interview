@@ -404,7 +404,7 @@ export default function Landing() {
               ></div>
 
               {/* Strong Ambient Glow - Orange Theme */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 rounded-[2.5rem] blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 rounded-2xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
               <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
 
               <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
@@ -473,7 +473,7 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             {/* Feature 1: Voice-based AI Interviews (Large Card - Spans 2 cols on desktop) */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group">
+            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
               {/* Main Background Gradient - Dark Purple/Blue */}
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950"></div>
 
@@ -844,7 +844,7 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 6: AI-Powered Learning Roadmaps */}
-            <motion.div variants={fadeInUp} className="md:col-span-3 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/10 shadow-indigo-500/20 shadow-2xl">
+            <motion.div variants={fadeInUp} className="md:col-span-3 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-2xl p-8 md:p-12 relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/10 shadow-indigo-500/20 shadow-2xl">
               {/* Decorative Background Elements */}
               <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Map className="h-64 w-64 text-white" />
@@ -929,8 +929,8 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
           >
             {/* Google Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-[2rem] bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]"></div>
+            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
                 {/* Floating Badge */}
@@ -987,8 +987,8 @@ export default function Landing() {
             </motion.div>
 
             {/* Amazon Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-[2rem] bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-orange-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]"></div>
+            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-orange-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
                 {/* Logo Area */}
@@ -1040,8 +1040,8 @@ export default function Landing() {
             </motion.div>
 
             {/* Microsoft Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-[2rem] bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2rem]"></div>
+            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
                 {/* Logo Area */}

@@ -227,7 +227,7 @@ export const badgeService = {
                 communicationScore: Math.round(avgCommScore),
                 technicalScore: Math.round(avgTechScore),
                 skillMastery: Math.round(avgTechScore), // Using tech score as proxy
-                fastestTime: fastestTime === Infinity ? 0 : fastestTime,
+                fastestTime: fastestTime === Infinity ? undefined : fastestTime,
                 interviewTypes: uniqueTypes.size,
                 morningInterviews,
                 nightInterviews,

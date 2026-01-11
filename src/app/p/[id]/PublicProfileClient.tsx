@@ -125,9 +125,9 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
             <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-[1400px] space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-[2rem]" />
-                        <Skeleton className="lg:col-span-6 h-[800px] bg-slate-900 rounded-[2rem]" />
-                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-[2rem]" />
+                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
+                        <Skeleton className="lg:col-span-6 h-[800px] bg-slate-900 rounded-2xl" />
+                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
                     </div>
                 </div>
             </div>
@@ -140,7 +140,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-slate-900/50 p-12 rounded-[2.5rem] border border-white/5 backdrop-blur-2xl max-w-lg"
+                    className="bg-slate-900/50 p-12 rounded-2xl border border-white/5 backdrop-blur-2xl max-w-lg"
                 >
                     <Lock className="h-20 w-20 text-slate-500 mx-auto mb-6 opacity-20" />
                     <h1 className="text-3xl font-bold text-white mb-3">Profile Protected</h1>
@@ -197,7 +197,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                     <div className="lg:col-span-3 flex flex-col gap-4 sm:gap-6">
                         {/* Profile Info Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-                            <Card className="h-full bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] overflow-hidden p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl relative">
+                            <Card className="h-full bg-card border border-white/5 rounded-2xl sm:rounded-2xl overflow-hidden p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl relative">
                                 <div className="absolute top-6 right-6">
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
                                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -243,7 +243,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* Candidate Overview Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl">
+                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
                                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">Candidate Overview</h3>
                                 <div className="space-y-6 sm:space-y-8">
                                     <OverviewItem
@@ -270,7 +270,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                     <div className="lg:col-span-6 flex flex-col gap-4 sm:gap-6">
                         {/* Interview Performance History Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-2xl min-h-[500px] flex flex-col">
+                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl min-h-[500px] flex flex-col">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-4">
                                         <StatsCircle icon={<TrendingUp className="h-5 w-5" />} />
@@ -415,7 +415,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* Skills & Expertise Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-2xl">
+                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h3 className="text-lg sm:text-xl font-black tracking-tight">Skills & Expertise</h3>
@@ -450,7 +450,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                     <div className="lg:col-span-3 flex flex-col gap-4 sm:gap-6">
                         {/* System Credentials Card */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl">
+                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
                                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">System Credentials</h3>
                                 <div className="space-y-6">
                                     <CredentialItem icon={<History className="text-primary" />} label="Engine" value="ArjunaAI v3.1" />
@@ -463,7 +463,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* Claim My Profile Card - Fixed Streak */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-primary/10 border border-white/10 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
+                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-primary/10 border border-white/10 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
                                 <div className="absolute top-[-20%] right-[-20%] w-48 h-48 bg-primary/20 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-700" />
                                 <div className="relative z-10">
                                     <div className="flex items-center justify-between mb-4">
@@ -489,7 +489,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* Profile Actions Card */}
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl">
+                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-6 text-center">Profile Actions</h3>
                                 <div className="flex flex-col gap-3">
                                     <Button className="w-full bg-[#1e293b] hover:bg-[#334155] border-white/5 rounded-2xl h-12 text-xs font-black uppercase tracking-widest gap-2 transition-all active:scale-95">
@@ -506,7 +506,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* Final Platforms CTA */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex-1 min-h-[220px]">
-                            <Card className="h-full bg-card border border-primary/20 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-2xl text-center flex flex-col items-center justify-center relative overflow-hidden group">
+                            <Card className="h-full bg-card border border-primary/20 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl text-center flex flex-col items-center justify-center relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <h3 className="text-base sm:text-lg font-black leading-[1.3] mb-6 sm:mb-8 relative z-10 px-2">
                                     Ready to build your <br /> <span className="text-primary">verified track record?</span>

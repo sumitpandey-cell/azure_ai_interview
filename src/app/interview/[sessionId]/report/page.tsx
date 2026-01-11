@@ -851,7 +851,7 @@ export default function InterviewReport() {
                                         <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                                     </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-[2.5rem] border-2 border-white/10 shadow-3xl p-10 bg-card/90 backdrop-blur-3xl">
+                                <AlertDialogContent className="rounded-2xl border-2 border-white/10 shadow-3xl p-10 bg-card/90 backdrop-blur-3xl">
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="text-2xl font-black uppercase tracking-tight text-white">Purge Intelligence?</AlertDialogTitle>
                                         <AlertDialogDescription className="text-muted-foreground/80 font-medium">
@@ -880,7 +880,7 @@ export default function InterviewReport() {
                 {/* Primary Intelligence Section */}
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
                     {/* Overall Score Gauge */}
-                    <Card className="xl:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group">
+                    <Card className="xl:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group">
                         <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
                         <CardContent className="p-6 sm:p-8 flex flex-col items-center justify-center h-full gap-6 sm:gap-8 text-center relative z-10">
                             <div className="relative h-40 w-40 sm:h-48 sm:w-48 group-hover:scale-105 transition-all duration-1000">
@@ -922,7 +922,7 @@ export default function InterviewReport() {
                     </Card>
 
                     {/* Executive Overview */}
-                    <Card className="xl:col-span-3 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/executive">
+                    <Card className="xl:col-span-3 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/executive">
                         <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
                         <CardContent className="p-6 sm:p-8 md:p-10 relative z-10">
                             <div className="flex flex-col h-full gap-6 sm:gap-8">
@@ -968,20 +968,20 @@ export default function InterviewReport() {
 
                 {/* Tactical Analysis Tabs */}
                 <Tabs defaultValue="insights" className="w-full">
-                    <TabsList className="bg-white/5 p-1 sm:p-1.5 rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 md:h-16 mb-6 sm:mb-8 md:mb-12 inline-flex border border-white/10 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
-                        <TabsTrigger value="insights" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Insights</TabsTrigger>
-                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[10px] sm:text-[11px] h-full transition-all duration-500 flex items-center gap-2">
+                    <TabsList className="bg-white/5 p-1 sm:p-1.5 rounded-2xl sm:rounded-2xl h-12 sm:h-14 md:h-16 mb-6 sm:mb-8 md:mb-12 inline-flex border border-white/10 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
+                        <TabsTrigger value="insights" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Insights</TabsTrigger>
+                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[10px] sm:text-[11px] h-full transition-all duration-500 flex items-center gap-2">
                             <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
                             Elite Mode
                         </TabsTrigger>
-                        <TabsTrigger value="skills" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Competencies</TabsTrigger>
-                        <TabsTrigger value="transcript" className="rounded-xl sm:rounded-[2rem] px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Transcript</TabsTrigger>
+                        <TabsTrigger value="skills" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Competencies</TabsTrigger>
+                        <TabsTrigger value="transcript" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Transcript</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="insights" className="space-y-4 sm:space-y-6 md:space-y-8 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
                         {/* Confidence Flow Graph */}
                         {reportData.confidenceFlow && reportData.confidenceFlow.length > 0 && (
-                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/confidence">
+                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/confidence">
                                 <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
                                 <CardHeader className="p-6 sm:p-8 md:p-10 pb-0 relative z-10">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -1071,7 +1071,7 @@ export default function InterviewReport() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                             {/* Strengths Card */}
-                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/strengths">
+                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/strengths">
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
                                 <CardHeader className="p-4 sm:p-6 md:p-8 pb-0">
                                     <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight flex items-center gap-3 sm:gap-4 uppercase text-emerald-500">
@@ -1094,7 +1094,7 @@ export default function InterviewReport() {
                             </Card>
 
                             {/* Improvements Card */}
-                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/improvements">
+                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/improvements">
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
                                 <CardHeader className="p-4 sm:p-6 md:p-8 pb-0">
                                     <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight flex items-center gap-3 sm:gap-4 uppercase text-rose-500">
@@ -1118,7 +1118,7 @@ export default function InterviewReport() {
                         </div>
 
                         {/* Action Plan - Navigate to Roadmap */}
-                        <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-[2.5rem] overflow-hidden relative group/plan">
+                        <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/plan">
                             <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
                             <div className="absolute top-0 right-0 h-full w-96 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
 
@@ -1205,7 +1205,7 @@ export default function InterviewReport() {
                                             {/* Decorative Number */}
                                             <div className="absolute -top-6 -left-4 text-8xl font-black text-white/[0.02] pointer-events-none group-hover/elite:text-primary/[0.05] transition-colors duration-1000">0{i + 1}</div>
 
-                                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden transition-all duration-700 hover:border-primary/20">
+                                            <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden transition-all duration-700 hover:border-primary/20">
                                                 <CardContent className="p-0">
                                                     <div className="grid grid-cols-1 xl:grid-cols-2">
                                                         {/* Actual Side */}
@@ -1262,7 +1262,7 @@ export default function InterviewReport() {
                                     ))}
                                 </div>
                             ) : (
-                                <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] p-12 text-center">
+                                <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl p-12 text-center">
                                     <div className="flex flex-col items-center gap-6">
                                         <div className="h-20 w-20 rounded-3xl bg-white/5 flex items-center justify-center border border-white/10">
                                             <AlertTriangle className="h-10 w-10 text-muted-foreground/40" />
@@ -1300,7 +1300,7 @@ export default function InterviewReport() {
                     <TabsContent value="skills" className="space-y-10 outline-none animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Radar Visual */}
-                            <Card className="lg:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden relative group/radar">
+                            <Card className="lg:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden relative group/radar">
                                 <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
                                 <CardHeader className="p-8 sm:p-10 pb-0 relative z-10">
                                     <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-foreground">Competency Map</h3>
@@ -1335,7 +1335,7 @@ export default function InterviewReport() {
                             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {reportData.overallSkills.map((skill: Skill, i: number) => (
                                     <div key={i} className="group/skill relative">
-                                        <Card className="h-full border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-primary/20 rounded-[2rem] transition-all duration-700 overflow-hidden">
+                                        <Card className="h-full border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-primary/20 rounded-2xl transition-all duration-700 overflow-hidden">
                                             <CardContent className="p-8 space-y-8">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-2">
@@ -1367,7 +1367,7 @@ export default function InterviewReport() {
                                                             )}
                                                         </div>
                                                     </DialogTrigger>
-                                                    <DialogContent className="max-w-2xl rounded-[2rem] border-2 border-white/10 bg-card/95 backdrop-blur-3xl">
+                                                    <DialogContent className="max-w-2xl rounded-2xl border-2 border-white/10 bg-card/95 backdrop-blur-3xl">
                                                         <DialogHeader>
                                                             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-foreground flex items-center gap-3">
                                                                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -1410,7 +1410,7 @@ export default function InterviewReport() {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {reportData.technicalSkills.map((skill: Skill, i: number) => (
-                                        <Card key={i} className="border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-blue-500/20 rounded-[2rem] transition-all duration-700 overflow-hidden group/tech">
+                                        <Card key={i} className="border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-blue-500/20 rounded-2xl transition-all duration-700 overflow-hidden group/tech">
                                             <CardContent className="p-6 space-y-6">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-1">
@@ -1442,7 +1442,7 @@ export default function InterviewReport() {
                                                             )}
                                                         </div>
                                                     </DialogTrigger>
-                                                    <DialogContent className="max-w-2xl rounded-[2rem] border-2 border-white/10 bg-card/95 backdrop-blur-3xl">
+                                                    <DialogContent className="max-w-2xl rounded-2xl border-2 border-white/10 bg-card/95 backdrop-blur-3xl">
                                                         <DialogHeader>
                                                             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-foreground flex items-center gap-3">
                                                                 <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -1472,7 +1472,7 @@ export default function InterviewReport() {
 
                         {/* Recommendation Tier */}
                         <Card className={cn(
-                            "border-2 shadow-2xl rounded-[2.5rem] overflow-hidden p-1 relative",
+                            "border-2 shadow-2xl rounded-2xl overflow-hidden p-1 relative",
                             reportData.overallScore >= 70 ? "border-emerald-500/30 bg-emerald-500/5" : "border-rose-500/30 bg-rose-500/5"
                         )}>
                             <CardContent className="p-10 flex flex-col lg:flex-row items-center gap-10">
@@ -1508,7 +1508,7 @@ export default function InterviewReport() {
                     </TabsContent>
 
                     <TabsContent value="transcript" className="outline-none animate-in fade-in slide-in-from-top-4 duration-700">
-                        <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden">
+                        <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden">
                             <CardHeader className="p-8 sm:p-10 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-4">
@@ -1545,7 +1545,7 @@ export default function InterviewReport() {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 tabular-nums">{msg.timestamp}</span>
                                             </div>
                                             <div className={cn(
-                                                "p-6 sm:p-8 rounded-[2.5rem] text-sm sm:text-base font-bold leading-relaxed shadow-2xl relative group/msg transition-all duration-500",
+                                                "p-6 sm:p-8 rounded-2xl text-sm sm:text-base font-bold leading-relaxed shadow-2xl relative group/msg transition-all duration-500",
                                                 isAI
                                                     ? "bg-white/[0.03] text-foreground rounded-tl-none border border-white/5 hover:bg-white/[0.05]"
                                                     : "bg-primary text-black rounded-tr-none shadow-primary/20 hover:scale-[1.01]"

@@ -28,7 +28,7 @@ export function useUserProfile() {
           .from('profiles')
           .select('full_name, avatar_url')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error fetching profile:', profileError);

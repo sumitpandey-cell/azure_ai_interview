@@ -601,13 +601,13 @@ export default function Templates() {
                     Back to Ecosystem
                   </button>
 
-                  <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2.5rem] bg-slate-900 dark:bg-card border-2 border-border/50 p-6 sm:p-10 md:p-14 shadow-2xl">
+                  <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-2xl bg-slate-900 dark:bg-card border-2 border-border/50 p-6 sm:p-10 md:p-14 shadow-2xl">
                     {/* Glowing Mesh Background */}
                     <div className="absolute top-0 right-0 -mt-20 -mr-20 h-96 w-96 rounded-full bg-primary/20 blur-[100px] animate-pulse" />
                     <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-10 items-center md:items-center text-center md:text-left">
-                      <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl sm:rounded-[2rem] bg-white p-3 sm:p-5 shadow-2xl flex items-center justify-center shrink-0 border-4 border-white/10 group-hover:scale-105 transition-transform">
+                      <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl sm:rounded-2xl bg-white p-3 sm:p-5 shadow-2xl flex items-center justify-center shrink-0 border-4 border-white/10 group-hover:scale-105 transition-transform">
                         {selectedCompany.logo_url ? (
                           <img
                             src={selectedCompany.logo_url}

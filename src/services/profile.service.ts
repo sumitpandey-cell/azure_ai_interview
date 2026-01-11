@@ -20,7 +20,7 @@ export const profileService = {
                 .from("profiles")
                 .select("*")
                 .eq("id", userId)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data;
@@ -131,7 +131,7 @@ export const profileService = {
                 .from("profiles")
                 .select("streak_count")
                 .eq("id", userId)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data?.streak_count || 0;

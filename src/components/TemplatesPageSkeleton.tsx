@@ -19,7 +19,7 @@ export function TemplatesPageSkeleton() {
 // Template Card Skeleton Component
 function TemplateCardSkeleton() {
     return (
-        <Card className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card rounded-[2rem]">
+        <Card className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card rounded-2xl">
             <CardContent className="p-8 flex flex-col h-full relative z-10">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6">
@@ -122,7 +122,7 @@ export function CompanyTemplatesPageSkeleton() {
 // Company Card Skeleton Component
 function CompanyCardSkeleton() {
     return (
-        <Card className="group relative overflow-hidden border-2 border-border/50 bg-card rounded-[2rem]">
+        <Card className="group relative overflow-hidden border-2 border-border/50 bg-card rounded-2xl">
             <CardContent className="p-8">
                 {/* Company Logo and Header */}
                 <div className="flex items-start gap-4 mb-8">

@@ -110,13 +110,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
           transition-all duration-300 ease-in-out
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${sidebarCollapsed ? "lg:w-20" : "lg:w-72"}
+        ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
         flex flex-col flex-shrink-0
       `}
       >
         {/* Logo Section */}
-        <div className={`h-24 flex items-center flex-shrink-0 transition-all duration-500 ${sidebarCollapsed ? "px-2 justify-center" : "px-8"}`}>
+        <div className={`h-20 flex items-center flex-shrink-0 transition-all duration-500 ${sidebarCollapsed ? "px-2 justify-center" : "px-6"}`}>
           {!sidebarCollapsed ? (
             <div className="flex items-center gap-4 group cursor-default">
               <div className="relative flex-shrink-0">
@@ -186,7 +186,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] border border-primary/20"
                   : "text-sidebar-foreground/60 hover:text-foreground hover:bg-sidebar-accent border border-transparent"
                 }
-                ${sidebarCollapsed ? "w-12 h-12 justify-center mx-auto p-0" : "px-5 py-3.5"}
+                ${sidebarCollapsed ? "w-12 h-12 justify-center mx-auto p-0" : "px-5 py-2.5"}
               `}
               title={sidebarCollapsed ? item.name : undefined}
             >
@@ -391,7 +391,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-8 relative z-10 w-full">
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-6 relative z-10 w-full">
           <div
             key={pathname}
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"

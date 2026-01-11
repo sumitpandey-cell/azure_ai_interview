@@ -156,10 +156,10 @@ export default function Badges() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-muted rounded-[2rem]" />
+              <div key={i} className="h-32 bg-muted rounded-2xl" />
             ))}
           </div>
-          <div className="h-40 bg-muted rounded-[2.5rem]" />
+          <div className="h-40 bg-muted rounded-2xl" />
           <div className="flex gap-4 overflow-hidden">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-10 w-32 bg-muted rounded-2xl shrink-0" />
@@ -167,7 +167,7 @@ export default function Badges() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="h-64 bg-muted rounded-[2rem]" />
+              <div key={i} className="h-64 bg-muted rounded-2xl" />
             ))}
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function Badges() {
             </div>
 
             <div className="hidden lg:flex items-center gap-4 lg:pb-2">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-[2.5rem] bg-card border border-border/50 flex items-center justify-center shadow-3xl relative group overflow-hidden">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-card border border-border/50 flex items-center justify-center shadow-3xl relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-primary group-hover:scale-110 group-hover:rotate-12 transition-all duration-700" />
                 <div className="absolute -inset-4 bg-primary/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -224,7 +224,7 @@ export default function Badges() {
             { label: "Last Transmission", value: latestBadge?.name || "Awaiting Data", sub: latestBadge ? "Protocol Verified" : "No Records", icon: Zap, color: "text-amber-500", progress: 100 },
             { label: "Sync Status", value: `${progressPercentage}%`, sub: "Global Calibration", icon: Target, color: "text-emerald-500", progress: progressPercentage }
           ].map((stat, i) => (
-            <Card key={i} className="border border-border/50 shadow-3xl transition-all duration-700 group/stat relative overflow-hidden rounded-[2.5rem] p-8 bg-card hover:bg-muted/10 hover:border-border">
+            <Card key={i} className="border border-border/50 shadow-3xl transition-all duration-700 group/stat relative overflow-hidden rounded-2xl p-8 bg-card hover:bg-muted/10 hover:border-border">
               <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover/stat:opacity-10 transition-all duration-1000 group-hover/stat:scale-125 group-hover/stat:-rotate-12 pointer-events-none">
                 <stat.icon className={cn("h-24 w-24", stat.color)} />
               </div>
@@ -338,7 +338,7 @@ export default function Badges() {
         {filteredBadges.length === 0 ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
             <Card className="border-4 border-dashed border-border bg-muted/20 p-24 text-center rounded-[4rem] backdrop-blur-3xl">
-              <div className="h-32 w-32 rounded-[2.5rem] bg-muted/50 border border-border flex items-center justify-center mx-auto mb-8 shadow-3xl">
+              <div className="h-32 w-32 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto mb-8 shadow-3xl">
                 <Medal className="h-16 w-16 text-muted-foreground/20" />
               </div>
               <h3 className="text-3xl font-black mb-3 text-foreground uppercase tracking-tight">Intelligence Void</h3>
@@ -365,7 +365,7 @@ export default function Badges() {
                     transition={{ duration: 0.4, delay: index * 0.02 }}
                   >
                     <Card className={cn(
-                      "group/badge relative h-full flex flex-col border border-border transition-all duration-500 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden backdrop-blur-3xl",
+                      "group/badge relative h-full flex flex-col border border-border transition-all duration-500 rounded-2xl sm:rounded-2xl overflow-hidden backdrop-blur-3xl",
                       isEarned
                         ? cn("bg-card hover:bg-muted/10 hover:-translate-y-2 border-primary/20", getRarityGlowColor(badge.rarity))
                         : "bg-muted/30 border-border/50 grayscale hover:grayscale-0 hover:bg-muted/50 transition-all duration-700"
@@ -394,7 +394,7 @@ export default function Badges() {
                         {/* Icon & Title */}
                         <div className="flex flex-col items-center text-center space-y-4">
                           <div className={cn(
-                            "h-20 w-20 sm:h-24 sm:w-24 rounded-[2rem] flex items-center justify-center text-4xl sm:text-5xl transition-all duration-1000 group-hover/badge:scale-110 group-hover/badge:rotate-3 border border-border relative overflow-hidden",
+                            "h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl transition-all duration-1000 group-hover/badge:scale-110 group-hover/badge:rotate-3 border border-border relative overflow-hidden",
                             isEarned ? "bg-muted/50 shadow-2xl" : "bg-muted/10"
                           )}>
                             <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.05] to-transparent opacity-0 group-hover/badge:opacity-100 transition-opacity" />

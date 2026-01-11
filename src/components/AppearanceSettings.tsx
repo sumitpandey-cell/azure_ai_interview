@@ -80,7 +80,7 @@ export function AppearanceSettings() {
     };
 
     return (
-        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10 overflow-hidden relative">
+        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl p-4 sm:p-10 overflow-hidden relative">
             <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 blur-3xl rounded-full -translate-y-20 translate-x-20" />
 
             <CardHeader className="p-0 mb-6 sm:mb-10 relative z-10">
@@ -88,7 +88,7 @@ export function AppearanceSettings() {
                     <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                         <Palette className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight">Visual Interface</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl font-black tracking-tight">Visual Interface</CardTitle>
                 </div>
                 <CardDescription className="text-xs sm:text-sm font-medium">
                     Customize your workspace with an aesthetic color profile that suits your style.
@@ -104,7 +104,7 @@ export function AppearanceSettings() {
                                 key={theme.id}
                                 onClick={() => handleThemeChange(theme.id)}
                                 className={cn(
-                                    "group relative flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border-2 transition-all duration-500 text-left",
+                                    "group relative flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-2xl border-2 transition-all duration-500 text-left",
                                     activeTheme === theme.id
                                         ? "border-primary bg-primary/5 shadow-xl shadow-primary/10 scale-[1.02]"
                                         : "border-border/30 bg-muted/20 hover:border-border hover:bg-muted/40 hover:-translate-y-1"
@@ -135,7 +135,7 @@ export function AppearanceSettings() {
 
                                 <div className="space-y-1">
                                     <span className={cn(
-                                        "text-base sm:text-lg font-black tracking-tight block",
+                                        "text-base sm:text-lg font-bold tracking-tight block",
                                         activeTheme === theme.id ? "text-primary" : "text-foreground"
                                     )}>
                                         {theme.name}
@@ -156,7 +156,7 @@ export function AppearanceSettings() {
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-8 rounded-2xl sm:rounded-[2rem] bg-muted/20 border-2 border-dashed border-border/50">
+                <div className="p-4 sm:p-8 rounded-2xl sm:rounded-2xl bg-muted/20 border-2 border-dashed border-border/50">
                     <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-8">
                         <div className="space-y-2 text-center md:text-left flex-1">
                             <h4 className="text-lg sm:text-xl font-black tracking-tight">Live UI Preview</h4>

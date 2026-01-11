@@ -267,7 +267,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'bronze',
         icon: '⚡',
         requirement: 'Complete in <15 min',
-        checkCondition: (data) => (data as any).fastestTime <= 15,
+        checkCondition: (data) => data.totalInterviews > 0 && (data as any).fastestTime > 0 && (data as any).fastestTime <= 15,
     },
     {
         id: 'lightning-fast',
@@ -277,7 +277,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'silver',
         icon: '⚡',
         requirement: 'Complete in <10 min',
-        checkCondition: (data) => (data as any).fastestTime <= 10,
+        checkCondition: (data) => data.totalInterviews > 0 && (data as any).fastestTime > 0 && (data as any).fastestTime <= 10,
     },
 
     // DIVERSITY BADGES

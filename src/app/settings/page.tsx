@@ -373,7 +373,7 @@ export default function Settings() {
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {activeSection === "general" && (
                         <div className="space-y-8">
-                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl overflow-hidden">
                                 <div className="h-20 sm:h-32 bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative">
                                     <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
                                 </div>
@@ -484,7 +484,7 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-2 border-border/50 shadow-xl bg-card rounded-2xl sm:rounded-[2.5rem] overflow-hidden">
+                            <Card className="border-2 border-border/50 shadow-xl bg-card rounded-2xl sm:rounded-2xl overflow-hidden">
                                 <CardContent className="p-4 sm:p-10 space-y-6 sm:space-y-8">
                                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 sm:pb-8 border-b border-border/30">
                                         <div className="space-y-2">
@@ -529,7 +529,7 @@ export default function Settings() {
                                     </div>
 
                                     {isPublic && (
-                                        <div className="mt-8 space-y-6 p-8 bg-primary/5 rounded-[2rem] border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="mt-8 space-y-6 p-8 bg-primary/5 rounded-2xl border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
                                             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                                                 <div className="space-y-1 flex-1">
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Live Profile URL</p>
@@ -573,7 +573,7 @@ export default function Settings() {
                     )}
 
                     {activeSection === "notifications" && (
-                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10">
+                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl p-4 sm:p-10">
                             <CardHeader className="p-0 mb-6 sm:mb-10">
                                 <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight">Broadcast Center</CardTitle>
                                 <CardDescription className="text-sm font-medium">Control the frequency and type of incoming intel.</CardDescription>
@@ -643,7 +643,7 @@ export default function Settings() {
 
                     {activeSection === "security" && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700">
-                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10">
+                            <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl p-4 sm:p-10">
                                 <CardHeader className="p-0 mb-6 sm:mb-10">
                                     <div className="flex items-center gap-4 mb-3">
                                         <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
@@ -662,7 +662,7 @@ export default function Settings() {
                                 </CardHeader>
                                 <CardContent className="p-0 space-y-8">
                                     {user?.app_metadata?.provider !== 'email' && (
-                                        <div className="bg-primary/5 border-2 border-primary/20 rounded-[2rem] p-6 mb-8 flex items-start gap-4">
+                                        <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-6 mb-8 flex items-start gap-4">
                                             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1">
                                                 <Lock className="h-5 w-5" />
                                             </div>
@@ -730,7 +730,7 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-2 border-destructive/20 bg-destructive/5 shadow-2xl rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-10 overflow-hidden relative">
+                            <Card className="border-2 border-destructive/20 bg-destructive/5 shadow-2xl rounded-2xl sm:rounded-2xl p-4 sm:p-10 overflow-hidden relative">
                                 <div className="absolute top-0 right-0 h-full w-32 bg-gradient-to-l from-destructive/10 to-transparent pointer-events-none" />
                                 <div className="relative z-10 space-y-6 sm:space-y-8">
                                     <div className="space-y-3">
@@ -743,7 +743,7 @@ export default function Settings() {
                                         </p>
                                     </div>
 
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] bg-card/40 border-2 border-destructive/10">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl sm:rounded-2xl bg-card/40 border-2 border-destructive/10">
                                         <div className="flex items-center gap-4">
                                             <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center text-destructive">
                                                 <Shield className="h-5 w-5" />
@@ -764,8 +764,8 @@ export default function Settings() {
                     )}
 
                     {activeSection === "billing" && (
-                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-700">
-                            <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[2.5rem] bg-muted/50 border-2 border-border/50 flex items-center justify-center mb-6 sm:mb-10 group-hover:rotate-12 transition-all duration-700">
+                        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl p-6 sm:p-10 flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-700">
+                            <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-2xl bg-muted/50 border-2 border-border/50 flex items-center justify-center mb-6 sm:mb-10 group-hover:rotate-12 transition-all duration-700">
                                 <CreditCard className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground opacity-30" />
                             </div>
                             <h3 className="text-2xl sm:text-4xl font-black tracking-tight mb-3 sm:mb-4">No Active License</h3>
@@ -774,7 +774,7 @@ export default function Settings() {
                             </p>
                             <Button
                                 onClick={() => router.push('/pricing')}
-                                className="h-12 sm:h-16 px-8 sm:px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl sm:rounded-[2rem] shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95"
+                                className="h-12 sm:h-16 px-8 sm:px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs sm:text-sm rounded-2xl sm:rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95"
                             >
                                 View Licensing Options
                             </Button>
