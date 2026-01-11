@@ -12,6 +12,12 @@ const PUBLIC_ROUTES = [
     '/contact',
     '/site.webmanifest',
     '/p',
+    '/faq',
+    '/terms',
+    '/privacy',
+    '/careers',
+    '/blog',
+    '/community',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated

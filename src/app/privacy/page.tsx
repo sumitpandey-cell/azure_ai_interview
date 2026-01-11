@@ -3,27 +3,16 @@ import { Shield, Lock, Eye, FileText, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 
+import { PublicHeader } from "@/components/PublicHeader";
+import { Footer } from "@/components/Footer";
+
 export default function PrivacyPage() {
     const lastUpdated = "December 31, 2025";
 
     return (
         <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden">
             <GlobalBackground />
-
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-                        <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
-                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">Arjuna AI</span>
-                    </Link>
-                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
-                    </Button>
-                </div>
-            </header>
+            <PublicHeader />
 
             <main className="pt-32 pb-20">
                 <div className="container mx-auto px-4 max-w-4xl">
@@ -109,11 +98,7 @@ export default function PrivacyPage() {
                 </div>
             </main>
 
-            <footer className="bg-[#0A0A0B] border-t border-white/10 pt-20 pb-10">
-                <div className="container mx-auto px-4 text-center">
-                    <p className="text-slate-500 text-sm">© 2025 Arjuna AI. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }

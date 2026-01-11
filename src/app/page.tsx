@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy, Map } from "lucide-react";
+import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy, Map, BarChart3, Rocket } from "lucide-react";
 import Link from "next/link";
+import { Footer } from "@/components/Footer";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { TransitionButton } from "@/components/TransitionButton";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -63,19 +65,19 @@ export default function Landing() {
       icon: Brain,
       title: "AI-Powered Interviews",
       description: "Practice with advanced AI that adapts to your responses and simulates real interview scenarios",
-      gradient: "from-indigo-500 to-purple-500",
+      gradient: "from-indigo-500 to-blue-500",
     },
     {
       icon: Target,
       title: "Personalized Feedback",
       description: "Get detailed analysis with actionable improvement suggestions after each session",
-      gradient: "from-purple-500 to-pink-500",
+      gradient: "from-blue-500 to-cyan-500",
     },
     {
       icon: Map,
       title: "Adaptive AI Roadmap",
       description: "AI-generated learning paths tailored to your interview performance and career goals",
-      gradient: "from-pink-500 to-rose-500",
+      gradient: "from-purple-500 to-indigo-500",
     },
     {
       icon: MessageSquare,
@@ -93,7 +95,7 @@ export default function Landing() {
       icon: Zap,
       title: "Daily Free Practice",
       description: "Get 30 minutes of free daily practice time to perfect your skills",
-      gradient: "from-yellow-500 to-orange-500",
+      gradient: "from-indigo-500 to-purple-500",
     },
   ];
 
@@ -201,7 +203,7 @@ export default function Landing() {
       >
         <div
           className={`transition-all duration-500 ease-in-out flex items-center justify-between ${scrolled
-            ? "bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 shadow-2xl rounded-full px-4 py-3 w-full max-w-4xl ring-1 ring-white/5"
+            ? "bg-[#0f1117]/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-4xl ring-1 ring-white/5"
             : "w-full container mx-auto px-4 sm:px-6 bg-transparent border-transparent border ring-0"
             }`}
         >
@@ -214,8 +216,8 @@ export default function Landing() {
               />
             </div>
             <span className={`bg-clip-text text-transparent transition-all duration-300 ${scrolled
-              ? "bg-gradient-to-r from-orange-400 to-amber-400"
-              : "bg-gradient-to-r from-white to-orange-200"
+              ? "bg-gradient-to-r from-white to-slate-400"
+              : "bg-gradient-to-r from-white to-indigo-200"
               }`}>
               Arjuna AI
             </span>
@@ -237,18 +239,16 @@ export default function Landing() {
 
           <div className="flex items-center gap-4">
             <div className="hidden md:block">
-              <Button
+              <TransitionButton
                 variant={scrolled ? "ghost" : "secondary"}
+                href="/auth"
                 className={`transition-all duration-300 ${scrolled
                   ? "text-white hover:bg-white/10 rounded-full px-6"
-                  : "bg-white text-orange-900 hover:bg-orange-50 rounded-lg px-6"
-                  } font-medium`}
-                asChild
+                  : "bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.45)]"
+                  } font-medium border-0`}
               >
-                <Link href="/auth">
-                  {scrolled ? "Login" : "Get Started"}
-                </Link>
-              </Button>
+                {scrolled ? "Login" : "Get Started"}
+              </TransitionButton>
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -285,23 +285,22 @@ export default function Landing() {
             >
               Testimonials
             </a>
-            <Button
-              className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl"
-              asChild
+            <TransitionButton
+              href="/auth"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.3)]"
             >
-              <Link href="/auth">Get Started</Link>
-            </Button>
+              Get Started
+            </TransitionButton>
           </div>
         )}
       </header>
-
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
-        {/* Animated Background Effects - Orange Theme */}
+        {/* Animated Background Effects - Cool Blue/Purple/Indigo Theme */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-orange-600/15 rounded-full blur-[120px] -translate-x-1/4" />
-          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-amber-600/15 rounded-full blur-[120px] translate-x-1/4" />
-          <div className="absolute top-[20%] left-[50%] transform -translate-x-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-orange-900/8 rounded-full blur-[100px]"></div>
+          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
+          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-purple-600/20 rounded-full blur-[120px] translate-x-1/4" />
+          <div className="absolute top-[20%] left-[50%] transform -translate-x-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-blue-900/10 rounded-full blur-[100px]"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
@@ -313,22 +312,19 @@ export default function Landing() {
           >
             {/* Badge */}
             <motion.div variants={fadeInUp} className="flex flex-col items-center gap-2 mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-orange-500/20 shadow-lg">
-                <div className="h-2 w-2 rounded-full bg-orange-400"></div>
-                <span className="text-sm font-medium text-orange-200">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-slate-300">
                   New: AI Voice Intelligence 2.0
                 </span>
               </div>
-              <span className="text-[12px] font-medium text-slate-500 opacity-50">
-                AI that truly understands your voice.
-              </span>
             </motion.div>
 
             {/* Heading */}
             <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-wide text-white mb-6">
               Ace Any Interview.
               <br />
-              <span className="bg-gradient-to-r from-orange-400/90 via-amber-400/90 to-yellow-400/90 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Powered by AI.
               </span>
             </motion.h1>
@@ -355,8 +351,8 @@ export default function Landing() {
                   />
                 ))}
               </div>
-              <div className="flex items-center gap-2 text-sm text-orange-200/80">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-orange-400"></span>
+              <div className="flex items-center gap-2 text-sm text-slate-400/80">
+                <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
                 Trusted by 20,000+ candidates
               </div>
             </motion.div>
@@ -364,22 +360,20 @@ export default function Landing() {
             {/* CTA Buttons */}
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
+                <TransitionButton
                   size="lg"
-                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-lg shadow-orange-500/25 transition-all"
-                  asChild
+                  href="/auth"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-[0_0_20px_rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all transform hover:-translate-y-1"
                 >
-                  <Link href="/auth">
-                    Start My Interview
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
+                  Start My Interview
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </TransitionButton>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-slate-700 text-slate-300 hover:text-white hover:bg-white/10 hover:border-orange-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent"
+                  className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5 hover:border-indigo-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent"
                   asChild
                 >
                   <Link href="#demo">
@@ -395,20 +389,17 @@ export default function Landing() {
               variants={scaleIn}
               className="relative mx-auto max-w-5xl"
             >
-              {/* Dynamic Glow Behind Mockup - Orange Theme */}
               <div
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-50 blur-3xl"
                 style={{
-                  background: "radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.25), transparent 70%)"
+                  background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)"
                 }}
               ></div>
 
-              {/* Strong Ambient Glow - Orange Theme */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 rounded-2xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
 
               <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
-
                 {/* Mac Window Header */}
                 <div className="relative h-11 bg-[#1a1b26] border-b border-white/5 flex items-center px-4 gap-2 z-10">
                   <div className="flex gap-2">
@@ -416,50 +407,44 @@ export default function Landing() {
                     <div className="w-3 h-3 rounded-full bg-[#FEBC2E] border border-[#D89E24]/50 shadow-inner"></div>
                     <div className="w-3 h-3 rounded-full bg-[#28C840] border border-[#1AAB29]/50 shadow-inner"></div>
                   </div>
-                  {/* Optional: URL Bar or Title */}
                   <div className="ml-4 flex-1 flex justify-center">
                     <div className="h-6 w-64 bg-white/5 rounded-md flex items-center justify-center border border-white/5">
                       <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                        <div className="w-2 h-2 rounded-full bg-orange-500/50"></div>
+                        <div className="w-2 h-2 rounded-full bg-blue-500/50"></div>
                         arjuna-interview.ai
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Window Content */}
                 <div className="relative z-0 bg-[#0f1117]">
                   <img
                     src="/dashboard-preview.png"
                     alt="Dashboard Preview"
                     className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500"
                   />
-                  {/* Overlay Gradient for depth */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
                 </div>
               </div>
-
             </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      {/* Features Section */}
-      {/* Features Section */}
-      <SectionWrapper id="features" className="py-24 bg-[#0f1117] relative overflow-hidden">
+      <SectionWrapper id="features" className="py-24 bg-slate-50 relative overflow-hidden">
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-16">
             <motion.h2
               variants={fadeInUp}
-              className="text-3xl md:text-5xl font-bold text-white mb-4"
+              className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
             >
               Everything you need to ace the interview
             </motion.h2>
             <motion.p
               variants={fadeInUp}
-              className="text-slate-500 text-lg max-w-2xl mx-auto"
+              className="text-slate-600 text-lg max-w-2xl mx-auto"
             >
               Our AI-powered platform provides a comprehensive suite of tools to help you prepare, practice, and perform.
             </motion.p>
@@ -473,9 +458,9 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             {/* Feature 1: Voice-based AI Interviews (Large Card - Spans 2 cols on desktop) */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
-              {/* Main Background Gradient - Dark Purple/Blue */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950"></div>
+            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl group bg-white">
+              {/* Main Background Gradient - Light Theme */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
 
               {/* Decorative Wave Lines (SVG) */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 800 400" preserveAspectRatio="none">
@@ -506,11 +491,11 @@ export default function Landing() {
 
                 {/* Left Text Content */}
                 <div className="flex-1 text-left space-y-6">
-                  <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                  <h3 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
                     Voice-based <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">AI Interviews.</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">AI Interviews.</span>
                   </h3>
-                  <p className="text-slate-400 text-lg leading-relaxed max-w-md">
+                  <p className="text-slate-600 text-lg leading-relaxed max-w-md">
                     Practice real-time scenarios with instant feedback. Our AI adapts to your responses just like a human interviewer.
                   </p>
                 </div>
@@ -593,15 +578,15 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 2: Instant Score + Feedback */}
-            <motion.div variants={fadeInUp} className="bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
+            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-              <h3 className="text-xl font-bold text-white mb-2">Instant Score + Feedback.</h3>
-              <p className="text-slate-400 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Instant Score + Feedback.</h3>
+              <p className="text-slate-600 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
 
               {/* Original Score Visualization */}
-              <div className="bg-[#1a1b26] rounded-2xl p-4 border border-white/10 shadow-md mb-6">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 shadow-sm mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-slate-400">Recent Interview</span>
+                  <span className="text-sm text-slate-500">Recent Interview</span>
                   <div className="flex gap-0.5">
                     {[1, 2, 3].map(i => <Star key={i} className="h-3 w-3 text-yellow-500 fill-yellow-500" />)}
                   </div>
@@ -610,27 +595,27 @@ export default function Landing() {
                 <div className="flex items-center gap-4">
                   <div className="relative h-20 w-20 flex items-center justify-center">
                     <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                      <path className="text-slate-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                      <path className="text-slate-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                       <path className="text-emerald-500" strokeDasharray="64, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
                     </svg>
-                    <span className="absolute text-xl font-bold text-white">64%</span>
+                    <span className="absolute text-xl font-bold text-slate-900">64%</span>
                   </div>
                   <div className="flex-1 space-y-2">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-slate-400">Score</span>
-                        <span className="text-white">64%</span>
+                        <span className="text-slate-900">64%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full w-[64%] bg-gradient-to-r from-emerald-400 to-green-500"></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-slate-400">Feedback</span>
-                        <span className="text-white">8%</span>
+                        <span className="text-slate-900">8%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full w-[8%] bg-red-500"></div>
                       </div>
                     </div>
@@ -639,19 +624,19 @@ export default function Landing() {
               </div>
 
               {/* New Skills Assessment Report */}
-              <div className="bg-[#1a1b26] rounded-2xl p-5 border border-white/10 shadow-md space-y-5">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <h4 className="font-bold text-white">Skills Assessment</h4>
-                  <span className="text-xs font-medium text-indigo-400">Report #2401</span>
+              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h4 className="font-bold text-slate-900">Skills Assessment</h4>
+                  <span className="text-xs font-medium text-indigo-600">Report #2401</span>
                 </div>
 
                 {/* Technical Knowledge */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-white">Technical Knowledge</span>
+                    <span className="font-semibold text-slate-800">Technical Knowledge</span>
                     <span className="text-indigo-400 font-bold">15%</span>
                   </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full w-[15%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -662,10 +647,10 @@ export default function Landing() {
                 {/* Communication */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-white">Communication</span>
+                    <span className="font-semibold text-slate-800">Communication</span>
                     <span className="text-indigo-400 font-bold">60%</span>
                   </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full w-[60%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -676,10 +661,10 @@ export default function Landing() {
                 {/* Problem Solving */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold text-white">Problem Solving</span>
+                    <span className="font-semibold text-slate-800">Problem Solving</span>
                     <span className="text-indigo-400 font-bold">10%</span>
                   </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full w-[10%] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed">
@@ -690,11 +675,11 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 3: Skill Templates */}
-            <motion.div variants={fadeInUp} className="md:col-span-3 bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
+            <motion.div variants={fadeInUp} className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Skill Templates.</h3>
-                  <p className="text-slate-400">Choose from a wide range of role-specific interview templates.</p>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Skill Templates.</h3>
+                  <p className="text-slate-600">Choose from a wide range of role-specific interview templates.</p>
                 </div>
                 <Button variant="ghost" className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 mt-4 md:mt-0">
                   View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -706,17 +691,17 @@ export default function Landing() {
                   { id: "BA", title: "Backend Developer", color: "bg-blue-500" },
                   { id: "BL", title: "Blockchain Developer", color: "bg-purple-500" },
                   { id: "DI", title: "AI/ML Engineer", color: "bg-green-500" },
-                  { id: "DE", title: "DevOps Engineer", color: "bg-orange-500" }
+                  { id: "DE", title: "DevOps Engineer", color: "bg-cyan-500" }
                 ].map((template, i) => (
-                  <div key={i} className="bg-[#1a1b26] border border-white/10 rounded-xl p-5 hover:border-indigo-500/50 hover:shadow-md hover:shadow-indigo-500/20 transition-all cursor-pointer group/card relative overflow-hidden">
+                  <div key={i} className="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:border-indigo-500/50 hover:shadow-md hover:shadow-indigo-500/20 transition-all cursor-pointer group/card relative overflow-hidden">
                     {/* Left Strip */}
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
 
                     <div className={`w-10 h-10 rounded-lg ${template.color}/10 flex items-center justify-center mb-4 text-${template.color.split('-')[1]}-600 font-bold ml-2`}>
                       {template.id}
                     </div>
-                    <h4 className="text-white font-medium mb-2 ml-2">{template.title}</h4>
-                    <p className="text-xs text-slate-400 mb-4 line-clamp-2 ml-2">Comprehensive assessment for {template.title} roles including technical and behavioral questions.</p>
+                    <h4 className="text-slate-900 font-medium mb-2 ml-2">{template.title}</h4>
+                    <p className="text-xs text-slate-500 mb-4 line-clamp-2 ml-2">Comprehensive assessment for {template.title} roles including technical and behavioral questions.</p>
                     <div className="text-xs font-medium text-indigo-400 group-hover/card:translate-x-1 transition-transform inline-flex items-center ml-2">
                       Learn more <ArrowRight className="ml-1 h-3 w-3" />
                     </div>
@@ -726,11 +711,11 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 4: Leaderboard Gamification */}
-            <motion.div variants={fadeInUp} className="bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
-              <h3 className="text-xl font-bold text-white mb-2">Leaderboard Gamification.</h3>
-              <p className="text-slate-400 text-sm mb-6">Compete with others and climb the rankings.</p>
+            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Leaderboard Gamification.</h3>
+              <p className="text-slate-600 text-sm mb-6">Compete with others and climb the rankings.</p>
 
-              <div className="bg-[#1a1b26] rounded-2xl p-6 border border-white/10 shadow-md relative overflow-hidden">
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
                 <div className="flex justify-center items-end gap-4 mb-6">
                   {/* Rank 2 */}
                   <div className="flex flex-col items-center">
@@ -758,7 +743,7 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="bg-[#0f1117] rounded-xl p-3 flex items-center justify-between border border-white/10 shadow-sm mt-4">
+                <div className="bg-white rounded-xl p-3 flex items-center justify-between border border-slate-200 shadow-sm mt-4">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-slate-500">4</span>
                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs text-indigo-400 font-bold">You</div>
@@ -770,31 +755,31 @@ export default function Landing() {
             </motion.div>
 
             {/* Feature 5: Smart Analytics Reports */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 bg-[#141821] rounded-3xl border border-white/10 p-8 relative overflow-hidden group hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/20 transition-all duration-500">
+            <motion.div variants={fadeInUp} className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="flex flex-col md:flex-row items-center gap-8 h-full">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-white mb-3">Smart Analytics Reports.</h3>
-                  <p className="text-slate-400 mb-6">Track your progress with real-time data visualization. Identify strengths and weaknesses to focus your preparation.</p>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Analytics Reports.</h3>
+                  <p className="text-slate-600 mb-6">Track your progress with real-time data visualization. Identify strengths and weaknesses to focus your preparation.</p>
 
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
-                      <div className="text-xs text-slate-400 mb-1">Interviews</div>
-                      <div className="text-xl font-bold text-white">21</div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div className="text-xs text-slate-500 mb-1">Interviews</div>
+                      <div className="text-xl font-bold text-slate-900">21</div>
                     </div>
-                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
-                      <div className="text-xs text-slate-400 mb-1">Avg Score</div>
-                      <div className="text-xl font-bold text-white">78%</div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div className="text-xs text-slate-500 mb-1">Avg Score</div>
+                      <div className="text-xl font-bold text-slate-900">78%</div>
                     </div>
-                    <div className="bg-[#1a1b26] p-3 rounded-xl border border-white/10">
-                      <div className="text-xs text-slate-400 mb-1">Rank</div>
-                      <div className="text-xl font-bold text-white">Top 7%</div>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div className="text-xs text-slate-500 mb-1">Rank</div>
+                      <div className="text-xl font-bold text-slate-900">Top 7%</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full md:w-1/2 bg-[#1a1b26] rounded-2xl p-4 border border-white/10 shadow-md relative overflow-hidden">
+                <div className="w-full md:w-1/2 bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-sm relative overflow-hidden">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs font-medium text-slate-400">Average Score Trend</span>
+                    <span className="text-xs font-medium text-slate-500">Average Score Trend</span>
                     <div className="flex gap-2">
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
@@ -843,56 +828,118 @@ export default function Landing() {
               </div>
             </motion.div>
 
-            {/* Feature 6: AI-Powered Learning Roadmaps */}
-            <motion.div variants={fadeInUp} className="md:col-span-3 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 rounded-2xl p-8 md:p-12 relative overflow-hidden group hover:shadow-2xl transition-all duration-500 border border-white/10 shadow-indigo-500/20 shadow-2xl">
-              {/* Decorative Background Elements */}
-              <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Map className="h-64 w-64 text-white" />
+            {/* Feature 6: AI-Powered Learning Roadmaps - High Quality UI Redesign */}
+            <motion.div
+              variants={fadeInUp}
+              className="md:col-span-3 relative rounded-[2.5rem] overflow-hidden bg-[#0B0F19] border border-slate-800 shadow-2xl group"
+            >
+              {/* Cinematic Background Effects */}
+              <div className="absolute inset-0">
+                {/* Grid Pattern */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+                {/* Ambient Glows */}
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3"></div>
               </div>
-              <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
 
-              <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
-                <div className="flex-1 space-y-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-indigo-100 text-xs font-medium backdrop-blur-md">
-                    <Sparkles className="h-3 w-3" />
-                    <span>Personalized Experience</span>
+              <div className="relative z-10 p-8 md:p-16 flex flex-col md:flex-row items-center gap-16">
+
+                {/* Content Side */}
+                <div className="flex-1 space-y-8 text-center md:text-left">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-semibold tracking-wide uppercase">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Smart Evolution</span>
+                    </div>
+                    <h3 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]">
+                      Your Personal <br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Growth Engine.</span>
+                    </h3>
                   </div>
-                  <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-                    Your Personal <br />
-                    <span className="text-indigo-200">AI Learning Roadmap.</span>
-                  </h3>
-                  <p className="text-indigo-100/80 text-lg md:text-xl leading-relaxed max-w-xl">
-                    Our AI synthesizes your performance from every session to build a custom-tailored path to success. Target your weaknesses and double down on your strengths.
+
+                  <p className="text-slate-400 text-lg md:text-xl leading-relaxed max-w-xl mx-auto md:mx-0">
+                    Stop practicing randomly. Our AI analyzes your performance DNA to build a dynamic curriculum that targets your weak spots and accelerates your mastery.
                   </p>
-                  <Button className="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_-5px_rgba(255,255,255,0.4)] transition-all hover:scale-105" asChild>
-                    <Link href="/auth">
-                      Get Your Master Plan <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 justify-center md:justify-start">
+                    <Button className="h-14 px-8 bg-white text-slate-950 hover:bg-slate-200 rounded-full text-lg font-bold shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)] transition-all hover:scale-105" asChild>
+                      <Link href="/auth">
+                        Generate Roadmap <ArrowRight className="ml-2 h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="w-full md:w-1/3 flex flex-col gap-4">
-                  {[
-                    { step: "01", text: "Skill Baseline Analysis", completed: true, delay: 0 },
-                    { step: "02", text: "Gap Identification", active: true, delay: 0.2 },
-                    { step: "03", text: "Custom Learning Path", future: true, delay: 0.4 },
-                  ].map((item, i) => (
+                {/* Visual Side - 3D Timeline UI */}
+                <div className="w-full md:w-[45%] relative perspective-1000">
+                  <div className="relative space-y-6 before:absolute before:left-8 before:top-8 before:bottom-8 before:w-0.5 before:bg-gradient-to-b before:from-indigo-500 before:via-purple-500 before:to-transparent before:opacity-30">
+
+                    {/* Step 1 */}
                     <motion.div
-                      key={i}
                       initial={{ opacity: 0, x: 20 }}
                       whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: item.delay }}
-                      className={`p-5 rounded-2xl border ${item.active ? 'bg-white/20 border-white/40 shadow-xl' : 'bg-white/5 border-white/10'} backdrop-blur-md flex items-center gap-4 transition-all hover:translate-x-2`}
+                      transition={{ delay: 0.1 }}
+                      className="relative pl-20 group/step"
                     >
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm ${item.completed ? 'bg-green-400 text-green-900 shadow-[0_0_15px_-3px_rgba(74,222,128,0.5)]' : item.active ? 'bg-white text-indigo-600 animate-pulse' : 'bg-white/10 text-white'}`}>
-                        {item.step}
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0B0F19] border-2 border-indigo-500 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_-3px_rgba(99,102,241,0.5)]">
+                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full"></div>
                       </div>
-                      <span className={`font-semibold ${item.active ? 'text-white' : 'text-indigo-100/70'}`}>{item.text}</span>
-                      {item.completed && <CheckCircle2 className="ml-auto h-5 w-5 text-green-400" />}
-                      {item.active && <Sparkles className="ml-auto h-4 w-4 text-indigo-200 animate-spin-slow" />}
+                      <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-300 shadow-xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-indigo-400 font-bold text-xs tracking-wider uppercase">Phase 01</span>
+                          <BarChart3 className="h-4 w-4 text-indigo-400" />
+                        </div>
+                        <h4 className="text-white font-bold text-lg mb-1">Skill Baseline Analysis</h4>
+                        <p className="text-slate-400 text-sm">Deep scan of your technical & behavioral strengths.</p>
+                      </div>
                     </motion.div>
-                  ))}
+
+                    {/* Step 2 (Active) */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="relative pl-20"
+                    >
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center z-10 shadow-[0_0_20px_0px_rgba(139,92,246,0.6)]">
+                        <Zap className="h-4 w-4 text-white fill-white" />
+                      </div>
+                      <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 backdrop-blur-md border border-indigo-500/50 p-6 rounded-2xl relative overflow-hidden shadow-2xl transform scale-105">
+                        <div className="absolute inset-0 bg-indigo-500/10 animate-pulse"></div>
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-white font-bold text-xs tracking-wider uppercase">Phase 02</span>
+                            <span className="flex h-2 w-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]"></span>
+                          </div>
+                          <h4 className="text-white font-bold text-lg mb-1">Gap Identification</h4>
+                          <p className="text-indigo-200 text-sm">Prioritized micro-learning modules for rapid improvement.</p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Step 3 */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="relative pl-20 group/step"
+                    >
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0B0F19] border-2 border-slate-700 group-hover/step:border-purple-500 transition-colors rounded-full flex items-center justify-center z-10">
+                        <Trophy className="h-4 w-4 text-slate-500 group-hover/step:text-purple-400 transition-colors" />
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl hover:bg-white/10 hover:border-purple-500/30 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-slate-500 font-bold text-xs tracking-wider uppercase group-hover/step:text-purple-400 transition-colors">Phase 03</span>
+                          <Target className="h-4 w-4 text-slate-600 group-hover/step:text-purple-400 transition-colors" />
+                        </div>
+                        <h4 className="text-slate-300 font-bold text-lg mb-1 group-hover/step:text-white transition-colors">Mastery & Placement</h4>
+                        <p className="text-slate-500 text-sm group-hover/step:text-slate-400 transition-colors">Interview-ready status with top percentile ranking.</p>
+                      </div>
+                    </motion.div>
+
+                  </div>
                 </div>
+
               </div>
             </motion.div>
           </motion.div>
@@ -1424,116 +1471,7 @@ export default function Landing() {
       </SectionWrapper>
 
       {/* Footer */}
-      <SectionWrapper className="bg-[#0A0A0B] border-t border-white/10 pt-20 pb-10">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-16">
-            {/* Brand Column */}
-            <div className="lg:col-span-2">
-              <Link href="/" className="flex items-center gap-2 text-xl font-bold mb-6">
-                <div className="relative">
-                  <img
-                    src="/arjuna-icon.png"
-                    alt="Arjuna AI"
-                    className="h-9 w-9 object-contain drop-shadow-lg"
-                  />
-                </div>
-                <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-                  Arjuna AI
-                </span>
-              </Link>
-              <p className="text-slate-400 mb-6 leading-relaxed max-w-sm">
-                The AI-powered interview preparation platform that helps you land your dream job at top tech companies.
-              </p>
-              <div className="flex gap-4">
-                {[Twitter, Github, Linkedin, Instagram].map((Icon, i) => (
-                  <a key={i} href="#" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:bg-indigo-500 hover:text-white transition-all duration-300">
-                    <Icon className="h-5 w-5" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Links Columns */}
-            <div>
-              <h4 className="text-white font-semibold mb-6">Product</h4>
-              <ul className="space-y-4">
-                {[
-                  { name: 'Features', href: '#features' },
-                  { name: 'Pricing', href: '/pricing' },
-                  { name: 'Testimonials', href: '#testimonials' },
-                  { name: 'FAQ', href: '/faq' }
-                ].map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-6">Company</h4>
-              <ul className="space-y-4">
-                {[
-                  { name: 'About Us', href: '/about' },
-                  { name: 'Careers', href: '#' },
-                  { name: 'Blog', href: '#' },
-                  { name: 'Contact', href: '/contact' }
-                ].map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-6">Resources</h4>
-              <ul className="space-y-4">
-                {[
-                  { name: 'Community', href: '#' },
-                  { name: 'Help Center', href: '/faq' },
-                  { name: 'Terms of Service', href: '/terms' },
-                  { name: 'Privacy Policy', href: '/privacy' }
-                ].map((item) => (
-                  <li key={item.name}>
-                    <Link href={item.href} className="text-slate-400 hover:text-indigo-400 transition-colors">{item.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Newsletter Column */}
-            <div className="lg:col-span-1">
-              <h4 className="text-white font-semibold mb-6">Stay Updated</h4>
-              <p className="text-slate-400 text-sm mb-4">Subscribe to our newsletter for the latest interview tips.</p>
-              <div className="flex flex-col gap-3">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-600"
-                  />
-                </div>
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                  Subscribe
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm">
-              © 2025 Arjuna AI. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-sm text-slate-500">
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="#" className="hover:text-white transition-colors">Cookie Policy</Link>
-            </div>
-          </div>
-        </div>
-      </SectionWrapper>
-    </div>
+      <Footer />
+    </div >
   );
 }

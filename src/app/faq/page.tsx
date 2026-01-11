@@ -1,126 +1,198 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Search, ArrowRight, MessageCircle } from "lucide-react";
+import { Plus, Minus, Search, ArrowRight, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { useState } from "react";
+import { Footer } from "@/components/Footer";
 
 const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
-        <details className="group border-b border-white/10 py-6">
-            <summary className="flex items-center justify-between cursor-pointer list-none">
-                <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
+        <div className={`border-b border-white/5 transition-all duration-300 ${isOpen ? 'bg-white/[0.02] rounded-2xl border-transparent' : ''}`}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between text-left py-6 px-4 md:px-6"
+            >
+                <h3 className={`text-lg md:text-xl font-medium transition-colors ${isOpen ? 'text-indigo-400' : 'text-slate-200 hover:text-white'}`}>
                     {question}
                 </h3>
-                <div className="flex-shrink-0 ml-4">
-                    <Plus className="h-6 w-6 text-slate-500 group-open:hidden" />
-                    <Minus className="h-6 w-6 text-indigo-400 hidden group-open:block" />
+                <div className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-indigo-500/20 rotate-45' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                    <Plus className={`h-5 w-5 transition-colors ${isOpen ? 'text-indigo-400' : 'text-slate-400'}`} />
                 </div>
-            </summary>
-            <div className="mt-4 text-slate-400 leading-relaxed text-lg animate-in fade-in slide-in-from-top-2 duration-300">
-                {answer}
+            </button>
+            <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out px-4 md:px-6 ${isOpen ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'}`}
+            >
+                <div className="text-slate-400 leading-relaxed text-base md:text-lg border-t border-white/5 pt-4">
+                    {answer}
+                </div>
             </div>
-        </details>
+        </div>
     );
 };
 
 export default function FAQPage() {
-    const categories = [
-        { name: "General", count: 8 },
-        { name: "Subscription", count: 5 },
-        { name: "Interviews", count: 12 },
-        { name: "Technical", count: 6 },
-    ];
+    const [activeCategory, setActiveCategory] = useState("All");
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const categories = ["All", "General", "Subscription", "Interviews", "Technical"];
 
     const faqs = [
         {
+            category: "General",
             question: "How does the AI interview work?",
             answer: "Our AI uses advanced Large Language Models and Speech-to-Text tech to simulate a real conversation. It listens to your answers, asks relevant follow-up questions, and evaluates your performance based on industry-standard hiring rubrics."
         },
         {
+            category: "Subscription",
             question: "Is there a free version of Arjuna AI?",
             answer: "Yes! Every user gets 15 minutes of free practice time daily. This resets every 24 hours, allowing you to maintain a consistent practice routine without a paid subscription."
         },
         {
+            category: "Interviews",
             question: "Can I practice for specific companies?",
             answer: "Absolutely. We have specialized templates for companies like Google, Meta, Amazon, and Microsoft. These include company-specific behavioral questions and technical expectations."
         },
         {
+            category: "Interviews",
             question: "How detailed is the feedback?",
             answer: "After each interview, you get a comprehensive report covering your communication skills, technical accuracy, pace, and tone. We provide specific suggestions on how to rephrase answers for better impact."
         },
         {
+            category: "General",
             question: "Which roles are supported?",
             answer: "We support a wide range of roles including Software Engineer (Junior to Staff), Product Manager, UX Designer, Data Scientist, Marketing Manager, and Business Analyst."
         },
         {
+            category: "Technical",
             question: "Can I redo an interview session?",
             answer: "Yes, you can restart any session or use our 'Continue' feature to pick up where you left off. All your attempts are saved in your dashboard for progress tracking."
+        },
+        {
+            category: "Subscription",
+            question: "What is included in the Pro plan?",
+            answer: "The Pro plan includes unlimited interview practice, access to all company-specific templates, advanced analytics, and priority support. You can cancel anytime."
+        },
+        {
+            category: "Technical",
+            question: "Do I need a microphone?",
+            answer: "Yes, for the full voice interview experience, a microphone is required. However, we also support a text-only mode for practicing in quiet environments."
         }
     ];
 
+    const filteredFaqs = faqs.filter(faq => {
+        const matchesCategory = activeCategory === "All" || faq.category === activeCategory;
+        const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) || faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
+
     return (
-        <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden">
+        <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
             <GlobalBackground />
 
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5">
+            {/* Navigation */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-                        <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
-                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">Arjuna AI</span>
+                    <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+                            <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain relative z-10" />
+                        </div>
+                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent group-hover:to-indigo-300 transition-all">
+                            Arjuna AI
+                        </span>
                     </Link>
                     <div className="flex items-center gap-6">
-                        <Link href="/auth" className="text-sm font-medium hover:text-indigo-400 transition-colors">Login</Link>
-                        <Button size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full" asChild>
+                        <Link href="/auth" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
+                        <Button size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full font-medium px-6" asChild>
                             <Link href="/auth">Get Started</Link>
                         </Button>
                     </div>
                 </div>
             </header>
 
-            <main className="pt-32 pb-20">
+            <main className="pt-32 pb-20 relative z-10">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-3xl mx-auto text-center mb-16">
-                        <h1 className="text-5xl font-bold text-white mb-6">Frequently Asked <span className="text-indigo-500">Questions</span></h1>
-                        <p className="text-xl text-slate-400">Everything you need to know about preparing with Arjuna AI.</p>
+                    {/* Hero & Search */}
+                    <div className="max-w-3xl mx-auto text-center mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        <div className="inline-flex items-center justify-center p-3 mb-6 rounded-2xl bg-indigo-500/10 text-indigo-400">
+                            <HelpCircle className="h-6 w-6" />
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+                            How can we <span className="text-indigo-400">help?</span>
+                        </h1>
+                        <p className="text-xl text-slate-400 mb-10">
+                            Everything you need to know about preparing with Arjuna AI.
+                        </p>
+
+                        <div className="relative max-w-2xl mx-auto group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl opacity-20 group-hover:opacity-40 blur transition-opacity duration-500" />
+                            <div className="relative bg-[#0F0F12] rounded-xl flex items-center p-2 border border-white/10 group-hover:border-indigo-500/30 transition-colors">
+                                <Search className="h-6 w-6 text-slate-500 ml-3 mr-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search for answers..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-transparent text-white placeholder:text-slate-600 focus:outline-none text-lg py-2"
+                                />
+                            </div>
+                        </div>
                     </div>
 
+                    {/* Categories & FAQs */}
                     <div className="max-w-4xl mx-auto">
-                        <div className="grid md:grid-cols-4 gap-4 mb-12">
+                        <div className="flex flex-wrap gap-2 justify-center mb-12">
                             {categories.map((cat) => (
-                                <button key={cat.name} className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center hover:border-indigo-500/50 transition-all group">
-                                    <div className="text-white font-semibold mb-1 group-hover:text-indigo-400">{cat.name}</div>
-                                    <div className="text-xs text-slate-500">{cat.count} articles</div>
+                                <button
+                                    key={cat}
+                                    onClick={() => setActiveCategory(cat)}
+                                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeCategory === cat
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 scale-105'
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                        }`}
+                                >
+                                    {cat}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="space-y-2">
-                            {faqs.map((faq, i) => (
-                                <FAQItem key={i} question={faq.question} answer={faq.answer} />
-                            ))}
+                        <div className="space-y-4 min-h-[400px]">
+                            {filteredFaqs.length > 0 ? (
+                                filteredFaqs.map((faq, i) => (
+                                    <FAQItem key={i} question={faq.question} answer={faq.answer} />
+                                ))
+                            ) : (
+                                <div className="text-center py-20 text-slate-500">
+                                    No questions found matching your search.
+                                </div>
+                            )}
                         </div>
 
-                        <div className="mt-20 p-8 rounded-[3rem] bg-indigo-500/10 border border-indigo-500/20 text-center">
-                            <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-6">
-                                <MessageCircle className="h-8 w-8 text-indigo-400" />
+                        {/* CTA Box */}
+                        <div className="mt-24 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/10 to-transparent border border-white/10 p-12 text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6 border border-white/10">
+                                    <MessageCircle className="h-8 w-8 text-indigo-400" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
+                                <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                                    Can't find the answer you're looking for? Please chat to our friendly team.
+                                </p>
+                                <Button size="lg" className="h-12 px-8 bg-white text-black hover:bg-slate-200 rounded-full font-bold" asChild>
+                                    <Link href="/contact">Contact Support</Link>
+                                </Button>
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
-                            <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                                Can't find the answer you're looking for? Please chat with our friendly team.
-                            </p>
-                            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold" asChild>
-                                <Link href="/contact">Contact Support</Link>
-                            </Button>
                         </div>
                     </div>
                 </div>
             </main>
 
-            <footer className="bg-[#0A0A0B] border-t border-white/10 pt-20 pb-10">
-                <div className="container mx-auto px-4 border-t border-white/5 pt-8 text-center">
-                    <p className="text-slate-500 text-sm">© 2025 Arjuna AI. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }
