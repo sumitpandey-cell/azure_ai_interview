@@ -18,7 +18,7 @@ export function WeeklyActivityChart({ data, currentStreak }: WeeklyActivityChart
     if (!hasActivity) {
         return (
             <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden">
-                <CardHeader className="bg-muted/10 border-b border-border/50 p-6">
+                <CardHeader className="bg-muted/10 border-b border-border/50 p-3 sm:p-4">
                     <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Activity className="h-4 w-4 text-primary" />
@@ -30,7 +30,7 @@ export function WeeklyActivityChart({ data, currentStreak }: WeeklyActivityChart
                         </div>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center p-4 sm:p-6 h-[200px]">
+                <CardContent className="flex items-center justify-center p-2 h-[180px]">
                     <div className="text-center text-muted-foreground">
                         <div className="h-12 w-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Activity className="h-6 w-6 opacity-30" />
@@ -44,7 +44,7 @@ export function WeeklyActivityChart({ data, currentStreak }: WeeklyActivityChart
 
     return (
         <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden transition-all hover:border-primary/30">
-            <CardHeader className="bg-muted/10 border-b border-border/50 p-6">
+            <CardHeader className="bg-muted/10 border-b border-border/50 p-3 sm:p-4">
                 <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Activity className="h-4 w-4 text-primary" />
@@ -56,8 +56,8 @@ export function WeeklyActivityChart({ data, currentStreak }: WeeklyActivityChart
                     </div>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-                <ResponsiveContainer width="100%" height={200}>
+            <CardContent className="p-2">
+                <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={data}>
                         <defs>
                             <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">

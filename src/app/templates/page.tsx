@@ -418,31 +418,31 @@ export default function Templates() {
                   {filteredTemplates.map((template) => {
                     const IconComponent = getIconComponent(template.icon_name);
                     return (
-                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-2xl sm:rounded-3xl">
+                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-2xl">
                         {/* Status Glow */}
                         <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
 
-                        <CardContent className="p-5 sm:p-8 flex flex-col h-full relative z-10">
+                        <CardContent className="p-5 sm:p-6 flex flex-col h-full relative z-10">
                           {/* Top Section */}
-                          <div className="flex justify-between items-start mb-4 sm:mb-6">
-                            <div className="flex gap-3 sm:gap-4">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex gap-3">
                               {/* Icon Wrapper */}
-                              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-muted p-2 sm:p-3.5 flex items-center justify-center shrink-0 group-hover:bg-primary/10 group-hover:rotate-6 transition-all duration-500">
-                                <IconComponent className={cn("h-5 w-5 sm:h-7 sm:w-7 transition-colors", template.color)} />
+                              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-muted p-2.5 sm:p-3 flex items-center justify-center shrink-0 group-hover:bg-primary/10 group-hover:rotate-6 transition-all duration-500">
+                                <IconComponent className={cn("h-6 w-6 sm:h-7 sm:w-7 transition-colors", template.color)} />
                               </div>
 
-                              <div className="space-y-0.5 sm:space-y-1 min-w-0">
-                                <h3 className="font-black text-base sm:text-xl text-foreground leading-tight group-hover:text-primary transition-colors truncate">
+                              <div className="space-y-1 min-w-0 flex-1">
+                                <h3 className="font-black text-sm sm:text-base text-foreground leading-tight group-hover:text-primary transition-colors">
                                   {template.title}
                                 </h3>
-                                <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 py-0.5 rounded-md bg-muted/50 inline-block">
+                                <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-muted-foreground px-2 py-0.5 rounded-md bg-muted/50 inline-block">
                                   {template.interview_type}
                                 </div>
                               </div>
                             </div>
 
                             <div className={cn(
-                              "text-[8px] sm:text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border-2 whitespace-nowrap",
+                              "text-[9px] sm:text-[10px] font-black uppercase tracking-tight px-2 py-1 rounded-lg border-2 whitespace-nowrap shrink-0",
                               template.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
                                 template.difficulty === "Intermediate" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
                                   "bg-rose-500/10 text-rose-600 border-rose-500/20"
@@ -452,27 +452,27 @@ export default function Templates() {
                           </div>
 
                           {/* Description */}
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-6 sm:mb-8 font-medium leading-relaxed">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-5 font-medium leading-relaxed">
                             {template.description}
                           </p>
 
                           {/* Key Specs */}
-                          <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                            <div className="space-y-1.5 sm:space-y-2">
-                              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                          <div className="space-y-3 mb-5">
+                            <div className="space-y-2">
+                              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-wider">
                                 Technical Stack
                               </p>
-                              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                              <div className="flex flex-wrap gap-1.5">
                                 {template.skills.slice(0, 3).map((skill, index) => (
                                   <div
                                     key={index}
-                                    className="bg-muted px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-[11px] font-bold text-foreground border border-transparent group-hover:border-primary/30 group-hover:bg-primary/5 transition-all"
+                                    className="bg-muted px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold text-foreground border border-transparent group-hover:border-primary/30 group-hover:bg-primary/5 transition-all"
                                   >
                                     {skill}
                                   </div>
                                 ))}
                                 {template.skills.length > 3 && (
-                                  <div className="text-[9px] sm:text-[10px] px-2 py-1 sm:py-1.5 text-muted-foreground font-black bg-muted/30 rounded-lg">
+                                  <div className="text-[10px] px-2 py-1 text-muted-foreground font-black bg-muted/30 rounded-lg">
                                     +{template.skills.length - 3}
                                   </div>
                                 )}
@@ -481,25 +481,25 @@ export default function Templates() {
                           </div>
 
                           {/* Bottom Action */}
-                          <div className="mt-auto pt-4 sm:pt-6 border-t border-border/50 flex items-center justify-between">
+                          <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500" />
+                              <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                               </div>
-                              <span className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest">PRO Ready</span>
+                              <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-wider">PRO Ready</span>
                             </div>
 
                             <Button
                               onClick={() => startInterviewWithTemplate(template)}
                               disabled={loadingTemplate === template.id}
-                              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-[9px] sm:text-[10px] h-9 sm:h-10 px-4 sm:px-6 rounded-lg sm:rounded-xl shadow-lg shadow-primary/10 group-hover:shadow-primary/20 transition-all"
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-[10px] h-9 px-5 rounded-xl shadow-lg shadow-primary/10 group-hover:shadow-primary/20 transition-all"
                             >
                               {loadingTemplate === template.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <div className="flex items-center gap-2">
                                   Launch
-                                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
+                                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                                 </div>
                               )}
                             </Button>

@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { StreakIndicator } from "@/components/StreakIndicator";
 import { interviewService, profileService, subscriptionService, badgeService } from "@/services";
 import type { InterviewSession } from "@/services/interview.service";
 import { useFeedback } from "@/context/FeedbackContext";
@@ -272,16 +273,56 @@ export default function Dashboard() {
         }
       `}</style>
 
-      <DashboardLayout>
-        <div className="space-y-4 pb-12 pt-10 sm:pt-0">
-          {/* Header Section with Top-Notch Tactical Design */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 pb-6 border-b border-white/5">
+
+      <DashboardLayout
+        headerControls={(
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <ThemeToggle />
+            <StreakIndicator streak={currentStreak} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="group flex items-center gap-2 pl-1 pr-2 py-1 bg-card/50 hover:bg-card border border-border/50 rounded-full transition-all active:scale-95">
+                  <div className="relative">
+                    <Avatar className="h-8 w-8 border-2 border-primary/20">
+                      <AvatarImage src={getAvatarUrl(
+                        userMetadata?.avatar_url,
+                        user?.id || 'user',
+                        'avataaars',
+                        null,
+                        userMetadata?.gender
+                      )} />
+                      <AvatarFallback className="text-[9px] font-black bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full" />
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
+                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border/50" />
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
+                  <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
+                  Interface Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
+                  <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                  Terminate Session
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      >
+        <div className="space-y-4 pb-12">
+          {/* Header Section - Greeting and Desktop Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-border/50">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">System Online</span>
               </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tighter italic leading-tight">
+              <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tighter italic leading-tight">
                 {new Date().getHours() < 12 ? 'MORNING' : new Date().getHours() < 18 ? 'AFTERNOON' : 'EVENING'}, <span className="text-primary not-italic">{userMetadata?.full_name?.split(' ')[0]?.toUpperCase() || "OPERATOR"}</span>
               </h1>
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -290,16 +331,17 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* Premium Header Controls Interface */}
-            <div className="flex items-center justify-between sm:justify-end gap-3 p-1.5 sm:p-2 bg-card/30 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-2xl shadow-2xl w-full sm:w-auto">
-              <div className="flex items-center gap-1.5 px-2 border-r border-white/10 mr-1">
+            {/* Desktop Header Controls */}
+            <div className="hidden lg:flex items-center gap-3 p-2 bg-card/30 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl">
+              <div className="flex items-center gap-1.5 px-2 border-r border-border/50 mr-1">
                 <NotificationBell />
                 <ThemeToggle />
+                <StreakIndicator streak={currentStreak} />
               </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-500 hover:scale-[1.02] active:scale-95">
+                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 bg-muted/50 hover:bg-muted border border-border/50 rounded-full transition-all duration-500 hover:scale-[1.02] active:scale-95">
                     <div className="relative">
                       <div className="absolute inset-0 bg-primary/20 blur-md rounded-full group-hover:bg-primary/40 transition-all" />
                       <Avatar className="h-9 w-9 border-2 border-primary/20 relative z-10">
@@ -312,22 +354,22 @@ export default function Dashboard() {
                         )} />
                         <AvatarFallback className="text-[10px] font-black text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#09090b] rounded-full z-20" />
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full z-20" />
                     </div>
 
                     <div className="flex flex-col items-start">
-                      <span className="text-[10px] sm:text-[11px] font-black text-foreground uppercase tracking-wider leading-none">
+                      <span className="text-[11px] font-black text-foreground uppercase tracking-wider leading-none">
                         {userMetadata?.full_name?.split(' ')[0] || "User"}
                       </span>
-                      <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-60">Verified Admin</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-60">Verified Admin</span>
                     </div>
 
-                    <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-card/80 backdrop-blur-3xl border-white/10 rounded-2xl p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
                   <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/5" />
+                  <DropdownMenuSeparator className="bg-border/50" />
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
                     <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
                     Interface Settings

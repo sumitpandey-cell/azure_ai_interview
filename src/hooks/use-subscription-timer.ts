@@ -6,6 +6,7 @@ interface UseSubscriptionTimerOptions {
     userId: string | undefined;
     onTimeExpired?: () => void;
     warnAt?: number[]; // Minutes to show warnings at [5, 2, 1]
+    isActive?: boolean;
 }
 
 interface UseSubscriptionTimerReturn {
@@ -26,6 +27,7 @@ export function useSubscriptionTimer({
     userId,
     onTimeExpired,
     warnAt = [5, 2, 1],
+    isActive = true,
 }: UseSubscriptionTimerOptions): UseSubscriptionTimerReturn {
     const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(0);
     const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export function useSubscriptionTimer({
 
     // Countdown timer
     useEffect(() => {
-        if (loading || totalRemainingSeconds <= 0) return;
+        if (loading || !isActive || totalRemainingSeconds <= 0) return;
 
         const interval = setInterval(() => {
             setTotalRemainingSeconds((prev) => {
@@ -96,7 +98,7 @@ export function useSubscriptionTimer({
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [loading, totalRemainingSeconds, onTimeExpired, warnAt, warningsShown]);
+    }, [loading, isActive, totalRemainingSeconds, onTimeExpired, warnAt, warningsShown]);
 
     const remainingMinutes = Math.floor(totalRemainingSeconds / 60);
     const remainingSeconds = totalRemainingSeconds % 60;

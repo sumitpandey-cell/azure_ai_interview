@@ -187,10 +187,10 @@ export default function Badges() {
                 Operational Achievements
               </div>
               <div className="space-y-2">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground leading-[1.1]">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground leading-[1.1]">
                   Arjuna <span className="text-primary italic">Distinctions</span>
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base md:text-lg font-medium max-w-2xl leading-relaxed">
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium max-w-2xl leading-relaxed">
                   Every mission is a diagnostic vector for mastery. Monitor your evolution through specialized protocol badges.
                 </p>
               </div>
@@ -224,22 +224,22 @@ export default function Badges() {
             { label: "Last Transmission", value: latestBadge?.name || "Awaiting Data", sub: latestBadge ? "Protocol Verified" : "No Records", icon: Zap, color: "text-amber-500", progress: 100 },
             { label: "Sync Status", value: `${progressPercentage}%`, sub: "Global Calibration", icon: Target, color: "text-emerald-500", progress: progressPercentage }
           ].map((stat, i) => (
-            <Card key={i} className="border border-border/50 shadow-3xl transition-all duration-700 group/stat relative overflow-hidden rounded-2xl p-8 bg-card hover:bg-muted/10 hover:border-border">
-              <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover/stat:opacity-10 transition-all duration-1000 group-hover/stat:scale-125 group-hover/stat:-rotate-12 pointer-events-none">
-                <stat.icon className={cn("h-24 w-24", stat.color)} />
+            <Card key={i} className="border border-border/50 shadow-3xl transition-all duration-700 group/stat relative overflow-hidden rounded-2xl p-3 sm:p-4 bg-card hover:bg-muted/10 hover:border-border">
+              <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover/stat:opacity-10 transition-all duration-1000 group-hover/stat:scale-125 group-hover/stat:-rotate-12 pointer-events-none">
+                <stat.icon className={cn("h-12 w-12", stat.color)} />
               </div>
 
-              <div className="relative z-10 space-y-8">
+              <div className="relative z-10 space-y-2.5">
                 <div className="flex items-center gap-3">
-                  <div className={cn("h-10 w-10 rounded-xl bg-muted/50 border border-border flex items-center justify-center shadow-lg transition-transform duration-500 group-hover/stat:scale-110", stat.color)}>
-                    <stat.icon className="h-5 w-5" />
+                  <div className={cn("h-7 w-7 rounded-xl bg-muted/50 border border-border flex items-center justify-center shadow-lg transition-transform duration-500 group-hover/stat:scale-110", stat.color)}>
+                    <stat.icon className="h-3.5 w-3.5" />
                   </div>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">{stat.label}</p>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground uppercase truncate block">
+                    <span className="text-xl sm:text-2xl font-black tracking-tighter text-foreground uppercase truncate block">
                       {stat.value}
                     </span>
                     {stat.total && <span className="text-xs font-black text-muted-foreground/30 uppercase tracking-widest">/ {stat.total}</span>}
@@ -266,13 +266,13 @@ export default function Badges() {
         </div>
 
         {/* Progress Trajectory */}
-        <Card className="border border-border/50 shadow-3xl bg-card rounded-[3rem] overflow-hidden p-8 sm:p-12 relative group/progress">
+        <Card className="border border-border/50 shadow-3xl bg-card rounded-2xl overflow-hidden p-3 sm:p-4 relative group/progress">
           <div className="absolute inset-0 dark:bg-grid-white/[0.02] bg-grid-black/[0.02] pointer-events-none" />
           <div className="absolute top-0 right-0 h-full w-96 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
             <div className="space-y-3 text-center md:text-left">
-              <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground uppercase leading-none">Global <span className="text-primary italic">Trajectory</span></h3>
-              <p className="text-xs sm:text-sm font-black text-muted-foreground/60 uppercase tracking-[0.3em]">
+              <h3 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase leading-none">Global <span className="text-primary italic">Trajectory</span></h3>
+              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.3em]">
                 {earnedCount} of {totalCount} Neural Sectors Optimized
               </p>
             </div>
@@ -280,9 +280,9 @@ export default function Badges() {
             <div className="flex-1 w-full max-w-2xl space-y-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/80">Calibration Depth</span>
-                <span className="text-2xl font-black text-foreground tabular-nums">{progressPercentage}%</span>
+                <span className="text-base sm:text-lg font-black text-foreground tabular-nums">{progressPercentage}%</span>
               </div>
-              <div className="w-full bg-muted/50 rounded-full h-4 overflow-hidden p-1 border border-border/50 shadow-inner">
+              <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden p-0.5 border border-border/50 shadow-inner">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercentage}%` }}
@@ -306,7 +306,7 @@ export default function Badges() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-foreground uppercase">
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
                 Distinction <span className="text-primary italic">Sectors</span>
               </h2>
             </div>
@@ -370,7 +370,7 @@ export default function Badges() {
                         ? cn("bg-card hover:bg-muted/10 hover:-translate-y-2 border-primary/20", getRarityGlowColor(badge.rarity))
                         : "bg-muted/30 border-border/50 grayscale hover:grayscale-0 hover:bg-muted/50 transition-all duration-700"
                     )}>
-                      <CardContent className="p-6 sm:p-8 flex flex-col h-full space-y-6 relative z-10">
+                      <CardContent className="p-4 sm:p-5 flex flex-col h-full space-y-4 relative z-10">
                         {/* Status Header */}
                         <div className="flex items-center justify-between">
                           <div className={cn(
@@ -394,7 +394,7 @@ export default function Badges() {
                         {/* Icon & Title */}
                         <div className="flex flex-col items-center text-center space-y-4">
                           <div className={cn(
-                            "h-20 w-20 sm:h-24 sm:w-24 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl transition-all duration-1000 group-hover/badge:scale-110 group-hover/badge:rotate-3 border border-border relative overflow-hidden",
+                            "h-16 w-16 sm:h-20 sm:w-20 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl transition-all duration-1000 group-hover/badge:scale-110 group-hover/badge:rotate-3 border border-border relative overflow-hidden",
                             isEarned ? "bg-muted/50 shadow-2xl" : "bg-muted/10"
                           )}>
                             <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.05] to-transparent opacity-0 group-hover/badge:opacity-100 transition-opacity" />
@@ -403,7 +403,7 @@ export default function Badges() {
                             </span>
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl sm:text-2xl font-black tracking-tight text-foreground uppercase leading-tight group-hover/badge:text-primary transition-colors">
+                            <h4 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase leading-tight group-hover/badge:text-primary transition-colors">
                               {badge.name}
                             </h4>
                             <p className="text-[10px] font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-wider line-clamp-2 px-2">
@@ -413,7 +413,7 @@ export default function Badges() {
                         </div>
 
                         {/* Progress & Requirement */}
-                        <div className="mt-auto pt-6 space-y-5">
+                        <div className="mt-auto pt-4 space-y-3">
                           {!isEarned && progress ? (
                             <div className="space-y-2">
                               <div className="flex justify-between text-[8px] font-black uppercase tracking-[0.3em]">

@@ -7,7 +7,6 @@ const PUBLIC_ROUTES = [
     '/',
     '/auth',
     '/auth/callback',
-    '/pricing',
     '/about',
     '/contact',
     '/site.webmanifest',

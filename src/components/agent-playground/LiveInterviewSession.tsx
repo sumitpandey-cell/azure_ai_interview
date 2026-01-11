@@ -57,6 +57,7 @@ interface LiveInterviewSessionProps {
     initialCameraEnabled?: boolean;
     initialTranscripts?: TranscriptEntry[];
     sessionData?: InterviewSession | null;
+    onAgentReady?: () => void;
 }
 
 export function LiveInterviewSession({
@@ -71,12 +72,23 @@ export function LiveInterviewSession({
     initialCameraEnabled = true,
     initialTranscripts = [],
     sessionData = null,
+    onAgentReady,
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
     const { localParticipant } = useLocalParticipant();
     const { state: agentState, audioTrack: agentAudioTrack, agent } =
         useVoiceAssistant();
     const room = useRoomContext();
+
+    const [hasSignaledReady, setHasSignaledReady] = useState(false);
+
+    useEffect(() => {
+        if (!hasSignaledReady && agentState !== 'idle' && agentState !== 'connecting') {
+            console.log("🤖 Agent is ready, signaling timer start...");
+            setHasSignaledReady(true);
+            onAgentReady?.();
+        }
+    }, [agentState, hasSignaledReady, onAgentReady]);
 
     const [isMuted, setIsMuted] = useState(!initialMicEnabled);
     const [cameraEnabled, setCameraEnabled] = useState(initialCameraEnabled);
