@@ -29,9 +29,10 @@ import { useFeedback } from "@/context/FeedbackContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  headerControls?: ReactNode;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, headerControls }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -217,35 +218,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
 
-        {/* Bottom Section: Streak & Upgrade */}
+        {/* Bottom Section: Upgrade */}
         <div className="p-4 space-y-4 mt-auto">
-          {/* Streak Card */}
-          {!sidebarCollapsed ? (
-            <div className="bg-sidebar-accent/50 backdrop-blur-2xl rounded-3xl p-5 border border-sidebar-border shadow-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-710" />
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-orange-500/20 blur-lg rounded-full animate-pulse"></div>
-                  <div className="relative h-12 w-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 shadow-inner">
-                    <Flame className="h-6 w-6 text-orange-500 fill-orange-500 animate-bounce transition-all duration-1000" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-foreground/50 uppercase tracking-widest leading-none mb-1">Vitality Streak</p>
-                  <p className="text-2xl font-black text-foreground tracking-tighter">{streak} <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-normal italic">Days</span></p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center group" title={`${streak} Day Streak`}>
-              <div className="relative h-12 w-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 transition-all duration-300 group-hover:scale-110 group-hover:bg-orange-500/20">
-                <Flame className="h-6 w-6 text-orange-500 fill-orange-500" />
-                <div className="absolute -top-1 -right-1 bg-orange-500 text-[8px] font-black text-white px-1.5 rounded-full border border-sidebar shadow-[0_0_10px_rgba(249,115,22,0.4)]">
-                  {streak}
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {/* Report Action Card */}
           {!sidebarCollapsed && showReportAction ? (
@@ -321,37 +296,37 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Upgrade Card */}
           {!sidebarCollapsed ? (
-            <div className="bg-sidebar-accent/50 rounded-2xl p-4 border border-sidebar-border shadow-xl text-center relative overflow-hidden group">
+            <div className="bg-sidebar-accent/50 rounded-2xl p-1.5 border border-sidebar-border shadow-xl text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <Button
-                className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest rounded-xl mb-3 h-10 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-xl mb-2 h-8 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                 onClick={() => router.push("/pricing")}
                 disabled={subscriptionLoading}
               >
                 Upgrade Plan
               </Button>
-              <div className="text-xs text-sidebar-foreground/70 font-medium">
+              <div className="text-[10px] text-sidebar-foreground/70 font-medium px-1">
                 {subscriptionLoading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-3 w-16 bg-sidebar-foreground/10 rounded animate-pulse" />
-                    <div className="h-6 w-24 bg-sidebar-foreground/20 rounded animate-pulse mt-1" />
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="h-2.5 w-14 bg-sidebar-foreground/10 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-sidebar-foreground/20 rounded animate-pulse" />
                   </div>
                 ) : (
                   <>
                     Plan : {plan_name}
-                    <div className={`text-lg font-bold mt-1 font-mono transition-colors ${remaining_minutes <= 120
+                    <div className={`text-base font-bold mt-0.5 font-mono transition-colors ${remaining_minutes <= 120
                       ? 'text-red-500'
                       : remaining_minutes < 300
                         ? 'text-amber-500'
                         : 'text-sidebar-foreground'
                       }`}>
                       {Math.ceil(remaining_minutes / 60)} min
-                      <span className="text-xs text-sidebar-foreground/50 ml-1">/ 100</span>
+                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">/ 100</span>
                     </div>
                   </>
                 )}
                 {/* Progress bar */}
-                <div className="mt-2 h-1.5 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className="mt-1.5 h-1 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-700 ${subscriptionLoading ? 'bg-primary/10' :
                       remaining_minutes <= 120
@@ -379,14 +354,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Tactical Mobile Toggle */}
-      <button
-        onClick={() => setMobileMenuOpen(true)}
-        className="lg:hidden fixed top-5 left-5 z-40 h-10 w-10 flex items-center justify-center bg-white/5 backdrop-blur-2xl border border-white/10 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.15)] group active:scale-90 transition-all duration-300"
-      >
-        <Menu className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
-        <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
-      </button>
+      {/* Fixed Top Header Bar - Mobile Only */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-2xl border-b border-border/50 shadow-lg">
+        <div className="h-full px-4 flex items-center justify-between">
+          {/* Hamburger Menu */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="h-10 w-10 flex items-center justify-center bg-card/50 border border-border/50 rounded-xl shadow-sm group active:scale-90 transition-all duration-300"
+          >
+            <Menu className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
+          </button>
+
+          {/* Header Controls from Page */}
+          {headerControls}
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">

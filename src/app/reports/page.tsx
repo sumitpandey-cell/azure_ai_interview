@@ -672,89 +672,131 @@ export default function Reports() {
           </div>
         ) : (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            {/* Dynamic Filter Station */}
-            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-[1.5rem] sm:rounded-2xl overflow-hidden p-4 sm:p-6 relative">
+            {/* Dynamic Filter Station - Mobile Optimized */}
+            <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl rounded-2xl overflow-hidden relative">
               <div className="absolute top-0 right-0 h-full w-40 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
-              <CardContent className="p-0">
-                <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center">
-                  <div className="flex items-center gap-3 shrink-0">
+              <CardContent className="p-3 sm:p-6">
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Mobile Header with Filter Toggle */}
+                  <div className="flex items-center justify-between sm:hidden">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Filter className="h-4 w-4" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Filters</span>
+                      {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
+                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                      className="h-8 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest"
+                    >
+                      {isFilterExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {/* Desktop Header */}
+                  <div className="hidden sm:flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                       <Filter className="h-5 w-5" />
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filter Station</span>
                   </div>
 
-                  <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="relative group">
-                      <MessageSquare className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                      <Input
-                        placeholder="Search Directives..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 h-12 sm:h-14 bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold focus:ring-primary focus:border-primary transition-all duration-300"
-                      />
+                  {/* Filter Controls - Collapsible on mobile, always visible on desktop */}
+                  <div className={cn(
+                    "space-y-3 sm:space-y-0",
+                    !isFilterExpanded && "hidden sm:block"
+                  )}>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                      {/* Search - Full width on mobile */}
+                      <div className="relative group flex-1">
+                        <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Input
+                          placeholder="Search Directives..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 h-11 sm:h-12 bg-background/50 border-border/50 rounded-xl font-bold text-sm focus:ring-primary focus:border-primary transition-all duration-300"
+                        />
+                      </div>
+
+                      {/* Filter Row - 2 columns on mobile, all in a row on desktop */}
+                      <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="h-11 sm:h-12 bg-background/50 border-border/50 rounded-xl font-bold text-xs sm:text-sm min-w-0 sm:min-w-[140px]">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {statusFilter === 'all' ? 'Status' : statusFilter === 'completed' ? 'Done' : 'Active'}
+                              </span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-border shadow-2xl">
+                            <SelectItem value="all" className="font-bold py-2.5 text-xs sm:text-sm">All Status</SelectItem>
+                            <SelectItem value="completed" className="font-bold py-2.5 text-xs sm:text-sm text-emerald-500">Completed</SelectItem>
+                            <SelectItem value="in-progress" className="font-bold py-2.5 text-xs sm:text-sm text-blue-500">In Progress</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={positionFilter} onValueChange={setPositionFilter}>
+                          <SelectTrigger className="h-11 sm:h-12 bg-background/50 border-border/50 rounded-xl font-bold text-xs sm:text-sm min-w-0 sm:min-w-[140px]">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Briefcase className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {positionFilter === 'all' ? 'Role' : positionFilter.length > 12 ? `${positionFilter.substring(0, 12)}...` : positionFilter}
+                              </span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-border shadow-2xl max-h-[300px]">
+                            <SelectItem value="all" className="font-bold py-2.5 text-xs sm:text-sm">All Roles</SelectItem>
+                            {uniquePositions.map(position => (
+                              <SelectItem key={position} value={position} className="font-bold py-2.5 text-xs sm:text-sm">{position}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger className="h-11 sm:h-12 bg-background/50 border-border/50 rounded-xl font-bold text-xs sm:text-sm col-span-2 sm:col-span-1 min-w-0 sm:min-w-[140px]">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <SortAsc className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {sortBy === 'date-desc' ? 'Newest' :
+                                  sortBy === 'date-asc' ? 'Oldest' :
+                                    sortBy === 'score-desc' ? 'Top Score' : 'Low Score'}
+                              </span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-border shadow-2xl">
+                            <SelectItem value="date-desc" className="font-bold py-2.5 text-xs sm:text-sm">Newest First</SelectItem>
+                            <SelectItem value="date-asc" className="font-bold py-2.5 text-xs sm:text-sm">Oldest First</SelectItem>
+                            <SelectItem value="score-desc" className="font-bold py-2.5 text-xs sm:text-sm">Highest Score</SelectItem>
+                            <SelectItem value="score-asc" className="font-bold py-2.5 text-xs sm:text-sm">Lowest Score</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-12 sm:h-14 bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Protocol Status" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-border shadow-2xl">
-                        <SelectItem value="all" className="font-bold py-3">Universal Status</SelectItem>
-                        <SelectItem value="completed" className="font-bold py-3 text-emerald-500">Mission Accomplished</SelectItem>
-                        <SelectItem value="in-progress" className="font-bold py-3 text-blue-500">Active Engagement</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={positionFilter} onValueChange={setPositionFilter}>
-                      <SelectTrigger className="h-12 sm:h-14 bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold">
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Target Vector" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-border shadow-2xl">
-                        <SelectItem value="all" className="font-bold py-3">All Vectors</SelectItem>
-                        {uniquePositions.map(position => (
-                          <SelectItem key={position} value={position} className="font-bold py-3">{position}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="h-12 sm:h-14 bg-background/50 border-border/50 rounded-xl sm:rounded-2xl font-bold">
-                        <div className="flex items-center gap-2">
-                          <SortAsc className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Data Sort" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-border shadow-2xl">
-                        <SelectItem value="date-desc" className="font-bold py-3">Temporal: Newest</SelectItem>
-                        <SelectItem value="date-asc" className="font-bold py-3">Temporal: Oldest</SelectItem>
-                        <SelectItem value="score-desc" className="font-bold py-3">Mastery: Highest</SelectItem>
-                        <SelectItem value="score-asc" className="font-bold py-3">Mastery: Lowest</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Clear Filters Button */}
+                    {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setStatusFilter('all');
+                          setPositionFilter('all');
+                          setSearchQuery('');
+                          setSortBy('date-desc');
+                        }}
+                        className="h-9 w-full sm:w-auto px-4 rounded-lg text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Clear All
+                      </Button>
+                    )}
                   </div>
-
-                  {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setStatusFilter('all');
-                        setPositionFilter('all');
-                        setSearchQuery('');
-                        setSortBy('date-desc');
-                      }}
-                      className="h-12 sm:h-14 px-6 rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all duration-300 w-full sm:w-auto"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Wipe Filters
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>

@@ -82,133 +82,82 @@ export function BadgeProgressWidget({
         .slice(0, 3);
 
     return (
-        <Card className="border shadow-sm bg-card p-3 sm:p-4">
+        <Card className="border shadow-sm bg-card p-2 sm:p-3">
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-yellow-500" />
-                    <h3 className="text-sm font-bold text-foreground">Badge Progress</h3>
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                    <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                    <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-foreground">Achievements</h3>
                 </div>
                 <button
                     onClick={() => router.push("/badges")}
-                    className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+                    className="text-[9px] sm:text-[10px] text-primary hover:text-primary/80 font-bold uppercase tracking-wider flex items-center gap-0.5 transition-colors"
                 >
-                    View All
-                    <ChevronRight className="h-3 w-3" />
+                    All
+                    <ChevronRight className="h-2.5 w-2.5" />
                 </button>
             </div>
 
-            {/* Horizontal Layout */}
-            <div className="flex flex-col lg:flex-row gap-4">
-                {/* Left: Stats */}
-                <div className="flex gap-2 lg:w-1/4">
-                    <div className="flex-1 bg-primary/10 dark:bg-primary/20 rounded-lg p-2 border border-primary/20 dark:border-primary/10">
-                        <div className="text-xs text-primary mb-0.5">Earned</div>
-                        <div className="text-lg font-bold text-primary dark:text-primary-foreground">{earnedCount}</div>
-                    </div>
-                    <div className="flex-1 bg-accent/10 dark:bg-accent/20 rounded-lg p-2 border border-accent/20 dark:border-accent/10">
-                        <div className="text-xs text-accent-foreground dark:text-accent mb-0.5">Score</div>
-                        <div className="text-lg font-bold text-accent-foreground dark:text-accent">{badgeScore}</div>
-                    </div>
+            {/* Compact Stats Row */}
+            <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="text-[9px] font-bold text-primary uppercase tracking-wide">Earned</span>
+                    <span className="text-sm font-black text-primary">{earnedCount}</span>
                 </div>
-
-                {/* Center: Next Badges */}
-                <div className="flex-1 lg:w-1/2">
-                    {nextBadges.length > 0 ? (
-                        <div>
-                            <div className="flex items-center gap-1.5 mb-2">
-                                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                                <h4 className="text-xs font-semibold text-foreground">Next Badges</h4>
-                            </div>
-                            <div className="space-y-2">
-                                {nextBadges.map((badge) => {
-                                    const progressPercent = Math.round((badge.progress.current / badge.progress.max) * 100);
-                                    return (
-                                        <div key={badge.id} className="flex items-center gap-2">
-                                            <span className="text-lg">{badge.icon}</span>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between mb-0.5">
-                                                    <div className="text-xs font-medium text-foreground truncate">{badge.name}</div>
-                                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 ml-2">
-                                                        {progressPercent}%
-                                                    </Badge>
-                                                </div>
-                                                <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
-                                                    <div
-                                                        className={`bg-gradient-to-r ${getRarityColor(badge.rarity)} h-full transition-all duration-500`}
-                                                        style={{ width: `${progressPercent}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <div className="text-center py-2">
-                                <Trophy className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
-                                <p className="text-xs text-muted-foreground">Complete interviews to earn badges!</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right: Recently Earned */}
-                <div className="lg:w-1/4">
-                    {recentlyEarned.length > 0 ? (
-                        <div>
-                            <div className="flex items-center gap-1.5 mb-2">
-                                <Award className="h-3.5 w-3.5 text-yellow-500" />
-                                <h4 className="text-xs font-semibold text-foreground">Recently Earned</h4>
-                            </div>
-                            <div className="flex lg:flex-col gap-2">
-                                <AnimatePresence>
-                                    {recentlyEarned.map((badge, idx) => (
-                                        <motion.div
-                                            key={badge.id}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: idx * 0.1 }}
-                                            className={`flex-1 bg-gradient-to-br ${getRarityColor(badge.rarity)} ${getRarityGlowColor(badge.rarity)} rounded-lg p-2 text-center shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-pointer`}
-                                            onClick={() => router.push('/badges')}
-                                        >
-                                            <div className="text-2xl mb-0.5 group-hover:scale-110 transition-transform">{badge.icon}</div>
-                                            <div className="text-[10px] font-bold text-white truncate">{badge.name}</div>
-                                            <div className="absolute top-0 right-0 p-0.5">
-                                                <Zap className="h-2 w-2 text-white/50" />
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full border border-dashed border-border rounded-lg py-4">
-                            <div className="text-center">
-                                <Award className="h-6 w-6 text-muted-foreground/30 mx-auto mb-1" />
-                                <p className="text-[10px] text-muted-foreground">None yet</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Overall Progress Bar */}
-            <div className="mt-3 pt-3 border-t border-border">
-                <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">Overall Progress</span>
-                    <span className="text-xs font-medium text-foreground">
-                        {earnedCount}/{totalBadges} ({progressPercentage}%)
-                    </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                <div className="flex-1 bg-muted rounded-full h-1 overflow-hidden">
                     <div
                         className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">
+                    {progressPercentage}%
+                </span>
+            </div>
+
+            {/* Minimal Badge Display */}
+            <div className="flex items-center gap-2">
+                {/* Recently Earned - Compact */}
+                {recentlyEarned.length > 0 ? (
+                    <div className="flex gap-1.5">
+                        <AnimatePresence>
+                            {recentlyEarned.slice(0, 2).map((badge, idx) => (
+                                <motion.div
+                                    key={badge.id}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className={`bg-gradient-to-br ${getRarityColor(badge.rarity)} rounded-lg p-1.5 text-center shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-pointer`}
+                                    onClick={() => router.push('/badges')}
+                                    title={badge.name}
+                                >
+                                    <div className="text-lg group-hover:scale-110 transition-transform">{badge.icon}</div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                ) : null}
+
+                {/* Next Badge - Single Most Achievable */}
+                {nextBadges.length > 0 && (
+                    <div className="flex-1 flex items-center gap-1.5 bg-muted/30 rounded-lg p-1.5 border border-border/50">
+                        <span className="text-base">{nextBadges[0].icon}</span>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-[9px] font-bold text-foreground truncate uppercase tracking-wide">{nextBadges[0].name}</div>
+                            <div className="flex items-center gap-1">
+                                <div className="flex-1 bg-muted rounded-full h-0.5 overflow-hidden">
+                                    <div
+                                        className={`bg-gradient-to-r ${getRarityColor(nextBadges[0].rarity)} h-full transition-all duration-500`}
+                                        style={{ width: `${Math.round((nextBadges[0].progress.current / nextBadges[0].progress.max) * 100)}%` }}
+                                    />
+                                </div>
+                                <span className="text-[8px] font-bold text-muted-foreground">
+                                    {Math.round((nextBadges[0].progress.current / nextBadges[0].progress.max) * 100)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </Card>
     );

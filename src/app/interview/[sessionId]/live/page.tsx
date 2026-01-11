@@ -27,6 +27,7 @@ export default function LiveInterview() {
     const [isSessionLoading, setIsSessionLoading] = useState(true);
     const [shouldConnect, setShouldConnect] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isTimerActive, setIsTimerActive] = useState(false);
     const [sessionStartTime] = useState(Date.now());
     const [session, setSession] = useState<InterviewSession | null>(null);
 
@@ -55,6 +56,7 @@ export default function LiveInterview() {
         userId: user?.id,
         onTimeExpired: () => handleEndSession?.(),
         warnAt: [5, 2, 1],
+        isActive: isTimerActive,
     });
 
     // Load Session & Token
@@ -372,6 +374,10 @@ export default function LiveInterview() {
                     sessionData={session}
                     initialTranscripts={(session?.transcript as any) || []}
                     onEndSession={handleEndSession}
+                    onAgentReady={() => {
+                        console.log("⏱️ Starting session timer - Agent Ready");
+                        setIsTimerActive(true);
+                    }}
                     remainingMinutes={subscriptionTimer.remainingMinutes}
                     remainingSeconds={subscriptionTimer.remainingSeconds}
                     isLowTime={subscriptionTimer.isLowTime}
