@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -334,37 +334,33 @@ export default function Templates() {
         {/* Header Section with Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="text-left space-y-1 sm:space-y-2">
-            <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary border border-primary/20 mb-1 sm:mb-2">
-              <Sparkles className="mr-2 h-3 w-3" />
-              Ready-to-use Scenarios
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-foreground tracking-tight">
-              Interview <span className="text-primary italic">Vault</span>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Interview Templates
             </h2>
-            <p className="text-muted-foreground text-xs sm:text-sm md:text-base font-medium max-w-lg leading-relaxed">
-              Unlock precision-engineered automation templates for high-impact practice.
+            <p className="text-muted-foreground text-sm sm:text-base max-w-lg">
+              Choose from a variety of interview scenarios to practice and improve your skills.
             </p>
           </div>
         </div>
 
         <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl sm:rounded-2xl border border-border/50 mb-6 sm:mb-10 w-full sm:w-auto h-11 sm:h-14">
+          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl border border-border/50 mb-6 sm:mb-10 w-full sm:w-auto">
             <TabsTrigger
               value="general"
-              className="flex-1 sm:flex-none px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg h-full"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
-              General Tracks
+              General
             </TabsTrigger>
             <TabsTrigger
               value="company"
-              className="flex-1 sm:flex-none px-4 sm:px-8 py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-lg h-full"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
-              Industry Giants
+              Companies
             </TabsTrigger>
           </TabsList>
 
           {/* Category Tabs and Search Bar */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8">
             {/* Category Tabs */}
             <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 no-scrollbar px-1">
               {categories.map((category) => (
@@ -372,10 +368,10 @@ export default function Templates() {
                   key={category}
                   onClick={() => setActiveCategory(category)}
                   className={cn(
-                    "px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-[9px] sm:text-[11px] uppercase tracking-widest transition-all whitespace-nowrap border-2",
+                    "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
                     activeCategory === category
-                      ? "bg-primary border-primary text-primary-foreground shadow-xl shadow-primary/20 scale-105"
-                      : "bg-card border-border/50 text-muted-foreground hover:border-primary/30 hover:text-primary"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
                   )}
                 >
                   {category}
@@ -385,10 +381,10 @@ export default function Templates() {
 
             {/* Search Bar */}
             <div className="relative w-full lg:w-96 group">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" />
               <Input
-                placeholder="Search tracks, skills..."
-                className="pl-11 h-12 w-full bg-card/50 border-2 border-border/50 rounded-2xl focus:ring-primary focus:border-primary transition-all"
+                placeholder="Search templates..."
+                className="pl-10 mr-12"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -410,93 +406,72 @@ export default function Templates() {
                   {filteredTemplates.map((template) => {
                     const IconComponent = getIconComponent(template.icon_name);
                     return (
-                      <Card key={template.id} className="group relative flex flex-col h-full overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-2xl">
-                        {/* Status Glow */}
-                        <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
-
-                        <CardContent className="p-5 sm:p-6 flex flex-col h-full relative z-10">
-                          {/* Top Section */}
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex gap-3">
-                              {/* Icon Wrapper */}
-                              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-muted p-2.5 sm:p-3 flex items-center justify-center shrink-0 group-hover:bg-primary/10 group-hover:rotate-6 transition-all duration-500">
-                                <IconComponent className={cn("h-6 w-6 sm:h-7 sm:w-7 transition-colors", template.color)} />
+                      <Card key={template.id} className="flex flex-col h-full hover:shadow-md transition-all">
+                        <CardHeader className="space-y-4">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex gap-4">
+                              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center bg-muted shrink-0", template.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100'))}>
+                                <IconComponent className={cn("h-5 w-5", template.color)} />
                               </div>
-
-                              <div className="space-y-1 min-w-0 flex-1">
-                                <h3 className="font-black text-sm sm:text-base text-foreground leading-tight group-hover:text-primary transition-colors">
+                              <div className="space-y-1">
+                                <CardTitle className="text-base font-semibold leading-tight">
                                   {template.title}
-                                </h3>
-                                <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-muted-foreground px-2 py-0.5 rounded-md bg-muted/50 inline-block">
-                                  {template.interview_type}
+                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="font-normal text-xs bg-muted text-muted-foreground hover:bg-muted">
+                                    {template.interview_type}
+                                  </Badge>
                                 </div>
                               </div>
                             </div>
-
-                            <div className={cn(
-                              "text-[9px] sm:text-[10px] font-black uppercase tracking-tight px-2 py-1 rounded-lg border-2 whitespace-nowrap shrink-0",
-                              template.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                                template.difficulty === "Intermediate" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-                                  "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                            <Badge variant="outline" className={cn(
+                              "font-medium border shrink-0",
+                              template.difficulty === "Beginner" && "text-emerald-600 border-emerald-200 bg-emerald-50",
+                              template.difficulty === "Intermediate" && "text-amber-600 border-amber-200 bg-amber-50",
+                              template.difficulty === "Advanced" && "text-rose-600 border-rose-200 bg-rose-50"
                             )}>
                               {template.difficulty}
-                            </div>
+                            </Badge>
                           </div>
-
-                          {/* Description */}
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-5 font-medium leading-relaxed">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {template.description}
                           </p>
+                        </CardHeader>
 
-                          {/* Key Specs */}
-                          <div className="space-y-3 mb-5">
-                            <div className="space-y-2">
-                              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-wider">
-                                Technical Stack
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {template.skills.slice(0, 3).map((skill, index) => (
-                                  <div
-                                    key={index}
-                                    className="bg-muted px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold text-foreground border border-transparent group-hover:border-primary/30 group-hover:bg-primary/5 transition-all"
-                                  >
-                                    {skill}
-                                  </div>
-                                ))}
-                                {template.skills.length > 3 && (
-                                  <div className="text-[10px] px-2 py-1 text-muted-foreground font-black bg-muted/30 rounded-lg">
-                                    +{template.skills.length - 3}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Bottom Action */}
-                          <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                              </div>
-                              <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-wider">PRO Ready</span>
-                            </div>
-
-                            <Button
-                              onClick={() => startInterviewWithTemplate(template)}
-                              disabled={loadingTemplate === template.id}
-                              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-[10px] h-9 px-5 rounded-xl shadow-lg shadow-primary/10 group-hover:shadow-primary/20 transition-all"
-                            >
-                              {loadingTemplate === template.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  Launch
-                                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                                </div>
+                        <CardContent className="flex-1 pb-2">
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">Technical Stack</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {template.skills.slice(0, 3).map((skill, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="font-normal bg-muted text-foreground hover:bg-muted/80"
+                                >
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {template.skills.length > 3 && (
+                                <Badge variant="secondary" className="font-normal bg-muted text-muted-foreground hover:bg-muted/80">
+                                  +{template.skills.length - 3}
+                                </Badge>
                               )}
-                            </Button>
+                            </div>
                           </div>
                         </CardContent>
+
+                        <CardFooter className="pt-4">
+                          <Button
+                            onClick={() => startInterviewWithTemplate(template)}
+                            disabled={loadingTemplate === template.id}
+                            className="w-full"
+                          >
+                            {loadingTemplate === template.id && (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            )}
+                            Start Session
+                          </Button>
+                        </CardFooter>
                       </Card>
                     );
                   })}
@@ -583,23 +558,18 @@ export default function Templates() {
               <>
                 {/* Step 2: Select Role for Selected Company - Redesigned */}
                 <div className="mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => setSelectedCompany(null)}
-                    className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-all mb-8"
+                    className="mb-6 pl-0 hover:pl-2 transition-all gap-2"
                   >
-                    <div className="h-10 w-10 rounded-xl bg-card border-2 border-border/50 flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all">
-                      <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                    </div>
-                    Back to Ecosystem
-                  </button>
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to Companies
+                  </Button>
 
-                  <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-2xl bg-slate-900 dark:bg-card border-2 border-border/50 p-6 sm:p-10 md:p-14 shadow-2xl">
-                    {/* Glowing Mesh Background */}
-                    <div className="absolute top-0 right-0 -mt-20 -mr-20 h-96 w-96 rounded-full bg-primary/20 blur-[100px] animate-pulse" />
-                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
-
-                    <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-10 items-center md:items-center text-center md:text-left">
-                      <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl sm:rounded-2xl bg-white p-3 sm:p-5 shadow-2xl flex items-center justify-center shrink-0 border-4 border-white/10 group-hover:scale-105 transition-transform">
+                  <div className="relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm">
+                    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
+                      <div className="h-20 w-20 rounded-lg border bg-muted p-2 flex items-center justify-center shrink-0">
                         {selectedCompany.logo_url ? (
                           <img
                             src={selectedCompany.logo_url}
@@ -607,25 +577,25 @@ export default function Templates() {
                             className="w-full h-full object-contain"
                           />
                         ) : (
-                          <Briefcase className="h-8 w-8 sm:h-12 sm:w-12 text-slate-900" />
+                          <Briefcase className="h-8 w-8 text-muted-foreground" />
                         )}
                       </div>
 
-                      <div className="flex-1 space-y-2 sm:space-y-4">
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-4">
-                          <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white">{selectedCompany.name}</h3>
-                          <div className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/20 text-primary border border-primary/20 text-[8px] sm:text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                          <h3 className="text-2xl font-bold tracking-tight text-foreground">{selectedCompany.name}</h3>
+                          <Badge variant="secondary" className="font-medium">
                             {selectedCompany.industry}
-                          </div>
+                          </Badge>
                         </div>
-                        <p className="text-slate-300 text-xs sm:text-base md:text-lg max-w-3xl leading-relaxed font-medium">
+                        <p className="text-muted-foreground max-w-3xl leading-relaxed">
                           {selectedCompany.description || `Prepare for your high-stakes interview at ${selectedCompany.name} with our curated, role-specific automation tracks.`}
                         </p>
                       </div>
 
-                      <div className="hidden xl:flex flex-col items-end gap-2 bg-white/5 rounded-3xl p-6 backdrop-blur-md border border-white/10">
-                        <div className="text-5xl font-black text-white tracking-tighter">{selectedCompany.common_roles.length}</div>
-                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Live Tracks</div>
+                      <div className="hidden xl:flex flex-col items-end gap-1">
+                        <div className="text-3xl font-bold text-primary">{selectedCompany.common_roles.length}</div>
+                        <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Available Roles</div>
                       </div>
                     </div>
                   </div>
@@ -633,71 +603,55 @@ export default function Templates() {
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {selectedCompany.common_roles.map((role, index) => (
-                    <Card key={index} className="group relative overflow-hidden border-2 border-border/50 bg-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 rounded-3xl">
-                      <CardContent className="p-8">
-                        <div className="flex justify-between items-start mb-8">
-                          <div className="h-16 w-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                            <Briefcase className="h-8 w-8" />
-                          </div>
-                          <div className="px-3 py-1.5 rounded-xl bg-muted text-muted-foreground text-[10px] font-black uppercase tracking-widest border border-border/50">
-                            Professional
+                    <Card key={index} className="flex flex-col h-full hover:shadow-md transition-all">
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <Briefcase className="h-5 w-5" />
                           </div>
                         </div>
+                        <CardTitle className="text-lg font-semibold">{role}</CardTitle>
+                        <CardDescription>
+                          Tailored performance assessment for the {role} track at {selectedCompany.name}.
+                        </CardDescription>
+                      </CardHeader>
 
-                        <h4 className="text-2xl font-black text-foreground mb-3 group-hover:text-primary transition-colors tracking-tight">
-                          {role}
-                        </h4>
-                        <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">
-                          Tailored performance assessment designed specifically for the {role} track at {selectedCompany.name}.
-                        </p>
-
-                        <div className="space-y-4 mb-10">
-                          <div className="flex items-center gap-4 group/item">
-                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
-                              <Code className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Focus</p>
-                              <p className="text-sm font-bold text-foreground">Tech & Behavioral</p>
-                            </div>
+                      <CardContent className="flex-1 space-y-4">
+                        <div className="space-y-3 pt-2">
+                          <div className="flex items-center gap-3 text-sm">
+                            <Code className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Focus:</span>
+                            <span className="font-medium">Tech & Behavioral</span>
                           </div>
-
-                          <div className="flex items-center gap-4 group/item">
-                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
-                              <Clock className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Duration</p>
-                              <p className="text-sm font-bold text-foreground">~45 Minutes</p>
-                            </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Duration:</span>
+                            <span className="font-medium">~45 Minutes</span>
                           </div>
-
-                          <div className="flex items-center gap-4 group/item">
-                            <div className="h-10 w-10 rounded-xl bg-muted group-hover/item:bg-primary/10 flex items-center justify-center transition-all">
-                              <CheckCircle2 className="h-5 w-5 text-muted-foreground group-hover/item:text-primary transition-colors" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Analysis</p>
-                              <p className="text-sm font-bold text-foreground">Deep AI Metrics</p>
-                            </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <Sparkles className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Analysis:</span>
+                            <span className="font-medium">AI Insights</span>
                           </div>
                         </div>
+                      </CardContent>
 
+                      <CardFooter className="pt-2">
                         <Button
-                          className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-primary/10 group-hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95"
+                          className="w-full"
                           onClick={() => startCompanyRoleInterview(selectedCompany, role)}
                           disabled={loadingTemplate === `${selectedCompany.id}-${role}`}
                         >
                           {loadingTemplate === `${selectedCompany.id}-${role}` ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           ) : (
                             <div className="flex items-center gap-2">
-                              Start Track
-                              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                              Start Interview
+                              <ArrowRight className="h-4 w-4" />
                             </div>
                           )}
                         </Button>
-                      </CardContent>
+                      </CardFooter>
                     </Card>
                   ))}
                 </div>

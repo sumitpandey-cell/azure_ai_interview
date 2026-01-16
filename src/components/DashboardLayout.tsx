@@ -137,15 +137,15 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-foreground tracking-tighter leading-tight">
-                  Arjuna<span className="text-primary italic">AI</span>
+                <span className="text-xl font-bold text-foreground tracking-tight leading-tight">
+                  ARJUNA<span className="text-primary italic">AI</span>
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground -mt-0.5">Interview Dashboard</span>
+                <span className="text-[11px] font-medium text-muted-foreground -mt-0.5">Interview Platform</span>
               </div>
             </div>
           ) : (
             <div className="relative flex-shrink-0 group">
-              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-50"></div>
+              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
               <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
                 <img
                   src="/favicon.ico"
@@ -179,9 +179,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
 
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-3 py-6 overflow-y-auto scrollbar-hide">
-          <div className={`${sidebarCollapsed ? "hidden" : "block"} px-4 mb-4`}>
-            <p className="text-[10px] font-black text-muted-foreground">Menu</p>
-          </div>
+
           {navigation.map((item) => (
             <Link
               key={item.name}
@@ -190,24 +188,28 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               className={`
                 group relative flex items-center gap-4 rounded-[1.25rem] transition-all duration-500
                 ${isActive(item.href)
-                  ? "bg-primary text-primary-foreground shadow-md shadow-blue-500/20"
+                  ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] border border-primary/20"
                   : "text-sidebar-foreground/60 hover:text-foreground hover:bg-sidebar-accent border border-transparent"
                 }
                 ${sidebarCollapsed ? "w-12 h-12 justify-center mx-auto p-0" : "px-5 py-2.5"}
               `}
               title={sidebarCollapsed ? item.name : undefined}
             >
+              {/* Active Indicator Glow */}
+              {isActive(item.href) && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[4px_0_12px_rgba(168,85,247,0.8)]" />
+              )}
+
               <item.icon
-                strokeWidth={1.5}
                 className={`h-5 w-5 flex-shrink-0 transition-all duration-500 
                   ${isActive(item.href)
-                    ? "text-primary-foreground scale-110"
+                    ? "text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] scale-110"
                     : "group-hover:text-primary group-hover:scale-110"
                   }`}
               />
 
               {!sidebarCollapsed && (
-                <span className={`text-[11px] font-bold transition-all duration-300 ${isActive(item.href) ? "translate-x-1" : "group-hover:translate-x-1"}`}>
+                <span className={`text-sm font-medium transition-all duration-300 ${isActive(item.href) ? "translate-x-1" : "group-hover:translate-x-1"}`}>
                   {item.name}
                 </span>
               )}
@@ -234,16 +236,16 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                     <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sidebar-foreground font-bold text-sm truncate w-32">{currentSession?.position || "Latest Interview"}</p>
+                    <p className="text-sidebar-foreground font-semibold text-sm truncate w-32">{currentSession?.position || "Latest Interview"}</p>
                     <p className="text-[10px] text-sidebar-foreground/50">Report Status</p>
                   </div>
                 </div>
 
                 <Button
-                  className={`w-full h-10 text-[10px] uppercase tracking-widest font-bold rounded-xl shadow-lg transition-all active:scale-95 ${isCurrentSessionGenerating
+                  className={`w-full h-10 text-xs font-medium rounded-xl shadow-sm transition-all active:scale-95 ${isCurrentSessionGenerating
                     ? 'bg-primary/20 text-primary cursor-not-allowed hover:bg-primary/20'
                     : hasFeedback
-                      ? 'bg-primary hover:opacity-90 text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                      ? 'bg-primary hover:opacity-90 text-primary-foreground shadow-md'
                       : 'bg-emerald-500 hover:bg-emerald-600 text-white'
                     }`}
                   disabled={isCurrentSessionGenerating}
@@ -301,7 +303,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
             <div className="bg-sidebar-accent/50 rounded-2xl p-1.5 border border-sidebar-border shadow-xl text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <Button
-                className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-xl mb-2 h-8 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold text-xs rounded-xl mb-2 h-9 shadow-md"
                 onClick={() => router.push("/pricing")}
                 disabled={subscriptionLoading}
               >
@@ -316,7 +318,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                 ) : (
                   <>
                     Plan : {plan_name}
-                    <div className={`text-base font-bold mt-0.5 font-mono transition-colors ${remaining_seconds <= 600
+                    <div className={`text-sm font-semibold mt-0.5 tabular-nums transition-colors ${remaining_seconds <= 600
                       ? 'text-red-500'
                       : remaining_seconds < 1800
                         ? 'text-amber-500'
