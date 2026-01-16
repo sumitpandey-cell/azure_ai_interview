@@ -132,14 +132,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-black text-foreground tracking-tighter leading-tight">
-                  ARJUNA<span className="text-primary italic">AI</span>
+                  Arjuna<span className="text-primary italic">AI</span>
                 </span>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] -mt-0.5">Tactical Interface</span>
+                <span className="text-[10px] font-bold text-muted-foreground -mt-0.5">Interview Dashboard</span>
               </div>
             </div>
           ) : (
             <div className="relative flex-shrink-0 group">
-              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-50"></div>
               <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
                 <img
                   src="/favicon.ico"
@@ -174,7 +174,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-3 py-6 overflow-y-auto scrollbar-hide">
           <div className={`${sidebarCollapsed ? "hidden" : "block"} px-4 mb-4`}>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Operational Menu</p>
+            <p className="text-[10px] font-black text-muted-foreground">Menu</p>
           </div>
           {navigation.map((item) => (
             <Link
@@ -184,28 +184,24 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               className={`
                 group relative flex items-center gap-4 rounded-[1.25rem] transition-all duration-500
                 ${isActive(item.href)
-                  ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(168,85,247,0.05)] border border-primary/20"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-blue-500/20"
                   : "text-sidebar-foreground/60 hover:text-foreground hover:bg-sidebar-accent border border-transparent"
                 }
                 ${sidebarCollapsed ? "w-12 h-12 justify-center mx-auto p-0" : "px-5 py-2.5"}
               `}
               title={sidebarCollapsed ? item.name : undefined}
             >
-              {/* Active Indicator Glow */}
-              {isActive(item.href) && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[4px_0_12px_rgba(168,85,247,0.8)]" />
-              )}
-
               <item.icon
+                strokeWidth={1.5}
                 className={`h-5 w-5 flex-shrink-0 transition-all duration-500 
                   ${isActive(item.href)
-                    ? "text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] scale-110"
+                    ? "text-primary-foreground scale-110"
                     : "group-hover:text-primary group-hover:scale-110"
                   }`}
               />
 
               {!sidebarCollapsed && (
-                <span className={`text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${isActive(item.href) ? "translate-x-1" : "group-hover:translate-x-1"}`}>
+                <span className={`text-[11px] font-bold transition-all duration-300 ${isActive(item.href) ? "translate-x-1" : "group-hover:translate-x-1"}`}>
                   {item.name}
                 </span>
               )}
@@ -314,7 +310,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                 ) : (
                   <>
                     Plan : {plan_name}
-                    <div className={`text-base font-bold mt-0.5 font-mono transition-colors ${remaining_minutes <= 120
+                    <div className={`text-base font-bold mt-0.5 transition-colors ${remaining_minutes <= 120
                       ? 'text-red-500'
                       : remaining_minutes < 300
                         ? 'text-amber-500'

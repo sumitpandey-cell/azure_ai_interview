@@ -19,7 +19,7 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
         return (
             <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden">
                 <CardHeader className="bg-muted/10 border-b border-border/50 p-3 sm:p-4">
-                    <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                    <CardTitle className="text-xs font-bold text-foreground flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-primary" />
                         Operational Analysis
                     </CardTitle>
@@ -29,7 +29,7 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                         <div className="h-12 w-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
                             <TrendingUp className="h-6 w-6 opacity-30" />
                         </div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest leading-loose">Awaiting longitudinal performance data</p>
+                        <p className="text-[10px] font-medium">No performance data available yet</p>
                     </div>
                 </CardContent>
             </Card>
@@ -39,7 +39,7 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
     return (
         <Card className="border-2 border-border/50 shadow-sm bg-card rounded-2xl h-full overflow-hidden transition-all hover:border-primary/30">
             <CardHeader className="bg-muted/10 border-b border-border/50 p-3 sm:p-4">
-                <CardTitle className="text-xs font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                <CardTitle className="text-xs font-bold text-foreground flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
                     Operational Analysis
                 </CardTitle>

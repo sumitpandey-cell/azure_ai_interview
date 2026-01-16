@@ -112,6 +112,7 @@ export default {
             },
             fontFamily: {
                 sans: [
+                    'var(--font-sans)',
                     'Inter',
                     'ui-sans-serif',
                     'system-ui',
@@ -123,6 +124,12 @@ export default {
                     'Arial',
                     'Noto Sans',
                     'sans-serif'
+                ],
+                heading: [
+                    'var(--font-heading)',
+                    'Plus Jakarta Sans',
+                    'ui-sans-serif',
+                    'system-ui',
                 ],
                 serif: [
                     'Lora',

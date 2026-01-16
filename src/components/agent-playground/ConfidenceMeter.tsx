@@ -77,7 +77,7 @@ export function ConfidenceMeter({ sentiment, confidence, scores, className }: Co
                         {config.label}
                     </span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-white/40">
+                <span className="text-[10px] font-bold text-white/40">
                     Confidence Index
                 </span>
             </div>

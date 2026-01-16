@@ -319,20 +319,20 @@ export default function Dashboard() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-border/50">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">System Online</span>
+                <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-bold text-primary">System online</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tighter italic leading-tight">
-                {new Date().getHours() < 12 ? 'MORNING' : new Date().getHours() < 18 ? 'AFTERNOON' : 'EVENING'}, <span className="text-primary not-italic">{userMetadata?.full_name?.split(' ')[0]?.toUpperCase() || "OPERATOR"}</span>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'}, <span className="text-primary">{userMetadata?.full_name?.split(' ')[0] || "Operator"}</span>
               </h1>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary" />
-                Arjuna AI Tactical Interface • Sector 7G
+                Arjuna AI Interface
               </p>
             </div>
 
             {/* Desktop Header Controls */}
-            <div className="hidden lg:flex items-center gap-3 p-2 bg-card/30 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl">
+            <div className="hidden lg:flex items-center gap-3 p-2 bg-card/30 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-sm">
               <div className="flex items-center gap-1.5 px-2 border-r border-border/50 mr-1">
                 <NotificationBell />
                 <ThemeToggle />
@@ -352,31 +352,31 @@ export default function Dashboard() {
                           null,
                           userMetadata?.gender
                         )} />
-                        <AvatarFallback className="text-[10px] font-black text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                        <AvatarFallback className="text-[10px] font-bold text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full z-20" />
                     </div>
 
                     <div className="flex flex-col items-start">
-                      <span className="text-[11px] font-black text-foreground uppercase tracking-wider leading-none">
+                      <span className="text-[11px] font-bold text-foreground leading-none">
                         {userMetadata?.full_name?.split(' ')[0] || "User"}
                       </span>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-60">Verified Admin</span>
+                      <span className="text-[9px] font-medium text-muted-foreground opacity-60">Verified Account</span>
                     </div>
 
                     <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
-                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground px-3 py-2">Identity</DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50" />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-bold py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
                     <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
                     Interface Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
+                  <DropdownMenuItem onClick={signOut} className="text-[11px] font-bold py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
                     <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                    Terminate Session
+                    Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -396,47 +396,47 @@ export default function Dashboard() {
           {/* Top Actions Section */}
           <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-6">
             <Button
-              className="h-11 sm:h-12 md:h-14 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] font-black uppercase tracking-widest group"
+              className="h-11 sm:h-12 md:h-14 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl transition-all hover:scale-[1.02] font-bold group"
               onClick={startInterview}
               disabled={subscriptionLoading || !allowed}
             >
               <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 fill-current group-hover:animate-pulse" />
-              Initialize Interview
+              Start Interview
             </Button>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Play className="h-8 w-8 sm:h-10 sm:w-10" />
+                  <Play strokeWidth={1.5} className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Total Enactments</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.totalInterviews || 0}</span>
+                <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground mb-0.5 sm:mb-1 block">Total Sessions</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">{stats?.totalInterviews || 0}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-accent/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Clock className="h-8 w-8 sm:h-10 sm:w-10" />
+                  <Clock strokeWidth={1.5} className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Practiced</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
+                <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground mb-0.5 sm:mb-1 block">Time Practiced</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Award className="h-8 w-8 sm:h-10 sm:w-10" />
+                  <Award strokeWidth={1.5} className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Global Standing</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">#{stats?.rank || 0}</span>
+                <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground mb-0.5 sm:mb-1 block">Global Rank</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">#{stats?.rank || 0}</span>
               </div>
 
               <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all">
                 <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Target className="h-8 w-8 sm:h-10 sm:w-10" />
+                  <Target strokeWidth={1.5} className="h-8 w-8 sm:h-10 sm:w-10" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
-                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Mean Accuracy</span>
-                    <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.averageScore || 0}%</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-muted-foreground mb-0.5 sm:mb-1 block">Average Score</span>
+                    <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">{stats?.averageScore || 0}%</span>
                   </div>
                   <div className="pt-2 hidden sm:block">
                     <MiniBarChart
@@ -451,6 +451,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
 
           {/* Analytics Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -475,17 +476,17 @@ export default function Dashboard() {
                   <Sparkles className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-tight">Recent Deployments</h3>
-                  <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Archive of latest operational logs</p>
+                  <h3 className="text-base sm:text-lg font-bold">Recent Sessions</h3>
+                  <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground">Your interview history</p>
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push('/reports')}
-                className="h-9 sm:h-10 px-3 sm:px-5 rounded-lg sm:rounded-xl border-border font-black uppercase tracking-widest text-[8px] sm:text-[10px] group transition-all"
+                className="h-9 sm:h-10 px-3 sm:px-5 rounded-lg sm:rounded-xl border-border font-medium text-[10px] sm:text-xs group transition-all"
               >
-                Archive
+                View All
                 <ArrowRight className="h-3 w-3 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -504,14 +505,14 @@ export default function Dashboard() {
                   <FileText className="h-8 w-8 text-muted-foreground/30" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black uppercase tracking-tight">No Archive Found</h3>
-                  <p className="text-sm text-muted-foreground font-medium">Initiate your first session to begin generating reports.</p>
+                  <h3 className="text-xl font-bold">No sessions found</h3>
+                  <p className="text-sm text-muted-foreground font-medium">Start your first interview to see it here.</p>
                 </div>
                 <Button
                   onClick={startInterview}
-                  className="rounded-xl h-12 px-8 font-black uppercase tracking-widest text-[10px]"
+                  className="rounded-xl h-12 px-8 font-bold text-[12px]"
                 >
-                  Start New Journey
+                  Start New Session
                 </Button>
               </div>
             ) : (
@@ -544,19 +545,19 @@ export default function Dashboard() {
                       <div className="p-4 sm:p-6 h-full flex flex-col">
                         <div className="flex items-start justify-between mb-4">
                           <div className="space-y-1">
-                            <h3 className="text-sm font-black uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                            <h3 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-1">
                               {session.position}
                             </h3>
                             <div className="flex items-center gap-2">
                               {session.config && (session.config as any).companyId ? (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-[9px] font-medium text-muted-foreground">
                                   <Building2 className="h-2.5 w-2.5" />
                                   Corporate Path
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 border border-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary">
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 border border-primary/10 text-[9px] font-medium text-primary">
                                   <Play className="h-2.5 w-2.5" />
-                                  General Protocol
+                                  General Interview
                                 </div>
                               )}
                             </div>
@@ -588,7 +589,7 @@ export default function Dashboard() {
                                     strokeLinecap="round"
                                   />
                                 </svg>
-                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black italic">
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">
                                   {score}%
                                 </span>
                               </>
@@ -606,14 +607,14 @@ export default function Dashboard() {
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
                           <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Timeline</span>
+                            <span className="text-[8px] font-bold text-muted-foreground/60 block mb-0.5">Timeline</span>
                             <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
                               {new Date(session.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                             </span>
                           </div>
                           <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Uptime</span>
+                            <span className="text-[8px] font-bold text-muted-foreground/60 block mb-0.5">Uptime</span>
                             <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
                               <Clock className="h-3 w-3 text-muted-foreground" />
                               {session.duration_seconds ? formatDurationShort(session.duration_seconds) : '---'}
@@ -623,7 +624,7 @@ export default function Dashboard() {
 
                         <div className="mt-auto flex items-center justify-between">
                           <div className={cn(
-                            "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-2",
+                            "px-3 py-1.5 rounded-xl text-[9px] font-bold flex items-center gap-2",
                             session.status === 'in_progress' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
                               score !== null ? (score >= 70 ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-primary/10 text-primary border border-primary/20") :
                                 "bg-muted text-muted-foreground/60 border border-border"
@@ -631,12 +632,12 @@ export default function Dashboard() {
                             <div className={cn(
                               "h-1.5 w-1.5 rounded-full shrink-0",
                               session.status === 'in_progress' ? "bg-amber-500 animate-pulse" :
-                                score !== null ? (score >= 70 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]") :
+                                score !== null ? (score >= 70 ? "bg-emerald-500" : "bg-primary") :
                                   "bg-muted-foreground"
                             )} />
-                            {session.status === 'in_progress' ? "Live Session" :
-                              isInsufficientData ? "Null Archive" :
-                                score !== null ? "Archived" : "Processing"}
+                            {session.status === 'in_progress' ? "In Progress" :
+                              isInsufficientData ? "No Report" :
+                                score !== null ? "Completed" : "Generating..."}
                           </div>
 
                           <div className="flex items-center gap-2">

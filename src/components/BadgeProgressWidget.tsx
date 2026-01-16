@@ -87,13 +87,13 @@ export function BadgeProgressWidget({
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                     <Trophy className="h-3.5 w-3.5 text-yellow-500" />
-                    <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-foreground">Achievements</h3>
+                    <h3 className="text-[10px] sm:text-xs font-bold text-foreground">Achievements</h3>
                 </div>
                 <button
                     onClick={() => router.push("/badges")}
-                    className="text-[9px] sm:text-[10px] text-primary hover:text-primary/80 font-bold uppercase tracking-wider flex items-center gap-0.5 transition-colors"
+                    className="text-[9px] sm:text-[10px] text-primary hover:text-primary/80 font-medium flex items-center gap-0.5 transition-colors"
                 >
-                    All
+                    View All
                     <ChevronRight className="h-2.5 w-2.5" />
                 </button>
             </div>
@@ -101,8 +101,8 @@ export function BadgeProgressWidget({
             {/* Compact Stats Row */}
             <div className="flex items-center gap-2 mb-2">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
-                    <span className="text-[9px] font-bold text-primary uppercase tracking-wide">Earned</span>
-                    <span className="text-sm font-black text-primary">{earnedCount}</span>
+                    <span className="text-[9px] font-medium text-primary">Earned</span>
+                    <span className="text-sm font-bold text-primary">{earnedCount}</span>
                 </div>
                 <div className="flex-1 bg-muted rounded-full h-1 overflow-hidden">
                     <div
@@ -110,7 +110,7 @@ export function BadgeProgressWidget({
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">
+                <span className="text-[9px] font-medium text-muted-foreground">
                     {progressPercentage}%
                 </span>
             </div>
@@ -143,7 +143,7 @@ export function BadgeProgressWidget({
                     <div className="flex-1 flex items-center gap-1.5 bg-muted/30 rounded-lg p-1.5 border border-border/50">
                         <span className="text-base">{nextBadges[0].icon}</span>
                         <div className="flex-1 min-w-0">
-                            <div className="text-[9px] font-bold text-foreground truncate uppercase tracking-wide">{nextBadges[0].name}</div>
+                            <div className="text-[9px] font-bold text-foreground truncate">{nextBadges[0].name}</div>
                             <div className="flex items-center gap-1">
                                 <div className="flex-1 bg-muted rounded-full h-0.5 overflow-hidden">
                                     <div
