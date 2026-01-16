@@ -28,10 +28,12 @@ export function PublicHeader() {
                     <Link href="/pricing" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Pricing</Link>
                     <Link href="/blog" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Blog</Link>
                     <Link href="/careers" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Careers</Link>
+                    <Link href="/community" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Community</Link>
+                    <Link href="/contact" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Contact</Link>
+                    <Link href="/faq" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">FAQ</Link>
                 </nav>
 
                 <div className="flex items-center gap-6">
-                    <Link href="/auth" className="hidden md:block text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
                     <TransitionButton
                         size="sm"
                         href="/auth"
@@ -55,6 +57,9 @@ export function PublicHeader() {
                     <Link href="/pricing" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
                     <Link href="/blog" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Blog</Link>
                     <Link href="/careers" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Careers</Link>
+                    <Link href="/community" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Community</Link>
+                    <Link href="/contact" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
+                    <Link href="/faq" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
                     <Link href="/auth" className="text-slate-400 hover:text-white py-2" onClick={() => setMobileMenuOpen(false)}>Login</Link>
                     <Button className="w-full bg-white text-black hover:bg-slate-200 rounded-full font-medium" asChild>
                         <Link href="/auth">Get Started</Link>

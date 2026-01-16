@@ -1,15 +1,20 @@
-import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
-
-// Set up the worker for PDF.js
-// In Next.js, we can use the CDN version or bundle it. 
-// For simplicity in this environment, using the CDN version of the worker.
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+// Set up the worker for PDF.js - only in browser
+if (typeof window !== 'undefined') {
+    // We will import pdfjs dynamically inside parsePDF to avoid top-level issues
+}
 
 /**
  * Parses a PDF file and extracts its text content
  */
 export async function parsePDF(file: File): Promise<string> {
+    if (typeof window === 'undefined') return '';
+
+    // Dynamic import to avoid SSR issues
+    const pdfjs = await import('pdfjs-dist');
+
+    // Set up worker
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
@@ -31,6 +36,7 @@ export async function parsePDF(file: File): Promise<string> {
  * Parses a DOCX file and extracts its text content
  */
 export async function parseDOCX(file: File): Promise<string> {
+    const mammoth = await import('mammoth');
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value.trim();

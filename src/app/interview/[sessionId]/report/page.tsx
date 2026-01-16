@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw, AlertTriangle, TrendingUp, Target, Shield, Award, Activity, FileText, Share2, Sparkles, Star, ChevronRight, Timer } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from 'recharts';
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
@@ -80,7 +81,7 @@ export default function InterviewReport() {
     const router = useRouter();
     const params = useParams();
     const sessionId = typeof params.sessionId === 'string' ? params.sessionId : params.sessionId?.[0];
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const userMetadata = user?.user_metadata as UserMetadata | undefined;
     const [loading, setLoading] = useState(true);
     const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError, clearFeedback } = useInterviewStore();
@@ -216,7 +217,7 @@ export default function InterviewReport() {
     };
 
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
             <DashboardLayout>
                 <ReportPageSkeleton />
@@ -241,57 +242,95 @@ export default function InterviewReport() {
     if ((session.feedback as any)?.note === 'Insufficient data for report generation') {
         return (
             <DashboardLayout>
-                <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">
-                    <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-800">
-                        <CardContent className="p-8 text-center space-y-6">
-                            <div className="h-16 w-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
-                                <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
-                            </div>
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                                    Report Not Available
-                                </h2>
-                                <p className="text-slate-600 dark:text-slate-400">
-                                    This interview was too short or had insufficient interaction to generate a meaningful AI feedback report.
-                                </p>
-                            </div>
+                <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-                            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl text-left space-y-3">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Requirements for report generation:</p>
-                                <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-                                    <li className="flex items-center gap-2">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                        Minimum {Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60)} minutes of duration
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                        At least {INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} unique user responses
-                                    </li>
-                                </ul>
-                            </div>
+                    <div className="max-w-xl w-full relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <Card className="border-none shadow-2xl bg-[#13151b]/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500/50 to-orange-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]" />
 
-                            <Button
-                                onClick={() => router.push("/dashboard")}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-xl"
-                            >
-                                Return to Dashboard
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    {session.transcript && Array.isArray(session.transcript) && session.transcript.length > 0 && (
-                        <div className="mt-8 w-full max-w-md">
-                            <p className="text-xs text-center text-slate-500 mb-4 uppercase tracking-widest font-bold">Session Transcript</p>
-                            <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 p-4 max-h-60 overflow-y-auto space-y-3">
-                                {(session.transcript as any[]).map((msg: any, idx: number) => (
-                                    <div key={idx} className="text-xs">
-                                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase mr-2">{['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'You'}:</span>
-                                        <span className="text-slate-600 dark:text-slate-400">{msg.text}</span>
+                            <CardContent className="p-8 sm:p-12 text-center space-y-10">
+                                {/* Animated Warning Icon */}
+                                <div className="relative mx-auto h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-amber-500/20 rounded-3xl blur-2xl animate-pulse" />
+                                    <div className="relative h-20 w-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-2xl shadow-amber-500/20">
+                                        <AlertTriangle className="h-10 w-10 text-amber-500" />
                                     </div>
-                                ))}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                                        Protocol Terminated
+                                    </div>
+                                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                        Intelligence <span className="text-amber-500">Threshold</span> Not Met
+                                    </h2>
+                                    <p className="text-slate-400 font-bold text-sm tracking-wide leading-relaxed max-w-sm mx-auto uppercase opacity-80">
+                                        This engagement was too brief to synchronize precision AI feedback models.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3 text-left">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Calibration Requirements</p>
+                                    {[
+                                        { label: "Minimum Duration", val: `${Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60)} Minutes`, active: (session.duration_seconds || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS },
+                                        { label: "Intelligence Exchange", val: `${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} Unique Responses`, active: ((session.transcript as any[])?.filter(m => !['ai', 'agent'].includes(m.speaker?.toLowerCase())).length || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS }
+                                    ].map((req, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.05]">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{req.label}</span>
+                                                <span className={`text-xs font-bold ${req.active ? 'text-emerald-400' : 'text-slate-300'}`}>{req.val}</span>
+                                            </div>
+                                            <div className={`h-2 w-2 rounded-full ${req.active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)] animate-pulse'}`} />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex flex-col gap-4">
+                                    <Button
+                                        onClick={() => router.push("/start-interview")}
+                                        className="w-full h-16 bg-white text-black hover:bg-slate-200 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
+                                    >
+                                        <Bot className="mr-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
+                                        Initialize New Protocol
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => router.push("/dashboard")}
+                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors"
+                                    >
+                                        <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                        Return to Dashboard
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Transcript Sub-box */}
+                        {session.transcript && Array.isArray(session.transcript) && session.transcript.length > 0 && (
+                            <div className="mt-8 space-y-4">
+                                <div className="flex items-center justify-between px-6">
+                                    <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Operational Logs</h3>
+                                    <span className="text-[9px] font-bold text-slate-700 uppercase tracking-widest">{session.transcript.length} Entries Recorded</span>
+                                </div>
+                                <div className="bg-[#13151b]/40 backdrop-blur-xl rounded-3xl border border-white/5 p-6 max-h-60 overflow-y-auto custom-scrollbar">
+                                    <div className="space-y-4">
+                                        {(session.transcript as any[]).map((msg: any, idx: number) => (
+                                            <div key={idx} className="flex gap-4 group">
+                                                <div className={`text-[9px] font-black uppercase tracking-widest shrink-0 w-12 ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'text-indigo-400' : 'text-slate-500'}`}>
+                                                    {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'Node' : 'User'}
+                                                </div>
+                                                <p className="text-xs text-slate-400 font-bold leading-relaxed group-hover:text-slate-200 transition-colors">
+                                                    {msg.text}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </DashboardLayout>
         );

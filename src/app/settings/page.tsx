@@ -25,8 +25,10 @@ import {
     Mail,
     Globe,
     ExternalLink,
-    Copy
+    Copy,
+    Loader2
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +45,7 @@ import { useRouter } from "next/navigation";
 type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
 
 export default function Settings() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const { fetchProfile } = useOptimizedQueries();
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<SettingsSection>("general");
@@ -281,7 +283,7 @@ export default function Settings() {
         if (!user?.id) return;
 
         const confirmed = window.confirm(
-            "Are you sure you want to delete your account? This action cannot be undone."
+            "Are you sure you want to delete your data? This will remove your interview history. To fully delete your account, please contact support."
         );
 
         if (!confirmed) return;
@@ -297,10 +299,12 @@ export default function Settings() {
                 await interviewService.deleteSession(session.id);
             }
 
-            toast.info("Please contact support to complete account deletion.");
+            toast.success("Interview data removed", {
+                description: "Your session history has been cleared. Contact support for full account closure."
+            });
         } catch (error: any) {
-            console.error("Error deleting account:", error);
-            toast.error(error.message || "Failed to delete account");
+            console.error("Error deleting data:", error);
+            toast.error(error.message || "Failed to clear data");
         } finally {
             setLoading(false);
         }
@@ -429,7 +433,13 @@ export default function Settings() {
                                                 <Sparkles className="h-2.5 w-2.5" />
                                                 Verified Candidate
                                             </div>
-                                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">{fullName || "User Identity"}</h1>
+                                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+                                                {authLoading ? (
+                                                    <Skeleton className="h-8 w-48" />
+                                                ) : (
+                                                    fullName || "User Identity"
+                                                )}
+                                            </h1>
                                             <div className="flex flex-wrap justify-center md:justify-start gap-4">
                                                 <div className="flex items-center gap-2 text-muted-foreground font-medium text-xs sm:text-sm">
                                                     <Mail className="h-4 w-4 text-primary" />
@@ -761,10 +771,10 @@ export default function Settings() {
                                     <div className="space-y-1.5">
                                         <div className="flex items-center gap-3 text-destructive">
                                             <Trash2 className="h-5 w-5 animate-pulse" />
-                                            <h3 className="text-lg sm:text-xl font-black tracking-tight">Self-Destruct Account</h3>
+                                            <h3 className="text-lg sm:text-xl font-black tracking-tight">Data Management</h3>
                                         </div>
                                         <p className="text-[10px] sm:text-xs font-medium text-destructive/70 max-w-2xl">
-                                            Permanent termination of your candidate identity, history and metadata. This operation is irreversible.
+                                            Clear your interview history and performance metrics. To fully deactivate or delete your account, please contact system administration.
                                         </p>
                                     </div>
 

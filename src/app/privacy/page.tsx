@@ -55,7 +55,7 @@ export default function PrivacyPage() {
                             <h2 className="text-2xl font-bold text-white mb-4">2. Information We Collect</h2>
                             <h3 className="text-xl font-semibold text-white mb-2">A. Personal Information</h3>
                             <p>
-                                When you create an account, we collect your name, email address, and profile picture (if provided via OAuth). If you subscribe to a paid plan, our payment processor (Stripe) collects your billing information.
+                                When you create an account, we collect your name, email address, and profile picture (if provided via OAuth). If you subscribe to a paid plan, our payment processor collects your billing information.
                             </p>
                             <h3 className="text-xl font-semibold text-white mb-2">B. Usage Data</h3>
                             <p>

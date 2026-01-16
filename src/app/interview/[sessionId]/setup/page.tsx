@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Brain, Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Settings, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -49,7 +50,7 @@ interface SessionData {
 export default function InterviewSetup() {
     const { sessionId } = useParams();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [isMicOn, setIsMicOn] = useState(false);
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -439,7 +440,13 @@ export default function InterviewSetup() {
 
                             <div className="bg-primary/20 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-primary/30 flex items-center gap-1.5 sm:gap-2">
                                 <Sparkles className="h-3 w-3 text-primary" />
-                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-primary">Identity: {user?.user_metadata?.full_name?.split(' ')[0] || "Pilot"}</span>
+                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-primary">
+                                    Identity: {authLoading ? (
+                                        <Skeleton className="h-2 w-12 inline-block ml-1 align-middle bg-primary/20" />
+                                    ) : (
+                                        user?.user_metadata?.full_name?.split(' ')[0] || "Pilot"
+                                    )}
+                                </span>
                             </div>
                         </div>
 
