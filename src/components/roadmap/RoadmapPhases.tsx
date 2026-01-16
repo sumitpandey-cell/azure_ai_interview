@@ -102,13 +102,13 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
     if (!phases || phases.length === 0) return null;
 
     return (
-        <div className="space-y-12 py-10">
-            <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+        <div className="space-y-8 py-6">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
                     Your Learning Path
                 </h2>
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-accent/30 px-4 py-2 rounded-full border border-accent">
-                    <Clock className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground bg-accent/30 px-3 py-1.5 rounded-full border border-accent uppercase tracking-wider">
+                    <Clock className="w-3.5 h-3.5" />
                     <span>Estimated: {phases.reduce((acc, p) => acc + p.duration_weeks, 0)} Weeks</span>
                 </div>
             </div>
@@ -147,18 +147,18 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                     onClick={() => isUnlocked && togglePhase(phase.phase_number)}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="space-y-1">
+                                        <div className="space-y-0.5">
                                             <div className="flex items-center gap-2">
-                                                <CardTitle className="text-xl">
+                                                <CardTitle className="text-lg">
                                                     Phase {phase.phase_number}: {phase.title}
                                                 </CardTitle>
                                                 {isUnlocked && !isCompleted && (
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                                    <span className="text-[9px] font-black uppercase tracking-wider bg-primary text-white px-2 py-0.5 rounded-md">
                                                         Active
                                                     </span>
                                                 )}
                                             </div>
-                                            <CardDescription className="text-sm max-w-2xl">
+                                            <CardDescription className="text-xs max-w-2xl">
                                                 {phase.description}
                                             </CardDescription>
                                         </div>
@@ -184,7 +184,7 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                 </CardHeader>
 
                                 {isExpanded && isUnlocked && (
-                                    <CardContent className="p-8 space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <CardContent className="p-5 sm:p-6 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                                         {/* Goals Section */}
                                         <div className="grid gap-4">
                                             <div className="flex items-center gap-2 mb-2">
@@ -198,8 +198,8 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                         <div
                                                             key={goal.id}
                                                             className={cn(
-                                                                "flex items-start gap-4 p-4 rounded-2xl border transition-all duration-300",
-                                                                completed ? "bg-emerald-500/5 border-emerald-500/20" : "bg-accent/10 border-accent/20 hover:border-primary/30"
+                                                                "flex items-start gap-3 p-3 rounded-xl border transition-all duration-300",
+                                                                completed ? "bg-emerald-500/5 border-emerald-500/20" : "bg-accent/5 border-accent/10 hover:border-primary/20"
                                                             )}
                                                         >
                                                             <div className="pt-1">
@@ -232,11 +232,11 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                 <Play className="w-4 h-4 text-primary" />
                                                 <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/80">Recommended Practice</h4>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 {phase.recommended_interviews.map((interview, idx) => (
-                                                    <div key={idx} className="group/item flex items-center justify-between p-5 rounded-2xl bg-gradient-to-b from-white to-accent/20 dark:from-black/40 dark:to-accent/10 border border-accent/20 shadow-sm transition-all hover:shadow-md">
-                                                        <div className="space-y-2">
-                                                            <h5 className="font-bold text-sm leading-tight text-foreground/90">{interview.template_title}</h5>
+                                                    <div key={idx} className="group/item flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-b from-white to-accent/20 dark:from-black/40 dark:to-accent/10 border border-accent/20 shadow-sm transition-all hover:shadow-md">
+                                                        <div className="space-y-1.5">
+                                                            <h5 className="font-bold text-xs leading-tight text-foreground/90">{interview.template_title}</h5>
                                                             <div className="flex flex-wrap gap-2">
                                                                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
                                                                     {interview.difficulty}
@@ -268,7 +268,7 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                 {phase.learning_resources.map((resource, idx) => (
                                                     <div
                                                         key={idx}
-                                                        className="flex flex-col justify-between p-4 rounded-xl border border-accent/20 bg-accent/10 hover:bg-accent/20 transition-all cursor-pointer group/card"
+                                                        className="flex flex-col justify-between p-3 rounded-xl border border-accent/20 bg-accent/10 hover:bg-accent/20 transition-all cursor-pointer group/card"
                                                         onClick={() => resource.url && window.open(resource.url, '_blank')}
                                                     >
                                                         <div className="space-y-2">

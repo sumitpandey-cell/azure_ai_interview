@@ -1,14 +1,14 @@
-
 // No import needed for direct API calls
-
+import { INTERVIEW_CONFIG } from "@/config/interview-config";
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
 interface Message {
     id?: number;
-    sender?: 'user' | 'ai';
-    speaker?: 'user' | 'ai';  // Database uses 'speaker' instead of 'sender'
+    speaker: 'user' | 'ai';
+    sender?: 'user' | 'ai';  // Legacy support
+    role?: string;           // LLM standard support
     text: string;
-    timestamp?: number;  // Database includes timestamp
+    timestamp?: number;
     sentiment?: string;
     confidence?: number;
 }
@@ -72,13 +72,8 @@ export interface FeedbackData {
     }[];
 }
 
-// Interview length thresholds
-const INTERVIEW_THRESHOLDS = {
-    MINIMUM_TURNS: 4, // Minimum meaningful exchanges
-    SHORT_INTERVIEW: 8, // Less than this = short interview
-    MEDIUM_INTERVIEW: 15, // Good length for assessment
-    LONG_INTERVIEW: 25, // Comprehensive interview
-} as const;
+// Interview length thresholds are now in INTERVIEW_CONFIG
+
 
 export interface InterviewLengthAnalysis {
     totalTurns: number;
@@ -94,10 +89,16 @@ export interface InterviewLengthAnalysis {
  * Analyzes the interview transcript to determine length and quality metrics
  */
 function analyzeInterviewLength(transcript: Message[]): InterviewLengthAnalysis {
-    // Handle both 'sender' and 'speaker' field names
-    const getSpeaker = (msg: Message) => msg.sender || msg.speaker;
-    const userMessages = transcript.filter(msg => getSpeaker(msg) === 'user');
-    const aiMessages = transcript.filter(msg => getSpeaker(msg) === 'ai');
+    // Standardized role identification
+    const getNormalizedRole = (msg: Message) => {
+        const rawRole = (msg.role || msg.speaker || msg.sender || 'unknown').toLowerCase();
+        if (['ai', 'assistant', 'model', 'agent'].includes(rawRole)) return 'ai';
+        if (rawRole === 'user' || rawRole === 'candidate') return 'user';
+        return 'unknown';
+    };
+
+    const userMessages = transcript.filter(msg => getNormalizedRole(msg) === 'user');
+    const aiMessages = transcript.filter(msg => getNormalizedRole(msg) === 'ai');
 
     const totalWordCount = transcript.reduce((count, msg) => {
         return count + msg.text.trim().split(/\s+/).length;
@@ -110,11 +111,11 @@ function analyzeInterviewLength(transcript: Message[]): InterviewLengthAnalysis 
     const totalTurns = transcript.length;
 
     let category: InterviewLengthAnalysis['category'];
-    if (totalTurns < INTERVIEW_THRESHOLDS.MINIMUM_TURNS) {
+    if (totalTurns < INTERVIEW_CONFIG.LENGTH_CATEGORIES.TOO_SHORT) {
         category = 'too-short';
-    } else if (totalTurns < INTERVIEW_THRESHOLDS.SHORT_INTERVIEW) {
+    } else if (totalTurns < INTERVIEW_CONFIG.LENGTH_CATEGORIES.SHORT) {
         category = 'short';
-    } else if (totalTurns < INTERVIEW_THRESHOLDS.MEDIUM_INTERVIEW) {
+    } else if (totalTurns < INTERVIEW_CONFIG.LENGTH_CATEGORIES.MEDIUM) {
         category = 'medium';
     } else {
         category = 'long';
@@ -134,8 +135,9 @@ function analyzeInterviewLength(transcript: Message[]): InterviewLengthAnalysis 
  * Returns appropriate feedback for interviews that are too short to assess
  */
 function getTooShortInterviewFeedback(position: string, analysis: InterviewLengthAnalysis): FeedbackData {
+    const minTurns = INTERVIEW_CONFIG.LENGTH_CATEGORIES.TOO_SHORT;
     return {
-        executiveSummary: `This interview session was too brief (${analysis.totalTurns} exchanges) to provide a comprehensive assessment for the ${position} position. A meaningful technical interview typically requires at least ${INTERVIEW_THRESHOLDS.MINIMUM_TURNS} substantial exchanges to evaluate candidate capabilities effectively. We recommend scheduling a longer session to get valuable insights into your technical skills and problem-solving approach.`,
+        executiveSummary: `This interview session was too brief (${analysis.totalTurns} exchanges) to provide a comprehensive assessment for the ${position} position. A meaningful technical interview typically requires at least ${minTurns} substantial exchanges to evaluate candidate capabilities effectively. We recommend scheduling a longer session to get valuable insights into your technical skills and problem-solving approach.`,
         strengths: [
             "Showed up and engaged with the interview process",
             "Demonstrated willingness to participate in technical assessment"
@@ -236,7 +238,7 @@ function getLengthBasedInstructions(category: InterviewLengthAnalysis['category'
 }
 
 // Export the analysis function for use in other parts of the application
-export { analyzeInterviewLength, INTERVIEW_THRESHOLDS };
+export { analyzeInterviewLength, INTERVIEW_CONFIG };
 
 export async function generateFeedback(
     transcript: Message[],
@@ -279,9 +281,11 @@ export async function generateFeedback(
             return { ...msg, text: cleanText };
         })
         .filter(msg => msg.text.trim().length > 0)
+        .filter(msg => msg.text.trim().length > 0)
         .map(msg => {
-            // Handle both 'sender' and 'speaker' field names
-            const speaker = (msg.sender || msg.speaker || 'unknown').toUpperCase();
+            // Standardize speaker identification for the prompt
+            const rawRole = (msg.role || msg.speaker || msg.sender || 'unknown').toLowerCase();
+            const speaker = ['ai', 'assistant', 'model', 'agent'].includes(rawRole) ? 'AI' : 'USER';
             const sentimentInfo = msg.sentiment ? ` [Sentiment: ${msg.sentiment}, Confidence: ${msg.confidence}%]` : '';
             return `${speaker}${sentimentInfo}: ${msg.text}`;
         })

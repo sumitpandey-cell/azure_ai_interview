@@ -47,6 +47,7 @@ import "@/styles/arjuna-animations.css";
 
 interface LiveInterviewSessionProps {
     sessionId: string;
+    userId: string;
     onEndSession: (hintsUsed?: number) => void;
     remainingMinutes: number;
     remainingSeconds: number;
@@ -58,14 +59,13 @@ interface LiveInterviewSessionProps {
     initialTranscripts?: TranscriptEntry[];
     sessionData?: InterviewSession | null;
     onAgentReady?: () => void;
+    onHintsUpdate?: (count: number) => void;
 }
 
 export function LiveInterviewSession({
     sessionId,
+    userId,
     onEndSession,
-    remainingMinutes,
-    remainingSeconds,
-    isLowTime,
     isCriticalTime,
     formatTime,
     initialMicEnabled = true,
@@ -73,14 +73,22 @@ export function LiveInterviewSession({
     initialTranscripts = [],
     sessionData = null,
     onAgentReady,
+    onHintsUpdate,
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
-    const { localParticipant } = useLocalParticipant();
+    const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
     const { state: agentState, audioTrack: agentAudioTrack, agent } =
         useVoiceAssistant();
     const room = useRoomContext();
 
     const [hasSignaledReady, setHasSignaledReady] = useState(false);
+
+    // Reset signal on disconnection to allow re-signaling on reconnection
+    useEffect(() => {
+        if (roomState === ConnectionState.Disconnected) {
+            setHasSignaledReady(false);
+        }
+    }, [roomState]);
 
     useEffect(() => {
         if (!hasSignaledReady && agentState !== 'idle' && agentState !== 'connecting') {
@@ -90,8 +98,6 @@ export function LiveInterviewSession({
         }
     }, [agentState, hasSignaledReady, onAgentReady]);
 
-    const [isMuted, setIsMuted] = useState(!initialMicEnabled);
-    const [cameraEnabled, setCameraEnabled] = useState(initialCameraEnabled);
     const [showTranscript, setShowTranscript] = useState(true);
     const [isEndCallDialogOpen, setIsEndCallDialogOpen] = useState(false);
     const [sentimentData, setSentimentData] = useState<{
@@ -105,30 +111,15 @@ export function LiveInterviewSession({
         if (roomState === ConnectionState.Connected) {
             localParticipant.setMicrophoneEnabled(initialMicEnabled);
             localParticipant.setCameraEnabled(initialCameraEnabled);
-            setIsMuted(!initialMicEnabled);
-            setCameraEnabled(initialCameraEnabled);
         }
     }, [roomState, localParticipant, initialMicEnabled, initialCameraEnabled]);
 
-    // Sync state with actual track status
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setIsMuted(!localParticipant.isMicrophoneEnabled);
-            setCameraEnabled(localParticipant.isCameraEnabled);
-        }, 100);
-        return () => clearInterval(interval);
-    }, [localParticipant]);
-
     const toggleMute = async () => {
-        const newState = !isMuted;
-        await localParticipant.setMicrophoneEnabled(!newState);
-        setIsMuted(newState);
+        await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
     };
 
     const toggleCamera = async () => {
-        const newState = !cameraEnabled;
-        await localParticipant.setCameraEnabled(newState);
-        setCameraEnabled(newState);
+        await localParticipant.setCameraEnabled(!isCameraEnabled);
     };
 
     const handleEndCall = () => {
@@ -223,7 +214,9 @@ export function LiveInterviewSession({
         if (isHintLoading || hintCooldown) return;
 
         setIsHintLoading(true);
-        setHintsUsed(prev => prev + 1);
+        const newCount = hintsUsed + 1;
+        setHintsUsed(newCount);
+        onHintsUpdate?.(newCount);
 
         try {
             // Encode data message
@@ -263,26 +256,25 @@ export function LiveInterviewSession({
         if (videoTrack && videoRef.current) {
             videoTrack.attach(videoRef.current);
         }
-    }, [localParticipant, cameraEnabled, localParticipant.videoTrackPublications]);
+    }, [localParticipant, isCameraEnabled, localParticipant.videoTrackPublications]);
 
     // Local Mic Track for Visualizer
+    const { microphoneTrack } = useLocalParticipant();
     const [localMicTrack, setLocalMicTrack] = useState<MediaStreamTrack | null>(null);
-    useEffect(() => {
-        const micTrack = Array.from(localParticipant.audioTrackPublications.values())
-            .map(pub => pub.track)
-            .find(track => track?.source === Track.Source.Microphone);
 
-        if (micTrack && micTrack.mediaStreamTrack) {
-            setLocalMicTrack(micTrack.mediaStreamTrack);
+    useEffect(() => {
+        if (microphoneTrack?.track?.mediaStreamTrack) {
+            setLocalMicTrack(microphoneTrack.track.mediaStreamTrack);
         } else {
             setLocalMicTrack(null);
         }
-    }, [localParticipant, isMuted, localParticipant.audioTrackPublications]);
+    }, [microphoneTrack, microphoneTrack?.track]);
 
     return (
         <TranscriptProvider initialTranscripts={initialTranscripts}>
             <TranscriptTracker
                 sessionId={sessionId}
+                userId={userId}
                 agentAudioTrack={agentAudioTrack}
                 sentimentData={sentimentData}
             />
@@ -313,9 +305,9 @@ export function LiveInterviewSession({
                                     autoPlay
                                     muted
                                     playsInline
-                                    className={`w-full h-full object-cover transition-opacity duration-500 ${cameraEnabled ? "opacity-100" : "opacity-0"}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-500 ${isCameraEnabled ? "opacity-100" : "opacity-0"}`}
                                 />
-                                {!cameraEnabled && (
+                                {!isCameraEnabled && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                                             <User className="h-8 w-8 text-white/20" />
@@ -443,18 +435,18 @@ export function LiveInterviewSession({
 
                             {/* Floating Center Controls */}
                             <div className="absolute bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 lg:gap-3 bg-card/60 backdrop-blur-2xl px-4 lg:px-6 py-3 lg:py-4 rounded-[40px] border border-white/5 shadow-3xl w-[90%] lg:w-auto justify-center ring-1 ring-white/5">
-                                <button onClick={toggleCamera} className={`p-2 lg:p-3 rounded-full transition-all ${cameraEnabled ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-destructive bg-destructive/10'}`}>
-                                    {cameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+                                <button onClick={toggleCamera} className={`p-2 lg:p-3 rounded-full transition-all ${isCameraEnabled ? 'text-white/60 hover:text-white hover:bg-white/5' : 'text-destructive bg-destructive/10'}`}>
+                                    {isCameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                                 </button>
 
                                 <button
                                     onClick={toggleMute}
-                                    className={`h-10 lg:h-12 px-6 lg:px-10 rounded-full font-bold text-[10px] lg:text-xs uppercase tracking-widest transition-all border ${isMuted
+                                    className={`h-10 lg:h-12 px-6 lg:px-10 rounded-full font-bold text-[10px] lg:text-xs uppercase tracking-widest transition-all border ${!isMicrophoneEnabled
                                         ? 'bg-destructive/10 border-destructive/50 text-destructive'
                                         : 'bg-primary border-primary text-black hover:opacity-90 shadow-[0_0_20px_rgba(168,85,247,0.4)] font-black'
                                         }`}
                                 >
-                                    {isMuted ? 'Muted' : 'Speaking'}
+                                    {!isMicrophoneEnabled ? 'Muted' : 'Speaking'}
                                 </button>
 
                                 <button
@@ -540,29 +532,6 @@ export function LiveInterviewSession({
                         </div>
                     )}
 
-                </div>
-
-                {/* Status Indicator Bar */}
-                <div className="h-auto lg:h-12 flex items-center justify-center mt-4 lg:mt-2 pb-4 lg:pb-0 relative">
-                    <div className="flex flex-wrap items-center justify-center gap-3 lg:gap-8 px-8 py-3 bg-card/40 backdrop-blur-xl rounded-2xl lg:rounded-full border border-white/5 text-[8px] lg:text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/40 max-w-[90%] shadow-2xl ring-1 ring-white/5">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
-                            <span className="hover:text-white/70 transition-colors cursor-default">Real-time Monitoring</span>
-                        </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(255,195,77,0.4)]" />
-                            <span className="hover:text-white/70 transition-colors cursor-default">Neural Engine Active</span>
-                        </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
-                        <div className="flex items-center gap-2.5">
-                            <span className="text-white/10">Security: <span className="text-primary/60 lowercase">encrypted</span></span>
-                        </div>
-                        <div className="hidden lg:block w-[1px] h-3 bg-white/5" />
-                        <div className="flex items-center gap-2.5">
-                            <span className="text-white/20 hover:text-white/70 transition-colors cursor-default">Build 1.4.2</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 

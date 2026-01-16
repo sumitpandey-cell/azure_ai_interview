@@ -1206,7 +1206,7 @@ async transitionSessionStatus(
 | 9 | Polling inefficiency | report/page.tsx:135 | Wasted resources | All users viewing reports |
 | 10 | Token TTL not validated | setup/page.tsx:278 | Slow connection | Users waiting on setup |
 | 11 | No idempotency in tracking | subscription.service.ts:111 | Duplicate charges | Retry scenarios |
-| 12 | Transcript schema inconsistency | interview.service.ts:778 | Incorrect turn counts | Random failures |
+| 12 | Transcript schema inconsistency | interview.service.ts:778 | ✅ FIXED | Standardized `role` field |
 | 13 | Client-side timer only | live/page.tsx:55 | Time manipulation | Malicious users |
 | 14 | No session ownership check | setup/page.tsx:115 | Unauthorized access | Users knowing session IDs |
 
@@ -1214,12 +1214,12 @@ async transitionSessionStatus(
 
 | # | Issue | Location | Impact | Affected Users |
 |---|-------|----------|--------|----------------|
-| 15 | Feedback structure inconsistency | interview.service.ts:874 | Complex frontend logic | Developers |
-| 16 | Hard-coded thresholds | live/page.tsx:228 | Inflexible quality checks | Edge case users |
-| 17 | No state machine for status | interview.service.ts | No audit trail | Support team |
-| 18 | Skills not sanitized | start-interview/page.tsx:206 | Potential injection | Users entering special chars |
-| 19 | No progress on feedback generation | FeedbackContext.tsx:38 | Poor UX | Users with long interviews |
-| 20 | Case-sensitive skill duplicates | start-interview/page.tsx:208 | Duplicate skills | Users mixing case |
+| 15 | Feedback structure inconsistency | interview.service.ts:874 | ✅ FIXED | Standardized V2 structure |
+| 16 | Hard-coded thresholds | live/page.tsx:228 | ✅ FIXED | Centralized in `INTERVIEW_CONFIG` |
+| 17 | No state machine for status | interview.service.ts | ✅ FIXED | Strict transition validation |
+| 18 | Skills not sanitized | start-interview/page.tsx:206 | ✅ FIXED | Alphanumeric sanitization |
+| 19 | No progress on feedback generation | FeedbackContext.tsx:38 | ✅ FIXED | Real-time progress overlay |
+| 20 | Case-sensitive skill duplicates | start-interview/page.tsx:208 | ✅ FIXED | Case-insensitive merging |
 
 ---
 
@@ -1238,8 +1238,8 @@ async transitionSessionStatus(
 6. **Add reconnection window** → 30-second grace period for disconnections
 7. **Implement exponential backoff polling** → Reduce server load
 8. **Add usage tracking idempotency** → Prevent duplicate charges
-9. **Create session state machine** → Proper state transitions
-10. **Add WebSocket for feedback status** → Replace polling
+9. **✅ Create session state machine** → DONE
+10. **✅ Add progress indicators** → DONE (Background overlay implemented)
 
 ### 🎯 **Long Term** (Next Quarter)
 

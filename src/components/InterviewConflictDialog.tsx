@@ -43,7 +43,7 @@ export function InterviewConflictDialog({
                         <AlertDialogTitle className="text-xl font-bold">Incomplete Interview Found</AlertDialogTitle>
                     </div>
                     <AlertDialogDescription className="text-base text-muted-foreground">
-                        You already have an active interview session for this specific role and type.
+                        You already have an active interview session in progress. Only one session can be active at a time.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 

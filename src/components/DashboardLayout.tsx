@@ -37,7 +37,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { remaining_minutes, plan_name, invalidateCache, loading: subscriptionLoading } = useSubscription();
+  const {
+    remaining_seconds,
+    monthly_seconds,
+    plan_name,
+    invalidateCache,
+    loading: subscriptionLoading
+  } = useSubscription();
   const { currentSession } = useInterviewStore();
   const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
 
@@ -314,14 +320,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                 ) : (
                   <>
                     Plan : {plan_name}
-                    <div className={`text-base font-bold mt-0.5 font-mono transition-colors ${remaining_minutes <= 120
+                    <div className={`text-base font-bold mt-0.5 font-mono transition-colors ${remaining_seconds <= 600
                       ? 'text-red-500'
-                      : remaining_minutes < 300
+                      : remaining_seconds < 1800
                         ? 'text-amber-500'
                         : 'text-sidebar-foreground'
                       }`}>
-                      {Math.ceil(remaining_minutes / 60)} min
-                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">/ 100</span>
+                      {Math.floor(remaining_seconds / 60)} min
+                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">/ {Math.floor(monthly_seconds / 60)}</span>
                     </div>
                   </>
                 )}
@@ -329,13 +335,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                 <div className="mt-1.5 h-1 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-700 ${subscriptionLoading ? 'bg-primary/10' :
-                      remaining_minutes <= 120
+                      remaining_seconds <= 600
                         ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]'
-                        : remaining_minutes < 300
+                        : remaining_seconds < 1800
                           ? 'bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]'
                           : 'bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]'
                       }`}
-                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_minutes / 6000) * 100, 100)}%` }}
+                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_seconds / monthly_seconds) * 100, 100)}%` }}
                   />
                 </div>
               </div>

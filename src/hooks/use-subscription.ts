@@ -7,7 +7,8 @@ export interface SubscriptionStatus {
     type: 'free' | 'paid';
     plan_name?: string;
     allowed: boolean;
-    remaining_minutes: number;
+    remaining_seconds: number;
+    monthly_seconds: number;
     plan_id?: string;
     loading: boolean;
 }
@@ -30,7 +31,8 @@ export function useSubscription() {
         return {
             type: 'free',
             allowed: true,
-            remaining_minutes: 3600, // Initialize to 1 hour (seconds) to prevent "Low Time" flash
+            remaining_seconds: 3600, // Initialize to 1 hour (seconds) to prevent "Low Time" flash
+            monthly_seconds: 3600,
             loading: true
         };
     };
@@ -80,7 +82,8 @@ export function useSubscription() {
                     type: subscriptionData.type,
                     plan_name: planName,
                     allowed: subscriptionData.allowed,
-                    remaining_minutes: subscriptionData.remaining_minutes,
+                    remaining_seconds: subscriptionData.remaining_seconds,
+                    monthly_seconds: subscriptionData.monthly_seconds,
                     plan_id: subscriptionData.plan_id,
                     loading: false
                 };
@@ -102,13 +105,13 @@ export function useSubscription() {
         }
     }, [user?.id]);
 
-    const recordUsage = useCallback(async (minutes: number) => {
+    const recordUsage = useCallback(async (secondsToAdd: number) => {
         if (!user?.id) return;
 
         try {
             const { error } = await (supabase as any).rpc('increment_usage', {
                 user_uuid: user.id,
-                seconds_to_add: minutes * 60 // Convert minutes to seconds
+                seconds_to_add: Math.round(secondsToAdd)
             });
 
             if (error) {
