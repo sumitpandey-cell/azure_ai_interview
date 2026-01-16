@@ -20,7 +20,9 @@ import {
   Award,
   Zap,
   Target,
-  ChevronRight
+  History,
+  ChevronRight,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,6 +60,8 @@ interface UserMetadata {
   gender?: string;
 }
 
+import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
+
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -65,20 +69,21 @@ export default function Dashboard() {
   // Type-safe access to user metadata
   const userMetadata = user?.user_metadata as UserMetadata | undefined;
 
-  // Real database data
-  const [sessions, setSessions] = useState<InterviewSession[]>([]);
-  const [stats, setStats] = useState({
-    totalInterviews: 0,
-    timePracticed: 0,
-    rank: 0,
-    averageScore: 0,
-  });
+  // Use optimized queries with caching
+  const {
+    sessions,
+    stats,
+    profile,
+    fetchSessions,
+    fetchStats,
+    fetchProfile,
+    isCached
+  } = useOptimizedQueries();
+
+  // Local state for things not covered by optimized queries
   const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
-  const [profile, setProfile] = useState<any>(null);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isCached.sessions);
 
   // Use analytics hook for cached data
   const { skillProgress, weeklyActivity, streakData, performanceData } = useAnalytics(user?.id);
@@ -101,61 +106,28 @@ export default function Dashboard() {
     if (!user?.id) return;
 
     try {
-      setLoading(true);
-
-      // Invalidate subscription cache to get fresh data
-      if (invalidateCache) {
-        invalidateCache();
+      // Only show loading if we don't have cached data
+      if (!isCached.sessions && sessions.length === 0) {
+        setLoading(true);
       }
 
-      // Load recent sessions
-      const recentSessions = await interviewService.getSessionHistory(user.id, 5);
-
-      // Sort sessions: generating feedback first, then by date
-      const sortedSessions = recentSessions.sort((a, b) => {
-        const aGenerating = a.status === 'completed' && !a.feedback;
-        const bGenerating = b.status === 'completed' && !b.feedback;
-
-        if (aGenerating && !bGenerating) return -1;
-        if (!aGenerating && bGenerating) return 1;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-
-      setSessions(sortedSessions);
-
-      // Extract scores for mini chart (last 5 completed sessions with scores)
-      const scores = recentSessions
-        .filter(s => s.score !== null)
-        .map(s => s.score as number)
-        .slice(0, 5);
-      setScoreHistory(scores.length > 0 ? scores : [30, 50, 40, 70, 60]); // Default values if no scores
-
-      // Load statistics
-      const [sessionStats, rank] = await Promise.all([
-        interviewService.getSessionStats(user.id),
-        interviewService.calculateUserRank(user.id)
+      // Parallel fetch with caching
+      const [fetchedSessions] = await Promise.all([
+        fetchSessions(),
+        fetchStats(),
+        fetchProfile(),
       ]);
 
-      setStats({
-        totalInterviews: sessionStats.completed,
-        timePracticed: sessionStats.totalDuration,
-        rank: rank,
-        averageScore: sessionStats.averageScore,
-      });
+      // Extract scores from freshly fetched (or cached) sessions
+      const sessionList = fetchedSessions || sessions;
+      const scores = sessionList
+        .filter((s: any) => s.score !== null)
+        .map((s: any) => s.score as number)
+        .slice(0, 5);
 
-      // Load profile
-      const userProfile = await profileService.getProfile(user.id);
-      setProfile(userProfile);
+      setScoreHistory(scores.length > 0 ? scores : [30, 50, 40, 70, 60]);
 
-      // Load subscription
-      const userSubscription = await subscriptionService.getSubscription(user.id);
-      setSubscription(userSubscription);
-
-      // Load remaining seconds
-      const remaining = await subscriptionService.getRemainingSeconds(user.id);
-      setRemainingSeconds(remaining);
-
-      // Load badges
+      // Checks for Badges (not yet optimized/cached globally)
       const userBadges = await badgeService.getUserBadges(user.id);
       const earnedSlugs = userBadges.map((ub: any) => ub.badge.slug);
       setEarnedBadges(earnedSlugs);
@@ -183,7 +155,7 @@ export default function Dashboard() {
     if (user?.id) {
       loadData();
     }
-  }, [user?.id]); // Removed hasFetched guard - reload every time we mount
+  }, [user?.id]); // Reload every time we mount
 
   // Refresh data when feedback is ready
   useEffect(() => {
@@ -194,7 +166,8 @@ export default function Dashboard() {
     }
   }, [shouldRefreshDashboard]);
 
-  const { allowed, loading: subscriptionLoading, invalidateCache, remaining_seconds: hookRemainingSeconds } = useSubscription();
+  // Use subscription hook for all subscription data
+  const { allowed, loading: subscriptionLoading, remaining_seconds } = useSubscription();
 
   const startInterview = async () => {
     // Check balance before proceeding
@@ -285,22 +258,22 @@ export default function Dashboard() {
                         null,
                         userMetadata?.gender
                       )} />
-                      <AvatarFallback className="text-[9px] font-black bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                      <AvatarFallback className="text-xs font-medium bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full" />
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
-                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">Account</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-border/50" />
-                <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="text-sm font-medium py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
                   <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
-                  Interface Settings
+                  Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
+                <DropdownMenuItem onClick={signOut} className="text-sm font-medium py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
                   <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                  Terminate Session
+                  Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -312,21 +285,22 @@ export default function Dashboard() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-border/50">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">System Online</span>
+                <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm" />
+                <span className="text-xs font-medium text-muted-foreground">System Active</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tighter italic leading-tight">
-                {new Date().getHours() < 12 ? 'MORNING' : new Date().getHours() < 18 ? 'AFTERNOON' : 'EVENING'}, <span className="text-primary not-italic">{userMetadata?.full_name?.split(' ')[0]?.toUpperCase() || "OPERATOR"}</span>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, <span className="text-primary">{userMetadata?.full_name?.split(' ')[0] || "User"}</span>
               </h1>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary" />
-                Arjuna AI Tactical Interface • Sector 7G
+                Arjuna AI Interview Platform
               </p>
             </div>
 
             {/* Desktop Header Controls */}
-            <div className="hidden lg:flex items-center gap-3 p-2 bg-card/30 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl">
-              <div className="flex items-center gap-1.5 px-2 border-r border-border/50 mr-1">
+            {/* Desktop Header Controls */}
+            <div className="hidden lg:flex items-center gap-2 p-1.5 bg-background/60 backdrop-blur-xl border border-border/40 rounded-full shadow-sm">
+              <div className="flex items-center gap-1 px-2 border-r border-border/40 h-8">
                 <NotificationBell />
                 <ThemeToggle />
                 <StreakIndicator streak={currentStreak} />
@@ -334,10 +308,9 @@ export default function Dashboard() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 bg-muted/50 hover:bg-muted border border-border/50 rounded-full transition-all duration-500 hover:scale-[1.02] active:scale-95">
+                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 hover:bg-muted/50 border border-transparent hover:border-border/40 rounded-full transition-all duration-300">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-md rounded-full group-hover:bg-primary/40 transition-all" />
-                      <Avatar className="h-9 w-9 border-2 border-primary/20 relative z-10">
+                      <Avatar className="h-9 w-9 border border-border/50 shadow-sm relative z-10 transition-transform group-hover:scale-105">
                         <AvatarImage src={getAvatarUrl(
                           userMetadata?.avatar_url,
                           user?.id || 'user',
@@ -347,29 +320,29 @@ export default function Dashboard() {
                         )} />
                         <AvatarFallback className="text-[10px] font-black text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full z-20" />
+                      <div className="absolute 0 bottom-0 right-0 h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full z-20" />
                     </div>
 
                     <div className="flex flex-col items-start">
-                      <span className="text-[11px] font-black text-foreground uppercase tracking-wider leading-none">
+                      <span className="text-sm font-bold text-foreground leading-none group-hover:text-primary transition-colors">
                         {userMetadata?.full_name?.split(' ')[0] || "User"}
                       </span>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight opacity-60">Verified Admin</span>
+                      <span className="text-[10px] font-medium text-muted-foreground/80">Verified User</span>
                     </div>
 
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
-                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Operator Identity</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">Account</DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50" />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-sm font-medium py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
                     <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
-                    Interface Settings
+                    Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="text-[11px] font-black uppercase tracking-widest py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
+                  <DropdownMenuItem onClick={signOut} className="text-sm font-medium py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
                     <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                    Terminate Session
+                    Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -377,68 +350,80 @@ export default function Dashboard() {
           </div>
 
           {/* Low Time Warning Banner */}
-          {!subscriptionLoading && !loading && (hookRemainingSeconds ?? remainingSeconds) < 300 && (hookRemainingSeconds ?? remainingSeconds) >= 0 && (
+          {/* LowTimeWarningBanner */}
+          {!subscriptionLoading && !loading && remaining_seconds < 300 && remaining_seconds >= 0 && (
             <LowTimeWarningBanner
-              remainingMinutes={Math.floor((hookRemainingSeconds ?? remainingSeconds) / 60)}
+              remainingMinutes={Math.floor(remaining_seconds / 60)}
               variant="dashboard"
             />
           )}
 
 
 
+          {/* Top Actions & Statistics Section */}
           {/* Top Actions Section */}
-          <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-6">
+          <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4">
             <Button
-              className="h-11 sm:h-12 md:h-14 w-full xl:w-auto px-6 sm:px-10 py-3 text-[10px] sm:text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] font-black uppercase tracking-widest group"
+              className="h-20 sm:h-24 xl:h-20 w-full xl:w-80 text-lg font-bold bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-3xl shadow-xl shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-95 group border-t border-white/20"
               onClick={startInterview}
               disabled={subscriptionLoading || !allowed}
             >
-              <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 fill-current group-hover:animate-pulse" />
-              Initialize Interview
+              <div className="flex flex-row items-center justify-center gap-3">
+                <div className="p-1.5 bg-white/20 rounded-full backdrop-blur-sm">
+                  <Zap className="h-5 w-5 fill-white" />
+                </div>
+                <span>Start Interview</span>
+              </div>
             </Button>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Play className="h-8 w-8 sm:h-10 sm:w-10" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
+              {/* Interviews Completed */}
+              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
+                  <Play className="h-20 w-20 fill-primary/20 text-primary" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Total Enactments</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.totalInterviews || 0}</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10">Interviews Completed</span>
+                <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter relative z-10">{stats?.totalInterviews || 0}</span>
               </div>
 
-              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-accent/30 transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Clock className="h-8 w-8 sm:h-10 sm:w-10" />
+              {/* Time Practiced */}
+              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
+                  <Clock className="h-20 w-20 text-accent fill-accent/20" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Practiced</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{formatTime(stats?.timePracticed || 0)}</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10">Time Practiced</span>
+                <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter relative z-10">{formatTime(stats?.timePracticed || 0)}</span>
               </div>
 
-              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Award className="h-8 w-8 sm:h-10 sm:w-10" />
+              {/* Global Rank */}
+              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
+                  <Award className="h-20 w-20 text-blue-500 fill-blue-500/20" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Global Standing</span>
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">#{stats?.rank || 0}</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10">Global Rank</span>
+                <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter relative z-10">#{stats?.rank || 0}</span>
               </div>
 
-              <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-border shadow-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all">
-                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <Target className="h-8 w-8 sm:h-10 sm:w-10" />
+              {/* Average Score */}
+              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
+                  <Target className="h-20 w-20 text-primary fill-primary/20" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5 sm:mb-1 block">Mean Accuracy</span>
-                    <span className="text-lg sm:text-xl md:text-2xl font-black text-foreground">{stats?.averageScore || 0}%</span>
-                  </div>
-                  <div className="pt-2 hidden sm:block">
-                    <MiniBarChart
-                      data={scoreHistory}
-                      height={32}
-                      barWidth={4}
-                      gap={3}
-                      color="hsl(var(--primary))"
-                    />
+                <div className="flex items-start justify-between w-full relative z-10 h-full">
+                  <div className="flex flex-col justify-between h-full w-full">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Average Score</span>
+                    <div className="flex items-end justify-between w-full">
+                      <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter">{stats?.averageScore || 0}%</span>
+                      <div className="h-6 w-10 mb-1 opacity-80">
+                        <MiniBarChart
+                          data={scoreHistory}
+                          height={24}
+                          barWidth={3}
+                          gap={2}
+                          color="hsl(var(--primary))"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -453,33 +438,25 @@ export default function Dashboard() {
           </div>
 
           {/* Badge Progress Section */}
-          <BadgeProgressWidget
-            earnedBadges={earnedBadges}
-            totalInterviews={stats.totalInterviews}
-            currentStreak={currentStreak}
-            averageScore={stats.averageScore}
-          />
+
 
           {/* Interview List Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-tight">Recent Deployments</h3>
-                  <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Archive of latest operational logs</p>
-                </div>
+            <div className="flex items-end justify-between px-1 pb-2 border-b border-border/40">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <History className="h-5 w-5 text-muted-foreground" />
+                  Recent Sessions
+                </h3>
               </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => router.push('/reports')}
-                className="h-9 sm:h-10 px-3 sm:px-5 rounded-lg sm:rounded-xl border-border font-black uppercase tracking-widest text-[8px] sm:text-[10px] group transition-all"
+                className="h-8 px-3 text-muted-foreground hover:text-primary hover:bg-primary/5 font-medium text-xs gap-1"
               >
-                Archive
-                <ArrowRight className="h-3 w-3 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
+                View History
+                <ArrowRight className="h-3 w-3" />
               </Button>
             </div>
 
@@ -497,19 +474,19 @@ export default function Dashboard() {
                   <FileText className="h-8 w-8 text-muted-foreground/30" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black uppercase tracking-tight">No Archive Found</h3>
-                  <p className="text-sm text-muted-foreground font-medium">Initiate your first session to begin generating reports.</p>
+                  <h3 className="text-xl font-semibold">No interviews yet</h3>
+                  <p className="text-sm text-muted-foreground font-medium">Start your first session to begin generating reports.</p>
                 </div>
                 <Button
                   onClick={startInterview}
-                  className="rounded-xl h-12 px-8 font-black uppercase tracking-widest text-[10px]"
+                  className="rounded-xl h-12 px-8 font-semibold text-sm"
                 >
-                  Start New Journey
+                  Start Interview
                 </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sessions.map((session) => {
+                {sessions.slice(0, 6).map((session) => {
                   const isGeneratingFeedback = isSessionGenerating(session.id);
                   const isInsufficientData = (session.feedback as any)?.note === 'Insufficient data for report generation';
                   const score = session.score;
@@ -524,124 +501,110 @@ export default function Dashboard() {
                           router.push(`/interview/${session.id}/report`);
                         }
                       }}
-                      className="group relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-border bg-card hover:border-primary/50 transition-all duration-500 cursor-pointer hover:shadow-2xl hover:shadow-primary/5"
+                      className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:border-primary/50 transition-all duration-300 cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1"
                     >
-                      {/* Top Bar Decoration */}
-                      <div className={cn(
-                        "absolute top-0 left-0 w-full h-1 bg-gradient-to-r",
-                        session.status === 'in_progress' ? "from-amber-500 to-amber-300" :
-                          score !== null ? (score >= 70 ? "from-emerald-500 to-emerald-300" : score >= 40 ? "from-primary to-accent" : "from-rose-500 to-rose-300") :
-                            "from-muted to-muted-foreground/30"
-                      )} />
+                      {/* Background Gradient Spot */}
+                      <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
 
-                      <div className="p-4 sm:p-6 h-full flex flex-col">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-black uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                              {session.position}
-                            </h3>
-                            <div className="flex items-center gap-2">
-                              {session.config && (session.config as any).companyId ? (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                                  <Building2 className="h-2.5 w-2.5" />
-                                  Corporate Path
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/5 border border-primary/10 text-[9px] font-bold uppercase tracking-wider text-primary">
-                                  <Play className="h-2.5 w-2.5" />
-                                  General Protocol
-                                </div>
-                              )}
-                            </div>
+                      <div className="p-6 h-full flex flex-col relative z-10">
+                        {/* Header: Type Badge & Status */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            {session.config && (session.config as any).companyId ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 uppercase tracking-wide">
+                                <Building2 className="h-3 w-3" />
+                                Corporate
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-wide">
+                                <Play className="h-3 w-3 fill-current" />
+                                General
+                              </span>
+                            )}
                           </div>
 
-                          {/* Mini Gauge or Status */}
-                          <div className="relative h-12 w-12 flex items-center justify-center shrink-0">
+                          {/* Date */}
+                          <span className="text-[11px] font-medium text-muted-foreground/60 tabular-nums">
+                            {new Date(session.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+
+                        {/* Title & Role */}
+                        <div className="mb-6 space-y-1">
+                          <h3 className="text-lg font-bold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                            {session.position || "Untitled Interview"}
+                          </h3>
+                          <p className="text-xs text-muted-foreground/80 font-medium line-clamp-1">
+                            Duration: {session.duration_seconds ? formatDurationShort(session.duration_seconds) : '---'}
+                          </p>
+                        </div>
+
+                        <div className="mt-auto flex items-end justify-between">
+                          {/* Status / Score Indicator */}
+                          <div>
                             {score !== null ? (
-                              <>
-                                <svg className="h-full w-full rotate-[-90deg]">
-                                  <circle
-                                    cx="24"
-                                    cy="24"
-                                    r="20"
-                                    className="stroke-muted-foreground/10 fill-none"
-                                    strokeWidth="4"
-                                  />
-                                  <circle
-                                    cx="24"
-                                    cy="24"
-                                    r="20"
-                                    className={cn(
-                                      "fill-none transition-all duration-1000",
-                                      score >= 70 ? "stroke-emerald-500" : score >= 40 ? "stroke-primary" : "stroke-rose-500"
-                                    )}
-                                    strokeWidth="4"
-                                    strokeDasharray={125.6}
-                                    strokeDashoffset={125.6 - (125.6 * score) / 100}
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black italic">
-                                  {score}%
-                                </span>
-                              </>
-                            ) : (
-                              <div className="h-10 w-10 bg-muted/30 rounded-full flex items-center justify-center">
-                                {isGeneratingFeedback ? (
-                                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                ) : (
-                                  <Clock className="h-5 w-5 text-muted-foreground/30" />
-                                )}
+                              <div className="flex flex-col">
+                                <span className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider">Score</span>
+                                <div className="flex items-baseline gap-1">
+                                  <span className={cn(
+                                    "text-3xl font-black tracking-tighter tabular-nums",
+                                    score >= 70 ? "text-emerald-500" : score >= 40 ? "text-primary" : "text-rose-500"
+                                  )}>
+                                    {score}
+                                  </span>
+                                  <span className="text-sm font-bold text-muted-foreground/50">%</span>
+                                </div>
                               </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {isGeneratingFeedback ? (
+                                  <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                                ) : (
+                                  <div className="h-10 w-10 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                                    <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                                  </div>
+                                )}
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-foreground">
+                                    {session.status === 'in_progress' ? "In Progress" : "Analyzing"}
+                                  </span>
+                                  <span className="text-[10px] font-medium text-muted-foreground">
+                                    {session.status === 'in_progress' ? "Resume now" : "Please wait"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Button */}
+                          <div className={cn(
+                            "h-10 w-10 rounded-full flex items-center justify-center border transition-all duration-300 transform group-hover:scale-110",
+                            session.status === 'in_progress'
+                              ? "bg-amber-500 text-white border-amber-600 shadow-lg shadow-amber-500/20"
+                              : score !== null
+                                ? "bg-foreground text-background border-foreground shadow-lg group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground"
+                                : "bg-muted text-muted-foreground border-border"
+                          )}>
+                            {session.status === 'in_progress' ? (
+                              <Play className="h-4 w-4 fill-current ml-0.5" />
+                            ) : (
+                              <ArrowRight className="h-4 w-4 -rotate-45 group-hover:rotate-0 transition-transform" />
                             )}
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                          <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Timeline</span>
-                            <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
-                              <Calendar className="h-3 w-3 text-muted-foreground" />
-                              {new Date(session.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                            </span>
+                        {/* Progress Bar for Score (Decorative) */}
+                        {score !== null && (
+                          <div className="absolute bottom-0 left-0 w-full h-1 bg-muted/50">
+                            <div
+                              className={cn(
+                                "h-full transition-all duration-1000 ease-out",
+                                score >= 70 ? "bg-emerald-500" : score >= 40 ? "bg-primary" : "bg-rose-500"
+                              )}
+                              style={{ width: `${score}%` }}
+                            />
                           </div>
-                          <div className="bg-muted/30 rounded-xl p-2.5 border border-border">
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 block mb-0.5">Uptime</span>
-                            <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              {session.duration_seconds ? formatDurationShort(session.duration_seconds) : '---'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-auto flex items-center justify-between">
-                          <div className={cn(
-                            "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] flex items-center gap-2",
-                            session.status === 'in_progress' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                              score !== null ? (score >= 70 ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-primary/10 text-primary border border-primary/20") :
-                                "bg-muted text-muted-foreground/60 border border-border"
-                          )}>
-                            <div className={cn(
-                              "h-1.5 w-1.5 rounded-full shrink-0",
-                              session.status === 'in_progress' ? "bg-amber-500 animate-pulse" :
-                                score !== null ? (score >= 70 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]") :
-                                  "bg-muted-foreground"
-                            )} />
-                            {session.status === 'in_progress' ? "Live Session" :
-                              isInsufficientData ? "Null Archive" :
-                                score !== null ? "Archived" : "Processing"}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full border border-border group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300"
-                            >
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );

@@ -177,280 +177,157 @@ export default function Badges() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pt-10 sm:pt-0">
-        {/* Header Section */}
-        <div className="relative mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 relative z-10">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] shadow-sm animate-in fade-in slide-in-from-left duration-1000">
-                <Medal className="h-3.5 w-3.5" />
-                Operational Achievements
-              </div>
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground leading-[1.1]">
-                  Arjuna <span className="text-primary italic">Distinctions</span>
-                </h1>
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium max-w-2xl leading-relaxed">
-                  Every mission is a diagnostic vector for mastery. Monitor your evolution through specialized protocol badges.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 pt-2">
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted/50 border border-border/50 backdrop-blur-xl">
-                  <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/80">Sector Evolution Active</span>
-                </div>
-              </div>
-            </div>
+      <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-10 sm:pt-0">
 
-            <div className="hidden lg:flex items-center gap-4 lg:pb-2">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-card border border-border/50 flex items-center justify-center shadow-3xl relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-primary group-hover:scale-110 group-hover:rotate-12 transition-all duration-700" />
-                <div className="absolute -inset-4 bg-primary/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-          </div>
-
-          {/* Background Decoration */}
-          <div className="absolute -left-32 -top-32 h-[500px] w-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-          <div className="absolute right-0 top-0 h-[400px] w-[400px] bg-accent/5 blur-[100px] rounded-full pointer-events-none" />
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Achievements</h1>
+          <p className="text-muted-foreground text-lg">Track your progress and milestones as you master technical interviews.</p>
         </div>
 
-        {/* Intelligence Statistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Deployments Won", value: earnedCount, total: totalCount, icon: Trophy, color: "text-blue-500", progress: (earnedCount / totalCount) * 100 },
-            { label: "Mastery Index", value: badgeScore, sub: "Analytical Points", icon: Award, color: "text-purple-500", progress: 100 },
-            { label: "Last Transmission", value: latestBadge?.name || "Awaiting Data", sub: latestBadge ? "Protocol Verified" : "No Records", icon: Zap, color: "text-amber-500", progress: 100 },
-            { label: "Sync Status", value: `${progressPercentage}%`, sub: "Global Calibration", icon: Target, color: "text-emerald-500", progress: progressPercentage }
+            { label: "Badges Earned", value: earnedCount, total: totalCount, icon: Medal },
+            { label: "Total Score", value: badgeScore, icon: Star },
+            { label: "Latest Badge", value: latestBadge?.name || "-", icon: Zap },
+            { label: "Completion", value: `${progressPercentage}%`, icon: Target }
           ].map((stat, i) => (
-            <Card key={i} className="border border-border/50 shadow-3xl transition-all duration-700 group/stat relative overflow-hidden rounded-2xl p-3 sm:p-4 bg-card hover:bg-muted/10 hover:border-border">
-              <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover/stat:opacity-10 transition-all duration-1000 group-hover/stat:scale-125 group-hover/stat:-rotate-12 pointer-events-none">
-                <stat.icon className={cn("h-12 w-12", stat.color)} />
-              </div>
-
-              <div className="relative z-10 space-y-2.5">
-                <div className="flex items-center gap-3">
-                  <div className={cn("h-7 w-7 rounded-xl bg-muted/50 border border-border flex items-center justify-center shadow-lg transition-transform duration-500 group-hover/stat:scale-110", stat.color)}>
-                    <stat.icon className="h-3.5 w-3.5" />
+            <Card key={i} className="bg-card border-border shadow-sm">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-2xl font-bold text-foreground">{stat.value}</span>
+                    {stat.total && <span className="text-sm text-muted-foreground">/ {stat.total}</span>}
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">{stat.label}</p>
                 </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl sm:text-2xl font-black tracking-tighter text-foreground uppercase truncate block">
-                      {stat.value}
-                    </span>
-                    {stat.total && <span className="text-xs font-black text-muted-foreground/30 uppercase tracking-widest">/ {stat.total}</span>}
-                  </div>
-                  <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.4em] leading-none">{stat.sub}</span>
+                <div className="h-10 w-10 rounded-full bg-secondary/50 flex items-center justify-center text-primary">
+                  <stat.icon className="h-5 w-5" />
                 </div>
-
-                <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden border border-border/20 p-0">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${stat.progress}%` }}
-                    transition={{ duration: 1.5, ease: "circOut", delay: i * 0.1 }}
-                    className={cn("h-full rounded-full transition-all duration-1000 ease-out",
-                      stat.color === "text-blue-500" ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" :
-                        stat.color === "text-purple-500" ? "bg-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)]" :
-                          stat.color === "text-amber-500" ? "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)]" :
-                            "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
-                    )}
-                  />
-                </div>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Progress Trajectory */}
-        <Card className="border border-border/50 shadow-3xl bg-card rounded-2xl overflow-hidden p-3 sm:p-4 relative group/progress">
-          <div className="absolute inset-0 dark:bg-grid-white/[0.02] bg-grid-black/[0.02] pointer-events-none" />
-          <div className="absolute top-0 right-0 h-full w-96 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-            <div className="space-y-3 text-center md:text-left">
-              <h3 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase leading-none">Global <span className="text-primary italic">Trajectory</span></h3>
-              <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.3em]">
-                {earnedCount} of {totalCount} Neural Sectors Optimized
-              </p>
+        {/* Global Progress */}
+        <Card className="p-6 border-border shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <h3 className="font-semibold text-foreground">Overall Progress</h3>
+              <p className="text-sm text-muted-foreground">You have unlocked {earnedCount} out of {totalCount} available badges.</p>
             </div>
-
-            <div className="flex-1 w-full max-w-2xl space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/80">Calibration Depth</span>
-                <span className="text-base sm:text-lg font-black text-foreground tabular-nums">{progressPercentage}%</span>
-              </div>
-              <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden p-0.5 border border-border/50 shadow-inner">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 2, ease: "circOut" }}
-                  className="bg-gradient-to-r from-primary via-accent to-primary h-full rounded-full shadow-[0_0_20px_rgba(var(--primary),0.4)]"
-                />
-              </div>
-            </div>
-
-            <div className="shrink-0 hidden lg:block">
-              <div className="h-20 w-20 rounded-3xl bg-muted/50 border border-border/50 flex items-center justify-center text-primary shadow-2xl relative group-hover/progress:scale-110 transition-all duration-700">
-                <Target className="h-10 w-10 group-hover:rotate-90 transition-transform duration-1000" />
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity" />
-              </div>
-            </div>
+            <span className="text-xl font-bold text-primary">{progressPercentage}%</span>
+          </div>
+          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercentage}%` }}
+              transition={{ duration: 1, ease: "circOut" }}
+            />
           </div>
         </Card>
 
-        {/* Operational Filters */}
-        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase">
-                Distinction <span className="text-primary italic">Sectors</span>
-              </h2>
-            </div>
-            <div className="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-muted/50 border border-border/50 text-[9px] font-black text-foreground/40 uppercase tracking-[0.3em]">
-              Operational Status: <span className="text-primary">Nominal</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3 overflow-x-auto pb-4 scroll-smooth scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={cn(
-                  "px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all duration-500 border flex items-center gap-2.5 relative overflow-hidden shrink-0",
-                  selectedCategory === category
-                    ? "bg-primary/20 border-primary text-primary shadow-[0_0_20px_rgba(var(--primary),0.2)]"
-                    : "bg-muted/50 border-border text-muted-foreground/60 hover:border-primary/30 hover:bg-muted/80"
-                )}
-              >
-                <span className="text-base relative z-10">{category === "all" ? "🌐" : CATEGORY_ICONS[category]}</span>
-                <span className="relative z-10">{category === "all" ? "All" : CATEGORY_LABELS[category]}</span>
-              </button>
-            ))}
-          </div>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
+                selectedCategory === cat
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:bg-muted"
+              )}
+            >
+              <span className="mr-2">{cat === "all" ? "🌐" : CATEGORY_ICONS[cat]}</span>
+              {cat === "all" ? "All Badges" : CATEGORY_LABELS[cat]}
+            </button>
+          ))}
         </div>
 
-        {/* Distinction Grid */}
-        {filteredBadges.length === 0 ? (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-            <Card className="border-4 border-dashed border-border bg-muted/20 p-24 text-center rounded-[4rem] backdrop-blur-3xl">
-              <div className="h-32 w-32 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto mb-8 shadow-3xl">
-                <Medal className="h-16 w-16 text-muted-foreground/20" />
-              </div>
-              <h3 className="text-3xl font-black mb-3 text-foreground uppercase tracking-tight">Intelligence Void</h3>
-              <p className="text-muted-foreground/60 font-medium text-lg max-w-lg mx-auto leading-relaxed">
-                No active distinctions identified in this sector. Initializing search for available operational protocols.
-              </p>
-            </Card>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredBadges.map((badge, index) => {
-                const isEarned = earnedBadges.has(badge.id);
-                const progress = getBadgeProgress(badge.id);
-                const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;
+        {/* Badge Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <AnimatePresence mode="popLayout">
+            {filteredBadges.map((badge, index) => {
+              const isEarned = earnedBadges.has(badge.id);
+              const progress = getBadgeProgress(badge.id);
+              const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;
 
-                return (
-                  <motion.div
-                    key={badge.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4, delay: index * 0.02 }}
-                  >
-                    <Card className={cn(
-                      "group/badge relative h-full flex flex-col border border-border transition-all duration-500 rounded-2xl sm:rounded-2xl overflow-hidden backdrop-blur-3xl",
-                      isEarned
-                        ? cn("bg-card hover:bg-muted/10 hover:-translate-y-2 border-primary/20", getRarityGlowColor(badge.rarity))
-                        : "bg-muted/30 border-border/50 grayscale hover:grayscale-0 hover:bg-muted/50 transition-all duration-700"
-                    )}>
-                      <CardContent className="p-4 sm:p-5 flex flex-col h-full space-y-4 relative z-10">
-                        {/* Status Header */}
-                        <div className="flex items-center justify-between">
-                          <div className={cn(
-                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] border",
-                            isEarned
-                              ? cn("border-primary/30 text-primary bg-primary/10", getRarityColor(badge.rarity))
-                              : "border-border text-muted-foreground bg-muted/50"
-                          )}>
-                            {isEarned ? badge.rarity : "Locked"}
-                          </div>
-                          {isEarned && (
-                            <button
-                              onClick={() => handleShareBadge(badge.name)}
-                              className="h-8 w-8 rounded-full bg-muted/50 border border-border flex items-center justify-center text-primary/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500 group/share"
-                            >
-                              <Share2 className="h-3.5 w-3.5 group-hover/share:scale-110" />
-                            </button>
-                          )}
+              return (
+                <motion.div
+                  key={badge.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card className={cn(
+                    "h-full overflow-hidden transition-all duration-300 border",
+                    isEarned
+                      ? "border-primary/20 bg-primary/5 shadow-sm hover:border-primary/40"
+                      : "border-border bg-card/50 opacity-80"
+                  )}>
+                    <CardContent className="p-5 flex flex-col items-center text-center h-full relative">
+                      {isEarned && (
+                        <div className="absolute top-3 right-3 text-primary">
+                          <Award className="h-4 w-4" />
                         </div>
+                      )}
 
-                        {/* Icon & Title */}
-                        <div className="flex flex-col items-center text-center space-y-4">
-                          <div className={cn(
-                            "h-16 w-16 sm:h-20 sm:w-20 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl transition-all duration-1000 group-hover/badge:scale-110 group-hover/badge:rotate-3 border border-border relative overflow-hidden",
-                            isEarned ? "bg-muted/50 shadow-2xl" : "bg-muted/10"
-                          )}>
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.05] to-transparent opacity-0 group-hover/badge:opacity-100 transition-opacity" />
-                            <span className={cn(isEarned ? "drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]" : "opacity-20")}>
-                              {isEarned ? badge.icon : <Lock className="h-8 w-8 text-foreground/20" />}
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            <h4 className="text-base sm:text-lg font-black tracking-tight text-foreground uppercase leading-tight group-hover/badge:text-primary transition-colors">
-                              {badge.name}
-                            </h4>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-wider line-clamp-2 px-2">
-                              {badge.description}
-                            </p>
-                          </div>
-                        </div>
+                      <div className={cn(
+                        "mb-4 text-4xl p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                        isEarned ? "bg-background shadow-sm border border-border" : "grayscale opacity-50"
+                      )}>
+                        {badge.icon}
+                      </div>
 
-                        {/* Progress & Requirement */}
-                        <div className="mt-auto pt-4 space-y-3">
-                          {!isEarned && progress ? (
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-[8px] font-black uppercase tracking-[0.3em]">
-                                <span className="text-muted-foreground/40">Sync Progress</span>
-                                <span className="text-primary">{progress.current} / {progress.max}</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${progressPercent}%` }}
-                                  transition={{ duration: 1.5, ease: "circOut" }}
-                                  className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.6)]"
-                                />
-                              </div>
+                      <div className="space-y-1 mb-4">
+                        <h3 className={cn("font-bold text-base", isEarned ? "text-foreground" : "text-muted-foreground")}>
+                          {badge.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {badge.description}
+                        </p>
+                      </div>
+
+                      <div className="mt-auto w-full pt-2">
+                        {!isEarned && progress ? (
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                              <span>Progress</span>
+                              <span>{progress.current}/{progress.max}</span>
                             </div>
-                          ) : isEarned ? (
-                            <div className="flex items-center justify-center gap-2 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-[8px] font-black uppercase tracking-[0.4em] text-primary group-hover/badge:bg-primary/10 transition-all duration-500">
-                              <span className="h-1 w-1 rounded-full bg-primary animate-pulse" />
-                              Synchronized
+                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full bg-primary"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressPercent}%` }}
+                              />
                             </div>
-                          ) : (
-                            <div className="h-0.5 w-full bg-border/50 rounded-full" />
-                          )}
-
-                          <div className="flex flex-col gap-1 text-center bg-muted/20 p-3 rounded-2xl border border-border/50">
-                            <span className="text-[7px] font-black uppercase tracking-[0.3em] text-muted-foreground/40">Protocol Requirement</span>
-                            <span className="text-[9px] font-black text-foreground/60 tracking-tight">{badge.requirement}</span>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
+                        ) : isEarned ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-wide border border-emerald-500/20">
+                            <TrendingUp className="h-3 w-3" />
+                            Earned
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wide">
+                            <Lock className="h-3 w-3" />
+                            Locked
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </div>
       </div>
     </DashboardLayout>
   );

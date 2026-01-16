@@ -338,25 +338,15 @@ export default function Settings() {
 
     return (
         <DashboardLayout>
-            <div className="w-full space-y-6 sm:space-y-10 pb-12 mx-auto pt-10 sm:pt-0">
-                {/* Modern Header */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="space-y-1.5">
-                        <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-primary border border-primary/20 mb-1">
-                            <SettingsIcon className="mr-1.5 h-3 w-3" />
-                            Control Center
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-                            Account <span className="text-primary italic">Settings</span>
-                        </h2>
-                        <p className="text-muted-foreground text-xs sm:text-sm font-medium max-w-lg">
-                            Fine-tune your experience and manage your global preferences.
-                        </p>
-                    </div>
+            <div className="w-full space-y-8 pb-12 mx-auto pt-10 sm:pt-0">
+                {/* Header */}
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
+                    <p className="text-muted-foreground text-lg">Manage your account settings and preferences.</p>
                 </div>
 
-                {/* Horizontal Tab Navigation */}
-                <div className="flex gap-2 overflow-x-auto pb-4 scroll-smooth scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+                {/* Tabs */}
+                <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = activeSection === tab.id;
@@ -365,29 +355,14 @@ export default function Settings() {
                                 key={tab.id}
                                 onClick={() => setActiveSection(tab.id as SettingsSection)}
                                 className={cn(
-                                    "px-4 py-2.5 rounded-xl transition-all duration-500 border flex items-center gap-2.5 relative overflow-hidden shrink-0 group",
+                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative rounded-t-lg",
                                     isActive
-                                        ? "bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)]"
-                                        : "bg-white/5 border-white/5 text-muted-foreground/60 hover:border-white/20 hover:bg-white/10"
+                                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                 )}
                             >
-                                <div className={cn(
-                                    "h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-500",
-                                    isActive ? "bg-primary/20" : "bg-white/5 group-hover:bg-primary/10"
-                                )}>
-                                    <Icon className={cn("h-3.5 w-3.5", isActive ? "text-primary" : "group-hover:text-primary")} />
-                                </div>
-                                <div className="flex flex-col items-start">
-                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
-                                        {tab.label}
-                                    </span>
-                                    <span className={cn(
-                                        "text-[8px] font-medium leading-none opacity-60 mt-0.5 whitespace-nowrap hidden sm:block",
-                                        isActive ? "text-primary" : "text-muted-foreground"
-                                    )}>
-                                        {tab.desc}
-                                    </span>
-                                </div>
+                                <Icon className="h-4 w-4" />
+                                {tab.label}
                             </button>
                         );
                     })}
@@ -397,23 +372,25 @@ export default function Settings() {
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {activeSection === "general" && (
                         <div className="space-y-6">
-                            <Card className="border-2 border-border/50 shadow-xl bg-card rounded-xl sm:rounded-2xl overflow-hidden">
-                                <div className="h-16 sm:h-24 bg-gradient-to-r from-primary/20 via-primary/5 to-transparent relative">
-                                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
-                                </div>
-                                <CardContent className="p-4 sm:p-8 -mt-8 sm:-mt-12 relative">
-                                    <div className="flex flex-col md:flex-row items-center md:items-end gap-4 sm:gap-6 mb-6 sm:mb-8">
+                            <Card className="border-border shadow-sm">
+                                <CardHeader>
+                                    <CardTitle>Profile Information</CardTitle>
+                                    <CardDescription>Update your photo and personal details.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="flex items-center gap-6">
                                         <div className="relative group">
-                                            <Label htmlFor="avatar-upload" className="cursor-pointer block relative">
-                                                <Avatar className="h-20 w-20 sm:h-28 sm:w-28 border-4 border-card shadow-[0_0_30px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-all duration-500">
-                                                    <AvatarImage src={getAvatarUrl(avatarUrl, user?.id || 'user', 'avataaars', null, gender)} />
-                                                    <AvatarFallback className="text-2xl sm:text-3xl font-black bg-primary/10 text-primary uppercase">
-                                                        {getInitials(fullName) || "U"}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="absolute inset-2 rounded-full flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-md">
-                                                    <Upload className="h-6 w-6 text-white animate-bounce" />
-                                                </div>
+                                            <Avatar className="h-24 w-24 border-2 border-border">
+                                                <AvatarImage src={getAvatarUrl(avatarUrl, user?.id || 'user', 'avataaars', null, gender)} />
+                                                <AvatarFallback className="text-xl">
+                                                    {getInitials(fullName) || "U"}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <Label
+                                                htmlFor="avatar-upload"
+                                                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-xs font-medium"
+                                            >
+                                                Change
                                             </Label>
                                             <Input
                                                 id="avatar-upload"
@@ -424,168 +401,123 @@ export default function Settings() {
                                                 disabled={loading}
                                             />
                                         </div>
-                                        <div className="flex-1 text-center md:text-left space-y-2">
-                                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest">
-                                                <Sparkles className="h-2.5 w-2.5" />
-                                                Verified Candidate
-                                            </div>
-                                            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">{fullName || "User Identity"}</h1>
-                                            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                                <div className="flex items-center gap-2 text-muted-foreground font-medium text-xs sm:text-sm">
-                                                    <Mail className="h-4 w-4 text-primary" />
-                                                    {email}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-muted-foreground font-medium text-xs sm:text-sm">
-                                                    <Globe className="h-4 w-4 text-primary" />
-                                                    Neutral AI Mode
-                                                </div>
-                                            </div>
+                                        <div className="space-y-1">
+                                            <h3 className="font-medium text-lg">{fullName || "User"}</h3>
+                                            <p className="text-sm text-muted-foreground">{email}</p>
                                         </div>
                                     </div>
 
-                                    <Separator className="mb-6 sm:mb-8 opacity-50" />
+                                    <Separator />
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl">
-                                        <div className="space-y-4">
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="fullName" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Account Name</Label>
-                                                <Input
-                                                    id="fullName"
-                                                    value={fullName}
-                                                    onChange={(e) => setFullName(e.target.value)}
-                                                    className="h-10 sm:h-11 bg-muted/30 border-2 border-border/50 rounded-xl px-4 font-bold text-sm focus:ring-primary focus:border-primary transition-all"
-                                                    placeholder="John Doe"
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="gender" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Candidate Profile</Label>
-                                                <Select value={gender} onValueChange={setGender}>
-                                                    <SelectTrigger className="h-10 sm:h-11 bg-muted/30 border-2 border-border/50 rounded-xl px-4 font-bold text-sm focus:ring-primary transition-all">
-                                                        <SelectValue placeholder="Identification" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-xl border-2 border-border/50 shadow-2xl">
-                                                        <SelectItem value="male" className="rounded-lg font-bold">Male</SelectItem>
-                                                        <SelectItem value="female" className="rounded-lg font-bold">Female</SelectItem>
-                                                        <SelectItem value="other" className="rounded-lg font-bold">Other / Undisclosed</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="fullName">Full Name</Label>
+                                            <Input
+                                                id="fullName"
+                                                value={fullName}
+                                                onChange={(e) => setFullName(e.target.value)}
+                                                placeholder="Your full name"
+                                            />
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Secure Email</Label>
-                                                <div className="relative group/input">
-                                                    <Input
-                                                        id="email"
-                                                        value={email}
-                                                        disabled
-                                                        className="h-10 sm:h-11 bg-muted/10 border-2 border-border/30 rounded-xl px-4 font-bold text-sm text-muted-foreground/50 cursor-not-allowed"
-                                                    />
-                                                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/30" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Global Language</Label>
-                                                <LanguageSelector
-                                                    selectedLanguage={selectedLanguage}
-                                                    onLanguageChange={handleLanguageChange}
-                                                    className="h-10 sm:h-11 w-full"
-                                                />
-                                            </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="gender">Gender</Label>
+                                            <Select value={gender} onValueChange={setGender}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select gender" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="male">Male</SelectItem>
+                                                    <SelectItem value="female">Female</SelectItem>
+                                                    <SelectItem value="other">Prefer not to say</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">Email Address</Label>
+                                            <Input
+                                                id="email"
+                                                value={email}
+                                                disabled
+                                                className="bg-muted text-muted-foreground"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Language Support</Label>
+                                            <LanguageSelector
+                                                selectedLanguage={selectedLanguage}
+                                                onLanguageChange={handleLanguageChange}
+                                                className="w-full"
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="mt-8 sm:mt-10 flex justify-end">
-                                        <Button
-                                            onClick={handleUpdateProfile}
-                                            disabled={loading}
-                                            className="h-10 sm:h-11 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[9px] sm:text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-                                        >
-                                            {loading ? "Syncing..." : "Publish Updates"}
+                                    <div className="flex justify-end pt-4">
+                                        <Button onClick={handleUpdateProfile} disabled={loading}>
+                                            {loading ? "Saving..." : "Save Changes"}
                                         </Button>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-2 border-border/50 shadow-lg bg-card rounded-xl sm:rounded-2xl overflow-hidden">
-                                <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6">
-                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-border/30">
-                                        <div className="space-y-1">
-                                            <h3 className="text-lg sm:text-xl font-black tracking-tight">Public Presence</h3>
-                                            <p className="text-xs text-muted-foreground font-medium max-w-md">
-                                                Showcase your achievements and metrics to the professional community.
-                                            </p>
+                            <Card className="border-border shadow-sm">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle>Public Profile</CardTitle>
+                                            <CardDescription>Manage your public visibility.</CardDescription>
                                         </div>
-                                        <div className="flex items-center gap-3 bg-muted/30 p-2.5 px-4 rounded-2xl border-2 border-border/50">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Privacy Mode</span>
-                                            <Switch
-                                                id="public-profile"
-                                                checked={isPublic}
-                                                onCheckedChange={handleTogglePrivacy}
-                                                disabled={loading}
-                                                className="data-[state=checked]:bg-primary scale-90"
-                                            />
-                                        </div>
+                                        <Switch
+                                            checked={isPublic}
+                                            onCheckedChange={handleTogglePrivacy}
+                                            disabled={loading}
+                                        />
                                     </div>
-
-                                    {/* Sentiment Analysis Setting */}
-                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-2">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg sm:text-xl font-black tracking-tight">AI Confidence Analysis</h3>
-                                                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-primary border border-primary/20">Lab</span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground font-medium max-w-md">
-                                                Enable real-time sentiment and confidence tracking during your interviews.
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-3 bg-primary/10 p-2.5 px-4 rounded-2xl border-2 border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.05)]">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-primary">Active Analysis</span>
-                                            <Switch
-                                                id="sentiment-analysis"
-                                                checked={sentimentEnabled}
-                                                onCheckedChange={handleToggleSentiment}
-                                                disabled={loading}
-                                                className="data-[state=checked]:bg-primary scale-90"
-                                            />
-                                        </div>
-                                    </div>
-
+                                </CardHeader>
+                                <CardContent>
                                     {isPublic && (
-                                        <div className="mt-8 space-y-6 p-8 bg-primary/5 rounded-2xl border-2 border-primary/20 animate-in fade-in zoom-in-95 duration-500">
-                                            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                                                <div className="space-y-1 flex-1">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Live Profile URL</p>
-                                                    <div className="text-sm font-mono font-bold break-all opacity-60">
-                                                        {window.location.origin}/p/{user?.id}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-3 shrink-0">
-                                                    <Button
-                                                        variant="outline"
-                                                        className="rounded-xl border-2 font-bold gap-2"
-                                                        onClick={() => {
-                                                            const url = `${window.location.origin}/p/${user?.id}`;
-                                                            navigator.clipboard.writeText(url);
-                                                            toast.success("Identity URL copied!");
-                                                        }}
-                                                    >
-                                                        <Copy className="h-4 w-4" />
-                                                        Copy Link
-                                                    </Button>
-                                                    <Button
-                                                        className="rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/10 gap-2"
-                                                        onClick={() => window.open(`/p/${user?.id}`, '_blank')}
-                                                    >
-                                                        Preview Page
-                                                        <ExternalLink className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
+                                        <div className="flex items-center gap-2 p-3 bg-muted rounded-md text-sm">
+                                            <div className="flex-1 font-mono truncate text-muted-foreground">
+                                                {window.location.origin}/p/{user?.id}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        const url = `${window.location.origin}/p/${user?.id}`;
+                                                        navigator.clipboard.writeText(url);
+                                                        toast.success("Copied to clipboard");
+                                                    }}
+                                                >
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => window.open(`/p/${user?.id}`, '_blank')}
+                                                >
+                                                    <ExternalLink className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </div>
                                     )}
                                 </CardContent>
+                            </Card>
+
+                            <Card className="border-border shadow-sm">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle>AI Analysis Features</CardTitle>
+                                            <CardDescription>Enable experimental features like sentiment analysis.</CardDescription>
+                                        </div>
+                                        <Switch
+                                            checked={sentimentEnabled}
+                                            onCheckedChange={handleToggleSentiment}
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </CardHeader>
                             </Card>
                         </div>
                     )}
@@ -597,69 +529,61 @@ export default function Settings() {
                     )}
 
                     {activeSection === "notifications" && (
-                        <Card className="border-2 border-border/50 shadow-xl bg-card rounded-xl sm:rounded-2xl p-4 sm:p-8">
-                            <CardHeader className="p-0 mb-6 sm:mb-8">
-                                <CardTitle className="text-xl sm:text-2xl font-black tracking-tight">Broadcast Center</CardTitle>
-                                <CardDescription className="text-xs font-medium">Control the frequency and type of intel.</CardDescription>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader>
+                                <CardTitle>Notifications</CardTitle>
+                                <CardDescription>Choose what updates you want to receive.</CardDescription>
                             </CardHeader>
-                            <CardContent className="p-0 space-y-4">
+                            <CardContent className="space-y-6">
                                 {[
                                     {
                                         id: "email-notifications",
-                                        label: "Master Broadcast",
-                                        desc: "Global toggle for all security and activity alerts.",
+                                        label: "Email Notifications",
+                                        desc: "Receive updates about your account activity.",
                                         checked: emailNotifications,
                                         onChange: setEmailNotifications
                                     },
                                     {
                                         id: "interview-reminders",
-                                        label: "T-Minus Reminders",
-                                        desc: "High-priority alerts 1 hour before sessions.",
+                                        label: "Interview Reminders",
+                                        desc: "Get reminded 1 hour before scheduled sessions.",
                                         checked: interviewReminders,
                                         onChange: setInterviewReminders
                                     },
                                     {
                                         id: "weekly-reports",
-                                        label: "Analytics Reports",
-                                        desc: "Weekly summary of your performance metrics.",
+                                        label: "Weekly Reports",
+                                        desc: "Receive a summary of your weekly progress.",
                                         checked: weeklyReports,
                                         onChange: setWeeklyReports
                                     },
                                     {
                                         id: "marketing-emails",
-                                        label: "System Pulse",
-                                        desc: "Updates on new experimental features and AI modules.",
+                                        label: "Product Updates",
+                                        desc: "Stay informed about new features and improvements.",
                                         checked: marketingEmails,
                                         onChange: setMarketingEmails
                                     }
-                                ].map((item, i) => (
-                                    <div key={item.id} className="group">
-                                        <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/20 border-2 border-transparent hover:border-border/50 hover:bg-muted/30 transition-all duration-300">
-                                            <div className="space-y-0.5">
-                                                <Label htmlFor={item.id} className="text-sm sm:text-base font-black tracking-tight">
-                                                    {item.label}
-                                                </Label>
-                                                <p className="text-[8px] sm:text-[10px] text-muted-foreground font-medium">
-                                                    {item.desc}
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                id={item.id}
-                                                checked={item.checked}
-                                                onCheckedChange={item.onChange}
-                                                className="data-[state=checked]:bg-primary scale-90"
-                                            />
+                                ].map((item) => (
+                                    <div key={item.id} className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor={item.id} className="text-base">
+                                                {item.label}
+                                            </Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                {item.desc}
+                                            </p>
                                         </div>
-                                        {i < 3 && <div className="h-px bg-border/20 my-1 mx-6" />}
+                                        <Switch
+                                            id={item.id}
+                                            checked={item.checked}
+                                            onCheckedChange={item.onChange}
+                                        />
                                     </div>
                                 ))}
-                                <div className="pt-4 sm:pt-6 flex justify-end">
-                                    <Button
-                                        onClick={handleSaveNotifications}
-                                        disabled={loading}
-                                        className="h-10 sm:h-11 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[9px] sm:text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95"
-                                    >
-                                        {loading ? "Syncing..." : "Save Protocol"}
+                                <div className="flex justify-end pt-4">
+                                    <Button onClick={handleSaveNotifications} disabled={loading}>
+                                        Save Preferences
                                     </Button>
                                 </div>
                             </CardContent>
@@ -667,142 +591,89 @@ export default function Settings() {
                     )}
 
                     {activeSection === "security" && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-700">
-                            <Card className="border-2 border-border/50 shadow-xl bg-card rounded-xl sm:rounded-2xl p-4 sm:p-8">
-                                <CardHeader className="p-0 mb-6 sm:mb-8">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                            <Shield className="h-5 w-5" />
-                                        </div>
-                                        <CardTitle className="text-xl sm:text-2xl font-black tracking-tight">
-                                            {user?.app_metadata?.provider !== 'email' ? 'Vault Access' : 'Security Clearance'}
-                                        </CardTitle>
-                                    </div>
-                                    <CardDescription className="text-xs font-medium">
+                        <div className="space-y-6">
+                            <Card className="border-border shadow-sm">
+                                <CardHeader>
+                                    <CardTitle>Password</CardTitle>
+                                    <CardDescription>
                                         {user?.app_metadata?.provider !== 'email'
-                                            ? 'Configure a permanent password for direct email authentication.'
-                                            : 'Secure your identity with a high-entropy password rotation.'
-                                        }
+                                            ? "You are logged in via a third-party provider. Set a password to also log in via email."
+                                            : "Update your account password."}
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-0 space-y-6">
-                                    {user?.app_metadata?.provider !== 'email' && (
-                                        <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4 mb-6 flex items-start gap-3">
-                                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
-                                                <Lock className="h-4 w-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">Authenticated via {user?.app_metadata?.provider || 'Auth Hub'}</p>
-                                                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-                                                    Establishing a password allows you to bridge your social identity with direct platform login.
-                                                </p>
-                                            </div>
+                                <CardContent className="space-y-4 max-w-md">
+                                    {user?.app_metadata?.provider === 'email' && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="current-password">Current Password</Label>
+                                            <Input
+                                                id="current-password"
+                                                type="password"
+                                                value={currentPassword}
+                                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                            />
                                         </div>
                                     )}
-
-                                    <div className="space-y-4 max-w-2xl">
-                                        {user?.app_metadata?.provider === 'email' && (
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="current-password" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Current Password</Label>
-                                                <Input
-                                                    id="current-password"
-                                                    type="password"
-                                                    value={currentPassword}
-                                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                                    className="h-10 sm:h-11 bg-muted/30 border-2 border-border/50 rounded-xl px-4 font-bold text-sm"
-                                                    placeholder="Verify existing credentials"
-                                                />
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="new-password" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                                                    {user?.app_metadata?.provider !== 'email' ? 'New Security Key' : 'Replacement Password'}
-                                                </Label>
-                                                <Input
-                                                    id="new-password"
-                                                    type="password"
-                                                    value={newPassword}
-                                                    onChange={(e) => setNewPassword(e.target.value)}
-                                                    className="h-10 sm:h-11 bg-muted/30 border-2 border-border/50 rounded-xl px-4 font-bold text-sm"
-                                                    placeholder="Minimum 6 characters"
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="confirm-password" className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Confirm Identity Key</Label>
-                                                <Input
-                                                    id="confirm-password"
-                                                    type="password"
-                                                    value={confirmPassword}
-                                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="h-10 sm:h-11 bg-muted/30 border-2 border-border/50 rounded-xl px-4 font-bold text-sm"
-                                                    placeholder="Must match exactly"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="new-password">New Password</Label>
+                                        <Input
+                                            id="new-password"
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                        />
                                     </div>
-
-                                    <div className="pt-4 sm:pt-6 flex justify-end">
-                                        <Button
-                                            onClick={handleUpdatePassword}
-                                            disabled={loading}
-                                            className="h-10 sm:h-11 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[9px] sm:text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95"
-                                        >
-                                            {loading ? "Establishing..." : (user?.app_metadata?.provider !== 'email' ? 'Set Access Key' : 'Apply Security Update')}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                                        <Input
+                                            id="confirm-password"
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="pt-2">
+                                        <Button onClick={handleUpdatePassword} disabled={loading}>
+                                            Update Password
                                         </Button>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-2 border-destructive/20 bg-destructive/5 shadow-lg rounded-xl sm:rounded-2xl p-4 sm:p-8 overflow-hidden relative">
-                                <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-destructive/10 to-transparent pointer-events-none" />
-                                <div className="relative z-10 space-y-4 sm:space-y-6">
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center gap-3 text-destructive">
-                                            <Trash2 className="h-5 w-5 animate-pulse" />
-                                            <h3 className="text-lg sm:text-xl font-black tracking-tight">Self-Destruct Account</h3>
-                                        </div>
-                                        <p className="text-[10px] sm:text-xs font-medium text-destructive/70 max-w-2xl">
-                                            Permanent termination of your candidate identity, history and metadata. This operation is irreversible.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-card/40 border-2 border-destructive/10">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-destructive/20 flex items-center justify-center text-destructive">
-                                                <Shield className="h-4 w-4" />
-                                            </div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-destructive/80">Confirm Intent</p>
-                                        </div>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleDeleteAccount}
-                                            className="h-9 sm:h-10 px-6 font-black uppercase tracking-widest text-[9px] rounded-lg shadow-xl shadow-destructive/20 transition-all hover:scale-105"
-                                        >
-                                            Delete My Data
-                                        </Button>
-                                    </div>
-                                </div>
+                            <Card className="border-red-200 dark:border-red-900/50 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-destructive">Delete Account</CardTitle>
+                                    <CardDescription>
+                                        Permanently remove your account and all associated data. This action cannot be undone.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleDeleteAccount}
+                                    >
+                                        Delete My Account
+                                    </Button>
+                                </CardContent>
                             </Card>
                         </div>
                     )}
 
                     {activeSection === "billing" && (
-                        <Card className="border-2 border-border/50 shadow-xl bg-card rounded-xl sm:rounded-2xl p-6 sm:p-10 flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-700">
-                            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-muted/50 border-2 border-border/50 flex items-center justify-center mb-6 sm:mb-8 group-hover:rotate-12 transition-all duration-700">
-                                <CreditCard className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground opacity-30" />
+                        <Card className="border-border shadow-sm">
+                            <div className="p-12 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                                    <CreditCard className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-lg font-semibold">Free Plan</h3>
+                                    <p className="text-muted-foreground max-w-sm mx-auto">
+                                        You are currently on the free plan. Upgrade to access premium features and unlimited interviews.
+                                    </p>
+                                </div>
+                                <Button className="mt-4" onClick={() => router.push('/pricing')}>
+                                    View Plans
+                                </Button>
                             </div>
-                            <h3 className="text-xl sm:text-2xl font-black tracking-tight mb-2 sm:mb-3">No Active License</h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground font-medium max-w-sm mb-6 sm:mb-8 leading-relaxed">
-                                You are currently operating on our base-tier plan. Unlock the full AI potential with a professional license.
-                            </p>
-                            <Button
-                                onClick={() => router.push('/pricing')}
-                                className="h-10 sm:h-12 px-8 sm:px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] sm:text-xs rounded-xl shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95"
-                            >
-                                View Licensing Options
-                            </Button>
                         </Card>
                     )}
                 </div>
