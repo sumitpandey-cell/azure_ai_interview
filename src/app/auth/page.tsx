@@ -19,12 +19,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const signUpSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Invalid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
   gender: z.string().optional(),
+  acceptTerms: z.boolean().refine(val => val === true, "You must accept the terms and conditions"),
 });
 
 const signInSchema = z.object({
@@ -54,6 +56,7 @@ function AuthContent() {
       email: "",
       password: "",
       gender: "",
+      acceptTerms: false,
     },
   });
 
@@ -404,6 +407,28 @@ function AuthContent() {
                           )}
                         />
 
+                        {/* Terms and Conditions Field */}
+                        <FormField
+                          control={signUpForm.control}
+                          name="acceptTerms"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 px-1">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  className="mt-1 border-border/50 bg-background/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                                  I acknowledge the <Link href="/terms" className="text-primary hover:text-primary/80 underline decoration-2 decoration-primary/20 transition-colors">Terms of Engagement</Link> and data protocols.
+                                </FormLabel>
+                                <FormMessage className="text-[10px] uppercase font-black tracking-widest pt-1" />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
                         <Button type="submit" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-primary/20 border-b-4 border-primary/20 active:border-b-0 transition-all mt-6" disabled={signUpForm.formState.isSubmitting}>
                           {signUpForm.formState.isSubmitting ? (
                             <div className="flex items-center gap-2">
@@ -528,8 +553,8 @@ function AuthContent() {
             </p>
           </div>
         </motion.div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 

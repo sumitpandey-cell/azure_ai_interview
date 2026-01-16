@@ -210,21 +210,10 @@ function StartInterviewContent() {
     const handleRoleSelection = (role: string) => {
         const suggestedSkills = ROLE_SKILLS[role] || [];
         if (suggestedSkills.length > 0) {
-            // Merge with existing skills, avoiding case-insensitive duplicates
-            setSkillsList(prev => {
-                const newList = [...prev];
-                const lowerPrev = prev.map(s => s.toLowerCase());
+            // Replace existing skills with suggested ones for the new role
+            setSkillsList(suggestedSkills);
 
-                suggestedSkills.forEach(skill => {
-                    if (!lowerPrev.includes(skill.toLowerCase())) {
-                        newList.push(skill);
-                        lowerPrev.push(skill.toLowerCase());
-                    }
-                });
-                return newList;
-            });
-
-            toast.success(`Suggested skills added for ${role}`, {
+            toast.success(`Suggested skills updated for ${role}`, {
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 duration: 3000
             });

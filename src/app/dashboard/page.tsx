@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,8 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakIndicator } from "@/components/StreakIndicator";
-import { interviewService, profileService, subscriptionService, badgeService } from "@/services";
+import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
+import { interviewService, subscriptionService, badgeService } from "@/services";
 import type { InterviewSession } from "@/services/interview.service";
 import { useFeedback } from "@/context/FeedbackContext";
 import { MiniBarChart } from "@/components/MiniBarChart";
@@ -52,6 +53,7 @@ import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
 import { formatDurationShort } from "@/lib/format-duration";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Type for user metadata
 interface UserMetadata {
@@ -63,7 +65,7 @@ interface UserMetadata {
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
 
   // Type-safe access to user metadata
@@ -80,9 +82,10 @@ export default function Dashboard() {
     isCached
   } = useOptimizedQueries();
 
-  // Local state for things not covered by optimized queries
   const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
   const [loading, setLoading] = useState(!isCached.sessions);
 
   // Use analytics hook for cached data
@@ -97,40 +100,62 @@ export default function Dashboard() {
     generateFeedbackInBackground
   } = useFeedback();
 
+  // Sort sessions: generating feedback first, then by date
+  const displaySessions = useMemo(() => {
+    if (!sessions) return [];
+
+    return [...sessions].sort((a, b) => {
+      const aGenerating = a.status === 'completed' && !a.feedback;
+      const bGenerating = b.status === 'completed' && !b.feedback;
+
+      if (aGenerating && !bGenerating) return -1;
+      if (!aGenerating && bGenerating) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }).slice(0, 5); // Limit to top 5
+  }, [sessions]);
+
   // Helper to check if a session is currently generating feedback
   const isSessionGenerating = (sessionId: string) => {
     return isGenerating && generatingSessionId === sessionId;
   };
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
     if (!user?.id) return;
 
     try {
-      // Only show loading if we don't have cached data
-      if (!isCached.sessions && sessions.length === 0) {
+      // Only show loading if we don't have cached data and aren't forcing refresh
+      if (!isCached.sessions && !force) {
         setLoading(true);
       }
 
-      // Parallel fetch with caching
-      const [fetchedSessions] = await Promise.all([
-        fetchSessions(),
-        fetchStats(),
-        fetchProfile(),
+      // Parallelize loading for better performance
+      const [recentSessions] = await Promise.all([
+        fetchSessions(force),
+        fetchStats(force),
+        fetchProfile(force)
       ]);
 
-      // Extract scores from freshly fetched (or cached) sessions
-      const sessionList = fetchedSessions || sessions;
-      const scores = sessionList
-        .filter((s: any) => s.score !== null)
-        .map((s: any) => s.score as number)
-        .slice(0, 5);
+      // Load additional data not yet in optimized queries
+      const [remaining, userBadges, userSubscription] = await Promise.all([
+        subscriptionService.getRemainingSeconds(user.id),
+        badgeService.getUserBadges(user.id),
+        subscriptionService.getSubscription(user.id)
+      ]);
 
-      setScoreHistory(scores.length > 0 ? scores : [30, 50, 40, 70, 60]);
+      setRemainingSeconds(remaining);
+      setSubscription(userSubscription);
 
-      // Checks for Badges (not yet optimized/cached globally)
-      const userBadges = await badgeService.getUserBadges(user.id);
       const earnedSlugs = userBadges.map((ub: any) => ub.badge.slug);
       setEarnedBadges(earnedSlugs);
+
+      // Extract scores for mini chart
+      if (recentSessions) {
+        const scores = recentSessions
+          .filter(s => s.score !== null)
+          .map(s => s.score as number)
+          .slice(0, 5);
+        setScoreHistory(scores.length > 0 ? scores : [30, 50, 40, 70, 60]);
+      }
 
       // Trigger catch-up check for badges (especially if they just finished an interview)
       const newlyAwarded = await badgeService.checkAndAwardBadges(user.id);
@@ -153,16 +178,25 @@ export default function Dashboard() {
   // Load data on mount and when navigating back to dashboard
   useEffect(() => {
     if (user?.id) {
-      loadData();
+      // Only load if not cached or data is missing
+      if (!isCached.sessions || !isCached.stats || !isCached.profile) {
+        loadData();
+      } else {
+        setLoading(false);
+        // Still sync score history from cache
+        const scores = sessions
+          .filter(s => s.score !== null)
+          .map(s => s.score as number)
+          .slice(0, 5);
+        if (scores.length > 0) setScoreHistory(scores);
+      }
     }
-  }, [user?.id]); // Reload every time we mount
+  }, [user?.id, isCached.sessions, isCached.stats, isCached.profile]);
 
   // Refresh data when feedback is ready
   useEffect(() => {
     if (shouldRefreshDashboard) {
-      loadData();
-      // Optional: reset state if you only want to refresh once per event
-      // resetFeedbackState(); 
+      loadData(true); // Force refresh
     }
   }, [shouldRefreshDashboard]);
 
@@ -438,7 +472,6 @@ export default function Dashboard() {
           </div>
 
           {/* Badge Progress Section */}
-
 
           {/* Interview List Section */}
           <div className="space-y-4">

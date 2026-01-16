@@ -25,8 +25,10 @@ import {
     Mail,
     Globe,
     ExternalLink,
-    Copy
+    Copy,
+    Loader2
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +45,7 @@ import { useRouter } from "next/navigation";
 type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
 
 export default function Settings() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const { fetchProfile } = useOptimizedQueries();
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<SettingsSection>("general");
@@ -281,7 +283,7 @@ export default function Settings() {
         if (!user?.id) return;
 
         const confirmed = window.confirm(
-            "Are you sure you want to delete your account? This action cannot be undone."
+            "Are you sure you want to delete your data? This will remove your interview history. To fully delete your account, please contact support."
         );
 
         if (!confirmed) return;
@@ -297,10 +299,12 @@ export default function Settings() {
                 await interviewService.deleteSession(session.id);
             }
 
-            toast.info("Please contact support to complete account deletion.");
+            toast.success("Interview data removed", {
+                description: "Your session history has been cleared. Contact support for full account closure."
+            });
         } catch (error: any) {
-            console.error("Error deleting account:", error);
-            toast.error(error.message || "Failed to delete account");
+            console.error("Error deleting data:", error);
+            toast.error(error.message || "Failed to clear data");
         } finally {
             setLoading(false);
         }

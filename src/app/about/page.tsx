@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Target, Users, BookOpen, Globe, Award, ArrowRight, Zap, Shield, Briefcase } from "lucide-react";
+import { CheckCircle2, Target, Users, BookOpen, Award, ArrowRight, Zap, Shield, Briefcase } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
+import { PublicHeader } from "@/components/PublicHeader";
 import { Footer } from "@/components/Footer";
 
 export default function AboutPage() {
@@ -9,26 +10,7 @@ export default function AboutPage() {
         <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
             <GlobalBackground />
 
-            {/* Navigation - Simple version for SEO pages */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                            <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain relative z-10" />
-                        </div>
-                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent group-hover:to-indigo-300 transition-all">
-                            Arjuna AI
-                        </span>
-                    </Link>
-                    <div className="flex items-center gap-6">
-                        <Link href="/auth" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
-                        <Button size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full font-medium px-6" asChild>
-                            <Link href="/auth">Get Started</Link>
-                        </Button>
-                    </div>
-                </div>
-            </header>
+            <PublicHeader />
 
             <main className="pt-32 pb-20 relative z-10">
                 {/* Hero Section */}
