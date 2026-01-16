@@ -6,7 +6,8 @@ interface Skill {
 
 interface TranscriptMessage {
     id: string | number;
-    sender: string;
+    speaker: string;
+    sender?: string; // Legacy support
     text: string;
     timestamp?: string;
 }
@@ -26,464 +27,666 @@ interface ReportData {
 }
 
 export function generateReportHTML(reportData: ReportData): string {
+    const primaryColor = "#A855F7";
+    const bgDark = "#020617";
+    const bgCard = "rgba(30, 41, 59, 0.4)";
+    const borderColor = "rgba(255, 255, 255, 0.05)";
+    const textMuted = "rgba(255, 255, 255, 0.4)";
+
     return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interview Report - ${reportData.candidateName}</title>
+    <title>Intelligence Profile - ${reportData.candidateName}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: #1e293b;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 20px;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        .container { 
-            max-width: 900px; 
-            margin: 0 auto; 
-            background: white; 
-            border-radius: 16px; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        /* Header Section */
-        .report-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: ${bgDark};
+            color: #ffffff;
+            line-height: 1.5;
+            padding: 40px 20px;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Tactical Header */
+        .header {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 9999px;
+            color: ${primaryColor};
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 16px;
+        }
+
+        .title-section h1 {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .title-section h1 span {
+            color: ${primaryColor};
+            font-style: italic;
+        }
+
+        .subtitle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .role-badge {
+            background: ${bgCard};
+            backdrop-filter: blur(20px);
+            border: 1px solid ${borderColor};
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: ${primaryColor};
+        }
+
+        .type-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: ${textMuted};
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #f59e0b;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Grid Layout */
+        .intelligence-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: ${bgCard};
+            backdrop-filter: blur(40px);
+            border: 1px solid ${borderColor};
+            border-radius: 24px;
+            padding: 32px;
             position: relative;
             overflow: hidden;
         }
-        .report-header::before {
-            content: '';
+
+        /* Score Gauge */
+        .score-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin-bottom: 24px;
+        }
+
+        .gauge-svg {
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 8;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke: ${primaryColor};
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: ${440 - (440 * reportData.overallScore) / 100};
+            transition: stroke-dashoffset 1s ease-out;
+        }
+
+        .score-value {
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 15s ease-in-out infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
+
+        .score-num {
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1;
         }
-        .header-content { position: relative; z-index: 1; }
-        .brand-section {
+
+        .score-label {
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: ${textMuted};
+            margin-top: 4px;
+        }
+
+        .status-pill {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-pill.needs-opt {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            color: #f43f5e;
+        }
+
+        /* Executive Summary */
+        .summary-card h2 {
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .section-tag {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: ${primaryColor};
+            margin-bottom: 24px;
+        }
+
+        .summary-text {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            border-left: 3px solid rgba(168, 85, 247, 0.3);
+            padding-left: 20px;
+            margin-bottom: 32px;
+            font-style: italic;
+        }
+
+        .metadata-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding-top: 24px;
+            border-top: 1px solid ${borderColor};
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .meta-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .meta-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: ${textMuted};
+        }
+
+        .meta-value {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        /* Sections */
+        .detail-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .title-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .points-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .point-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid ${borderColor};
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .point-marker {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Competencies */
+        .competencies-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .skill-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid ${borderColor};
+            padding: 24px;
+            border-radius: 20px;
+        }
+
+        .skill-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .skill-name-wrap h4 {
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .skill-tag {
+            font-size: 7px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: ${primaryColor};
+            letter-spacing: 0.1em;
+        }
+
+        .skill-score-num {
+            font-size: 20px;
+            font-weight: 900;
+            color: ${primaryColor};
+        }
+
+        .progress-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: ${primaryColor};
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        .skill-brief {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        /* Transcript */
+        .transcript-wrap {
+            margin-top: 32px;
+        }
+
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+            max-width: 85%;
+        }
+
+        .message-row.user {
+            margin-left: auto;
+            align-items: flex-end;
+        }
+
+        .sender-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 8px;
+        }
+
+        .sender-tag {
+            font-size: 7px;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .timestamp {
+            font-size: 8px;
+            font-weight: 900;
+            color: ${textMuted};
+        }
+
+        .bubble {
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .ai .bubble {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid ${borderColor};
+            border-top-left-radius: 0;
+        }
+
+        .user .bubble {
+            background: ${primaryColor};
+            color: #000000;
+            border-top-right-radius: 0;
+        }
+
+        .report-id-footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid ${borderColor};
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        .brand-logo {
-            font-size: 28px;
+            color: ${textMuted};
+            font-size: 9px;
             font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .brand-tagline {
-            font-size: 12px;
-            opacity: 0.9;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 0.1em;
         }
-        .report-date {
-            font-size: 13px;
-            opacity: 0.9;
-            text-align: right;
+
+        .arjuna-logo-small {
+            font-size: 14px;
+            font-weight: 900;
+            color: #ffffff;
         }
-        .candidate-info h1 {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .candidate-info .position {
-            font-size: 20px;
-            opacity: 0.95;
-            margin-bottom: 20px;
-        }
-        .metadata-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .metadata-item {
-            background: rgba(255,255,255,0.15);
-            padding: 12px 16px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-        .metadata-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.8;
-            margin-bottom: 4px;
-        }
-        .metadata-value {
-            font-size: 15px;
-            font-weight: 600;
-        }
-        
-        /* Content Section */
-        .content { padding: 40px; }
-        
-        /* Score Section */
-        .score-section { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            margin: 0 0 40px 0; 
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        .score-section .score { 
-            font-size: 72px; 
-            font-weight: 800; 
-            margin-bottom: 8px;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .score-section .label { 
-            font-size: 18px; 
-            opacity: 0.95;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        /* Section Styling */
-        .section { margin: 40px 0; }
-        .section h2 { 
-            font-size: 26px; 
-            color: #0f172a; 
-            margin-bottom: 20px; 
-            padding-bottom: 12px; 
-            border-bottom: 3px solid #667eea;
-            font-weight: 700;
-        }
-        .section h3 { 
-            font-size: 20px; 
-            color: #334155; 
-            margin: 24px 0 16px;
-            font-weight: 600;
-        }
-        
-        /* Summary Box */
-        .summary { 
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            padding: 24px; 
-            border-radius: 12px; 
-            border-left: 5px solid #667eea;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            line-height: 1.8;
-        }
-        
-        /* Lists */
-        .list { list-style: none; }
-        .list li { 
-            padding: 16px; 
-            border-bottom: 1px solid #e2e8f0; 
-            display: flex; 
-            align-items: start;
-            transition: background 0.2s;
-        }
-        .list li:hover { background: #f8fafc; }
-        .list li:last-child { border-bottom: none; }
-        .list li::before { 
-            content: "•"; 
-            color: #667eea; 
-            font-weight: bold; 
-            font-size: 24px; 
-            margin-right: 16px;
-            line-height: 1;
-        }
-        .strength::before { content: "✓"; color: #10b981 !important; }
-        .improvement::before { content: "⚠"; color: #f59e0b !important; }
-        
-        /* Skill Items */
-        .skill-item { 
-            background: #f8fafc;
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s;
-        }
-        .skill-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
-        }
-        .skill-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 12px; 
-        }
-        .skill-name { 
-            font-weight: 700; 
-            color: #0f172a;
-            font-size: 16px;
-        }
-        .skill-score { 
-            font-weight: 800; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 22px;
-        }
-        .skill-bar { 
-            height: 10px; 
-            background: #e2e8f0; 
-            border-radius: 5px; 
-            overflow: hidden; 
-            margin-bottom: 12px;
-        }
-        .skill-bar-fill { 
-            height: 100%; 
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 5px;
-            transition: width 0.5s ease;
-        }
-        .skill-feedback { 
-            font-size: 14px; 
-            color: #64748b;
-            line-height: 1.6;
-        }
-        
-        /* Transcript */
-        .transcript { 
-            background: #f8fafc;
-            padding: 24px; 
-            border-radius: 12px; 
-            max-height: 600px; 
-            overflow-y: auto;
-            border: 2px solid #e2e8f0;
-        }
-        .message { 
-            margin-bottom: 20px; 
-            padding: 16px; 
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .message.ai { 
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            border-left: 4px solid #667eea;
-        }
-        .message.user { 
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-left: 4px solid #10b981;
-        }
-        .message-sender { 
-            font-weight: 700; 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            color: #64748b; 
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-        .message-text { 
-            color: #1e293b;
-            line-height: 1.6;
-        }
-        
-        /* Recommendation */
-        .recommendation { 
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-            border: 3px solid #10b981; 
-            padding: 24px; 
-            border-radius: 12px; 
-            margin: 40px 0;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
-        }
-        .recommendation.negative { 
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border-color: #ef4444;
-            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
-        }
-        .recommendation h3 { 
-            color: #166534; 
-            margin-bottom: 12px;
-            font-size: 22px;
-            font-weight: 700;
-        }
-        .recommendation.negative h3 { color: #991b1b; }
-        .recommendation p {
-            line-height: 1.8;
-            font-size: 15px;
-        }
-        
-        /* Footer */
-        .footer { 
-            margin-top: 60px; 
-            padding: 30px 40px;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            text-align: center; 
-            color: #64748b;
-            border-top: 3px solid #667eea;
-        }
-        .footer-brand {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-        .footer-text {
-            font-size: 13px;
-            margin: 4px 0;
-        }
-        
+
         @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; }
-            .report-header::before { display: none; }
+            body { background: #020617 !important; -webkit-print-color-adjust: exact; }
+            .card { background: rgba(30, 41, 59, 1) !important; backdrop-filter: none !important; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header Section -->
-        <div class="report-header">
-            <div class="header-content">
-                <div class="brand-section">
-                    <div>
-                        <div class="brand-logo">🏹 Arjuna AI</div>
-                        <div class="brand-tagline">Interview Intelligence Platform</div>
-                    </div>
-                    <div class="report-date">
-                        <div>Report Generated</div>
-                        <div style="font-weight: 600;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        <!-- Tactical Header -->
+        <header class="header">
+            <div class="badge">
+                <span>🏹</span> Intelligence Profile
+            </div>
+            <div class="title-section">
+                <h1>${reportData.candidateName} <span>Analytics</span></h1>
+                <div class="subtitle">
+                    <div class="role-badge">${reportData.position}</div>
+                    <div class="type-badge">
+                        <div class="dot"></div>
+                        Tactical Protocol
                     </div>
                 </div>
+            </div>
+        </header>
+
+        <!-- Primary Intelligence -->
+        <div class="intelligence-grid">
+            <div class="card score-card">
+                <div class="gauge-container">
+                    <svg class="gauge-svg" width="160" height="160">
+                        <circle class="gauge-bg" cx="80" cy="80" r="70" />
+                        <circle class="gauge-fill" cx="80" cy="80" r="70" />
+                    </svg>
+                    <div class="score-value">
+                        <span class="score-num">${reportData.overallScore}</span>
+                        <span class="score-label">Analytical Grade</span>
+                    </div>
+                </div>
+                <div class="status-pill ${reportData.overallScore >= 70 ? '' : 'needs-opt'}">
+                    ${reportData.overallScore >= 70 ? 'Primary Deployment' : 'Tactical Recalibration'}
+                </div>
+                <div style="font-size: 8px; font-weight: 900; text-transform: uppercase; color: ${textMuted}; margin-top: 12px;">
+                    Status: <span style="color: rgba(255,255,255,0.6)">${reportData.overallScore >= 70 ? 'Validated' : 'Needs Optimization'}</span>
+                </div>
+            </div>
+
+            <div class="card summary-card">
+                <div class="section-tag">Protocol Intelligence Summary</div>
+                <h2>Executive Overview</h2>
+                <div class="summary-text">
+                    "${reportData.executiveSummary}"
+                </div>
                 
-                <div class="candidate-info">
-                    <h1>${reportData.candidateName}</h1>
-                    <div class="position">${reportData.position}</div>
-                    
-                    <div class="metadata-grid">
-                        <div class="metadata-item">
-                            <div class="metadata-label">Interview Date</div>
-                            <div class="metadata-value">${reportData.date}</div>
+                <div class="metadata-row">
+                    <div class="meta-item">
+                        <div class="meta-icon">⏳</div>
+                        <div class="meta-content">
+                            <span class="meta-label">Temporal Log</span>
+                            <span class="meta-value">${reportData.date.split(',')[0]}</span>
                         </div>
-                        <div class="metadata-item">
-                            <div class="metadata-label">Interview Type</div>
-                            <div class="metadata-value">AI-Powered Assessment</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon">🎯</div>
+                        <div class="meta-content">
+                            <span class="meta-label">Competencies</span>
+                            <span class="meta-value">${reportData.overallSkills.length} Total</span>
                         </div>
-                        <div class="metadata-item">
-                            <div class="metadata-label">Report ID</div>
-                            <div class="metadata-value">#${Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon">💬</div>
+                        <div class="meta-content">
+                            <span class="meta-label">Transmissions</span>
+                            <span class="meta-value">${reportData.transcript.length} Segments</span>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon">🏆</div>
+                        <div class="meta-content">
+                            <span class="meta-label">Rank Grade</span>
+                            <span class="meta-value">${reportData.overallScore >= 90 ? 'A+' : reportData.overallScore >= 80 ? 'A' : reportData.overallScore >= 70 ? 'B+' : 'C'}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Content Section -->
-        <div class="content">
-            <div class="score-section">
-                <div class="score">${reportData.overallScore}%</div>
-                <div class="label">Overall Match Score</div>
-            </div>
-
-            <div class="section">
-                <h2>📋 Executive Summary</h2>
-                <div class="summary">${reportData.executiveSummary}</div>
-            </div>
-
-            <div class="section">
-                <h2>✨ Key Strengths</h2>
-                <ul class="list">
-                    ${reportData.strengths.map((item: string) => `<li class="strength">${item}</li>`).join('')}
-                </ul>
-            </div>
-
-            <div class="section">
-                <h2>🎯 Areas for Improvement</h2>
-                <ul class="list">
-                    ${reportData.improvements.map((item: string) => `<li class="improvement">${item}</li>`).join('')}
-                </ul>
-            </div>
-
-            <div class="section">
-                <h2>📊 Overall Assessment</h2>
-                ${reportData.overallSkills.map((skill: Skill) => `
-                    <div class="skill-item">
-                        <div class="skill-header">
-                            <span class="skill-name">${skill.name}</span>
-                            <span class="skill-score">${skill.score}%</span>
-                        </div>
-                        <div class="skill-bar">
-                            <div class="skill-bar-fill" style="width: ${skill.score}%"></div>
-                        </div>
-                        <div class="skill-feedback">${skill.feedback}</div>
-                    </div>
-                `).join('')}
-            </div>
-
-            ${reportData.technicalSkills.length > 0 ? `
-            <div class="section">
-                <h2>💻 Technical Skills Assessment</h2>
-                ${reportData.technicalSkills.map((skill: Skill) => `
-                    <div class="skill-item">
-                        <div class="skill-header">
-                            <span class="skill-name">${skill.name}</span>
-                            <span class="skill-score">${skill.score}%</span>
-                        </div>
-                        <div class="skill-bar">
-                            <div class="skill-bar-fill" style="width: ${skill.score}%"></div>
-                        </div>
-                        <div class="skill-feedback">${skill.feedback}</div>
-                    </div>
-                `).join('')}
-            </div>
-            ` : ''}
-
-            <div class="section">
-                <h2>🎯 Recommended Action Plan</h2>
-                <ul class="list">
-                    ${reportData.actionPlan.map((item: string) => `<li>${item}</li>`).join('')}
-                </ul>
-            </div>
-
-            <div class="section">
-                <h2>💬 Interview Transcript</h2>
-                <div class="transcript">
-                    ${reportData.transcript.map((msg: TranscriptMessage) => `
-                        <div class="message ${msg.sender}">
-                            <div class="message-sender">${msg.sender === 'ai' ? '🤖 AI Interviewer' : '👤 Candidate'}</div>
-                            <div class="message-text">${msg.text}</div>
+        <!-- Tactical Analysis -->
+        <div class="detail-sections">
+            <div class="card">
+                <h3 class="section-title" style="color: #10b981;">
+                    <div class="title-icon" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);">🛡️</div>
+                    Tactical Strengths
+                </h3>
+                <div class="points-list">
+                    ${reportData.strengths.map(s => `
+                        <div class="point-item">
+                            <div class="point-marker" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">✓</div>
+                            ${s}
                         </div>
                     `).join('')}
                 </div>
             </div>
 
-            <div class="recommendation ${reportData.overallScore >= 70 ? '' : 'negative'}">
-                <h3>${reportData.overallScore >= 70 ? '✅' : '⚠️'} AI Recommendation: ${reportData.overallScore >= 70 ? 'Proceed to Next Round' : 'Additional Assessment Recommended'}</h3>
-                <p>Based on the comprehensive analysis and overall match score of <strong>${reportData.overallScore}%</strong>, this candidate is ${reportData.overallScore >= 70 ? '<strong>recommended</strong> to proceed to the next stage of the interview process' : '<strong>recommended</strong> for additional assessment or skill development before proceeding'} for the <strong>${reportData.position}</strong> role.</p>
+            <div class="card">
+                <h3 class="section-title" style="color: #f43f5e;">
+                    <div class="title-icon" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2);">⚡</div>
+                    Growth Directives
+                </h3>
+                <div class="points-list">
+                    ${reportData.improvements.map(s => `
+                        <div class="point-item">
+                            <div class="point-marker" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">!</div>
+                            ${s}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Competencies -->
+        <div class="card">
+            <div class="section-tag">Vector Positioning</div>
+            <h3 class="section-title">Core Competencies</h3>
+            <div class="competencies-grid">
+                ${reportData.overallSkills.map(skill => `
+                    <div class="skill-card">
+                        <div class="skill-top">
+                            <div class="skill-name-wrap">
+                                <h4>${skill.name}</h4>
+                                <span class="skill-tag">Intelligence Metric</span>
+                            </div>
+                            <div class="skill-score-num">${skill.score}%</div>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: ${skill.score}%"></div>
+                        </div>
+                        <p class="skill-brief">${skill.feedback}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="card transcript-wrap">
+            <div class="section-tag">Session Protocol Log</div>
+            <h3 class="section-title">Intelligence Transcript</h3>
+            <div style="margin-top: 32px;">
+                ${reportData.transcript.slice(0, 15).map(msg => {
+        const speakerRaw = (msg.speaker || msg.sender || '').toLowerCase();
+        const isAI = ['ai', 'agent', 'model'].includes(speakerRaw);
+        return `
+                        <div class="message-row ${isAI ? 'ai' : 'user'}">
+                            <div class="sender-info">
+                                <span class="sender-tag" style="background: ${isAI ? 'rgba(168, 85, 247, 0.1)' : 'rgba(255,255,255,0.05)'}; color: ${isAI ? primaryColor : textMuted};">
+                                    ${isAI ? 'AI' : 'YOU'}
+                                </span>
+                                <span class="timestamp">${msg.timestamp || ''}</span>
+                            </div>
+                            <div class="bubble">${msg.text}</div>
+                        </div>
+                    `;
+    }).join('')}
+                ${reportData.transcript.length > 15 ? `
+                    <div style="text-align: center; color: ${textMuted}; font-size: 10px; font-weight: 800; margin-top: 24px; text-transform: uppercase; letter-spacing: 0.2em;">
+                        + ${reportData.transcript.length - 15} More Transmissions in Full Log
+                    </div>
+                ` : ''}
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="footer">
-            <div class="footer-brand">🏹 Arjuna AI</div>
-            <div class="footer-text">AI-Powered Interview Intelligence Platform</div>
-            <div class="footer-text">© ${new Date().getFullYear()} Arjuna AI. All rights reserved.</div>
-            <div class="footer-text" style="margin-top: 12px; font-size: 11px; opacity: 0.7;">
-                This report was generated using advanced AI technology to provide objective candidate assessment.
+        <footer class="report-id-footer">
+            <div class="arjuna-logo-small">
+                ARJUNA<span style="color: ${primaryColor}; font-style: italic;">AI</span>
+                <span style="color: ${textMuted}; font-size: 8px; margin-left: 8px;">Tactical Interface v2.5</span>
             </div>
-        </div>
+            <div>
+                Intel-ID: #${Math.random().toString(36).substr(2, 9).toUpperCase()} • Generated ${new Date().toLocaleDateString()}
+            </div>
+        </footer>
     </div>
 </body>
 </html>

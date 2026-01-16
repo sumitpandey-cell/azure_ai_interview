@@ -38,6 +38,8 @@ import { useInterviewStore } from "@/stores/use-interview-store";
 import { interviewService, subscriptionService } from "@/services";
 import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
 import { cn } from "@/lib/utils";
+import { parseFile } from "@/lib/file-parser";
+import { INTERVIEW_CONFIG } from "@/config/interview-config";
 
 const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
@@ -170,21 +172,10 @@ function StartInterviewContent() {
         const toastId = toast.loading(`Analyzing ${file.name}...`);
 
         try {
-            // If it's a text file, we can read it easily
-            if (fileExtension === 'txt') {
-                const text = await file.text();
-                form.setValue('jobDescription', text);
-                toast.success("Job description extracted successfully", { id: toastId });
-            } else {
-                // For PDF and DOCX, in a real app we'd send to an API
-                // For now, we'll simulate the extraction or inform the user
-                // To keep it functional, let's pretend we extracted basic info
-                setTimeout(() => {
-                    const ext = fileExtension?.toUpperCase() || 'FILE';
-                    toast.success(`${file.name} attached. (Parsing logic for ${ext} would be connected here)`, { id: toastId });
-                    form.setValue('jobDescription', `Attached file: ${file.name}\n(Content from ${ext} parsing payload)`);
-                }, 1500);
-            }
+            // Use the file parser utility for all file types
+            const text = await parseFile(file);
+            form.setValue('jobDescription', text);
+            toast.success("Job description extracted successfully", { id: toastId });
         } catch (error) {
             console.error("Error reading file:", error);
             toast.error("Failed to read file", { id: toastId });
@@ -195,17 +186,44 @@ function StartInterviewContent() {
 
     const handleAddSkill = () => {
         if (skillInput.trim()) {
-            setSkillsList([...skillsList, skillInput.trim()]);
+            const newSkill = skillInput.trim();
+            // Sanitize skill (allow only alphanumeric, spaces, and dashes)
+            const sanitizedSkill = newSkill.replace(/[^a-zA-Z0-9\s-]/g, '');
+
+            if (!sanitizedSkill) {
+                toast.error("Invalid skill name");
+                return;
+            }
+
+            const lowerSkills = skillsList.map(s => s.toLowerCase());
+            if (lowerSkills.includes(sanitizedSkill.toLowerCase())) {
+                toast.error("Skill already added");
+                setSkillInput("");
+                return;
+            }
+
+            setSkillsList([...skillsList, sanitizedSkill]);
             setSkillInput("");
-            form.setValue("skills", ""); // Clear the hidden input if we were using one, or just manage state
         }
     };
 
     const handleRoleSelection = (role: string) => {
         const suggestedSkills = ROLE_SKILLS[role] || [];
         if (suggestedSkills.length > 0) {
-            // Merge with existing skills, avoiding duplicates
-            setSkillsList(prev => Array.from(new Set([...prev, ...suggestedSkills])));
+            // Merge with existing skills, avoiding case-insensitive duplicates
+            setSkillsList(prev => {
+                const newList = [...prev];
+                const lowerPrev = prev.map(s => s.toLowerCase());
+
+                suggestedSkills.forEach(skill => {
+                    if (!lowerPrev.includes(skill.toLowerCase())) {
+                        newList.push(skill);
+                        lowerPrev.push(skill.toLowerCase());
+                    }
+                });
+                return newList;
+            });
+
             toast.success(`Suggested skills added for ${role}`, {
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 duration: 3000
@@ -221,11 +239,12 @@ function StartInterviewContent() {
 
         setIsLoading(true);
         try {
-            // Check message threshold (min 2 minutes)
+            // Check balance threshold from config
             const usage = await subscriptionService.checkUsageLimit(user.id);
-            if (usage.remainingMinutes < 120) {
+            if (usage.remainingSeconds < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS) {
+                const minMins = Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60);
                 toast.error("Insufficient balance", {
-                    description: "You need at least 2 minutes of interview time to start a new session.",
+                    description: `You need at least ${minMins} minutes of interview time to start a new session.`,
                     action: {
                         label: "Upgrade",
                         onClick: () => router.push("/pricing")
@@ -238,15 +257,10 @@ function StartInterviewContent() {
             // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
             const existingSessions = await interviewService.getInProgressSessions(user.id);
 
-            // Filter for session of the SAME DOMAIN (position and type)
-            const sameDomainSession = existingSessions?.find(s =>
-                s.position.toLowerCase() === values.position.toLowerCase() &&
-                s.interview_type.toLowerCase() === values.interviewType.toLowerCase()
-            );
-
-            // If there is an in-progress session of the SAME DOMAIN, show dialog
-            if (sameDomainSession) {
-                setConflictSession(sameDomainSession);
+            // If there is ANY in-progress session, show dialog
+            if (existingSessions && existingSessions.length > 0) {
+                const activeSession = existingSessions[0];
+                setConflictSession(activeSession);
                 setPendingValues(values);
                 setConflictDialogOpen(true);
                 setIsLoading(false);

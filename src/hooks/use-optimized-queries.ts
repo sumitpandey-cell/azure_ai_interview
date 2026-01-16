@@ -313,7 +313,7 @@ export function useOptimizedQueries() {
       });
 
       if (!session) {
-        throw new Error('Failed to create interview session');
+        throw new Error('You already have an active interview session. Please complete or abandon it first.');
       }
 
       // Invalidate cache since we added a new interview
@@ -334,7 +334,7 @@ export function useOptimizedQueries() {
       score?: number;
       feedback?: any;
       transcript?: any;
-      durationMinutes?: number;
+      durationSeconds?: number;
       totalHintsUsed?: number;
       averagePerformanceScore?: number;
     }

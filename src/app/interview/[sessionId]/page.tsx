@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -29,11 +29,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2, Search } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { subscriptionService } from "@/services";
+import { parseFile } from "@/lib/file-parser";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
@@ -52,8 +54,10 @@ export default function StartInterview() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
+    const [isParsing, setIsParsing] = useState(false);
     const [skillsList, setSkillsList] = useState<string[]>([]);
     const [skillInput, setSkillInput] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [jobDescriptionType, setJobDescriptionType] = useState<'upload' | 'manual'>('upload');
     const [interviewMode, setInterviewMode] = useState<'general' | 'company'>(
         pathname.includes('company') ? 'company' : 'general'
@@ -111,6 +115,41 @@ export default function StartInterview() {
         }
     };
 
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 1) {
+            toast.error("Only one file can be uploaded at a time");
+            return;
+        }
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("File size exceeds 5MB limit");
+            return;
+        }
+
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        if (!['pdf', 'docx', 'txt'].includes(fileExtension || '')) {
+            toast.error("Unsupported file format. Please use PDF, DOCX, or TXT.");
+            return;
+        }
+
+        setIsParsing(true);
+        const toastId = toast.loading(`Analyzing ${file.name}...`);
+
+        try {
+            const text = await parseFile(file);
+            form.setValue('jobDescription', text);
+            toast.success("Job description extracted successfully", { id: toastId });
+        } catch (error) {
+            console.error("Error reading file:", error);
+            toast.error("Failed to read file", { id: toastId });
+        } finally {
+            setIsParsing(false);
+        }
+    };
+
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         if (!user) {
             toast.error("You must be logged in to start an interview");
@@ -121,7 +160,7 @@ export default function StartInterview() {
         try {
             // Check usage limit before starting
             const usageCheck = await subscriptionService.checkUsageLimit(user.id);
-            if (usageCheck.hasLimit || usageCheck.remainingMinutes < 120) {
+            if (usageCheck.hasLimit || usageCheck.remainingSeconds < 120) {
                 toast.error("Insufficient balance. Minimum 2 minutes required to start an interview.", {
                     action: {
                         label: "Upgrade",
@@ -179,9 +218,9 @@ export default function StartInterview() {
             } else {
                 throw new Error('Failed to create session');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating session:", error);
-            toast.error("Failed to create interview session");
+            toast.error(error.message || "Failed to create interview session");
         } finally {
             setIsLoading(false);
         }
@@ -477,13 +516,44 @@ export default function StartInterview() {
                                     </div>
 
                                     {jobDescriptionType === 'upload' ? (
-                                        <div className="border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5 p-10 text-center hover:bg-primary/10 transition-colors cursor-pointer group">
-                                            <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                                                <Upload className="h-7 w-7" />
-                                            </div>
-                                            <h3 className="text-foreground font-semibold mb-1 text-lg">Upload job description file</h3>
-                                            <p className="text-muted-foreground text-sm mb-6">PDF or DOCX (Max 5MB)</p>
-                                            <Button type="button" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">Choose File</Button>
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={cn(
+                                                "border-2 border-dashed border-primary/20 rounded-2xl bg-primary/5 p-10 text-center hover:bg-primary/10 transition-colors cursor-pointer group relative overflow-hidden",
+                                                isParsing && "opacity-70 pointer-events-none"
+                                            )}
+                                        >
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                                accept=".pdf,.docx,.txt"
+                                                multiple={false}
+                                            />
+                                            {form.watch('jobDescription') && typeof form.watch('jobDescription') === 'string' && form.watch('jobDescription').startsWith('Attached file:') ? (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <Search className="h-7 w-7" />
+                                                    </div>
+                                                    <h3 className="text-foreground font-semibold mb-1 text-lg text-emerald-600">File Attached</h3>
+                                                    <p className="text-muted-foreground text-sm mb-6">
+                                                        {form.watch('jobDescription').split('\n')[0].replace('Attached file: ', '')}
+                                                    </p>
+                                                    <Button type="button" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold">Change File</Button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                                                        {isParsing ? <Loader2 className="h-7 w-7 animate-spin" /> : <Upload className="h-7 w-7" />}
+                                                    </div>
+                                                    <h3 className="text-foreground font-semibold mb-1 text-lg">Upload job description file</h3>
+                                                    <p className="text-muted-foreground text-sm mb-6">PDF or DOCX (Max 5MB)</p>
+                                                    <Button type="button" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground">
+                                                        {isParsing ? "Analyzing..." : "Choose File"}
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     ) : (
                                         <FormField

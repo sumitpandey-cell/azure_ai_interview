@@ -6,6 +6,8 @@ import { interviewService } from "@/services/interview.service";
 
 interface FeedbackContextType {
     isGenerating: boolean;
+    progress: number; // 0 to 100
+    statusText: string;
     feedbackReady: boolean;
     currentSessionId: string | null;
     shouldRefreshDashboard: boolean;
@@ -25,27 +27,37 @@ export const useFeedback = () => {
 
 export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [statusText, setStatusText] = useState("");
     const [feedbackReady, setFeedbackReady] = useState(false);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [shouldRefreshDashboard, setShouldRefreshDashboard] = useState(false);
 
     const generateFeedbackInBackground = useCallback(async (sessionId: string) => {
         setIsGenerating(true);
+        setProgress(0);
+        setStatusText("Preparing report...");
         setFeedbackReady(false);
         setCurrentSessionId(sessionId);
         setShouldRefreshDashboard(false);
 
         const processFeedback = async () => {
             console.log("🚀 [FeedbackContext] STARTING background feedback generation for:", sessionId);
-            console.log("🔧 [FeedbackContext] This is a client-side process using Gemini API");
-            // toast.info("Generating AI feedback in background..."); // Using toast here might be redundant if user is redirected
 
             try {
-                // Generate feedback using the service (which handles resumptions and scores)
-                const success = await interviewService.generateAllResumptionFeedback(sessionId);
+                // Generate feedback with progress callback
+                const success = await interviewService.generateAllResumptionFeedback(
+                    sessionId,
+                    (p, text) => {
+                        setProgress(p);
+                        setStatusText(text);
+                    }
+                );
 
                 if (success) {
                     console.log("✅ [Background] Feedback generated successfully");
+                    setProgress(100);
+                    setStatusText("Report ready!");
                     setFeedbackReady(true);
                     setShouldRefreshDashboard(true);
 
@@ -79,11 +91,15 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
         setFeedbackReady(false);
         setShouldRefreshDashboard(false);
         setCurrentSessionId(null);
+        setProgress(0);
+        setStatusText("");
     }, []);
 
     return (
         <FeedbackContext.Provider value={{
             isGenerating,
+            progress,
+            statusText,
             feedbackReady,
             currentSessionId,
             shouldRefreshDashboard,

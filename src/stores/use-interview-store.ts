@@ -6,7 +6,8 @@ import { CodingChallenge } from '@/types/coding-challenge-types';
 
 interface Message {
     id: number;
-    sender: 'user' | 'ai';
+    speaker: 'user' | 'ai';
+    sender?: 'user' | 'ai'; // Legacy support
     text: string;
     timestamp?: string;
 }

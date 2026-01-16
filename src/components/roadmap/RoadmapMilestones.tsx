@@ -37,14 +37,14 @@ export function RoadmapMilestones({ milestones, progress }: RoadmapMilestonesPro
     };
 
     return (
-        <div className="space-y-8 py-10">
-            <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                    <Trophy className="w-5 h-5 text-primary" />
+        <div className="space-y-6 pt-2">
+            <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                    <Trophy className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Success Milestones</h2>
-                    <p className="text-sm text-muted-foreground">Track your progression towards mastery</p>
+                    <h2 className="text-xl font-bold tracking-tight">Success Milestones</h2>
+                    <p className="text-[11px] text-muted-foreground">Track your progression towards mastery</p>
                 </div>
             </div>
 
@@ -63,50 +63,50 @@ export function RoadmapMilestones({ milestones, progress }: RoadmapMilestonesPro
                                     <div className="flex flex-col md:flex-row md:items-stretch">
                                         {/* Status Sidebar */}
                                         <div className={cn(
-                                            "md:w-32 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r transition-colors",
+                                            "md:w-28 p-4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r transition-colors",
                                             isCompleted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-accent/30 border-accent/20"
                                         )}>
                                             {isCompleted ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
-                                                        <CheckCircle2 className="w-6 h-6" />
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/40">
+                                                        <CheckCircle2 className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Achieved</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Achieved</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <div className="w-12 h-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground/40">
-                                                        <Circle className="w-6 h-6" />
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <div className="w-10 h-10 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground/40">
+                                                        <Circle className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Upcoming</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">Upcoming</span>
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Content Area */}
-                                        <div className="flex-1 p-6 space-y-4">
-                                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                                <div className="space-y-1">
+                                        <div className="flex-1 p-5 space-y-3">
+                                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                                <div className="space-y-0.5">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest py-0.5 px-2 bg-primary/10 text-primary rounded-md">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest py-0.5 px-2 bg-primary/10 text-primary rounded-md">
                                                             Phase {milestone.phase_number}
                                                         </span>
-                                                        <h4 className={cn("text-lg font-bold", isCompleted && "text-emerald-700 dark:text-emerald-400")}>
+                                                        <h4 className={cn("text-base font-bold", isCompleted && "text-emerald-700 dark:text-emerald-400")}>
                                                             {milestone.title}
                                                         </h4>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                                                    <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
                                                         {milestone.description}
                                                     </p>
                                                 </div>
 
-                                                <div className="flex items-center md:flex-col md:items-end gap-3 md:gap-1">
-                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-                                                        <Calendar className="w-3.5 h-3.5" />
+                                                <div className="flex items-center md:flex-col md:items-end gap-3 md:gap-0.5">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                                                        <Calendar className="w-3 h-3" />
                                                         {formatDate(milestone.estimated_date)}
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 text-sm font-bold">
-                                                        <Target className="w-4 h-4 text-primary" />
+                                                    <div className="flex items-center gap-1.5 text-xs font-black">
+                                                        <Target className="w-3.5 h-3.5 text-primary" />
                                                         Target: {milestone.target_score}%
                                                     </div>
                                                 </div>

@@ -6,10 +6,12 @@ import { interviewService } from "@/services/interview.service";
 
 export function TranscriptTracker({
     sessionId,
+    userId,
     agentAudioTrack,
     sentimentData
 }: {
     sessionId: string;
+    userId: string;
     agentAudioTrack?: TrackReferenceOrPlaceholder;
     sentimentData?: {
         sentiment: string;
@@ -59,8 +61,9 @@ export function TranscriptTracker({
             console.log(`📝 Saving transcript: [${name}] ${s.text}`);
 
             // Fire and forget save
-            interviewService.addTranscriptEntry(sessionId, {
-                speaker: isSelf ? 'user' : 'ai',
+            interviewService.addTranscriptEntry(sessionId, userId, {
+                role: isSelf ? 'user' : 'assistant',
+                speaker: isSelf ? 'user' : 'ai', // Keep speaker for legacy if needed
                 text: s.text,
                 timestamp: s.firstReceivedTime || Date.now(),
                 ...(isSelf && sentimentData ? {

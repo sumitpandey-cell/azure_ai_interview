@@ -38,12 +38,14 @@ export async function POST(request: NextRequest) {
         }
 
         const supabase = await createClient();
-
-        // Get authenticated user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+
         if (authError || !user) {
+            console.error('Roadmap generation auth error:', authError);
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        console.log(`Generating roadmap for user: ${user.id} (${user.email})`);
 
         // Get payment ID from request (if provided)
         const body = await request.json().catch(() => ({}));

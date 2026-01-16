@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, RefreshCw, Sparkles, AlertCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -30,17 +31,26 @@ export default function RoadmapPage() {
         fetchRoadmap();
     }, []);
 
-    const fetchRoadmap = async () => {
+    const fetchRoadmap = async (isPolling = false) => {
         try {
-            setLoading(true);
+            if (!isPolling) setLoading(true);
             setError(null);
 
             const response = await fetch('/api/roadmap/generate');
             const data = await response.json();
 
-            if (response.ok) {
+            if (response.ok && data.roadmap) {
                 setRoadmap(data.roadmap);
                 setProgress(data.progress || []);
+
+                // If currently generating, start polling
+                if (data.roadmap.roadmap_data?.status === 'generating') {
+                    setGenerating(true);
+                } else {
+                    setGenerating(false);
+                }
+            } else if (response.ok) {
+                setRoadmap(null);
             } else {
                 setError(data.error || 'Failed to fetch roadmap');
             }
@@ -48,9 +58,22 @@ export default function RoadmapPage() {
             console.error('Error fetching roadmap:', err);
             setError('Failed to load roadmap');
         } finally {
-            setLoading(false);
+            if (!isPolling) setLoading(false);
         }
     };
+
+    // Polling logic
+    useEffect(() => {
+        let intervalId: any;
+        if (generating) {
+            intervalId = setInterval(() => {
+                fetchRoadmap(true);
+            }, 5000); // Poll every 5 seconds
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [generating]);
 
     const handleGenerate = async () => {
         try {
@@ -241,14 +264,18 @@ export default function RoadmapPage() {
         );
     }
 
-    if (!roadmap) {
+    if (!roadmap || roadmap.roadmap_data?.status === 'generating') {
         return (
             <DashboardLayout>
                 <div className="container max-w-2xl mx-auto px-4 py-16 text-center">
-                    <Sparkles className="w-16 h-16 mx-auto mb-6 text-primary" />
-                    <h1 className="text-3xl font-bold mb-3">Get Your Personalized Roadmap</h1>
+                    <Sparkles className={cn("w-16 h-16 mx-auto mb-6", generating ? "text-primary animate-pulse" : "text-primary")} />
+                    <h1 className="text-3xl font-bold mb-3">
+                        {generating ? "Building Your Professional Roadmap" : "Get Your Personalized Roadmap"}
+                    </h1>
                     <p className="text-muted-foreground mb-8 text-lg">
-                        Our AI will analyze your interview history and create a customized learning plan tailored to your strengths and weaknesses.
+                        {generating
+                            ? "Our AI is currently synthesizing your performance data into a tactical growth strategy. This usually takes 30-60 seconds."
+                            : "Our AI will analyze your interview history and create a customized learning plan tailored to your strengths and weaknesses."}
                     </p>
 
                     {error && (
@@ -277,9 +304,28 @@ export default function RoadmapPage() {
                         )}
                     </Button>
 
-                    <p className="mt-4 text-sm text-muted-foreground">
-                        First roadmap is completely free!
-                    </p>
+                    {!generating && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            First roadmap is completely free!
+                        </p>
+                    )}
+
+                    {generating && (
+                        <div className="mt-12 space-y-6 max-w-md mx-auto">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                    <span>AI Neural Processing</span>
+                                    <span className="text-primary italic">In Progress</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary w-[40%] animate-progress-indeterminate rounded-full" />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
+                                You can safely navigate away. We'll continue the calculation.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </DashboardLayout>
         );
@@ -297,7 +343,7 @@ export default function RoadmapPage() {
                                     <div className="h-1 w-8 bg-primary rounded-full" />
                                     <span className="text-xs font-bold uppercase tracking-widest text-primary">Personalized Path</span>
                                 </div>
-                                <h1 className="text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-foreground/60 tracking-tight">
+                                <h1 className="text-3xl md:text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-foreground/60 tracking-tight">
                                     Your Learning Roadmap
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
@@ -316,15 +362,15 @@ export default function RoadmapPage() {
                             <div className="flex items-center gap-3">
                                 <Button
                                     variant="outline"
-                                    size="lg"
+                                    size="sm"
                                     onClick={handleRefresh}
                                     disabled={refreshing}
-                                    className="rounded-2xl border-accent hover:bg-accent transition-all duration-300 shadow-sm"
+                                    className="rounded-xl border-accent hover:bg-accent transition-all duration-300 shadow-sm px-4 h-9"
                                 >
                                     {refreshing ? (
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                                     ) : (
-                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                        <RefreshCw className="w-3.5 h-3.5 mr-2" />
                                     )}
                                     Refresh Path
                                 </Button>
@@ -344,17 +390,17 @@ export default function RoadmapPage() {
                     )}
 
                     {/* Roadmap Content Grid */}
-                    <div className="space-y-16">
-                        <section className="relative glass-card rounded-2xl p-4 sm:p-6 overflow-hidden">
+                    <div className="space-y-12">
+                        <section className="relative glass-card rounded-xl p-4 sm:p-5 overflow-hidden">
                             <Tabs defaultValue="visual" className="w-full">
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
-                                    <div className="space-y-1">
-                                        <h2 className="text-2xl font-bold">Path Visualization</h2>
-                                        <p className="text-sm text-muted-foreground">Toggle between visual tree and technical overview</p>
+                                    <div className="space-y-0.5">
+                                        <h2 className="text-xl font-bold">Path Visualization</h2>
+                                        <p className="text-[11px] text-muted-foreground">Toggle between visual tree and technical overview</p>
                                     </div>
-                                    <TabsList className="bg-background/50 border border-border/50 p-1 rounded-xl">
-                                        <TabsTrigger value="visual" className="rounded-lg font-bold px-4 sm:px-6">Skill Tree</TabsTrigger>
-                                        <TabsTrigger value="analysis" className="rounded-lg font-bold px-4 sm:px-6">Detailed Analysis</TabsTrigger>
+                                    <TabsList className="bg-background/50 border border-border/50 p-1 rounded-lg h-10">
+                                        <TabsTrigger value="visual" className="rounded-md font-bold px-3 sm:px-4 text-xs">Skill Tree</TabsTrigger>
+                                        <TabsTrigger value="analysis" className="rounded-md font-bold px-3 sm:px-4 text-xs">Detailed Analysis</TabsTrigger>
                                     </TabsList>
                                 </div>
                                 <TabsContent value="visual" className="mt-0 px-0">
@@ -367,8 +413,8 @@ export default function RoadmapPage() {
                         </section>
 
                         <section className="relative">
-                            <div className="flex items-center gap-2 mb-8 border-l-3 border-primary pl-4 py-1">
-                                <h2 className="text-2xl font-bold">Execution Plan</h2>
+                            <div className="flex items-center gap-2 mb-6 border-l-2 border-primary pl-4 py-0.5">
+                                <h2 className="text-xl font-bold">Execution Plan</h2>
                             </div>
                             <RoadmapPhases
                                 phases={roadmap.roadmap_data?.phases || []}
@@ -378,7 +424,10 @@ export default function RoadmapPage() {
                             />
                         </section>
 
-                        <section className="relative border-t pt-16">
+                        <section className="relative border-t pt-12">
+                            <div className="flex items-center gap-2 mb-6 border-l-2 border-primary pl-4 py-0.5">
+                                <h2 className="text-xl font-bold">Success Milestones</h2>
+                            </div>
                             <RoadmapMilestones
                                 milestones={roadmap.roadmap_data?.milestones || []}
                                 progress={progress}
@@ -386,23 +435,23 @@ export default function RoadmapPage() {
                         </section>
 
                         {/* Career Call to Action */}
-                        <div className="mt-20 p-8 md:p-12 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground shadow-2xl shadow-primary/20 relative overflow-hidden group">
+                        <div className="mt-16 p-6 md:p-10 rounded-xl bg-gradient-to-br from-primary to-primary-foreground text-primary-foreground shadow-xl shadow-primary/10 relative overflow-hidden group">
                             <div className="relative z-10 max-w-2xl">
-                                <h3 className="text-3xl font-bold mb-4">Ready for your next challenge?</h3>
-                                <p className="text-primary-foreground/80 text-lg mb-8">
+                                <h3 className="text-2xl font-bold mb-3">Ready for your next challenge?</h3>
+                                <p className="text-primary-foreground/80 text-base mb-6">
                                     The best way to progress through your roadmap is consistent practice. Kick off an interview session now to apply what you've learned.
                                 </p>
                                 <Button
-                                    size="lg"
+                                    size="default"
                                     variant="secondary"
-                                    className="rounded-2xl px-8 font-bold text-primary hover:scale-105 transition-transform"
+                                    className="rounded-xl px-6 font-bold text-primary hover:scale-105 transition-transform"
                                     onClick={() => router.push('/dashboard')}
                                 >
                                     Start Practice Session
                                     <ChevronRight className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
-                            <Sparkles className="absolute right-12 top-1/2 -translate-y-1/2 w-48 h-48 opacity-10 group-hover:scale-110 transition-transform duration-700" />
+                            <Sparkles className="absolute right-8 top-1/2 -translate-y-1/2 w-32 h-32 opacity-10 group-hover:scale-110 transition-transform duration-700" />
                         </div>
                     </div>
 

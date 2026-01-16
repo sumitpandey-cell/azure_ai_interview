@@ -39,6 +39,8 @@ import {
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
 import { classifyError, ErrorSeverity, FeedbackError, shouldRetry, getRetryDelay, getRetryMessage } from "@/lib/feedback-error";
 import { useFeedback } from "@/context/FeedbackContext";
+import { supabase } from "@/integrations/supabase/client";
+import { INTERVIEW_CONFIG } from "@/config/interview-config";
 
 interface InterviewSession {
     id: string;
@@ -61,7 +63,8 @@ interface Skill {
 
 interface TranscriptMessage {
     id: string | number;
-    sender: string;
+    speaker: string;
+    sender?: string; // Legacy support
     text: string;
     timestamp?: string;
 }
@@ -126,94 +129,57 @@ export default function InterviewReport() {
         !session?.feedback &&
         (!instantFeedback || !instantFeedback.skills || instantFeedback.skills.length === 0);
 
+    // Real-time listener for feedback generation
     useEffect(() => {
         if (!isFeedbackGenerating || !sessionId) return;
 
-        let pollCount = 0;
-        const MAX_POLLS = 20; // 20 polls × 3 seconds = 60 seconds timeout
+        console.log("📡 Setting up real-time listener for feedback...");
 
-        // Smart polling with retry logic
-        const pollWithRetry = async (): Promise<'SUCCESS' | 'PENDING' | 'RETRY' | 'FATAL'> => {
-            try {
-                const data = await fetchSessionDetail(sessionId, true);
-
-                if (data?.feedback) {
-                    // Success! Feedback is ready
-                    setSession(data as InterviewSession);
-                    setErrorState(null);
-                    setRetryAttempt(0);
-                    toast.success("Feedback report is ready!");
-                    return 'SUCCESS';
-                }
-
-                return 'PENDING';
-            } catch (error) {
-                console.error("Error polling for feedback:", error);
-
-                // Classify the error
-                const classified = classifyError(error, undefined, retryAttempt);
-
-                // Check if we should retry
-                if (shouldRetry(classified, MAX_RETRIES)) {
-                    // Network issue - retry with exponential backoff
-                    const nextRetryCount = retryAttempt + 1;
-                    setRetryAttempt(nextRetryCount);
-
-                    const retryMessage = getRetryMessage(retryAttempt, MAX_RETRIES);
-                    toast.warning(retryMessage, { duration: getRetryDelay(retryAttempt) });
-
-                    // Schedule next retry with exponential backoff
-                    setTimeout(() => {
-                        // Trigger re-poll by updating a dependency
-                    }, getRetryDelay(retryAttempt));
-
-                    return 'RETRY';
-                } else {
-                    // Fatal error or max retries exceeded
-                    const finalError: FeedbackError = {
-                        ...classified,
-                        retryCount: retryAttempt,
-                    };
-
-                    if (retryAttempt >= MAX_RETRIES && classified.severity === ErrorSeverity.RETRYABLE) {
-                        finalError.message = 'Network connection unstable. Please check your internet and try again.';
-                        finalError.severity = ErrorSeverity.FATAL; // Treat as fatal after max retries
+        // 1. Subscribe to changes for this specific session
+        const channel = supabase
+            .channel(`session_feedback_${sessionId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'interview_sessions',
+                    filter: `id=eq.${sessionId}`
+                },
+                (payload) => {
+                    const newData = payload.new as InterviewSession;
+                    if (newData.feedback) {
+                        console.log("✅ Feedback received via real-time!");
+                        setSession(newData);
+                        setErrorState(null);
+                        setRetryAttempt(0);
+                        toast.success("Feedback report is ready!");
                     }
-
-                    setErrorState(finalError);
-                    toast.error(finalError.message);
-                    return 'FATAL';
                 }
-            }
-        };
+            )
+            .subscribe();
 
-        const pollInterval = setInterval(async () => {
-            pollCount++;
-
-            const result = await pollWithRetry();
-
-            // Stop polling on success or fatal error
-            if (result === 'SUCCESS' || result === 'FATAL') {
-                clearInterval(pollInterval);
-                return;
-            }
-
-            // Timeout after 60 seconds of pending state
-            if (pollCount >= MAX_POLLS && result === 'PENDING') {
-                clearInterval(pollInterval);
+        // 2. Fallback Timeout (60s)
+        const timeoutId = setTimeout(() => {
+            if (isFeedbackGenerating) {
+                console.log("⏱️ Feedback generation timed out");
                 setFeedbackTimeout(true);
                 toast.error("Feedback generation is taking longer than expected.");
             }
-        }, 3000); // Poll every 3 seconds
+        }, 60000);
 
-        return () => clearInterval(pollInterval);
-    }, [isFeedbackGenerating, sessionId, retryAttempt]);
+        return () => {
+            supabase.removeChannel(channel);
+            clearTimeout(timeoutId);
+        };
+    }, [isFeedbackGenerating, sessionId]);
 
     const copyTranscriptToClipboard = async () => {
         try {
             const transcriptText = reportData.transcript
                 .map((msg: TranscriptMessage) => {
-                    const speaker = msg.sender === 'ai' ? 'AI Interviewer' : 'Candidate';
+                    const speakerRaw = (msg.speaker || msg.sender || 'candidate').toLowerCase();
+                    const speaker = ['ai', 'agent', 'model'].includes(speakerRaw) ? 'AI Interviewer' : 'Candidate';
                     const timestamp = msg.timestamp ? ` [${msg.timestamp}]` : '';
                     return `${speaker}${timestamp}:\n${msg.text}`;
                 })
@@ -295,11 +261,11 @@ export default function InterviewReport() {
                                 <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
                                     <li className="flex items-center gap-2">
                                         <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                        Minimum 2 minutes of duration
+                                        Minimum {Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60)} minutes of duration
                                     </li>
                                     <li className="flex items-center gap-2">
                                         <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                        At least 2 unique user responses
+                                        At least {INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} unique user responses
                                     </li>
                                 </ul>
                             </div>
@@ -319,7 +285,7 @@ export default function InterviewReport() {
                             <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 p-4 max-h-60 overflow-y-auto space-y-3">
                                 {(session.transcript as any[]).map((msg: any, idx: number) => (
                                     <div key={idx} className="text-xs">
-                                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase mr-2">{msg.sender === 'ai' ? 'AI' : 'You'}:</span>
+                                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase mr-2">{['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'You'}:</span>
                                         <span className="text-slate-600 dark:text-slate-400">{msg.text}</span>
                                     </div>
                                 ))}
@@ -592,12 +558,12 @@ export default function InterviewReport() {
                                 </p>
                                 <div className="space-y-3 max-h-96 overflow-y-auto">
                                     {(session.transcript as any[]).slice(0, 5).map((msg: any, idx: number) => (
-                                        <div key={idx} className={`p-3 rounded-lg ${msg.sender === 'ai'
+                                        <div key={idx} className={`p-3 rounded-lg ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase())
                                             ? 'bg-blue-50 dark:bg-blue-950/20'
                                             : 'bg-slate-50 dark:bg-slate-800'
                                             }`}>
                                             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                                                {msg.sender === 'ai' ? 'AI Interviewer' : 'You'}
+                                                {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI Interviewer' : 'You'}
                                             </p>
                                             <p className="text-sm text-slate-700 dark:text-slate-300">
                                                 {msg.text}
@@ -696,19 +662,26 @@ export default function InterviewReport() {
         return dbFeedback;
     };
 
-    // Handle feedback structure - check if it has resumptions array
+    // Standardized feedback structure extraction
+    // v2.0 structure: { overall: { ... }, resumptions: [ ... ] }
+    // legacy structure (single resumption): { score, executiveSummary, ... }
     let rawFeedback = session?.feedback;
-    if (rawFeedback && rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
-        // If overall is empty but resumptions exist, use first resumption
-        // Also check if overall lacks executiveSummary which is a sign of incomplete aggregation
-        if (!rawFeedback.overall || Object.keys(rawFeedback.overall).length === 0 || !rawFeedback.overall.executiveSummary) {
-            console.log('📊 Using resumption data as overall is empty or lacks summary');
-            rawFeedback = rawFeedback.resumptions[0];
-        } else {
+
+    if (rawFeedback) {
+        // If we have the new standardized structure, use 'overall'
+        if (rawFeedback.overall && typeof rawFeedback.overall === 'object') {
             rawFeedback = rawFeedback.overall;
+        }
+        // If we have the old nested structure for multi-resumption (backward compatibility)
+        else if (rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
+            if (!rawFeedback.overall || Object.keys(rawFeedback.overall).length === 0 || !rawFeedback.executiveSummary) {
+                console.log('📊 Using first resumption as fallback for legacy nested structure');
+                rawFeedback = rawFeedback.resumptions[0];
+            }
         }
     }
 
+    // merge with potentially more up-to-date instant feedback from Zustand store
     const feedbackData = mergeFeedback(rawFeedback, instantFeedback);
 
     // Use instant transcript if available (more up-to-date), fallback to DB transcript
@@ -764,26 +737,28 @@ export default function InterviewReport() {
         // Ensure transcript format is consistent and filter AI internal thoughts
         transcript: transcriptData.length > 0
             ? transcriptData
-                .filter((msg: any) => msg && (msg.sender || msg.speaker) && msg.text && msg.text.trim()) // Filter out invalid messages
-                .map((msg: any, index: number) => {
+                // Safely handle potential transcript structure issues
+                .filter((msg: any) => msg && (msg.speaker || msg.sender || msg.role) && msg.text && msg.text.trim())
+                .map((msg: any, i: number) => {
                     let cleanedText = msg.text.trim();
-                    const sender = msg.sender || msg.speaker; // Handle both sender and speaker fields
+                    const speakerRaw = (msg.speaker || msg.sender || msg.role || 'candidate').toLowerCase();
+                    const speaker = ['ai', 'agent', 'model', 'assistant'].includes(speakerRaw) ? 'ai' : 'user';
 
                     // Remove AI internal thoughts (e.g., **Thinking**, **Analysis**, etc.)
-                    if (sender === 'ai') {
+                    if (speaker === 'ai') {
                         cleanedText = cleanedText.replace(/\*\*[^*]+\*\*\s*/g, '');
                     }
 
                     return {
-                        id: msg.id || index,
-                        sender: sender,
+                        id: msg.id || i,
+                        speaker: speaker,
                         text: cleanedText,
-                        timestamp: msg.timestamp || "Just now"
+                        timestamp: msg.timestamp || '-'
                     };
                 })
                 .filter((msg: any) => msg.text.trim()) // Remove messages that became empty after filtering
             : [
-                { id: 1, sender: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
+                { id: 1, speaker: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
             ],
         comparisons: feedbackData.comparisons || [],
         confidenceFlow: feedbackData.confidenceFlow || []
@@ -801,7 +776,7 @@ export default function InterviewReport() {
                                 Intelligence Profile
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-[1.1]">
+                                <h1 className="text-xl sm:text-2xl md:text-2xl font-black tracking-tight text-foreground leading-[1.1]">
                                     {reportData.candidateName} <span className="text-primary italic">Analytics</span>
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 sm:mt-3">
@@ -819,9 +794,9 @@ export default function InterviewReport() {
                         <div className="flex flex-wrap items-center gap-3 lg:pb-2">
                             <Button
                                 onClick={downloadReport}
-                                className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/40 backdrop-blur-3xl border border-white/5 hover:bg-card/60 text-foreground font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-2xl group/btn"
+                                className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/40 backdrop-blur-3xl border border-white/5 hover:bg-card/60 text-foreground font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-2xl group/btn"
                             >
-                                <Download className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                                <Download className="h-3.5 w-3.5 mr-2 group-hover:scale-110 transition-transform" />
                                 Export Intel
                             </Button>
                             <Button
@@ -838,17 +813,17 @@ export default function InterviewReport() {
                                     }
                                 }}
                                 disabled={isGenerating}
-                                className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary text-black hover:bg-primary/90 font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-xl shadow-primary/20 group/btn disabled:opacity-50"
+                                className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary text-black hover:bg-primary/90 font-black uppercase tracking-[0.15em] text-[9px] sm:text-[10px] transition-all shadow-xl shadow-primary/20 group/btn disabled:opacity-50"
                             >
-                                <RefreshCw className={cn("h-4 w-4 mr-2 transition-transform duration-700", isGenerating ? "animate-spin" : "group-hover:rotate-180")} />
+                                <RefreshCw className={cn("h-3.5 w-3.5 mr-2 transition-transform duration-700", isGenerating ? "animate-spin" : "group-hover:rotate-180")} />
                                 {isGenerating ? 'Recalibrating...' : 'Recalibrate'}
                             </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button
-                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl flex items-center justify-center p-0"
+                                        className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl flex items-center justify-center p-0"
                                     >
-                                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="rounded-2xl border-2 border-white/10 shadow-3xl p-10 bg-card/90 backdrop-blur-3xl">
@@ -882,8 +857,8 @@ export default function InterviewReport() {
                     {/* Overall Score Gauge */}
                     <Card className="xl:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group">
                         <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
-                        <CardContent className="p-6 sm:p-8 flex flex-col items-center justify-center h-full gap-6 sm:gap-8 text-center relative z-10">
-                            <div className="relative h-40 w-40 sm:h-48 sm:w-48 group-hover:scale-105 transition-all duration-1000">
+                        <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full gap-4 sm:gap-6 text-center relative z-10">
+                            <div className="relative h-32 w-32 sm:h-40 sm:w-40 group-hover:scale-105 transition-all duration-1000">
                                 <svg className="h-full w-full transform -rotate-90 filter drop-shadow-[0_0_20px_rgba(var(--primary),0.2)]" viewBox="0 0 100 100">
                                     <circle
                                         cx="50" cy="50" r="42"
@@ -903,7 +878,7 @@ export default function InterviewReport() {
                                     />
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-5xl sm:text-6xl font-black tracking-tighter tabular-nums text-foreground">{reportData.overallScore}</span>
+                                    <span className="text-4xl sm:text-5xl font-black tracking-tighter tabular-nums text-foreground">{reportData.overallScore}</span>
                                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2">Analytical Grade</span>
                                 </div>
                                 <div className="absolute -inset-8 bg-primary/10 blur-[60px] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
@@ -924,11 +899,11 @@ export default function InterviewReport() {
                     {/* Executive Overview */}
                     <Card className="xl:col-span-3 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/executive">
                         <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
-                        <CardContent className="p-6 sm:p-8 md:p-10 relative z-10">
-                            <div className="flex flex-col h-full gap-6 sm:gap-8">
+                        <CardContent className="p-4 sm:p-6 md:p-8 relative z-10">
+                            <div className="flex flex-col h-full gap-4 sm:gap-6">
                                 <div className="flex items-center justify-between">
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight uppercase text-foreground">Executive Overview</h3>
+                                    <div className="space-y-1.5">
+                                        <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight uppercase text-foreground">Executive Overview</h3>
                                         <p className="text-[10px] text-primary font-black uppercase tracking-[0.4em]">Protocol Intelligence Summary</p>
                                     </div>
                                     <div className="hidden sm:flex gap-6 px-5 py-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
@@ -939,7 +914,7 @@ export default function InterviewReport() {
                                     </div>
                                 </div>
 
-                                <p className="text-base sm:text-lg font-medium leading-relaxed max-w-5xl italic border-l-4 border-primary/30 pl-4 sm:pl-6 py-2 bg-gradient-to-r from-primary/5 to-transparent rounded-r-2xl sm:rounded-r-3xl">
+                                <p className="text-sm sm:text-base font-medium leading-relaxed max-w-5xl italic border-l-4 border-primary/30 pl-3 sm:pl-4 py-1.5 bg-gradient-to-r from-primary/5 to-transparent rounded-r-xl sm:rounded-r-2xl">
                                     "{reportData.executiveSummary}"
                                 </p>
 
@@ -947,16 +922,16 @@ export default function InterviewReport() {
                                     {[
                                         { label: "Duration", value: formatDuration(session.duration_seconds || 0), icon: Timer, color: "text-amber-500" },
                                         { label: "Competencies", value: reportData.overallSkills.length, icon: Target, color: "text-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]" },
-                                        { label: "AI Response", value: reportData.transcript.filter((m: any) => m.sender === 'ai').length, icon: MessageSquare, color: "text-blue-500" },
+                                        { label: "AI Response", value: reportData.transcript.filter((m: any) => ['ai', 'agent', 'model'].includes((m.speaker || m.sender || '').toLowerCase())).length, icon: MessageSquare, color: "text-blue-500" },
                                         { label: "Rank Grade", value: reportData.rankGrade, icon: Award, color: "text-emerald-500" }
                                     ].map((m, i) => (
-                                        <div key={i} className="flex items-center gap-4 group/metric">
-                                            <div className={cn("h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center shadow-xl border border-white/10 group-hover/metric:scale-110 group-hover/metric:bg-white/10 transition-all duration-500", m.color)}>
-                                                <m.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        <div key={i} className="flex items-center gap-3 group/metric">
+                                            <div className={cn("h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/5 flex items-center justify-center shadow-xl border border-white/10 group-hover/metric:scale-110 group-hover/metric:bg-white/10 transition-all duration-500", m.color)}>
+                                                <m.icon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">{m.label}</span>
-                                                <span className="text-xs sm:text-sm font-black text-foreground uppercase truncate tracking-widest mt-0.5">{m.value}</span>
+                                                <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">{m.label}</span>
+                                                <span className="text-[10px] sm:text-xs font-black text-foreground uppercase truncate tracking-widest mt-0.5">{m.value}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -968,7 +943,7 @@ export default function InterviewReport() {
 
                 {/* Tactical Analysis Tabs */}
                 <Tabs defaultValue="insights" className="w-full">
-                    <TabsList className="bg-white/5 p-1 sm:p-1.5 rounded-2xl sm:rounded-2xl h-12 sm:h-14 md:h-16 mb-6 sm:mb-8 md:mb-12 inline-flex border border-white/10 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
+                    <TabsList className="bg-white/5 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl h-10 sm:h-12 md:h-14 mb-4 sm:mb-6 md:mb-8 inline-flex border border-white/10 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
                         <TabsTrigger value="insights" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[9px] sm:text-[10px] h-full transition-all duration-500">Insights</TabsTrigger>
                         <TabsTrigger value="elite" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-black font-black uppercase tracking-[0.2em] text-[10px] sm:text-[11px] h-full transition-all duration-500 flex items-center gap-2">
                             <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
@@ -983,16 +958,16 @@ export default function InterviewReport() {
                         {reportData.confidenceFlow && reportData.confidenceFlow.length > 0 && (
                             <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/confidence">
                                 <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
-                                <CardHeader className="p-6 sm:p-8 md:p-10 pb-0 relative z-10">
+                                <CardHeader className="p-4 sm:p-6 md:p-8 pb-0 relative z-10">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <div className="space-y-2">
-                                            <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-foreground flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                                    <Activity className="h-5 w-5 text-primary" />
+                                        <div className="space-y-1.5">
+                                            <h3 className="text-lg sm:text-xl font-black tracking-tight uppercase text-foreground flex items-center gap-2.5">
+                                                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                                                    <Activity className="h-4 w-4 text-primary" />
                                                 </div>
                                                 Confidence <span className="text-primary italic">Flow</span>
                                             </h3>
-                                            <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-1">Emotional Intelligence Matrix • Performance Momentum</p>
+                                            <p className="text-[9px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-1">Emotional Intelligence Matrix • Performance Momentum</p>
                                         </div>
                                         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                                             <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
@@ -1000,8 +975,8 @@ export default function InterviewReport() {
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-6 sm:p-8 md:p-10 pt-8 sm:pt-12 relative z-10">
-                                    <div className="h-[300px] w-full">
+                                <CardContent className="p-4 sm:p-6 md:p-8 pt-6 sm:pt-8 relative z-10">
+                                    <div className="h-[250px] w-full">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={reportData.confidenceFlow} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                                 <defs>
@@ -1073,21 +1048,21 @@ export default function InterviewReport() {
                             {/* Strengths Card */}
                             <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/strengths">
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
-                                <CardHeader className="p-4 sm:p-6 md:p-8 pb-0">
-                                    <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight flex items-center gap-3 sm:gap-4 uppercase text-emerald-500">
-                                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-lg shadow-emerald-500/10">
-                                            <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <CardHeader className="p-4 sm:p-6 md:p-6 pb-0">
+                                    <h3 className="text-base sm:text-lg md:text-xl font-black tracking-tight flex items-center gap-2.5 sm:gap-3 uppercase text-emerald-500">
+                                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-lg shadow-emerald-500/10">
+                                            <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
                                         </div>
                                         Tactical Strengths
                                     </h3>
                                 </CardHeader>
-                                <CardContent className="p-4 sm:p-6 md:p-8 space-y-3 sm:space-y-4">
+                                <CardContent className="p-4 sm:p-5 md:p-6 space-y-2.5 sm:space-y-3">
                                     {reportData.strengths.map((item: string, i: number) => (
-                                        <div key={i} className="flex gap-3 sm:gap-4 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 group-hover/strengths:bg-emerald-500/[0.05] group-hover/strengths:border-emerald-500/20 transition-all duration-700">
-                                            <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                                                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500" />
+                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/5 group-hover/strengths:bg-emerald-500/[0.05] group-hover/strengths:border-emerald-500/20 transition-all duration-700">
+                                            <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                                <CheckCircle2 className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-emerald-500" />
                                             </div>
-                                            <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed">{item}</p>
+                                            <p className="text-[11px] sm:text-xs font-bold text-foreground/80 leading-relaxed">{item}</p>
                                         </div>
                                     ))}
                                 </CardContent>
@@ -1096,21 +1071,21 @@ export default function InterviewReport() {
                             {/* Improvements Card */}
                             <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/improvements">
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
-                                <CardHeader className="p-4 sm:p-6 md:p-8 pb-0">
-                                    <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight flex items-center gap-3 sm:gap-4 uppercase text-rose-500">
-                                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20 shadow-lg shadow-rose-500/10">
-                                            <Activity className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <CardHeader className="p-4 sm:p-6 md:p-6 pb-0">
+                                    <h3 className="text-base sm:text-lg md:text-xl font-black tracking-tight flex items-center gap-2.5 sm:gap-3 uppercase text-rose-500">
+                                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20 shadow-lg shadow-rose-500/10">
+                                            <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
                                         </div>
                                         Growth Directives
                                     </h3>
                                 </CardHeader>
-                                <CardContent className="p-4 sm:p-6 md:p-8 space-y-3 sm:space-y-4">
+                                <CardContent className="p-4 sm:p-5 md:p-6 space-y-2.5 sm:space-y-3">
                                     {reportData.improvements.map((item: string, i: number) => (
-                                        <div key={i} className="flex gap-3 sm:gap-4 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 group-hover/improvements:bg-rose-500/[0.05] group-hover/improvements:border-rose-500/20 transition-all duration-700">
-                                            <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
-                                                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-rose-500" />
+                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/5 group-hover/improvements:bg-rose-500/[0.05] group-hover/improvements:border-rose-500/20 transition-all duration-700">
+                                            <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
+                                                <XCircle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-rose-500" />
                                             </div>
-                                            <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed">{item}</p>
+                                            <p className="text-[11px] sm:text-xs font-bold text-foreground/80 leading-relaxed">{item}</p>
                                         </div>
                                     ))}
                                 </CardContent>
@@ -1122,12 +1097,12 @@ export default function InterviewReport() {
                             <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
                             <div className="absolute top-0 right-0 h-full w-96 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
 
-                            <CardContent className="p-6 sm:p-8 md:p-10 relative z-10">
-                                <div className="flex flex-col lg:flex-row items-center gap-6 sm:gap-8">
+                            <CardContent className="p-4 sm:p-6 md:p-8 relative z-10">
+                                <div className="flex flex-col lg:flex-row items-center gap-4 sm:gap-6">
                                     {/* Icon and Title */}
                                     <div className="flex-shrink-0">
-                                        <div className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-2xl sm:rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shadow-2xl shadow-primary/10 group-hover/plan:scale-110 group-hover/plan:rotate-6 transition-all duration-700">
-                                            <Star className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-primary" />
+                                        <div className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shadow-2xl shadow-primary/10 group-hover/plan:scale-110 group-hover/plan:rotate-6 transition-all duration-700">
+                                            <Star className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
                                         </div>
                                     </div>
 
@@ -1209,49 +1184,49 @@ export default function InterviewReport() {
                                                 <CardContent className="p-0">
                                                     <div className="grid grid-cols-1 xl:grid-cols-2">
                                                         {/* Actual Side */}
-                                                        <div className="p-8 sm:p-10 border-b xl:border-b-0 xl:border-r border-white/5 space-y-6">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-8 w-8 rounded-lg bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-500">
-                                                                    <MessageSquare className="h-4 w-4" />
+                                                        <div className="p-6 sm:p-8 border-b xl:border-b-0 xl:border-r border-white/5 space-y-4">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <div className="h-7 w-7 rounded-lg bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-500">
+                                                                    <MessageSquare className="h-3.5 w-3.5" />
                                                                 </div>
-                                                                <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-500/60">Actual Production</span>
+                                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500/60">Actual Production</span>
                                                             </div>
 
                                                             <div className="space-y-4">
                                                                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 italic text-xs font-medium text-muted-foreground">
                                                                     Q: {item.question}
                                                                 </div>
-                                                                <p className="text-sm sm:text-base font-bold text-foreground/80 leading-relaxed italic">
+                                                                <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed italic">
                                                                     "{item.actualAnswer}"
                                                                 </p>
                                                             </div>
                                                         </div>
 
                                                         {/* Elite Side */}
-                                                        <div className="p-8 sm:p-10 space-y-6 bg-primary/[0.02] relative group-hover/elite:bg-primary/[0.04] transition-colors duration-700">
+                                                        <div className="p-6 sm:p-8 space-y-4 bg-primary/[0.02] relative group-hover/elite:bg-primary/[0.04] transition-colors duration-700">
                                                             <div className="absolute inset-0 bg-grid-primary/[0.02] pointer-events-none" />
                                                             <div className="relative z-10 flex items-center justify-between">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/40 text-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]">
-                                                                        <Target className="h-4 w-4" />
+                                                                <div className="flex items-center gap-2.5">
+                                                                    <div className="h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/40 text-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                                                                        <Target className="h-3.5 w-3.5" />
                                                                     </div>
-                                                                    <span className="text-xs font-black uppercase tracking-[0.3em] text-primary">Elite Version</span>
+                                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Elite Version</span>
                                                                 </div>
                                                                 <Badge className="bg-primary hover:bg-primary text-black font-black text-[9px] tracking-widest uppercase px-3 py-1">Top Tier</Badge>
                                                             </div>
 
                                                             <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-primary text-black shadow-2xl shadow-primary/20">
-                                                                <p className="text-sm sm:text-base font-black leading-relaxed">
+                                                                <p className="text-xs sm:text-sm font-black leading-relaxed">
                                                                     {item.eliteAnswer}
                                                                 </p>
                                                             </div>
 
                                                             {/* Explanation Box */}
-                                                            <div className="relative z-10 flex gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 group-hover/elite:border-primary/20 transition-all">
-                                                                <Bot className="h-5 w-5 text-primary shrink-0 mt-1" />
+                                                            <div className="relative z-10 flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10 group-hover/elite:border-primary/20 transition-all">
+                                                                <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                                                 <div className="space-y-1">
-                                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Analytical Insight</p>
-                                                                    <p className="text-xs font-bold text-foreground/70 leading-relaxed">{item.explanation}</p>
+                                                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Analytical Insight</p>
+                                                                    <p className="text-[11px] font-bold text-foreground/70 leading-relaxed">{item.explanation}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1306,8 +1281,8 @@ export default function InterviewReport() {
                                     <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-foreground">Competency Map</h3>
                                     <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] mt-2">Vector Positioning</p>
                                 </CardHeader>
-                                <CardContent className="p-8 flex flex-col items-center justify-center min-h-[400px] relative z-10">
-                                    <div className="h-[350px] w-full group-hover:scale-110 transition-transform duration-1000">
+                                <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px] relative z-10">
+                                    <div className="h-[280px] w-full group-hover:scale-110 transition-transform duration-1000">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart cx="50%" cy="50%" outerRadius="80%" data={reportData.overallSkills}>
                                                 <PolarGrid stroke="rgba(255,255,255,0.05)" />
@@ -1336,13 +1311,13 @@ export default function InterviewReport() {
                                 {reportData.overallSkills.map((skill: Skill, i: number) => (
                                     <div key={i} className="group/skill relative">
                                         <Card className="h-full border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-primary/20 rounded-2xl transition-all duration-700 overflow-hidden">
-                                            <CardContent className="p-8 space-y-8">
+                                            <CardContent className="p-6 space-y-6">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="space-y-2">
-                                                        <h4 className="text-lg font-black tracking-tight text-foreground uppercase leading-none">{skill.name}</h4>
-                                                        <p className="text-[9px] text-primary/60 font-black uppercase tracking-[0.3em] leading-none">Intelligence Metric</p>
+                                                    <div className="space-y-1.5">
+                                                        <h4 className="text-base font-black tracking-tight text-foreground uppercase leading-none">{skill.name}</h4>
+                                                        <p className="text-[8px] text-primary/60 font-black uppercase tracking-[0.3em] leading-none">Intelligence Metric</p>
                                                     </div>
-                                                    <div className="text-3xl font-black text-primary tabular-nums tracking-tighter shadow-primary/20 drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]">{skill.score}%</div>
+                                                    <div className="text-2xl font-black text-primary tabular-nums tracking-tighter shadow-primary/20 drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]">{skill.score}%</div>
                                                 </div>
 
                                                 <div className="space-y-3">
@@ -1475,27 +1450,27 @@ export default function InterviewReport() {
                             "border-2 shadow-2xl rounded-2xl overflow-hidden p-1 relative",
                             reportData.overallScore >= 70 ? "border-emerald-500/30 bg-emerald-500/5" : "border-rose-500/30 bg-rose-500/5"
                         )}>
-                            <CardContent className="p-10 flex flex-col lg:flex-row items-center gap-10">
+                            <CardContent className="p-6 sm:p-8 md:p-10 flex flex-col lg:flex-row items-center gap-6 sm:gap-10">
                                 <div className={cn(
-                                    "h-24 w-24 rounded-3xl flex items-center justify-center shrink-0 shadow-2xl",
+                                    "h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-3xl flex items-center justify-center shrink-0 shadow-2xl",
                                     reportData.overallScore >= 70 ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-rose-500 text-white shadow-rose-500/20"
                                 )}>
-                                    {reportData.overallScore >= 70 ? <CheckCircle2 className="h-12 w-12" /> : <AlertTriangle className="h-12 w-12" />}
+                                    {reportData.overallScore >= 70 ? <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10" /> : <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10" />}
                                 </div>
-                                <div className="flex-1 space-y-4 text-center lg:text-left">
-                                    <h3 className={cn("text-3xl font-black uppercase tracking-tight", reportData.overallScore >= 70 ? "text-emerald-500" : "text-rose-500")}>
+                                <div className="flex-1 space-y-3 text-center lg:text-left">
+                                    <h3 className={cn("text-xl sm:text-2xl font-black uppercase tracking-tight", reportData.overallScore >= 70 ? "text-emerald-500" : "text-rose-500")}>
                                         {reportData.overallScore >= 70 ? "Operational Deployment Recommended" : "Deployment Delay Suggested"}
                                     </h3>
-                                    <p className="text-lg font-medium text-foreground/80 leading-relaxed max-w-4xl">
+                                    <p className="text-sm sm:text-base font-medium text-foreground/80 leading-relaxed max-w-4xl">
                                         Based on a deep-dive analysis of tactical responses and core competencies, this profile exhibits
                                         {reportData.overallScore >= 70
-                                            ? " strong alignment with organizational objectives. Direct engagement in subsequent mission phases is highly recommended."
-                                            : " significant gaps in critical operational areas. Further training and technical recalibration are advised prior to next engagement."
+                                            ? " strong alignment with organizational objectives."
+                                            : " significant gaps. Further training and technical recalibration are advised."
                                         }
                                     </p>
                                 </div>
                                 <Button asChild className={cn(
-                                    "h-16 px-10 rounded-2xl font-black uppercase tracking-widest text-[12px] group",
+                                    "h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[11px] group",
                                     reportData.overallScore >= 70 ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-rose-600 hover:bg-rose-700 text-white"
                                 )}>
                                     <Link href="/reports">
@@ -1509,28 +1484,28 @@ export default function InterviewReport() {
 
                     <TabsContent value="transcript" className="outline-none animate-in fade-in slide-in-from-top-4 duration-700">
                         <Card className="border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden">
-                            <CardHeader className="p-8 sm:p-10 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                            <MessageSquare className="h-5 w-5 text-primary" />
+                            <CardHeader className="p-4 sm:p-6 md:p-8 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                                            <MessageSquare className="h-4 w-4 text-primary" />
                                         </div>
-                                        <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase text-foreground">Intelligence Transcript</h3>
+                                        <h3 className="text-lg sm:text-xl font-black tracking-tight uppercase text-foreground">Intelligence Transcript</h3>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-14">Source: Session Protocol Log • {reportData.transcript.length} Transmissions</p>
+                                    <p className="text-[9px] text-muted-foreground/40 font-black uppercase tracking-[0.4em] ml-11">Source: Session Protocol Log • {reportData.transcript.length} Transmissions</p>
                                 </div>
                                 <Button
                                     onClick={copyTranscriptToClipboard}
-                                    className="h-11 px-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-[0.2em] text-[10px] transition-all ml-14 sm:ml-0"
+                                    className="h-10 px-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-[0.2em] text-[10px] transition-all ml-14 sm:ml-0"
                                 >
-                                    <Copy className="h-4 w-4 mr-2" />
+                                    <Copy className="h-3.5 w-3.5 mr-2" />
                                     Export Logs
                                 </Button>
                             </CardHeader>
-                            <CardContent className="p-8 sm:p-12 space-y-10 max-h-[800px] overflow-y-auto no-scrollbar relative">
+                            <CardContent className="p-6 sm:p-8 md:p-10 space-y-8 max-h-[800px] overflow-y-auto no-scrollbar relative">
                                 <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent hidden md:block" />
                                 {reportData.transcript.map((msg: TranscriptMessage, i: number) => {
-                                    const isAI = msg.sender === 'ai';
+                                    const isAI = ['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase());
                                     return (
                                         <div key={i} className={cn(
                                             "flex flex-col gap-3 max-w-[90%] md:max-w-[70%] animate-in fade-in slide-in-from-bottom-4 duration-700",
@@ -1545,7 +1520,7 @@ export default function InterviewReport() {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 tabular-nums">{msg.timestamp}</span>
                                             </div>
                                             <div className={cn(
-                                                "p-6 sm:p-8 rounded-2xl text-sm sm:text-base font-bold leading-relaxed shadow-2xl relative group/msg transition-all duration-500",
+                                                "p-4 sm:p-5 rounded-xl text-xs sm:text-sm font-bold leading-relaxed shadow-2xl relative group/msg transition-all duration-500",
                                                 isAI
                                                     ? "bg-white/[0.03] text-foreground rounded-tl-none border border-white/5 hover:bg-white/[0.05]"
                                                     : "bg-primary text-black rounded-tr-none shadow-primary/20 hover:scale-[1.01]"

@@ -51,14 +51,30 @@ class RoadmapService {
      * @param supabaseClient - Optional Supabase client (for server-side calls)
      */
     async generateRoadmap(userId: string, paymentId?: string, supabaseClient?: any, force: boolean = false) {
-        try {
-            const client = supabaseClient || supabase;
+        const client = supabaseClient || supabase;
+        let placeholderId: string | null = null;
 
+        try {
             // 1. Check for existing active roadmap (skip if forcing)
             if (!force) {
                 const existing = await this.getActiveRoadmap(userId, client);
-                if (existing && !this.isExpired(existing)) {
-                    return existing;
+                if (existing) {
+                    if (existing.roadmap_data?.status === 'generating') {
+                        // Check if it's stuck (e.g., more than 5 minutes old)
+                        const createdAt = new Date(existing.created_at).getTime();
+                        const now = new Date().getTime();
+                        if (now - createdAt < 5 * 60 * 1000) {
+                            return existing; // Still generating
+                        } else {
+                            // Stuck, deactivate it
+                            await client
+                                .from('learning_roadmaps')
+                                .update({ is_active: false })
+                                .eq('id', existing.id);
+                        }
+                    } else if (!this.isExpired(existing)) {
+                        return existing;
+                    }
                 }
             }
 
@@ -77,6 +93,35 @@ class RoadmapService {
             if (history.completed.length < 3) {
                 throw new Error('Minimum 3 completed interviews required');
             }
+
+            // 11. Deactivate any existing active roadmaps before starting
+            await client
+                .from('learning_roadmaps')
+                .update({ is_active: false })
+                .eq('user_id', userId)
+                .eq('is_active', true);
+
+            // 11b. Insert placeholder record to track status
+            const { data: placeholder, error: insertError } = await client
+                .from('learning_roadmaps')
+                .insert({
+                    user_id: userId,
+                    overall_level: 'Beginner', // temporary
+                    roadmap_data: { status: 'generating' },
+                    version: 1,
+                    is_paid: !(!eligibility.requiresPayment),
+                    payment_amount: !eligibility.requiresPayment ? 0 : 99,
+                    payment_id: paymentId || null,
+                    payment_status: !eligibility.requiresPayment ? 'free' : 'pending',
+                    generated_at: new Date().toISOString(),
+                    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                    is_active: true,
+                })
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+            placeholderId = placeholder.id;
 
             // 6. Build AI prompt
             const prompt = this.buildAnalysisPrompt(history);
@@ -114,35 +159,36 @@ class RoadmapService {
             const paymentStatus = isFree ? 'free' : 'completed';
             const paymentAmount = isFree ? 0 : 99;
 
-            // 11. Deactivate any existing active roadmaps before creating a new one
-            await client
+            // 12. Update placeholder with real data
+            const { data, error: updateError } = await client
                 .from('learning_roadmaps')
-                .update({ is_active: false })
-                .eq('user_id', userId)
-                .eq('is_active', true);
-
-            // 12. Store in database
-            const { data, error } = await client
-                .from('learning_roadmaps')
-                .insert({
-                    user_id: userId,
+                .update({
                     overall_level: overallLevel,
                     roadmap_data: roadmapData,
-                    version: 1,
-                    is_paid: !isFree,
-                    payment_amount: paymentAmount,
-                    payment_id: paymentId || null,
                     payment_status: paymentStatus,
                     generated_at: new Date().toISOString(),
-                    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
                 })
+                .eq('id', placeholderId)
+                .eq('user_id', userId)
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (updateError) throw updateError;
             return data;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error generating roadmap:', error);
+            // Cleanup placeholder if it exists and failed (only if it was an AI/Update error)
+            if (placeholderId && error.code !== '42501') {
+                try {
+                    await client
+                        .from('learning_roadmaps')
+                        .delete()
+                        .eq('id', placeholderId)
+                        .eq('user_id', userId);
+                } catch (cleanupErr) {
+                    console.error('Failed to cleanup placeholder:', cleanupErr);
+                }
+            }
             throw error;
         }
     }
@@ -262,6 +308,19 @@ Return ONLY valid JSON, no markdown formatting, no code blocks, just the raw JSO
                     .update({ is_active: false })
                     .eq('id', data.id);
                 return null;
+            }
+
+            // Check if stuck in generating state
+            if (data && data.roadmap_data?.status === 'generating') {
+                const createdAt = new Date(data.created_at).getTime();
+                const now = new Date().getTime();
+                if (now - createdAt > 10 * 60 * 1000) { // 10 minutes timeout
+                    await client
+                        .from('learning_roadmaps')
+                        .update({ is_active: false })
+                        .eq('id', data.id);
+                    return null;
+                }
             }
 
             return data;

@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Star,
-  ThumbsUp,
-  ThumbsDown,
   Clock,
   FileText,
   Calendar,
@@ -16,12 +14,8 @@ import {
   LogOut,
   Loader2,
   Play,
-  TrendingUp,
   Building2,
-  Trash2,
   ArrowRight,
-  ExternalLink,
-  MessageSquare,
   Sparkles,
   Award,
   Zap,
@@ -54,8 +48,7 @@ import { PerformanceAnalysisChart } from "@/components/PerformanceAnalysisChart"
 import { useAnalytics } from "@/hooks/use-analytics";
 import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
-import { Timer } from "lucide-react";
-import { formatDuration, formatDurationShort } from "@/lib/format-duration";
+import { formatDurationShort } from "@/lib/format-duration";
 import { toast } from "sonner";
 
 // Type for user metadata
@@ -84,7 +77,7 @@ export default function Dashboard() {
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
-  const [remainingMinutes, setRemainingMinutes] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
   const [loading, setLoading] = useState(true);
 
   // Use analytics hook for cached data
@@ -158,9 +151,9 @@ export default function Dashboard() {
       const userSubscription = await subscriptionService.getSubscription(user.id);
       setSubscription(userSubscription);
 
-      // Load remaining minutes
-      const remaining = await subscriptionService.getRemainingMinutes(user.id);
-      setRemainingMinutes(remaining);
+      // Load remaining seconds
+      const remaining = await subscriptionService.getRemainingSeconds(user.id);
+      setRemainingSeconds(remaining);
 
       // Load badges
       const userBadges = await badgeService.getUserBadges(user.id);
@@ -201,12 +194,12 @@ export default function Dashboard() {
     }
   }, [shouldRefreshDashboard]);
 
-  const { allowed, loading: subscriptionLoading, invalidateCache, remaining_minutes: hookRemainingMinutes } = useSubscription();
+  const { allowed, loading: subscriptionLoading, invalidateCache, remaining_seconds: hookRemainingSeconds } = useSubscription();
 
   const startInterview = async () => {
     // Check balance before proceeding
-    const { remainingMinutes } = await subscriptionService.checkUsageLimit(user?.id || '');
-    if (remainingMinutes < 120) {
+    const { remainingSeconds } = await subscriptionService.checkUsageLimit(user?.id || '');
+    if (remainingSeconds < 120) {
       toast.error("Insufficient balance", {
         description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
         duration: 5000,
@@ -384,9 +377,9 @@ export default function Dashboard() {
           </div>
 
           {/* Low Time Warning Banner */}
-          {!subscriptionLoading && !loading && (hookRemainingMinutes ?? remainingMinutes) < 300 && (hookRemainingMinutes ?? remainingMinutes) >= 0 && (
+          {!subscriptionLoading && !loading && (hookRemainingSeconds ?? remainingSeconds) < 300 && (hookRemainingSeconds ?? remainingSeconds) >= 0 && (
             <LowTimeWarningBanner
-              remainingMinutes={Math.floor((hookRemainingMinutes ?? remainingMinutes) / 60)}
+              remainingMinutes={Math.floor((hookRemainingSeconds ?? remainingSeconds) / 60)}
               variant="dashboard"
             />
           )}

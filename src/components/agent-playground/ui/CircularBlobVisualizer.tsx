@@ -23,11 +23,14 @@ export function CircularBlobVisualizer({
 
     // Audio nodes for Agent
     const agentAnalyserRef = useRef<AnalyserNode | null>(null);
-    const agentDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+    const agentDataRef = useRef<Uint8Array | null>(null);
 
     // Audio nodes for Local
     const localAnalyserRef = useRef<AnalyserNode | null>(null);
-    const localDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+    const localDataRef = useRef<Uint8Array | null>(null);
+
+    // Particles for the globe
+    const particlesRef = useRef<{ phi: number; theta: number; size: number }[]>([]);
 
     // Setup Agent Audio
     useEffect(() => {
@@ -35,13 +38,14 @@ export function CircularBlobVisualizer({
         if (audioTrack && audioTrack.kind === "audio") {
             const mediaStreamTrack = audioTrack.mediaStreamTrack;
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([mediaStreamTrack]));
             const analyser = audioContext.createAnalyser();
             analyser.fftSize = 128;
             analyser.smoothingTimeConstant = 0.8;
             source.connect(analyser);
             agentAnalyserRef.current = analyser;
-            agentDataRef.current = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
+            agentDataRef.current = new Uint8Array(analyser.frequencyBinCount);
 
             return () => {
                 source.disconnect();
@@ -55,13 +59,14 @@ export function CircularBlobVisualizer({
     useEffect(() => {
         if (localTrack && localTrack.kind === "audio") {
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([localTrack]));
             const analyser = audioContext.createAnalyser();
             analyser.fftSize = 128;
-            analyser.smoothingTimeConstant = 0.7; // Faster response for local voice
+            analyser.smoothingTimeConstant = 0.7;
             source.connect(analyser);
             localAnalyserRef.current = analyser;
-            localDataRef.current = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
+            localDataRef.current = new Uint8Array(analyser.frequencyBinCount);
 
             return () => {
                 source.disconnect();
@@ -85,9 +90,27 @@ export function CircularBlobVisualizer({
 
         const centerX = size / 2;
         const centerY = size / 2;
-        const baseRadius = size * 0.3;
+        const baseRadius = size * 0.32;
 
-        let rotation = 0;
+        // Initialize particles if not already done
+        if (particlesRef.current.length === 0) {
+            const count = 400; // Increased density
+            for (let i = 0; i < count; i++) {
+                const phi = Math.acos(-1 + (2 * i) / count);
+                const theta = Math.sqrt(count * Math.PI) * phi;
+                particlesRef.current.push({
+                    phi,
+                    theta,
+                    size: Math.random() * 1.0 + 0.5, // Slightly smaller dots
+                });
+            }
+        }
+
+        let rotationX = 0;
+        let rotationY = 0;
+        let smoothedVolume = 0;
+        let smoothedAgentVolume = 0;
+        let smoothedLocalVolume = 0;
 
         const animate = () => {
             ctx.clearRect(0, 0, size, size);
@@ -96,82 +119,115 @@ export function CircularBlobVisualizer({
             let localVolume = 0;
 
             if (agentAnalyserRef.current && agentDataRef.current) {
+                if (agentAnalyserRef.current.context.state === 'suspended') {
+                    (agentAnalyserRef.current.context as AudioContext).resume();
+                }
                 agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
                 agentVolume = Array.from(agentDataRef.current).reduce((a, b) => a + b, 0) / agentDataRef.current.length;
             }
 
             if (localAnalyserRef.current && localDataRef.current) {
+                if (localAnalyserRef.current.context.state === 'suspended') {
+                    (localAnalyserRef.current.context as AudioContext).resume();
+                }
                 localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
                 localVolume = Array.from(localDataRef.current).reduce((a, b) => a + b, 0) / localDataRef.current.length;
             }
 
-            const activeVolume = Math.max(localVolume, agentVolume);
-            const normalizedVolume = activeVolume / 255;
+            // Smoothing
+            smoothedAgentVolume = smoothedAgentVolume * 0.8 + agentVolume * 0.2;
+            smoothedLocalVolume = smoothedLocalVolume * 0.8 + localVolume * 0.2;
 
-            // Background Glow
+            const activeVolume = Math.max(smoothedLocalVolume, smoothedAgentVolume);
+            smoothedVolume = smoothedVolume * 0.7 + activeVolume * 0.3;
+            const normalizedVolume = smoothedVolume / 150;
+
+            // State indicators
+            const AGENT_ACTIVE = state === "speaking" || smoothedAgentVolume > 10;
+            const LOCAL_ACTIVE = smoothedLocalVolume > 12;
+
+            // Base Colors
+            let primaryColor = { r: 168, g: 85, b: 247 }; // Purple (Agent)
+            let glowOpacity = 0.15;
+
+            if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
+                primaryColor = { r: 251, g: 191, b: 36 }; // Amber (Local)
+            } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
+                primaryColor = { r: 71, g: 85, b: 105 }; // Slate (Idle)
+                glowOpacity = 0.05;
+            }
+
+            // Background Ambient Glow
             const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size / 2);
-            const glowOpacity = 0.05 + normalizedVolume * 0.2;
-            const glowColor = agentVolume > localVolume ? "rgba(168, 85, 247," : "rgba(255, 195, 77,"; // Purple for AI, Amber for User
-
-            glowGradient.addColorStop(0, `${glowColor}${glowOpacity})`);
-            glowGradient.addColorStop(1, `${glowColor}0)`);
+            const dynamicGlow = glowOpacity + normalizedVolume * 0.4;
+            glowGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`);
+            glowGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
             ctx.fillStyle = glowGradient;
             ctx.fillRect(0, 0, size, size);
 
-            // Draw Blob
-            ctx.beginPath();
-            const points = 60;
+            // Update Rotations
+            rotationY += 0.005 + normalizedVolume * 0.02;
+            rotationX += 0.002 + normalizedVolume * 0.01;
+
             const time = Date.now() / 1000;
 
-            for (let i = 0; i < points; i++) {
-                const angle = (i / points) * Math.PI * 2;
+            // Sort particles by Z-depth for correct rendering (optional for simple dots but better)
+            const projectedParticles = particlesRef.current.map(p => {
+                // Spherical to Cartesian
+                let x = Math.sin(p.phi) * Math.cos(p.theta);
+                let y = Math.sin(p.phi) * Math.sin(p.theta);
+                let z = Math.cos(p.phi);
 
-                // Multi-layered noise effect
-                const noise1 = Math.sin(angle * 3 + time * 2) * 5;
-                const noise2 = Math.cos(angle * 5 - time * 3) * 3;
-                const volumeEffect = normalizedVolume * baseRadius * 1.5;
+                // Rotate around Y
+                const x1 = x * Math.cos(rotationY) - z * Math.sin(rotationY);
+                const z1 = x * Math.sin(rotationY) + z * Math.cos(rotationY);
+                x = x1; z = z1;
 
-                const radius = baseRadius + noise1 + noise2 + (Math.random() * volumeEffect * 0.1) + volumeEffect;
+                // Rotate around X
+                const y2 = y * Math.cos(rotationX) - z * Math.sin(rotationX);
+                const z2 = y * Math.sin(rotationX) + z * Math.cos(rotationX);
+                y = y2; z = z2;
 
-                const x = centerX + Math.cos(angle + rotation) * radius;
-                const y = centerY + Math.sin(angle + rotation) * radius;
+                // Displacement / Noise
+                const noise = Math.sin(p.phi * 5 + time * 2) * Math.cos(p.theta * 5 + time * 3) * 0.05;
+                const volumeOffset = normalizedVolume * 0.4;
+                const radius = baseRadius * (1 + noise + volumeOffset);
 
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
+                return {
+                    x: centerX + x * radius,
+                    y: centerY + y * radius,
+                    z,
+                    size: p.size * (z + 2) / 2 // Perspective size
+                };
+            }).sort((a, b) => a.z - b.z);
 
-            // Blob Styling
-            const blobGradient = ctx.createRadialGradient(centerX - 10, centerY - 10, 0, centerX, centerY, baseRadius * 2);
-            if (agentVolume > localVolume || (agentVolume === 0 && localVolume === 0 && state === "speaking")) {
-                blobGradient.addColorStop(0, "#C084FC"); // purple-400
-                blobGradient.addColorStop(0.5, "#A855F7"); // purple-500
-                blobGradient.addColorStop(1, "#7E22CE"); // purple-700
-            } else if (localVolume > 0) {
-                blobGradient.addColorStop(0, "#FCD34D"); // amber-300
-                blobGradient.addColorStop(0.5, "#FBBF24"); // amber-400
-                blobGradient.addColorStop(1, "#D97706"); // amber-600
-            } else {
-                blobGradient.addColorStop(0, "#1F2937"); // gray-800
-                blobGradient.addColorStop(1, "#111827"); // gray-900
-            }
+            // Render Particles
+            projectedParticles.forEach(p => {
+                const opacity = (p.z + 1.5) / 2.5; // Depth-based opacity
+                const brightness = Math.floor(200 + p.z * 55);
 
-            ctx.fillStyle = blobGradient;
-            ctx.fill();
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 
+                if (AGENT_ACTIVE) {
+                    ctx.fillStyle = `rgba(192, 132, 252, ${opacity})`; // purple-400
+                } else if (LOCAL_ACTIVE) {
+                    ctx.fillStyle = `rgba(252, 211, 77, ${opacity})`; // amber-300
+                } else {
+                    ctx.fillStyle = `rgba(148, 163, 184, ${opacity * 0.5})`; // slate-400
+                }
 
-            // Add a subtle rim light/stroke
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-            ctx.lineWidth = 1;
-            ctx.stroke();
+                ctx.fill();
 
-            // Inner circle highlight (3D effect)
-            ctx.beginPath();
-            ctx.arc(centerX - baseRadius * 0.3, centerY - baseRadius * 0.3, baseRadius * 0.2, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-            ctx.fill();
+                // Add point glow for front particles
+                if (p.z > 0.5 && (AGENT_ACTIVE || LOCAL_ACTIVE)) {
+                    ctx.shadowBlur = 4;
+                    ctx.shadowColor = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${opacity})`;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
 
-            rotation += 0.005 + normalizedVolume * 0.05;
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 

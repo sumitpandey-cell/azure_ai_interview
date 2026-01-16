@@ -139,9 +139,9 @@ export default function Templates() {
     setLoadingTemplate(template.id);
 
     try {
-      // Check balance before creating session
-      const { remainingMinutes } = await subscriptionService.checkUsageLimit(user.id);
-      if (remainingMinutes < 120) {
+      // Check balance before creating session (min 2 minutes / 120 seconds)
+      const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
+      if (remainingSeconds < 120) {
         toast.error("Insufficient balance", {
           description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
           action: {
@@ -154,13 +154,9 @@ export default function Templates() {
 
       // Check for existing sessions
       const existingSessions = await interviewService.getInProgressSessions(user.id);
-      const sameDomainSession = existingSessions?.find(s =>
-        s.position.toLowerCase() === template.title.toLowerCase() &&
-        s.interview_type.toLowerCase() === template.interview_type.toLowerCase()
-      );
 
-      if (sameDomainSession) {
-        setConflictSession(sameDomainSession);
+      if (existingSessions && existingSessions.length > 0) {
+        setConflictSession(existingSessions[0]);
         setPendingAction({ type: 'general', data: template });
         setConflictDialogOpen(true);
         setLoadingTemplate(null);
@@ -225,9 +221,9 @@ export default function Templates() {
     setLoadingTemplate(templateKey);
 
     try {
-      // Check balance before creating session
-      const { remainingMinutes } = await subscriptionService.checkUsageLimit(user.id);
-      if (remainingMinutes < 120) {
+      // Check balance before creating session (min 2 minutes / 120 seconds)
+      const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
+      if (remainingSeconds < 120) {
         toast.error("Insufficient balance", {
           description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
           action: {
@@ -240,13 +236,9 @@ export default function Templates() {
 
       // Check for existing sessions
       const existingSessions = await interviewService.getInProgressSessions(user.id);
-      const sameDomainSession = existingSessions?.find(s =>
-        s.position.toLowerCase() === role.toLowerCase() &&
-        s.interview_type.toLowerCase() === "technical"
-      );
 
-      if (sameDomainSession) {
-        setConflictSession(sameDomainSession);
+      if (existingSessions && existingSessions.length > 0) {
+        setConflictSession(existingSessions[0]);
         setPendingAction({ type: 'company', data: { company, role } });
         setConflictDialogOpen(true);
         setLoadingTemplate(null);

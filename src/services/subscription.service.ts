@@ -167,10 +167,11 @@ export const subscriptionService = {
     },
 
     /**
-     * Check if user has remaining time (converts seconds in DB to minutes for display)
+     * Check if user has remaining time
      */
     async checkUsageLimit(userId: string): Promise<{
         hasLimit: boolean;
+        remainingSeconds: number;
         remainingMinutes: number;
         percentageUsed: number;
     }> {
@@ -182,6 +183,7 @@ export const subscriptionService = {
                 // Return default free tier limits if no subscription exists
                 return {
                     hasLimit: false,
+                    remainingSeconds: 6000, // 100 minutes
                     remainingMinutes: 100,
                     percentageUsed: 0,
                 };
@@ -194,7 +196,8 @@ export const subscriptionService = {
 
             return {
                 hasLimit: remainingSeconds <= 0,
-                remainingMinutes: Math.max(0, remainingSeconds), // Note: Keeping the key name for compatibility but it contains seconds
+                remainingSeconds: Math.max(0, remainingSeconds),
+                remainingMinutes: Math.max(0, Math.floor(remainingSeconds / 60)),
                 percentageUsed,
             };
         } catch (error) {
@@ -202,6 +205,7 @@ export const subscriptionService = {
             // On error, allow free tier access
             return {
                 hasLimit: false,
+                remainingSeconds: 6000,
                 remainingMinutes: 100,
                 percentageUsed: 0,
             };
@@ -209,25 +213,22 @@ export const subscriptionService = {
     },
 
     /**
-     * Get remaining time in minutes for countdown timer (converts from seconds stored in DB)
+     * Get remaining time in seconds for countdown timer
      */
-    async getRemainingMinutes(userId: string): Promise<number> {
-        const { remainingMinutes } = await this.checkUsageLimit(userId);
-        return remainingMinutes;
+    async getRemainingSeconds(userId: string): Promise<number> {
+        const { remainingSeconds } = await this.checkUsageLimit(userId);
+        return remainingSeconds;
     },
 
     /**
-     * Check if user has low remaining time (< 5 minutes)
+     * Check if user has low remaining time (< 5 minutes / 300 seconds)
      */
     async hasLowTime(userId: string): Promise<boolean> {
-        const remaining = await this.getRemainingMinutes(userId);
-        return remaining < 5 && remaining > 0;
+        const remainingSeconds = await this.getRemainingSeconds(userId);
+        return remainingSeconds < 300 && remainingSeconds > 0;
     },
 
-
-
-
-
+    
     /**
      * Update subscription plan
      */

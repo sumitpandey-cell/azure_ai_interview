@@ -80,75 +80,75 @@ export function AppearanceSettings() {
     };
 
     return (
-        <Card className="border-2 border-border/50 shadow-2xl bg-card rounded-2xl sm:rounded-2xl p-4 sm:p-10 overflow-hidden relative">
-            <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 blur-3xl rounded-full -translate-y-20 translate-x-20" />
+        <Card className="border-2 border-border/50 shadow-lg bg-card rounded-xl sm:rounded-2xl p-4 sm:p-8 overflow-hidden relative">
+            <div className="absolute top-0 right-0 h-32 w-32 bg-primary/5 blur-3xl rounded-full -translate-y-16 translate-x-16" />
 
-            <CardHeader className="p-0 mb-6 sm:mb-10 relative z-10">
-                <div className="flex items-center gap-4 mb-3">
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <Palette className="h-5 w-5 sm:h-6 sm:w-6" />
+            <CardHeader className="p-0 mb-6 sm:mb-8 relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Palette className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <CardTitle className="text-xl sm:text-2xl font-black tracking-tight">Visual Interface</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl font-black tracking-tight">Visual Interface</CardTitle>
                 </div>
-                <CardDescription className="text-xs sm:text-sm font-medium">
+                <CardDescription className="text-[10px] sm:text-xs font-medium">
                     Customize your workspace with an aesthetic color profile that suits your style.
                 </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-0 space-y-6 sm:space-y-10 relative z-10">
-                <div className="space-y-4 sm:space-y-6">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Universal Color Themes</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <CardContent className="p-0 space-y-6 sm:space-y-8 relative z-10">
+                <div className="space-y-4">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Universal Color Themes</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                         {themes.map((theme) => (
                             <button
                                 key={theme.id}
                                 onClick={() => handleThemeChange(theme.id)}
                                 className={cn(
-                                    "group relative flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-2xl border-2 transition-all duration-500 text-left",
+                                    "group relative flex flex-col items-start gap-2.5 sm:gap-3.5 p-3 sm:p-5 rounded-xl sm:rounded-xl border-2 transition-all duration-500 text-left",
                                     activeTheme === theme.id
-                                        ? "border-primary bg-primary/5 shadow-xl shadow-primary/10 scale-[1.02]"
-                                        : "border-border/30 bg-muted/20 hover:border-border hover:bg-muted/40 hover:-translate-y-1"
+                                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10 scale-[1.02]"
+                                        : "border-border/30 bg-muted/20 hover:border-border hover:bg-muted/40 hover:-translate-y-0.5"
                                 )}
                             >
                                 <div className="flex items-center justify-between w-full">
                                     <div
-                                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl shadow-inner flex items-center justify-center transform group-hover:rotate-6 transition-all duration-500 border-2 border-white/10"
+                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl shadow-inner flex items-center justify-center transform group-hover:rotate-6 transition-all duration-500 border-2 border-white/10"
                                         style={{
                                             backgroundColor: theme.color,
-                                            boxShadow: `0 10px 30px ${theme.secondary}`
+                                            boxShadow: `0 8px 20px ${theme.secondary}`
                                         }}
                                     >
                                         {activeTheme === theme.id ? (
-                                            <Check className="h-6 w-6 sm:h-7 sm:w-7 text-white drop-shadow-md animate-in zoom-in duration-300" />
+                                            <Check className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-md animate-in zoom-in duration-300" />
                                         ) : (
-                                            <div className="h-3 w-3 rounded-full bg-white/40" />
+                                            <div className="h-2.5 w-2.5 rounded-full bg-white/40" />
                                         )}
                                     </div>
 
                                     {activeTheme === theme.id && (
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
-                                            <Sparkles className="h-3 w-3" />
+                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
+                                            <Sparkles className="h-2.5 w-2.5" />
                                             Active
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-0.5">
                                     <span className={cn(
-                                        "text-base sm:text-lg font-bold tracking-tight block",
+                                        "text-sm sm:text-base font-bold tracking-tight block",
                                         activeTheme === theme.id ? "text-primary" : "text-foreground"
                                     )}>
                                         {theme.name}
                                     </span>
-                                    <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                                    <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
                                         {theme.desc}
                                     </span>
                                 </div>
 
                                 {activeTheme === theme.id && (
-                                    <div className="absolute top-4 right-4 flex h-2 w-2">
+                                    <div className="absolute top-3 right-3 flex h-1.5 w-1.5">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
                                     </div>
                                 )}
                             </button>
@@ -156,16 +156,16 @@ export function AppearanceSettings() {
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-8 rounded-2xl sm:rounded-2xl bg-muted/20 border-2 border-dashed border-border/50">
-                    <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-8">
-                        <div className="space-y-2 text-center md:text-left flex-1">
-                            <h4 className="text-lg sm:text-xl font-black tracking-tight">Live UI Preview</h4>
-                            <p className="text-xs sm:text-sm text-muted-foreground font-medium">This is how your primary buttons and accents will appear across the platform.</p>
+                <div className="p-4 sm:p-6 rounded-xl sm:rounded-xl bg-muted/20 border-2 border-dashed border-border/50">
+                    <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                        <div className="space-y-1 text-center md:text-left flex-1">
+                            <h4 className="text-base sm:text-lg font-black tracking-tight">Live UI Preview</h4>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">This is how your primary buttons and accents will appear across the platform.</p>
                         </div>
-                        <div className="flex gap-3 sm:gap-4">
-                            <button className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-[9px] sm:text-[10px] shadow-lg shadow-primary/20">Primary Action</button>
-                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                                <Palette className="h-5 w-5" />
+                        <div className="flex gap-2.5 sm:gap-3">
+                            <button className="h-9 sm:h-10 px-4 sm:px-5 rounded-lg bg-primary text-primary-foreground font-black uppercase tracking-widest text-[8px] sm:text-[9px] shadow-lg shadow-primary/20">Primary Action</button>
+                            <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                <Palette className="h-4 w-4" />
                             </div>
                         </div>
                     </div>

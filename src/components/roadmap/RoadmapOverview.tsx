@@ -81,19 +81,19 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
                     }
                 ].map((stat, i) => (
                     <Card key={i} className={`glass-card hover-lift relative overflow-hidden border-none bg-gradient-to-br ${stat.gradient} backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 ring-1 ring-black/5 dark:ring-white/5`}>
-                        <CardHeader className="pb-2">
+                        <CardHeader className="pb-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</span>
-                                <div className="p-2 rounded-xl bg-white dark:bg-black/20 shadow-sm ring-1 ring-black/5 dark:ring-white/10">
-                                    {stat.icon}
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</span>
+                                <div className="p-1.5 rounded-lg bg-white dark:bg-black/20 shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+                                    {stat.icon && Object.assign({}, stat.icon, { props: { ...stat.icon.props, className: (stat.icon.props.className || '').replace('w-5 h-5', 'w-4 h-4') } })}
                                 </div>
                             </div>
-                            <CardTitle className={`text-3xl font-bold mt-2 ${stat.customValueClass || ''}`}>
+                            <CardTitle className={`text-2xl font-black mt-1 ${stat.customValueClass || ''}`}>
                                 {stat.value}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground font-medium">
+                        <CardContent className="pb-4">
+                            <p className="text-[10px] text-muted-foreground font-medium">
                                 {stat.description}
                             </p>
                         </CardContent>
@@ -107,14 +107,14 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
                 {/* Strengths */}
                 <Card className="glass-card hover-lift border-none shadow-sm ring-1 ring-black/5 dark:ring-white/5 bg-emerald-50/30 dark:bg-emerald-950/10">
-                    <CardHeader className="border-b border-emerald-100/50 dark:border-emerald-900/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                                <Award className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <CardHeader className="py-4 border-b border-emerald-100/50 dark:border-emerald-900/50">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-xl font-bold">Key Strengths</CardTitle>
-                                <p className="text-sm text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">Where you're excelling right now</p>
+                                <CardTitle className="text-lg font-bold">Key Strengths</CardTitle>
+                                <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">Where you're excelling right now</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -122,11 +122,11 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
                         <div className="grid gap-3">
                             {data.strengths?.length > 0 ? (
                                 data.strengths.map((strength, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3.5 rounded-2xl bg-white dark:bg-black/20 border border-emerald-100/50 dark:border-emerald-900/50 group hover:scale-[1.01] transition-all">
-                                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
-                                            <Zap className="w-4 h-4 text-emerald-600" />
+                                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-black/20 border border-emerald-100/50 dark:border-emerald-900/50 group hover:scale-[1.01] transition-all">
+                                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
+                                            <Zap className="w-3.5 h-3.5 text-emerald-600" />
                                         </div>
-                                        <span className="text-sm font-medium leading-tight">{strength}</span>
+                                        <span className="text-xs font-semibold leading-tight">{strength}</span>
                                     </div>
                                 ))
                             ) : (
@@ -140,14 +140,14 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
 
                 {/* Areas for Growth */}
                 <Card className="border-none shadow-sm ring-1 ring-black/5 dark:ring-white/5 bg-amber-50/30 dark:bg-amber-950/10">
-                    <CardHeader className="border-b border-amber-100/50 dark:border-amber-900/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    <CardHeader className="py-4 border-b border-amber-100/50 dark:border-amber-900/50">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-xl font-bold">Priority Growth Areas</CardTitle>
-                                <p className="text-sm text-amber-600/70 dark:text-amber-400/70 mt-0.5">Focus areas to boost your career</p>
+                                <CardTitle className="text-lg font-bold">Priority Growth Areas</CardTitle>
+                                <p className="text-[11px] text-amber-600/70 dark:text-amber-400/70">Focus areas to boost your career</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -155,11 +155,11 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
                         <div className="grid gap-3">
                             {data.weaknesses?.length > 0 ? (
                                 data.weaknesses.map((weakness, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3.5 rounded-2xl bg-white dark:bg-black/20 border border-amber-100/50 dark:border-amber-900/50 group hover:scale-[1.01] transition-all">
-                                        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
+                                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-black/20 border border-amber-100/50 dark:border-amber-900/50 group hover:scale-[1.01] transition-all">
+                                        <div className="w-7 h-7 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
                                             <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
                                         </div>
-                                        <span className="text-sm font-medium leading-tight">{weakness}</span>
+                                        <span className="text-xs font-semibold leading-tight">{weakness}</span>
                                     </div>
                                 ))
                             ) : (

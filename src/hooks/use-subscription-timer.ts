@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { subscriptionService } from '@/services/subscription.service';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ interface UseSubscriptionTimerReturn {
     isExpired: boolean;
     loading: boolean;
     formatTime: () => string;
+    setRemainingSeconds: (seconds: number) => void;
 }
 
 /**
@@ -31,7 +32,6 @@ export function useSubscriptionTimer({
 }: UseSubscriptionTimerOptions): UseSubscriptionTimerReturn {
     const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(0);
     const [loading, setLoading] = useState(true);
-    const [warningsShown, setWarningsShown] = useState<Set<number>>(new Set());
 
     // Fetch initial remaining time
     useEffect(() => {
@@ -42,7 +42,7 @@ export function useSubscriptionTimer({
             }
 
             try {
-                const remainingSeconds = await subscriptionService.getRemainingMinutes(userId);
+                const remainingSeconds = await subscriptionService.getRemainingSeconds(userId);
                 setTotalRemainingSeconds(remainingSeconds);
                 console.log(`⏱️ Initial remaining time: ${remainingSeconds} seconds`);
             } catch (error) {
@@ -57,18 +57,36 @@ export function useSubscriptionTimer({
         fetchRemainingTime();
     }, [userId]);
 
+    const onTimeExpiredRef = useRef(onTimeExpired);
+    const warnAtRef = useRef(warnAt);
+    const warningsShownRef = useRef<Set<number>>(new Set());
+
+    useEffect(() => {
+        onTimeExpiredRef.current = onTimeExpired;
+    }, [onTimeExpired]);
+
+    useEffect(() => {
+        warnAtRef.current = warnAt;
+    }, [warnAt]);
+
     // Countdown timer
     useEffect(() => {
         if (loading || !isActive || totalRemainingSeconds <= 0) return;
 
+        console.log("⏱️ Starting stable subscription timer interval");
+
         const interval = setInterval(() => {
             setTotalRemainingSeconds((prev) => {
-                const newValue = Math.max(0, prev - 1);
+                if (prev <= 0) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                const newValue = prev - 1;
 
                 // Check if we hit a warning threshold
                 const remainingMinutes = Math.ceil(newValue / 60);
-                if (warnAt.includes(remainingMinutes) && !warningsShown.has(remainingMinutes)) {
-                    setWarningsShown((prev) => new Set(prev).add(remainingMinutes));
+                if (warnAtRef.current.includes(remainingMinutes) && !warningsShownRef.current.has(remainingMinutes)) {
+                    warningsShownRef.current.add(remainingMinutes);
 
                     if (remainingMinutes === 5) {
                         toast.warning('⏰ 5 minutes remaining in your session', {
@@ -90,15 +108,18 @@ export function useSubscriptionTimer({
                     toast.error('⏰ Time expired!', {
                         description: 'Your session time has run out.',
                     });
-                    onTimeExpired?.();
+                    onTimeExpiredRef.current?.();
                 }
 
                 return newValue;
             });
         }, 1000);
 
-        return () => clearInterval(interval);
-    }, [loading, isActive, totalRemainingSeconds, onTimeExpired, warnAt, warningsShown]);
+        return () => {
+            console.log("⏱️ Clearing subscription timer interval");
+            clearInterval(interval);
+        };
+    }, [loading, isActive]);
 
     const remainingMinutes = Math.floor(totalRemainingSeconds / 60);
     const remainingSeconds = totalRemainingSeconds % 60;
@@ -120,5 +141,6 @@ export function useSubscriptionTimer({
         isExpired,
         loading,
         formatTime,
+        setRemainingSeconds: setTotalRemainingSeconds,
     };
 }

@@ -141,11 +141,13 @@ export async function GET(request: Request) {
       console.warn(`Agent dispatch warning:`, dispatchErr);
     }
 
+    const ttl = 3600; // 1 hour token validity
     const token = new AccessToken(
       lkKey!,
       lkSecret!,
       {
         identity: candidateIdentity,
+        ttl: ttl,
         metadata: JSON.stringify({
           selectedVoice,
           selectedAvatar,
@@ -162,9 +164,13 @@ export async function GET(request: Request) {
       canSubscribe: true,
     });
 
+    const jwt = await token.toJwt();
+    const expiresAt = Math.floor(Date.now() / 1000) + ttl;
+
     return NextResponse.json({
       url: lkUrl!,
-      token: await token.toJwt(),
+      token: jwt,
+      expiresAt: expiresAt
     });
   } catch (error) {
     console.error('Error in livekit_token route:', error);

@@ -61,7 +61,7 @@ export default function InterviewSetup() {
     const [selectedAvatar, setSelectedAvatar] = useState<InterviewerAvatar>(getDefaultAvatar());
 
     const [showTimeWarning, setShowTimeWarning] = useState(false);
-    const { allowed, remaining_minutes, loading: subscriptionLoading } = useSubscription();
+    const { allowed, remaining_seconds, loading: subscriptionLoading } = useSubscription();
     const { currentSession, setCurrentSession } = useInterviewStore();
 
     useEffect(() => {
@@ -129,7 +129,42 @@ export default function InterviewSetup() {
         }
     };
 
-    const toggleMic = () => setIsMicOn(!isMicOn);
+    const toggleMic = async () => {
+        if (!isMicOn) {
+            // Turning on
+            try {
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (stream) {
+                    // Combine with existing stream tracks
+                    const tracks = [...stream.getVideoTracks(), ...audioStream.getAudioTracks()];
+                    const newStream = new MediaStream(tracks);
+                    setStream(newStream);
+                    if (videoRef.current) videoRef.current.srcObject = newStream;
+                } else {
+                    setStream(audioStream);
+                }
+                setIsMicOn(true);
+            } catch (error: any) {
+                console.error('Error starting mic:', error);
+                toast.error('Microphone access denied or unavailable.');
+            }
+        } else {
+            // Turning off
+            if (stream) {
+                stream.getAudioTracks().forEach(track => track.stop());
+                const videoTracks = stream.getVideoTracks();
+                if (videoTracks.length > 0) {
+                    const newStream = new MediaStream(videoTracks);
+                    setStream(newStream);
+                    if (videoRef.current) videoRef.current.srcObject = newStream;
+                } else {
+                    setStream(null);
+                    if (videoRef.current) videoRef.current.srcObject = null;
+                }
+            }
+            setIsMicOn(false);
+        }
+    };
 
 
 
@@ -137,63 +172,102 @@ export default function InterviewSetup() {
         try {
             setCameraError(null);
 
-            // Check if mediaDevices API is available
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                const isHttps = window.location.protocol === 'https:';
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-                if (!isHttps && !isLocalhost) {
-                    setCameraError('HTTPS required for camera access on mobile devices');
-                    toast.error('Camera/Mic requires HTTPS. Please use ngrok or access via localhost.', {
-                        duration: 6000,
-                    });
-                } else {
-                    setCameraError('Camera API not supported in this browser');
-                    toast.error('Your browser does not support camera access.');
-                }
+                handleMediaApiMissing();
                 return;
             }
 
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
-            setIsCameraOn(true);
-            setIsMicOn(true); // Also enable mic when camera starts
-        } catch (error: any) {
-            console.error('Error accessing camera:', error);
+            try {
+                // Try to get both video and audio
+                const mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                updateStreamAndState(mediaStream, true, true);
+            } catch (error: any) {
+                console.warn('Initial dual-media request failed, trying fallbacks:', error.name);
 
-            // Provide specific error messages
-            if (error.name === 'NotAllowedError') {
-                setCameraError('Permission denied. Please allow camera access.');
-                toast.error('Camera access denied. Please allow camera permissions in your browser settings.');
-            } else if (error.name === 'NotFoundError') {
-                setCameraError('No camera found on this device.');
-                toast.error('No camera detected. Please connect a camera.');
-            } else if (error.name === 'NotReadableError') {
-                setCameraError('Camera is already in use by another application.');
-                toast.error('Camera is busy. Please close other apps using the camera.');
-            } else {
-                setCameraError('Unable to access camera. Please check permissions.');
-                toast.error('Camera access failed. Please check your browser settings.');
+                // If video failed but audio might still work
+                if (error.name === 'NotAllowedError' || error.name === 'NotFoundError' || error.name === 'NotReadableError' || error.name === 'OverconstrainedError') {
+                    setCameraError(getSpecificErrorMessage(error));
+
+                    // IF we already have mic check it or try to get it
+                    try {
+                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        updateStreamAndState(audioStream, false, true);
+                        toast.info("Camera unavailable, but microphone is active. You can proceed with audio only.");
+                    } catch (audioError) {
+                        console.error('Total media failure:', audioError);
+                        throw error; // Throw the original video error if both fail
+                    }
+                } else {
+                    throw error;
+                }
             }
+        } catch (error: any) {
+            handleMediaError(error);
+        }
+    };
+
+    const handleMediaApiMissing = () => {
+        const isHttps = window.location.protocol === 'https:';
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        if (!isHttps && !isLocalhost) {
+            setCameraError('HTTPS required for camera access');
+            toast.error('Camera/Mic requires HTTPS. Please access via localhost or HTTPS.');
+        } else {
+            setCameraError('Camera API not supported');
+            toast.error('Your browser does not support camera access.');
+        }
+    };
+
+    const updateStreamAndState = (mediaStream: MediaStream, videoGranted: boolean, audioGranted: boolean) => {
+        // Stop old stream tracks first
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        setStream(mediaStream);
+        if (videoRef.current) {
+            videoRef.current.srcObject = mediaStream;
+        }
+
+        if (videoGranted) setIsCameraOn(true);
+        if (audioGranted) setIsMicOn(true);
+    };
+
+    const getSpecificErrorMessage = (error: any) => {
+        if (error.name === 'NotAllowedError') return 'Camera permission denied.';
+        if (error.name === 'NotFoundError') return 'No camera found.';
+        if (error.name === 'NotReadableError') return 'Camera is busy.';
+        return 'Camera access failed.';
+    };
+
+    const handleMediaError = (error: any) => {
+        console.error('Error accessing media:', error);
+        if (error.name === 'NotAllowedError') {
+            toast.error('Media access denied. Please check browser permissions.');
+        } else {
+            toast.error('Unexpected error accessing camera/microphone.');
         }
     };
 
     const stopCamera = () => {
         if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
+            stream.getVideoTracks().forEach(track => track.stop());
+
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                const audioOnlyStream = new MediaStream(audioTracks);
+                setStream(audioOnlyStream);
+                if (videoRef.current) videoRef.current.srcObject = audioOnlyStream;
+            } else {
+                setStream(null);
+                if (videoRef.current) videoRef.current.srcObject = null;
+            }
         }
         setIsCameraOn(false);
-        setIsMicOn(false); // Also disable mic when camera stops
     };
 
     const toggleCamera = () => {
@@ -219,12 +293,12 @@ export default function InterviewSetup() {
             return;
         }
 
-        if (remaining_minutes <= 0 && !subscriptionLoading) {
+        if (remaining_seconds <= 0 && !subscriptionLoading) {
             toast.error("You have no remaining interview time.");
             return;
         }
 
-        if (remaining_minutes < 300 && !showTimeWarning && !subscriptionLoading) {
+        if (remaining_seconds < 300 && !showTimeWarning && !subscriptionLoading) {
             setShowTimeWarning(true);
             return;
         }
@@ -272,12 +346,13 @@ export default function InterviewSetup() {
             const tokenResponse = await fetch(`/api/livekit_token?sessionId=${sessionId}`);
 
             if (tokenResponse.ok) {
-                const { url, token } = await tokenResponse.json();
+                const { url, token, expiresAt } = await tokenResponse.json();
 
                 // Store token in sessionStorage for live page to use
                 sessionStorage.setItem('livekit_prefetched_token', JSON.stringify({
                     url,
                     token,
+                    expiresAt,
                     timestamp: Date.now() // Track when token was generated
                 }));
 
@@ -561,7 +636,7 @@ export default function InterviewSetup() {
                             Tactical Alert: <span className="text-amber-500">Low Reserves</span>
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-                            System indicates only <span className="text-amber-500">{Math.ceil(remaining_minutes / 60)} minutes</span> of operational uptime remaining.
+                            System indicates only <span className="text-amber-500">{Math.ceil(remaining_seconds / 60)} minutes</span> of operational uptime remaining.
                             The engagement will terminate automatically upon depletion of chronological credits.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

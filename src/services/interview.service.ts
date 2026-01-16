@@ -2,6 +2,7 @@ import { supabase, publicSupabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { subscriptionService } from "./subscription.service";
 import { badgeService } from "./badge.service";
+import { INTERVIEW_CONFIG } from "@/config/interview-config";
 
 export type InterviewSession = Tables<"interview_sessions">;
 export type InterviewSessionInsert = TablesInsert<"interview_sessions">;
@@ -24,7 +25,7 @@ export interface CompleteSessionData {
     score?: number;
     feedback?: any;
     transcript?: any;
-    durationMinutes?: number;
+    durationSeconds?: number;
     totalHintsUsed?: number;
     averagePerformanceScore?: number;
 }
@@ -39,6 +40,15 @@ export const interviewService = {
      */
     async createSession(config: CreateSessionConfig): Promise<InterviewSession | null> {
         try {
+            // 1. Extra safety check: see if an in-progress session already exists
+            const inProgress = await this.getInProgressSessions(config.userId);
+            if (inProgress.length > 0) {
+                console.warn("⚠️ User already has an active session:", inProgress[0].id);
+                // Return null to indicate failure due to existing session
+                // The UI should handle this and ask to continue/abandon
+                return null;
+            }
+
             const sessionData: any = {
                 user_id: config.userId,
                 interview_type: config.interviewType,
@@ -56,7 +66,15 @@ export const interviewService = {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                // Handle unique constraint violation (code 23505)
+                if (error.code === '23505') {
+                    console.error("❌ Unique constraint violation: User already has an active session.");
+                    return null;
+                }
+                throw error;
+            }
+
             console.log("✓ Interview session created:", data.id);
             return data;
         } catch (error) {
@@ -66,10 +84,36 @@ export const interviewService = {
     },
 
     /**
+     * Internal status transition validator
+     */
+    async canTransitionTo(sessionId: string, newStatus: string): Promise<boolean> {
+        const session = await this.getSessionById(sessionId);
+        if (!session) return false;
+
+        const currentStatus = session.status;
+        if (currentStatus === newStatus) return true;
+
+        const allowed = INTERVIEW_CONFIG.VALID_TRANSITIONS[currentStatus] || [];
+        const isAllowed = allowed.includes(newStatus);
+
+        if (!isAllowed) {
+            console.error(`❌ Invalid status transition: ${currentStatus} -> ${newStatus} for session ${sessionId}`);
+        }
+
+        return isAllowed;
+    },
+
+    /**
      * Update interview session (for ongoing changes like transcript updates)
      */
     async updateSession(sessionId: string, updates: InterviewSessionUpdate): Promise<InterviewSession | null> {
         try {
+            // If status is being updated, validate the transition
+            if (updates.status) {
+                const allowed = await this.canTransitionTo(sessionId, updates.status);
+                if (!allowed) return null;
+            }
+
             const { data, error } = await supabase
                 .from("interview_sessions")
                 .update(updates)
@@ -94,21 +138,25 @@ export const interviewService = {
             console.log("🔧 [completeSession] Completion data:", completionData);
 
             const {
-                durationMinutes,
+                durationSeconds,
                 totalHintsUsed,
                 averagePerformanceScore,
                 ...otherData
             } = completionData;
 
             const updateData: any = {
-                status: "completed",
+                status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                 completed_at: new Date().toISOString(),
                 ...otherData,
             };
 
+            // Validate transition
+            const allowed = await this.canTransitionTo(sessionId, updateData.status);
+            if (!allowed) return null;
+
             // Map frontend camelCase to backend snake_case
-            if (durationMinutes !== undefined) {
-                updateData.duration_seconds = durationMinutes;
+            if (durationSeconds !== undefined) {
+                updateData.duration_seconds = durationSeconds;
             }
             if (totalHintsUsed !== undefined) {
                 updateData.total_hints_used = totalHintsUsed;
@@ -218,10 +266,14 @@ export const interviewService = {
      */
     async abandonSession(sessionId: string): Promise<InterviewSession | null> {
         try {
+            // Validate transition
+            const allowed = await this.canTransitionTo(sessionId, INTERVIEW_CONFIG.STATUS.COMPLETED);
+            if (!allowed) return null;
+
             const { data, error } = await supabase
                 .from("interview_sessions")
                 .update({
-                    status: "completed",
+                    status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                     completed_at: new Date().toISOString(),
                     feedback: {
                         note: "Session abandoned - User started a new interview"
@@ -294,8 +346,10 @@ export const interviewService = {
      */
     async addTranscriptEntry(
         sessionId: string,
+        userId: string,
         entry: {
-            speaker: "user" | "ai";
+            role: "user" | "assistant";
+            speaker?: string; // Legacy support
             text: string;
             timestamp: number;
             sentiment?: string;
@@ -303,19 +357,14 @@ export const interviewService = {
         }
     ): Promise<boolean> {
         try {
-            // Get current session
-            const session = await this.getSessionById(sessionId);
-            if (!session) return false;
-
-            // Get existing transcript or initialize empty array
-            const currentTranscript = (session.transcript as any[]) || [];
-            const updatedTranscript = [...currentTranscript, entry];
-
-            // Update session with new transcript
-            await this.updateSession(sessionId, {
-                transcript: updatedTranscript as any,
+            // Use the atomic RPC to append to transcript
+            const { error } = await (supabase as any).rpc('append_transcript_entry', {
+                p_session_id: sessionId,
+                p_user_id: userId,
+                p_entry: entry as any
             });
 
+            if (error) throw error;
             return true;
         } catch (error) {
             console.error("Error adding transcript entry:", error);
@@ -392,10 +441,10 @@ export const interviewService = {
 
                     if (transcripts.length > 0) {
                         // Complete the session and generate feedback
-                        const durationMinutes = session.duration_seconds || 10; // Default duration in seconds
+                        const durationSeconds = session.duration_seconds || 600; // Default 10 mins in seconds
 
                         await this.completeSession(session.id, {
-                            durationMinutes,
+                            durationSeconds,
                             transcript: transcripts
                         });
 
@@ -405,7 +454,7 @@ export const interviewService = {
                     } else {
                         // Complete session without feedback if no transcripts
                         await this.completeSession(session.id, {
-                            durationMinutes: 1,
+                            durationSeconds: 60,
                             feedback: {
                                 note: "No conversation recorded - session completed automatically"
                             }
@@ -673,16 +722,21 @@ export const interviewService = {
             if (error) throw error;
             console.log("✓ Interview resumption ended:", data.id, "Duration:", durationSeconds, "seconds");
 
-            // Update the total duration in the interview_sessions table
+            // Update the total duration in the interview_sessions table ATOMICALLY
+            const { error: durationError } = await (supabase as any).rpc('increment_session_duration', {
+                p_session_id: sessionId,
+                p_seconds: durationSeconds
+            });
+
+            if (durationError) {
+                console.error("Error updating session duration:", durationError);
+            } else {
+                console.log("✓ Session total duration incremented:", durationSeconds, "seconds");
+            }
+
+            // Track usage in subscription ATOMICALLY via RPC
             const session = await this.getSessionById(sessionId);
             if (session) {
-                const newTotalDuration = (session.duration_seconds || 0) + durationSeconds;
-                await this.updateSession(sessionId, {
-                    duration_seconds: newTotalDuration
-                });
-                console.log("✓ Session total duration updated:", newTotalDuration, "seconds");
-
-                // Track usage in subscription
                 await subscriptionService.trackUsage(session.user_id, durationSeconds);
             }
 
@@ -775,7 +829,9 @@ export const interviewService = {
             const transcripts = await this.getTranscripts(sessionId);
             if (!Array.isArray(transcripts)) return 0;
 
-            return transcripts.filter((t: any) => t.speaker === 'user' || t.role === 'user').length;
+            return transcripts.filter((t: any) =>
+                (t.role === 'user' || t.speaker === 'user' || t.sender === 'user')
+            ).length;
         } catch (error) {
             console.error("Error getting user turn count:", error);
             return 0;
@@ -785,8 +841,13 @@ export const interviewService = {
     /**
      * Generate feedback for all resumptions (called only at interview completion)
      */
-    async generateAllResumptionFeedback(sessionId: string): Promise<boolean> {
+    async generateAllResumptionFeedback(
+        sessionId: string,
+        onProgress?: (progress: number, statusText: string) => void
+    ): Promise<boolean> {
         try {
+            if (onProgress) onProgress(5, "Fetching session data...");
+
             // Get session and resumptions
             const session = await this.getSessionById(sessionId);
             if (!session || session.status !== 'completed') {
@@ -794,7 +855,11 @@ export const interviewService = {
                 return false;
             }
 
+            if (onProgress) onProgress(10, "Retrieving conversation segments...");
             let resumptions = await this.getResumptionHistory(sessionId);
+
+            // Log for debugging
+            console.log(`[FeedbackService] Found ${resumptions.length} segments for session ${sessionId}`);
             if (resumptions.length === 0) {
                 console.log("⚠️ No resumptions found for session:", sessionId, "- falling back to full session transcript");
                 const transcriptCount = await this.getTranscriptCount(sessionId);
@@ -822,6 +887,12 @@ export const interviewService = {
             const resumptionFeedbacks: any[] = [];
 
             for (let i = 0; i < resumptions.length; i++) {
+                // Segment analysis: 15% to 85%
+                const segmentStartProgress = 15 + Math.round((i / resumptions.length) * 70);
+                const segmentEndProgress = 15 + Math.round(((i + 0.9) / resumptions.length) * 70);
+
+                if (onProgress) onProgress(segmentStartProgress, `Analyzing segment ${i + 1} of ${resumptions.length}...`);
+
                 const resumption = resumptions[i];
                 const startIndex = resumption.start_transcript_index;
                 const endIndex = resumption.end_transcript_index || await this.getTranscriptCount(sessionId);
@@ -840,7 +911,10 @@ export const interviewService = {
                         config: (session.config as any) || {},
                     };
 
+                    if (onProgress) onProgress(segmentStartProgress + 5, `Synthesizing results for segment ${i + 1}...`);
                     const feedback = await generateFeedback(transcriptSlice, sessionData);
+
+                    if (onProgress) onProgress(segmentEndProgress, `Segment ${i + 1} analysis complete.`);
 
                     resumptionFeedbacks.push({
                         resumption_id: resumption.id,
@@ -859,6 +933,8 @@ export const interviewService = {
                 }
             }
 
+            if (onProgress) onProgress(90, "Finalizing report structure...");
+
             // Calculate overall session score (average of resumption scores)
             let sessionScore = 0;
             if (resumptionFeedbacks.length > 0) {
@@ -866,68 +942,69 @@ export const interviewService = {
                 sessionScore = Math.round(totalScore / resumptionFeedbacks.length);
             }
 
-            // Simplified feedback structure:
-            // If only 1 resumption (most common case), store feedback directly at root
-            // If multiple resumptions, use the complex structure with overall + resumptions
-            let updatedFeedback: any;
+            // Aggregated feedback structure (Standardized)
+            // We always use the same structure: { overall: Feedback, resumptions: Feedback[], multipleResumptions: boolean }
+            // This ensures front-end consistency and simplifies report rendering logic.
 
-            if (resumptionFeedbacks.length === 1) {
-                // Single resumption - flatten structure (simple and clean)
-                const feedback = resumptionFeedbacks[0];
-                updatedFeedback = {
-                    score: feedback.score,
-                    executiveSummary: feedback.executiveSummary,
-                    strengths: feedback.strengths,
-                    improvements: feedback.improvements,
-                    overallSkills: feedback.overallSkills,
-                    technicalSkills: feedback.technicalSkills,
-                    comparisons: feedback.comparisons || [],
-                    confidenceFlow: feedback.confidenceFlow || [],
+            const aggregatedOverall = resumptionFeedbacks.length === 1
+                ? {
+                    score: resumptionFeedbacks[0].score,
+                    executiveSummary: resumptionFeedbacks[0].executiveSummary,
+                    strengths: resumptionFeedbacks[0].strengths,
+                    improvements: resumptionFeedbacks[0].improvements,
+                    overallSkills: resumptionFeedbacks[0].overallSkills,
+                    technicalSkills: resumptionFeedbacks[0].technicalSkills,
+                    comparisons: resumptionFeedbacks[0].comparisons || [],
+                    confidenceFlow: resumptionFeedbacks[0].confidenceFlow || [],
+                    generatedAt: new Date().toISOString(),
+                }
+                : {
+                    score: sessionScore,
+                    executiveSummary: resumptionFeedbacks[0]?.executiveSummary || "Summary aggregated from multiple session segments.",
+                    strengths: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.strengths))),
+                    improvements: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.improvements))),
+                    overallSkills: resumptionFeedbacks[0]?.overallSkills.map((skill: any) => ({
+                        ...skill,
+                        score: Math.round(resumptionFeedbacks.reduce((sum, r) => {
+                            const s = r.overallSkills.find((os: any) => os.name === skill.name);
+                            return sum + (s?.score || 0);
+                        }, 0) / resumptionFeedbacks.length)
+                    })),
+                    technicalSkills: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.technicalSkills.map((s: any) => s.name)))).map(name => {
+                        const occurrences = resumptionFeedbacks.filter(r => r.technicalSkills.some((ts: any) => ts.name === name));
+                        return {
+                            name,
+                            score: Math.round(occurrences.reduce((sum, r) => {
+                                const s = r.technicalSkills.find((ts: any) => ts.name === name);
+                                return sum + (s?.score || 0);
+                            }, 0) / (occurrences.length || 1)),
+                            feedback: occurrences[0].technicalSkills.find((ts: any) => ts.name === name)?.feedback || ""
+                        };
+                    }),
+                    comparisons: resumptionFeedbacks.flatMap(r => r.comparisons || []),
+                    confidenceFlow: resumptionFeedbacks.flatMap((r, idx) =>
+                        (r.confidenceFlow || []).map((cf: any) => ({
+                            ...cf,
+                            segment: resumptionFeedbacks.length > 1 ? `[S${idx + 1}] ${cf.segment}` : cf.segment
+                        }))
+                    ),
                     generatedAt: new Date().toISOString(),
                 };
-            } else {
-                // Multiple resumptions - use nested structure with aggregated overall feedback
-                updatedFeedback = {
-                    overall: {
-                        score: sessionScore,
-                        executiveSummary: resumptionFeedbacks[0]?.executiveSummary || "Summary aggregated from multiple session segments.",
-                        strengths: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.strengths))),
-                        improvements: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.improvements))),
-                        overallSkills: resumptionFeedbacks[0]?.overallSkills.map((skill: any) => ({
-                            ...skill,
-                            score: Math.round(resumptionFeedbacks.reduce((sum, r) => {
-                                const s = r.overallSkills.find((os: any) => os.name === skill.name);
-                                return sum + (s?.score || 0);
-                            }, 0) / resumptionFeedbacks.length)
-                        })),
-                        technicalSkills: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.technicalSkills.map((s: any) => s.name)))).map(name => {
-                            const occurrences = resumptionFeedbacks.filter(r => r.technicalSkills.some((ts: any) => ts.name === name));
-                            return {
-                                name,
-                                score: Math.round(occurrences.reduce((sum, r) => {
-                                    const s = r.technicalSkills.find((ts: any) => ts.name === name);
-                                    return sum + (s?.score || 0);
-                                }, 0) / (occurrences.length || 1)),
-                                feedback: occurrences[0].technicalSkills.find((ts: any) => ts.name === name)?.feedback || ""
-                            };
-                        }),
-                        comparisons: resumptionFeedbacks.flatMap(r => r.comparisons || []),
-                        confidenceFlow: resumptionFeedbacks.flatMap((r, idx) =>
-                            (r.confidenceFlow || []).map((cf: any) => ({
-                                ...cf,
-                                segment: resumptionFeedbacks.length > 1 ? `[S${idx + 1}] ${cf.segment}` : cf.segment
-                            }))
-                        ),
-                        generatedAt: new Date().toISOString(),
-                    },
-                    resumptions: resumptionFeedbacks,
-                };
-            }
 
+            const updatedFeedback = {
+                overall: aggregatedOverall,
+                resumptions: resumptionFeedbacks,
+                multipleResumptions: resumptionFeedbacks.length > 1,
+                feedbackVer: "2.0" // Versioning to help handle legacy data if needed
+            };
+
+            if (onProgress) onProgress(95, "Storing operational report...");
             await this.updateSession(sessionId, {
                 feedback: updatedFeedback as any,
                 score: sessionScore, // Save the calculated score
             });
+
+            if (onProgress) onProgress(100, "Report generation complete.");
 
             console.log(`✅ Generated feedback for ${resumptionFeedbacks.length} resumptions`);
             return true;

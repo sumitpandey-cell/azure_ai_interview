@@ -155,8 +155,8 @@ function SkillNodeItem({ node }: { node: any }) {
         <motion.div
             whileHover={{ scale: 1.02, y: -2 }}
             className={cn(
-                "relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-[1.5rem] sm:rounded-2xl border-2 transition-all duration-500 glass-card",
-                isPhase ? "w-full sm:w-64 min-h-[100px] sm:h-28" : "w-[90%] sm:w-52 min-h-[90px] sm:h-24",
+                "relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all duration-500 glass-card",
+                isPhase ? "w-full sm:w-56 min-h-[85px] sm:h-24" : "w-[90%] sm:w-44 min-h-[75px] sm:h-20",
                 isCompleted ? "border-emerald-500 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.1)]" :
                     isActive ? "border-amber-500 bg-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.1)]" :
                         "border-border opacity-40 grayscale"
@@ -173,12 +173,12 @@ function SkillNodeItem({ node }: { node: any }) {
             </div>
 
             <div className={cn(
-                "mb-2 p-1.5 sm:p-2 rounded-xl",
+                "mb-1.5 p-1 sm:p-1.5 rounded-lg",
                 isCompleted ? "bg-emerald-500/20 text-emerald-500" :
                     isActive ? "bg-amber-500/20 text-amber-500" :
                         "bg-muted text-muted-foreground"
             )}>
-                {isPhase ? <Hexagon className="w-4 h-4 sm:w-5 sm:h-5 fill-current opacity-20" /> : <Rocket className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                {isPhase ? <Hexagon className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current opacity-20" /> : <Rocket className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
             </div>
 
             <h3 className={cn(
