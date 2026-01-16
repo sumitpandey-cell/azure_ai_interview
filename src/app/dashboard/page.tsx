@@ -62,8 +62,6 @@ interface UserMetadata {
   gender?: string;
 }
 
-import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
-
 export default function Dashboard() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
