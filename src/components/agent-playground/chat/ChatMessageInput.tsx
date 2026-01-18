@@ -58,7 +58,7 @@ export const ChatMessageInput = ({
 
     return (
         <div
-            className="flex flex-col gap-2 border-t border-white/5"
+            className="flex flex-col gap-2 border-t border-border/40"
             style={{ height: height }}
         >
             <div className="flex flex-row pt-3 gap-2 items-center relative">
@@ -77,7 +77,7 @@ export const ChatMessageInput = ({
                 ></div>
                 <input
                     ref={inputRef}
-                    className={`w-full text-xs font-medium caret-transparent bg-transparent text-white p-2 pr-10 rounded-lg border border-transparent focus:outline-none transition-all placeholder:text-white/20`}
+                    className={`w-full text-xs font-medium caret-transparent bg-transparent text-foreground p-2 pr-10 rounded-lg border border-transparent focus:outline-none transition-all placeholder:text-muted-foreground/40`}
                     style={{
                         paddingLeft: message.length > 0 ? "12px" : "24px",
                     }}
@@ -107,7 +107,7 @@ export const ChatMessageInput = ({
                 <button
                     disabled={message.length === 0 || !onSend}
                     onClick={handleSend}
-                    className={`text-[10px] font-bold uppercase tracking-widest text-primary hover:text-white transition-all pr-2 ${message.length > 0 ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                    className={`text-[10px] font-bold uppercase tracking-widest text-primary hover:text-foreground transition-all pr-2 ${message.length > 0 ? "opacity-100 blur-0" : "opacity-0 blur-sm"
                         }`}
                 >
                     Send

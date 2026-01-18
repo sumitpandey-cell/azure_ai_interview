@@ -463,7 +463,7 @@ const Leaderboard = () => {
                 </div>
               </div>
               <div className="text-center border-l border-border/50">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Sessions</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Interviews</p>
                 <p className="text-lg font-bold tracking-tight text-foreground">{player.interviewCount}</p>
               </div>
             </div>
@@ -529,7 +529,7 @@ const Leaderboard = () => {
                 </div>
                 <div className="h-8 w-px bg-border/50" />
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mastery</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Score</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold text-foreground">{userScore}</span>
                     <span className="text-xs text-muted-foreground">%</span>
@@ -608,8 +608,8 @@ const Leaderboard = () => {
                   <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead className="w-[80px] text-center font-bold text-xs uppercase text-muted-foreground">Rank</TableHead>
                     <TableHead className="font-bold text-xs uppercase text-muted-foreground">Candidate</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Mastery</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Sessions</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Score</TableHead>
+                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Interviews</TableHead>
                     <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Status</TableHead>
                     <TableHead className="text-right pr-6 font-bold text-xs uppercase text-muted-foreground">Action</TableHead>
                   </TableRow>
@@ -628,7 +628,7 @@ const Leaderboard = () => {
                         key={leaderboardUser.userId}
                         className={cn(
                           "cursor-pointer transition-colors",
-                          isCurrentUser && "bg-primary/5 hover:bg-primary/10"
+                          isCurrentUser && "bg-muted/30 hover:bg-muted/40"
                         )}
                       >
                         <TableCell className="text-center py-4">
@@ -649,7 +649,7 @@ const Leaderboard = () => {
                               <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className={cn("text-sm font-semibold", isCurrentUser && "text-primary")}>
+                              <p className={cn("text-sm font-bold", isCurrentUser ? "text-foreground" : "text-foreground/90")}>
                                 {displayName} {isCurrentUser && "(You)"}
                               </p>
                               <p className="text-xs text-muted-foreground">
@@ -668,8 +668,8 @@ const Leaderboard = () => {
                         </TableCell>
                         <TableCell className="text-center py-4">
                           {isTop3 ? (
-                            <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                              Elite
+                            <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                              Top 3
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal">
@@ -813,7 +813,7 @@ const Leaderboard = () => {
                       </h1>
                       <div className="flex flex-wrap justify-center md:justify-start items-center gap-2">
                         <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border-indigo-500/20 text-[10px] uppercase font-bold tracking-widest">
-                          Elite Talent
+                          Top Talent
                         </Badge>
                         <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/20 text-[10px] uppercase font-bold tracking-widest">
                           Interview Candidate
@@ -833,7 +833,7 @@ const Leaderboard = () => {
                       </div>
                       <div className="border-x border-white/10 px-3 sm:px-6">
                         <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">Interviews</p>
-                        <p className="text-2xl sm:text-3xl font-black text-white leading-none">
+                        <p className="text-2xl sm:text-3xl font-bold text-white leading-none">
                           {selectedUser?.interviewCount}
                         </p>
                       </div>

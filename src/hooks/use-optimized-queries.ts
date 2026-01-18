@@ -173,35 +173,38 @@ export function useOptimizedQueries() {
 
     console.log('🔄 Fetching leaderboard from database');
     try {
-      // 1. Fetch all completed interview sessions with scores
+      // 1. Fetch all completed interview sessions
       const { data: sessions, error: sessionsError } = await supabase
         .from("interview_sessions")
         .select("user_id, score")
-        .not("score", "is", null)
         .eq("status", "completed");
 
       if (sessionsError) throw sessionsError;
 
       // 2. Aggregate scores by user
-      const userStats: Record<string, { totalScore: number; count: number }> = {};
+      const userStats: Record<string, { totalScore: number; scoreCount: number; totalCount: number }> = {};
 
       sessions?.forEach((session) => {
         if (!userStats[session.user_id]) {
-          userStats[session.user_id] = { totalScore: 0, count: 0 };
+          userStats[session.user_id] = { totalScore: 0, scoreCount: 0, totalCount: 0 };
         }
-        userStats[session.user_id].totalScore += session.score || 0;
-        userStats[session.user_id].count += 1;
+        userStats[session.user_id].totalCount += 1;
+        if (session.score !== null) {
+          userStats[session.user_id].totalScore += session.score;
+          userStats[session.user_id].scoreCount += 1;
+        }
       });
 
       // 3. Calculate Weighted Score (rewards both performance and experience)
       const rankedUsers = Object.entries(userStats).map(([userId, stats]) => {
-        const avgScore = stats.totalScore / stats.count;
-        const experienceMultiplier = 1 + (Math.log10(stats.count) / 10);
+        const avgScore = stats.scoreCount > 0 ? stats.totalScore / stats.scoreCount : 0;
+        // Total completed sessions contribute to rank visibility
+        const experienceMultiplier = 1 + (Math.log10(stats.totalCount) / 10);
         const weightedScore = avgScore * experienceMultiplier;
 
         return {
           userId,
-          interviewCount: stats.count,
+          interviewCount: stats.totalCount,
           averageScore: avgScore,
           bayesianScore: weightedScore,
         };
@@ -247,10 +250,15 @@ export function useOptimizedQueries() {
         setLeaderboard([]);
         return [];
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in fetchLeaderboard:", error);
-      toast.error("Failed to load leaderboard data");
-      return leaderboard;
+      // Handle RLS or permission errors silently for a better user experience
+      const isRlsError = error?.code === '42501' || error?.message?.includes('row-level security');
+      if (!isRlsError) {
+        toast.error("Failed to load leaderboard data");
+      }
+      setLeaderboard([]);
+      return [];
     }
   }, [leaderboard, isLeaderboardCacheValid, setLeaderboard]);
 

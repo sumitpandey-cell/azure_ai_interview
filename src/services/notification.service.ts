@@ -18,12 +18,13 @@ export const notificationService = {
             const { data, error } = await supabase
                 .from("notifications")
                 .insert(notification)
-                .select()
-                .single();
+                .select();
 
             if (error) throw error;
-            console.log("✓ Notification created:", data.id);
-            return data;
+
+            const result = data && data.length > 0 ? data[0] : null;
+            if (result) console.log("✓ Notification created:", result.id);
+            return result;
         } catch (error) {
             console.error("Error creating notification:", error);
             return null;

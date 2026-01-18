@@ -284,8 +284,8 @@ export default function RoadmapPage() {
 
     return (
         <DashboardLayout>
-            <div className="min-h-screen bg-transparent pt-10 sm:pt-0">
-                <div className="max-w-[1600px] mx-auto space-y-8 sm:space-y-12 pb-12 sm:pb-16 pt-10 sm:pt-0">
+            <div className="min-h-screen bg-transparent sm:pt-0">
+                <div className="max-w-[1600px] mx-auto space-y-8 sm:space-y-12 pb-12 sm:pb-16 sm:pt-0">
                     {/* Header Section */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                         <div className="space-y-1.5">

@@ -330,45 +330,43 @@ export default function Templates() {
   );
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-12 pt-10 sm:pt-0">
+      <div className="space-y-6 sm:space-y-8 pb-12 sm:pt-0">
         {/* Header Section with Controls */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="text-left space-y-1 sm:space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Interview Templates
-            </h2>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-lg">
-              Choose from a variety of interview scenarios to practice and improve your skills.
-            </p>
-          </div>
+        <div className="space-y-2 mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Interview Templates
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
+            Choose from a variety of interview scenarios to practice and improve your skills.
+          </p>
         </div>
 
         <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl border border-border/50 mb-6 sm:mb-10 w-full sm:w-auto">
+          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl border border-border/50 mb-6 w-full sm:w-auto">
             <TabsTrigger
               value="general"
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
               General
             </TabsTrigger>
             <TabsTrigger
               value="company"
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
               Companies
             </TabsTrigger>
           </TabsList>
 
           {/* Category Tabs and Search Bar */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8">
+          <div className="flex flex-col gap-4 mb-8">
             {/* Category Tabs */}
-            <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 no-scrollbar px-1">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setActiveCategory(category)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
+                    "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors border whitespace-nowrap shrink-0",
                     activeCategory === category
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -380,11 +378,11 @@ export default function Templates() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative w-full lg:w-96 group">
+            <div className="relative w-full group">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" />
               <Input
                 placeholder="Search templates..."
-                className="pl-10 mr-12"
+                className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -503,8 +501,8 @@ export default function Templates() {
               <>
                 {/* Step 1: Select Company */}
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Select a Company</h3>
-                  <p className="text-muted-foreground text-sm">Choose a company to see role-specific interview templates</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1 sm:mb-2">Select a Company</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm">Choose a company to see role-specific interview templates</p>
                 </div>
 
                 {searchTerm && (

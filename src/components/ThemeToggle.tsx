@@ -56,11 +56,11 @@ export function ThemeToggle() {
             <DropdownMenuContent align="end" className="bg-card/80 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
                 <DropdownMenuItem onClick={() => handleThemeChange("light")} className="text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl cursor-pointer group">
                     <Sun className="mr-3 h-4 w-4 text-amber-400 group-hover:rotate-45 transition-transform" />
-                    <span>Light Protocol</span>
+                    <span>Light Theme</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleThemeChange("dark")} className="text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl cursor-pointer group">
                     <Moon className="mr-3 h-4 w-4 text-blue-400 group-hover:-rotate-12 transition-transform" />
-                    <span>Dark Protocol</span>
+                    <span>Dark Theme</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleThemeChange("system")}>
                     <Laptop className="mr-3 h-4 w-4 text-muted-foreground" />

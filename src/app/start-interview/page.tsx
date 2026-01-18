@@ -174,7 +174,7 @@ function StartInterviewContent() {
         try {
             // Use the file parser utility for all file types
             const text = await parseFile(file);
-            form.setValue('jobDescription', text);
+            form.setValue('jobDescription', `Attached file: ${file.name}\n${text}`);
             toast.success("Job description extracted successfully", { id: toastId });
         } catch (error) {
             console.error("Error reading file:", error);
@@ -366,17 +366,17 @@ function StartInterviewContent() {
 
     return (
         <DashboardLayout>
-            <div className="mx-auto max-w-3xl space-y-8 pb-12 pt-10 sm:pt-0">
+            <div className="mx-auto max-w-3xl space-y-8 pb-12 sm:pt-0">
                 <div className="text-center space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans">
-                    <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-primary shadow-sm border border-primary/20">
+                    <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-primary shadow-sm border border-primary/20">
                         <Sparkles className="mr-2 h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         AI-Powered Career Prep
                     </div>
                     <div className="space-y-2 sm:space-y-3 px-4 sm:px-0">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground">
-                            Ready to <span className="text-primary italic">Ace</span> it?
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                            Ready to <span className="text-primary">Ace</span> it?
                         </h1>
-                        <p className="text-muted-foreground max-w-xl mx-auto text-xs sm:text-sm md:text-lg font-medium leading-relaxed">
+                        <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base font-medium leading-relaxed">
                             Customize your session below and let our AI simulate a high-stakes interview tailored just for you.
                         </p>
                     </div>
@@ -421,7 +421,7 @@ function StartInterviewContent() {
                                                         >
                                                             <RadioGroupItem value="general" id="general" className="mt-1" />
                                                             <Label htmlFor="general" className="flex-1 cursor-pointer">
-                                                                <div className="font-black text-foreground uppercase tracking-wider text-xs sm:text-sm">General</div>
+                                                                <div className="font-bold text-foreground uppercase tracking-wider text-xs sm:text-sm">General</div>
                                                                 <div className="text-[10px] sm:text-xs mt-1 text-muted-foreground leading-relaxed font-medium">Focus on core domain skills and situational judgment.</div>
                                                             </Label>
                                                         </div>
@@ -439,7 +439,7 @@ function StartInterviewContent() {
                                                         >
                                                             <RadioGroupItem value="company" id="company" className="mt-1" />
                                                             <Label htmlFor="company" className="flex-1 cursor-pointer">
-                                                                <div className="font-black text-foreground uppercase tracking-wider text-xs sm:text-sm">Company Specific</div>
+                                                                <div className="font-bold text-foreground uppercase tracking-wider text-xs sm:text-sm">Company Specific</div>
                                                                 <div className="text-[10px] sm:text-xs mt-1 text-muted-foreground leading-relaxed font-medium">Practice with curated questions from top-tier tech giants.</div>
                                                             </Label>
                                                         </div>
@@ -465,7 +465,7 @@ function StartInterviewContent() {
                                                 name="companyId"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                        <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                             Select Company
                                                         </FormLabel>
                                                         <Select
@@ -487,7 +487,7 @@ function StartInterviewContent() {
                                                                         <div className="flex items-center gap-2">
                                                                             <span>{company.name}</span>
                                                                             {company.industry && (
-                                                                                <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-widest font-black">{company.industry}</span>
+                                                                                <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-widest font-bold">{company.industry}</span>
                                                                             )}
                                                                         </div>
                                                                     </SelectItem>
@@ -506,7 +506,7 @@ function StartInterviewContent() {
                                                 name="role"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                        <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                             Specific Role
                                                         </FormLabel>
                                                         <Select onValueChange={(value) => {
@@ -539,7 +539,7 @@ function StartInterviewContent() {
                                                 name="position"
                                                 render={({ field }) => (
                                                     <FormItem className="md:col-span-2">
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                        <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                             Target Position
                                                         </FormLabel>
                                                         <Select onValueChange={(value) => {
@@ -574,7 +574,7 @@ function StartInterviewContent() {
                                                 name="experienceLevel"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                        <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                             Experience Level
                                                         </FormLabel>
                                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -601,7 +601,7 @@ function StartInterviewContent() {
                                             name="interviewType"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                    <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                         Interview Type
                                                     </FormLabel>
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -641,7 +641,7 @@ function StartInterviewContent() {
                                             name="difficulty"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                    <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
                                                         Challenge Level
                                                     </FormLabel>
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -853,7 +853,7 @@ function StartInterviewContent() {
 
                                 <Button
                                     type="submit"
-                                    className="w-full h-12 sm:h-14 text-xs sm:text-base uppercase tracking-[0.2em] bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                                    className="w-full h-12 sm:h-14 text-xs sm:text-base uppercase tracking-[0.2em] bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (

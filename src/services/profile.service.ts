@@ -49,20 +49,23 @@ export const profileService = {
         }
     },
 
-    /**
-     * Update specified fields of a profile
-     */
     async updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile | null> {
         try {
+            // Use update instead of upsert to avoid RLS insert issues.
+            // Direct inserts into profiles are usually handled by database triggers.
             const { data, error } = await supabase
                 .from("profiles")
-                .update(updates)
+                .update({
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                })
                 .eq("id", userId)
-                .select()
-                .single();
+                .select(); // Remove .single() to avoid 406 error if row doesn't exist
 
             if (error) throw error;
-            return data;
+
+            // Return first item or null if no row was updated
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error updating profile:", error);
             return null;

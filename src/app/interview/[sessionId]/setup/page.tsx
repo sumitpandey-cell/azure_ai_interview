@@ -383,17 +383,17 @@ export default function InterviewSetup() {
     return (
         <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-primary/30">
             {/* Header */}
-            <header className="h-16 sm:h-20 border-b border-white/5 bg-background/80 backdrop-blur-2xl sticky top-0 z-50 flex items-center px-4 sm:px-8 lg:px-16 justify-between">
+            <header className="h-16 sm:h-20 border-b border-border/50 bg-background/80 backdrop-blur-2xl sticky top-0 z-50 flex items-center px-4 sm:px-8 lg:px-16 justify-between">
                 <div className="flex items-center gap-4">
                     <div className="relative group cursor-pointer" onClick={() => router.push('/dashboard')}>
                         <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-all"></div>
                         <img src="/favicon.ico" alt="Arjuna AI" className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg sm:text-xl font-black text-foreground tracking-tighter leading-none">
-                            ARJUNA<span className="text-primary italic">AI</span>
+                        <span className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-none">
+                            Arjuna<span className="text-primary">AI</span>
                         </span>
-                        <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Calibration Protocol</span>
+                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">Interview Setup</span>
                     </div>
                 </div>
 
@@ -401,10 +401,10 @@ export default function InterviewSetup() {
                     variant="ghost"
                     size="sm"
                     onClick={() => router.replace('/dashboard')}
-                    className="group h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-white/5 hover:bg-white/5 transition-all"
+                    className="group h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-border/40 hover:bg-muted transition-all"
                 >
                     <ArrowLeft className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:-translate-x-1" />
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest pt-0.5 hidden sm:inline">Return to Hangar</span>
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Back to Dashboard</span>
                 </Button>
             </header>
 
@@ -433,18 +433,18 @@ export default function InterviewSetup() {
                                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isCameraOn ? 'bg-emerald-400' : 'bg-rose-400'} opacity-75`}></span>
                                     <span className={`relative inline-flex rounded-full h-2 w-2 ${isCameraOn ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
                                 </span>
-                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/90">
-                                    {isCameraOn ? "System Hot" : "Imaging Offline"}
+                                <span className="text-[10px] sm:text-xs font-bold text-white/90">
+                                    {isCameraOn ? "Camera Active" : "Camera Off"}
                                 </span>
                             </div>
 
                             <div className="bg-primary/20 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-primary/30 flex items-center gap-1.5 sm:gap-2">
                                 <Sparkles className="h-3 w-3 text-primary" />
-                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-primary">
-                                    Identity: {authLoading ? (
+                                <span className="text-[10px] sm:text-xs font-bold text-primary">
+                                    {authLoading ? (
                                         <Skeleton className="h-2 w-12 inline-block ml-1 align-middle bg-primary/20" />
                                     ) : (
-                                        user?.user_metadata?.full_name?.split(' ')[0] || "Pilot"
+                                        user?.user_metadata?.full_name?.split(' ')[0] || "User"
                                     )}
                                 </span>
                             </div>
@@ -460,8 +460,8 @@ export default function InterviewSetup() {
                                         <VideoOff className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground/40" />
                                     </div>
                                 </div>
-                                <h3 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground/80">Optical Sensors Offline</h3>
-                                <p className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-widest mt-2">{cameraError || "Calibration Required"}</p>
+                                <h3 className="text-base sm:text-lg font-bold text-foreground/80">Camera Disabled</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-2">{cameraError || "Enable camera to continue"}</p>
                             </div>
                         )}
 
@@ -476,7 +476,7 @@ export default function InterviewSetup() {
                                 title={isMicOn ? "Mute Audio" : "Unmute Audio"}
                             >
                                 {isMicOn ? <Mic className="h-5 w-5 sm:h-6 sm:w-6" /> : <MicOff className="h-5 w-5 sm:h-6 sm:w-6" />}
-                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{isMicOn ? "Audio On" : "Enable Mic"}</div>
+                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] sm:text-xs font-medium">{isMicOn ? "Microphone On" : "Enable Microphone"}</div>
                             </button>
 
                             <button
@@ -488,40 +488,40 @@ export default function InterviewSetup() {
                                 title={isCameraOn ? "Cut Vision" : "Launch Vision"}
                             >
                                 {isCameraOn ? <Video className="h-5 w-5 sm:h-6 sm:w-6" /> : <VideoOff className="h-5 w-5 sm:h-6 sm:w-6" />}
-                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{isCameraOn ? "Vision Active" : "Enable View"}</div>
+                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] sm:text-xs font-medium">{isCameraOn ? "Camera On" : "Enable Camera"}</div>
                             </button>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-white/5 space-y-3 sm:space-y-4">
-                            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-border/40 space-y-3 sm:space-y-4">
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                                Compliance Check
+                                System Status
                             </h3>
                             <div className="space-y-3">
                                 {[
-                                    { label: "Environmental Audit", desc: "Minimal noise detected" },
-                                    { label: "Encryption Active", desc: "End-to-end tunnel active" }
+                                    { label: "Environment Check", desc: "Minimal background noise" },
+                                    { label: "Secure Connection", desc: "End-to-end encryption active" }
                                 ].map((step, i) => (
                                     <div key={i} className="flex flex-col gap-1">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-muted-foreground uppercase">{step.label}</span>
-                                            <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+                                            <span className="text-xs font-semibold text-muted-foreground">{step.label}</span>
+                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
                                         </div>
-                                        <p className="text-[9px] text-muted-foreground opacity-60 font-medium">{step.desc}</p>
+                                        <p className="text-[10px] text-muted-foreground/60 font-medium">{step.desc}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-white/5 space-y-3 sm:space-y-4">
-                            <h3 className="text-[11px] font-black text-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-border/40 space-y-3 sm:space-y-4">
+                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-primary" />
-                                Tactical Brief
+                                Interview Tips
                             </h3>
-                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">
-                                Ensure clear diction and maintain visual contact with the AI node for optimal precision analysis.
+                            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                                Speak clearly and maintain eye contact with the camera for the best interview experience.
                             </p>
                         </div>
                     </div>
@@ -534,8 +534,8 @@ export default function InterviewSetup() {
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50"></div>
                             <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
                                 <div className="space-y-1">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Operational Intel</span>
-                                    <h3 className="text-lg sm:text-xl font-black text-foreground tracking-tighter uppercase">Session Config</h3>
+                                    <span className="text-xs font-semibold text-primary">Interview Details</span>
+                                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Session Configuration</h3>
                                 </div>
 
                                 <div className="space-y-4">
@@ -543,31 +543,31 @@ export default function InterviewSetup() {
                                         { label: "Modality", val: session.interview_type },
                                         { label: "Target Position", val: session.position }
                                     ].map((row, i) => (
-                                        <div key={i} className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 group/row hover:bg-white/[0.05] transition-all">
-                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest group-hover/row:text-primary transition-colors">{row.label}</span>
-                                            <span className="text-[11px] sm:text-[12px] font-bold text-foreground transition-all">{row.val}</span>
+                                        <div key={i} className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40 group/row hover:bg-white/[0.05] transition-all">
+                                            <span className="text-[10px] font-semibold text-muted-foreground group-hover/row:text-primary transition-colors">{row.label}</span>
+                                            <span className="text-xs sm:text-sm font-medium text-foreground transition-all">{row.val}</span>
                                         </div>
                                     ))}
 
                                     {session.config?.difficulty && (
-                                        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5">
-                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Calibration Tier</span>
+                                        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40">
+                                            <span className="text-[10px] font-semibold text-muted-foreground">Difficulty Level</span>
                                             <div className="flex items-center gap-2">
                                                 <div className={`h-1.5 w-1.5 rounded-full ${session.config.difficulty === 'Beginner' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
                                                     session.config.difficulty === 'Intermediate' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
                                                         'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
                                                     }`}></div>
-                                                <span className="text-[12px] font-black text-foreground uppercase">{session.config.difficulty}</span>
+                                                <span className="text-xs sm:text-sm font-semibold text-foreground">{session.config.difficulty}</span>
                                             </div>
                                         </div>
                                     )}
 
                                     {session.config?.skills && session.config.skills.length > 0 && (
-                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5">
-                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Skill Nodes assessed</span>
+                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40">
+                                            <span className="text-[10px] font-semibold text-muted-foreground">Skills to Assess</span>
                                             <div className="flex flex-wrap gap-2">
                                                 {session.config.skills.map((skill, idx) => (
-                                                    <span key={idx} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-tight">
+                                                    <span key={idx} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[10px] font-semibold">
                                                         {skill}
                                                     </span>
                                                 ))}
@@ -585,19 +585,20 @@ export default function InterviewSetup() {
                             selectedAvatar={selectedAvatar}
                             onSelect={setSelectedAvatar}
                             variant="compact"
+                            disabled={isLoading}
                         />
                     </Card>
 
                     <div className="space-y-6 pt-4">
                         <div className="flex flex-col gap-6 text-center">
                             <div className="space-y-2">
-                                <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tighter uppercase italic">Ready to engage?</h2>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">The AI Interviewer is primed for session</p>
+                                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ready to Start?</h2>
+                                <p className="text-xs text-muted-foreground font-medium">Your AI interviewer is ready to begin</p>
                             </div>
 
                             <Button
                                 size="lg"
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 sm:h-16 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] rounded-2xl sm:rounded-[1.5rem] shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all hover:scale-[1.03] active:scale-[0.98] group relative overflow-hidden"
+                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 sm:h-14 text-sm sm:text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden"
                                 onClick={handleStart}
                                 disabled={isLoading || subscriptionLoading || !allowed}
                             >
@@ -605,29 +606,29 @@ export default function InterviewSetup() {
                                 {isLoading ? (
                                     <div className="flex items-center gap-3">
                                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                                        <span>Establishing Uplink...</span>
+                                        <span>Starting Interview...</span>
                                     </div>
                                 ) : !allowed ? (
-                                    "Quota Exhausted"
+                                    "Limit Reached"
                                 ) : (
-                                    <div className="flex items-center justify-center gap-3">
+                                    <div className="flex items-center justify-center gap-2">
                                         <div className="p-1 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">
                                             <Zap className="h-4 w-4 fill-white" />
                                         </div>
-                                        <span>Initiate Sequence</span>
+                                        <span>Start Interview</span>
                                     </div>
                                 )}
                             </Button>
 
                             {!isMicOn ? (
                                 <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-rose-500/10 border border-rose-500/20">
-                                    <div className="h-1 w-1 rounded-full bg-rose-500 animate-pulse"></div>
-                                    <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest">Microphone Required</p>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                    <p className="text-[10px] text-rose-500 font-semibold">Microphone Required</p>
                                 </div>
                             ) : !isCameraOn && (
                                 <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-blue-500/10 border border-blue-500/20">
-                                    <div className="h-1 w-1 rounded-full bg-blue-500 animate-pulse"></div>
-                                    <p className="text-[9px] text-blue-500 font-black uppercase tracking-widest">Camera Optional (Recommended)</p>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                    <p className="text-[10px] text-blue-500 font-semibold">Camera Optional (Recommended)</p>
                                 </div>
                             )}
                         </div>
@@ -639,23 +640,23 @@ export default function InterviewSetup() {
             <AlertDialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
                 <AlertDialogContent className="bg-card/70 backdrop-blur-3xl border border-white/10 rounded-2xl p-8">
                     <AlertDialogHeader className="space-y-4">
-                        <AlertDialogTitle className="text-2xl font-black text-foreground uppercase italic tracking-tighter">
-                            Tactical Alert: <span className="text-amber-500">Low Reserves</span>
+                        <AlertDialogTitle className="text-2xl font-bold text-foreground">
+                            Low Time Warning
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-                            System indicates only <span className="text-amber-500">{Math.ceil(remaining_seconds / 60)} minutes</span> of operational uptime remaining.
-                            The engagement will terminate automatically upon depletion of chronological credits.
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed">
+                            You have only <span className="text-amber-500 font-semibold">{Math.ceil(remaining_seconds / 60)} minutes</span> of interview time remaining.
+                            The interview will end automatically when your time runs out.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-8 flex gap-4">
-                        <AlertDialogCancel className="flex-1 h-12 rounded-xl border border-white/10 bg-white/5 font-black uppercase tracking-widest text-[10px] hover:bg-white/10">
-                            Abort
+                        <AlertDialogCancel className="flex-1 h-12 rounded-xl border border-border bg-background font-semibold text-sm hover:bg-muted">
+                            Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={proceedToStart}
-                            className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                            className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-xl shadow-primary/20"
                         >
-                            Proceed with Mission
+                            Continue Anyway
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

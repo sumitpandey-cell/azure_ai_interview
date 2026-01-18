@@ -351,8 +351,8 @@ export default function LiveInterview() {
     // Error State
     if (error) {
         return (
-            <div className="flex-1 flex items-center justify-center min-h-screen bg-black text-white">
-                <div className="p-4 bg-red-900/20 rounded border border-red-500/50">
+            <div className="flex-1 flex items-center justify-center min-h-screen bg-background text-foreground">
+                <div className="p-4 bg-destructive/10 rounded border border-destructive/50">
                     <h2 className="text-xl font-bold mb-2">Error</h2>
                     <p>{error}</p>
                     <Button onClick={() => router.replace('/dashboard')} className="mt-4" variant="destructive">
@@ -385,7 +385,7 @@ export default function LiveInterview() {
                     autoGainControl: true,
                 },
             }}
-            className="h-screen w-screen bg-black"
+            className="h-screen w-screen bg-background"
             onError={(err) => {
                 console.error("LiveKit Error:", err);
                 toast.error(`Connection error: ${err.message}`);
@@ -489,8 +489,8 @@ export default function LiveInterview() {
                     />
 
                     {isDisconnected && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
-                            <div className="max-w-md w-full bg-card border border-white/10 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4">
+                            <div className="max-w-md w-full bg-card border border-border/50 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
                                 <div className="flex flex-col items-center text-center space-y-6">
                                     <div className="relative">
                                         <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -502,13 +502,13 @@ export default function LiveInterview() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <h3 className="text-2xl font-black uppercase tracking-tighter text-white">Operational Link Severed</h3>
-                                        <p className="text-sm text-muted-foreground font-bold tracking-widest uppercase">
-                                            Attempting to stabilize uplink... {reconnectCountdown}s
+                                        <h3 className="text-2xl font-bold text-foreground">Connection Lost</h3>
+                                        <p className="text-sm text-muted-foreground font-medium">
+                                            Attempting to reconnect... {reconnectCountdown}s
                                         </p>
                                     </div>
 
-                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-destructive transition-all duration-1000 ease-linear"
                                             style={{ width: `${(reconnectCountdown / 60) * 100}%` }}
@@ -518,16 +518,16 @@ export default function LiveInterview() {
                                     <div className="flex flex-col w-full gap-3">
                                         <Button
                                             onClick={handleReconnect}
-                                            className="h-12 bg-primary hover:bg-primary/90 text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                                            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl shadow-xl shadow-primary/20"
                                         >
-                                            Force Reconnect Now
+                                            Reconnect Now
                                         </Button>
                                         <Button
                                             variant="ghost"
                                             onClick={() => router.replace("/dashboard")}
-                                            className="h-12 text-muted-foreground hover:text-white uppercase tracking-widest text-[10px] font-bold"
+                                            className="h-12 text-muted-foreground hover:text-foreground text-sm font-medium"
                                         >
-                                            Return to Headquarters
+                                            Return to Dashboard
                                         </Button>
                                     </div>
                                 </div>

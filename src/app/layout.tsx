@@ -43,6 +43,18 @@ export default function RootLayout({
                   if (colorTheme && colorTheme !== 'purple') {
                     root.setAttribute('data-color-theme', colorTheme);
                   }
+
+                  // Polyfill Promise.withResolvers for PDF.js compatibility
+                  if (typeof Promise.withResolvers === 'undefined') {
+                    Promise.withResolvers = function() {
+                      let resolve, reject;
+                      const promise = new Promise((res, rej) => {
+                        resolve = res;
+                        reject = rej;
+                      });
+                      return { promise, resolve, reject };
+                    };
+                  }
                 } catch (e) {}
               })();
             `,

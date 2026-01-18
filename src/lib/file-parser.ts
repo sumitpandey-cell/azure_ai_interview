@@ -1,7 +1,4 @@
-// Set up the worker for PDF.js - only in browser
-if (typeof window !== 'undefined') {
-    // We will import pdfjs dynamically inside parsePDF to avoid top-level issues
-}
+import './polyfills';
 
 /**
  * Parses a PDF file and extracts its text content
@@ -9,27 +6,44 @@ if (typeof window !== 'undefined') {
 export async function parsePDF(file: File): Promise<string> {
     if (typeof window === 'undefined') return '';
 
-    // Dynamic import to avoid SSR issues
-    const pdfjs = await import('pdfjs-dist');
+    try {
+        // Use the legacy build of pdfjs-dist which is much more stable in Next.js
+        // @ts-ignore
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
-    // Set up worker
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+        // version is now 4.4.168
+        const version = pdfjs.version || '4.4.168';
 
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
+        // Set worker using CDN matching this version
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
 
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-        fullText += pageText + '\n';
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+
+            // Extract text from items
+            const pageText = textContent.items
+                .map((item: any) => (item as any).str)
+                .join(' ');
+
+            fullText += pageText + '\n';
+        }
+
+        return fullText.trim();
+    } catch (error: any) {
+        console.error("PDF Parsing Error:", error);
+
+        if (error?.message?.includes('Object.defineProperty')) {
+            throw new Error("PDF compatibility issue. Please try copying the text or use a .txt/.docx file.");
+        }
+
+        throw new Error(`Failed to parse PDF: ${error.message || 'Unknown error'}`);
     }
-
-    return fullText.trim();
 }
 
 /**

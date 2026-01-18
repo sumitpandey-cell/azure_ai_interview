@@ -342,7 +342,7 @@ export default function Settings() {
 
     return (
         <DashboardLayout>
-            <div className="w-full space-y-8 pb-12 mx-auto pt-10 sm:pt-0">
+            <div className="w-full space-y-8 pb-12 mx-auto sm:pt-0">
                 {/* Header */}
                 <div className="flex flex-col gap-2">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>

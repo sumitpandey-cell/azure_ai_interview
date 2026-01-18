@@ -140,7 +140,7 @@ export default function StartInterview() {
 
         try {
             const text = await parseFile(file);
-            form.setValue('jobDescription', text);
+            form.setValue('jobDescription', `Attached file: ${file.name}\n${text}`);
             toast.success("Job description extracted successfully", { id: toastId });
         } catch (error) {
             console.error("Error reading file:", error);

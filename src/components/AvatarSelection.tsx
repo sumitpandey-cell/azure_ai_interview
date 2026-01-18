@@ -8,9 +8,10 @@ interface AvatarSelectionProps {
     selectedAvatar: InterviewerAvatar;
     onSelect: (avatar: InterviewerAvatar) => void;
     variant?: 'default' | 'compact';
+    disabled?: boolean;
 }
 
-export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' }: AvatarSelectionProps) {
+export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default', disabled = false }: AvatarSelectionProps) {
     const getAvatarIcon = (avatar: InterviewerAvatar) => {
         switch (avatar.id) {
             case 'kirti': return Heart;
@@ -43,7 +44,7 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' 
         return (
             <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between px-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Interviewer Persona</span>
+                    <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60">Interviewer Persona</span>
                     <span className="text-[10px] font-bold text-primary flex items-center gap-1">
                         <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                         AI Verified
@@ -56,8 +57,9 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' 
                         return (
                             <button
                                 key={avatar.id}
-                                onClick={() => onSelect(avatar)}
-                                className={`relative h-12 w-12 rounded-xl flex items-center justify-center text-2xl transition-all duration-300 hover:scale-110 active:scale-95 group ${isSelected
+                                onClick={() => !disabled && onSelect(avatar)}
+                                disabled={disabled}
+                                className={`relative h-12 w-12 rounded-xl flex items-center justify-center text-2xl transition-all duration-300 group ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:scale-110 active:scale-95'} ${isSelected
                                     ? `bg-gradient-to-br ${avatar.color} ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/20`
                                     : 'bg-muted/50 grayscale hover:grayscale-0'
                                     }`}
@@ -125,8 +127,8 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' 
                             return (
                                 <div
                                     key={avatar.id}
-                                    className="group relative transition-all duration-500 ease-out"
-                                    onClick={() => onSelect(avatar)}
+                                    className={`group relative transition-all duration-500 ease-out ${disabled ? 'pointer-events-none opacity-50' : ''}`}
+                                    onClick={() => !disabled && onSelect(avatar)}
                                 >
                                     {/* Avatar Circle */}
                                     <div
@@ -196,13 +198,14 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' 
 
                                                 {/* Action Button */}
                                                 <button
+                                                    disabled={disabled}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onSelect(avatar);
+                                                        if (!disabled) onSelect(avatar);
                                                     }}
                                                     className={`w-full py-3 px-4 rounded-xl text-sm font-bold 
                                                     transition-all duration-300 shadow-lg 
-                                                    flex items-center justify-center gap-2 group/btn hover:scale-[1.02] active:scale-[0.98]
+                                                    flex items-center justify-center gap-2 group/btn ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:scale-[1.02] active:scale-[0.98]'}
                                                     ${isSelected
                                                             ? 'bg-primary text-primary-foreground shadow-primary/20'
                                                             : 'bg-primary/90 hover:bg-primary text-primary-foreground shadow-primary/20'
@@ -210,7 +213,7 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default' 
                                                 >
                                                     <Mic size={16} />
                                                     {isSelected ? 'Selected' : 'Select Interviewer'}
-                                                    <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                                                    <ChevronRight size={16} className={disabled ? '' : "group-hover/btn:translate-x-1 transition-transform"} />
                                                 </button>
                                             </div>
                                         </div>

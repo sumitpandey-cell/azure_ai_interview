@@ -113,6 +113,7 @@ export function CircularBlobVisualizer({
         let smoothedLocalVolume = 0;
 
         const animate = () => {
+            const isDark = document.documentElement.classList.contains('dark');
             ctx.clearRect(0, 0, size, size);
 
             let agentVolume = 0;
@@ -122,16 +123,20 @@ export function CircularBlobVisualizer({
                 if (agentAnalyserRef.current.context.state === 'suspended') {
                     (agentAnalyserRef.current.context as AudioContext).resume();
                 }
-                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
-                agentVolume = Array.from(agentDataRef.current).reduce((a, b) => a + b, 0) / agentDataRef.current.length;
+                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current as any);
+                let sum = 0;
+                for (let i = 0; i < agentDataRef.current.length; i++) sum += agentDataRef.current[i];
+                agentVolume = sum / agentDataRef.current.length;
             }
 
             if (localAnalyserRef.current && localDataRef.current) {
                 if (localAnalyserRef.current.context.state === 'suspended') {
                     (localAnalyserRef.current.context as AudioContext).resume();
                 }
-                localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
-                localVolume = Array.from(localDataRef.current).reduce((a, b) => a + b, 0) / localDataRef.current.length;
+                localAnalyserRef.current.getByteFrequencyData(localDataRef.current as any);
+                let sum = 0;
+                for (let i = 0; i < localDataRef.current.length; i++) sum += localDataRef.current[i];
+                localVolume = sum / localDataRef.current.length;
             }
 
             // Smoothing
@@ -146,20 +151,21 @@ export function CircularBlobVisualizer({
             const AGENT_ACTIVE = state === "speaking" || smoothedAgentVolume > 10;
             const LOCAL_ACTIVE = smoothedLocalVolume > 12;
 
-            // Base Colors
+            // Base Colors & Opacities based on theme
             let primaryColor = { r: 168, g: 85, b: 247 }; // Purple (Agent)
-            let glowOpacity = 0.15;
+            let glowOpacity = isDark ? 0.15 : 0.25;
 
             if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
                 primaryColor = { r: 251, g: 191, b: 36 }; // Amber (Local)
             } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
-                primaryColor = { r: 71, g: 85, b: 105 }; // Slate (Idle)
-                glowOpacity = 0.05;
+                // Adaptive Idle Color
+                primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 };
+                glowOpacity = isDark ? 0.08 : 0.12;
             }
 
             // Background Ambient Glow
             const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size / 2);
-            const dynamicGlow = glowOpacity + normalizedVolume * 0.4;
+            const dynamicGlow = glowOpacity + (normalizedVolume * (isDark ? 0.4 : 0.3));
             glowGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`);
             glowGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
             ctx.fillStyle = glowGradient;
@@ -171,9 +177,8 @@ export function CircularBlobVisualizer({
 
             const time = Date.now() / 1000;
 
-            // Sort particles by Z-depth for correct rendering (optional for simple dots but better)
+            // Projected Particles
             const projectedParticles = particlesRef.current.map(p => {
-                // Spherical to Cartesian
                 let x = Math.sin(p.phi) * Math.cos(p.theta);
                 let y = Math.sin(p.phi) * Math.sin(p.theta);
                 let z = Math.cos(p.phi);
@@ -188,7 +193,6 @@ export function CircularBlobVisualizer({
                 const z2 = y * Math.sin(rotationX) + z * Math.cos(rotationX);
                 y = y2; z = z2;
 
-                // Displacement / Noise
                 const noise = Math.sin(p.phi * 5 + time * 2) * Math.cos(p.theta * 5 + time * 3) * 0.05;
                 const volumeOffset = normalizedVolume * 0.4;
                 const radius = baseRadius * (1 + noise + volumeOffset);
@@ -197,31 +201,33 @@ export function CircularBlobVisualizer({
                     x: centerX + x * radius,
                     y: centerY + y * radius,
                     z,
-                    size: p.size * (z + 2) / 2 // Perspective size
+                    size: p.size * (z + 2) / 2
                 };
             }).sort((a, b) => a.z - b.z);
 
             // Render Particles
             projectedParticles.forEach(p => {
-                const opacity = (p.z + 1.5) / 2.5; // Depth-based opacity
-                const brightness = Math.floor(200 + p.z * 55);
+                const depthFactor = (p.z + 1.5) / 2.5;
+                const opacity = isDark ? depthFactor : depthFactor * 0.8 + 0.2; // Higher base opacity in light mode
 
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 
                 if (AGENT_ACTIVE) {
-                    ctx.fillStyle = `rgba(192, 132, 252, ${opacity})`; // purple-400
+                    ctx.fillStyle = isDark ? `rgba(192, 132, 252, ${opacity})` : `rgba(147, 51, 234, ${opacity})`;
                 } else if (LOCAL_ACTIVE) {
-                    ctx.fillStyle = `rgba(252, 211, 77, ${opacity})`; // amber-300
+                    ctx.fillStyle = isDark ? `rgba(252, 211, 77, ${opacity})` : `rgba(217, 119, 6, ${opacity})`;
                 } else {
-                    ctx.fillStyle = `rgba(148, 163, 184, ${opacity * 0.5})`; // slate-400
+                    // Idle state particles
+                    const idleColor = isDark ? '148, 163, 184' : '51, 65, 85';
+                    ctx.fillStyle = `rgba(${idleColor}, ${opacity * (isDark ? 0.5 : 0.7)})`;
                 }
 
                 ctx.fill();
 
                 // Add point glow for front particles
-                if (p.z > 0.5 && (AGENT_ACTIVE || LOCAL_ACTIVE)) {
-                    ctx.shadowBlur = 4;
+                if (p.z > 0.4 && (AGENT_ACTIVE || LOCAL_ACTIVE)) {
+                    ctx.shadowBlur = isDark ? 4 : 2;
                     ctx.shadowColor = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${opacity})`;
                     ctx.fill();
                     ctx.shadowBlur = 0;

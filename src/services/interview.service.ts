@@ -118,11 +118,10 @@ export const interviewService = {
                 .from("interview_sessions")
                 .update(updates)
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select(); // Reverted .single() as it can cause 406 on certain RLS configs
 
             if (error) throw error;
-            return data;
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error updating interview session:", error);
             return null;
@@ -171,24 +170,30 @@ export const interviewService = {
                 .from("interview_sessions")
                 .update(updateData)
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select();
 
             if (error) {
                 console.error("❌ [completeSession] Supabase error:", error);
                 throw error;
             }
 
+            if (!data || data.length === 0) {
+                console.warn("⚠️ [completeSession] No row updated. This might be an RLS issue or the session doesn't exist.");
+                return null;
+            }
+
+            const session = data[0];
+
             console.log("✓ Interview session completed:", sessionId);
 
             // Check and award badges after completion
             try {
-                await badgeService.checkAndAwardBadges(data.user_id);
+                await badgeService.checkAndAwardBadges(session.user_id);
             } catch (badgeError) {
                 console.error("Error checking badges after completion:", badgeError);
             }
 
-            return data;
+            return session;
         } catch (error) {
             console.error("❌ [completeSession] Error completing interview session:", error);
             console.error("❌ [completeSession] Error details:", JSON.stringify(error, null, 2));
@@ -280,12 +285,11 @@ export const interviewService = {
                     }
                 })
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select();
 
             if (error) throw error;
             console.log("✓ Session abandoned:", sessionId);
-            return data;
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error abandoning session:", error);
             return null;
