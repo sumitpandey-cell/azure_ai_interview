@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering - prevents static generation during build
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";

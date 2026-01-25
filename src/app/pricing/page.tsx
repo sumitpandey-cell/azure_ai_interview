@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering - prevents static generation during build
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from "react";
 import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
