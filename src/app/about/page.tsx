@@ -35,26 +35,6 @@ export default function AboutPage() {
                     </div>
                 </div>
 
-                {/* Impact Stats */}
-                <div className="container mx-auto px-4 mb-32">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                        {[
-                            { label: "Interviews Conducted", value: "50k+", icon: Zap },
-                            { label: "Success Rate", value: "92%", icon: Award },
-                            { label: "Countries Served", value: "45+", icon: Globe },
-                            { label: "Partner Companies", value: "120+", icon: Briefcase },
-                        ].map((stat, i) => (
-                            <div key={i} className="group p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-indigo-500/20 hover:bg-white/[0.04] transition-all duration-300 text-center">
-                                <div className="mx-auto w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                    <stat.icon className="h-6 w-6 text-indigo-400" />
-                                </div>
-                                <div className="text-3xl font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">{stat.value}</div>
-                                <div className="text-sm text-slate-500">{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
                 {/* Vision/Mission/Values Grid */}
                 <div className="container mx-auto px-4 mb-20 animate-in fade-in slide-in-from-bottom-12 duration-1000 fill-mode-forwards" style={{ animationDelay: '200ms' }}>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -128,18 +108,6 @@ export default function AboutPage() {
                     </div>
                 </div>
 
-                {/* Trusted By Section (New Component to fill gap) */}
-                <div className="container mx-auto px-4 mb-32">
-                    <div className="pt-8 flex flex-col items-center gap-8 border-t border-b border-white/5 py-12 bg-white/[0.01]">
-                        <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Trusted by engineers from</p>
-                        <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix', 'Uber', 'Airbnb', 'Stripe'].map((company) => (
-                                <span key={company} className="text-xl md:text-2xl font-bold text-white">{company}</span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
                 {/* The "Timeline" Story Section */}
                 <div className="container mx-auto px-4 mb-32">
                     <div className="max-w-4xl mx-auto">
@@ -183,7 +151,7 @@ export default function AboutPage() {
                                 <span className="text-indigo-400">next interview?</span>
                             </h2>
                             <p className="text-xl text-slate-400 mb-10 leading-relaxed">
-                                Join the community of high-performers who trust Arjuna AI to help them land offers at the world's most competitive companies.
+                                Join the thousands of high-performers who trust Arjuna AI to help them land offers at the world's most competitive companies.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <Button size="lg" className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105" asChild>

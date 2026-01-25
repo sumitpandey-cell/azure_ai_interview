@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSearchParams } from "next/navigation";
+import { PaymentStatusModal, type PaymentStatus } from "@/components/PaymentStatusModal";
 import { getAvatarUrl, getInitials } from "@/lib/avatar-utils";
 import {
   DropdownMenu,
@@ -65,6 +67,7 @@ interface UserMetadata {
 export default function Dashboard() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Type-safe access to user metadata
   const userMetadata = user?.user_metadata as UserMetadata | undefined;
@@ -97,6 +100,12 @@ export default function Dashboard() {
     currentSessionId: generatingSessionId,
     generateFeedbackInBackground
   } = useFeedback();
+
+  const [paymentModal, setPaymentModal] = useState<{
+    isOpen: boolean;
+    status: PaymentStatus;
+    details?: string;
+  }>({ isOpen: false, status: "success" });
 
   // Sort sessions: generating feedback first, then by date, filtering only completed or truly in_progress
   const displaySessions = useMemo(() => {
@@ -201,7 +210,31 @@ export default function Dashboard() {
   }, [shouldRefreshDashboard]);
 
   // Use subscription hook for all subscription data
-  const { allowed, loading: subscriptionLoading, remaining_seconds } = useSubscription();
+  const { allowed, loading: subscriptionLoading, remaining_seconds, invalidateCache } = useSubscription();
+
+  // Handle payment success redirect
+  useEffect(() => {
+    const status = searchParams.get('payment') as PaymentStatus | null;
+    if (!status) return;
+
+    // Pricing page handles failures/cancellations
+    if (status === 'failed' || status === 'cancelled') return;
+
+    setPaymentModal({
+      isOpen: true,
+      status,
+      details: searchParams.get('reason') || undefined
+    });
+
+    if (status === 'success') {
+      invalidateCache();
+      loadData(true);
+    }
+
+    // Clear query params
+    const newPath = window.location.pathname;
+    window.history.replaceState({}, '', newPath);
+  }, [searchParams, invalidateCache]);
 
   const startInterview = async () => {
     // Check balance before proceeding
@@ -701,6 +734,13 @@ export default function Dashboard() {
           </div>
         </div>
       </DashboardLayout>
+
+      <PaymentStatusModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}
+        status={paymentModal.status}
+        details={paymentModal.details}
+      />
     </>
   );
 }

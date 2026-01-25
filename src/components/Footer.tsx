@@ -44,7 +44,6 @@ export function Footer() {
                             <h4 className="text-white font-semibold mb-2">Product</h4>
 
                             <Link href="/#features" className="text-slate-400 hover:text-white transition-colors w-fit">Features</Link>
-                            <Link href="/community" className="text-slate-400 hover:text-white transition-colors w-fit">Community</Link>
                             <Link href="/faq" className="text-slate-400 hover:text-white transition-colors w-fit">FAQ</Link>
                         </div>
 
@@ -52,7 +51,6 @@ export function Footer() {
                         <div className="flex flex-col gap-4">
                             <h4 className="text-white font-semibold mb-2">Company</h4>
                             <Link href="/about" className="text-slate-400 hover:text-white transition-colors w-fit">About</Link>
-                            <Link href="/careers" className="text-slate-400 hover:text-white transition-colors w-fit">Careers</Link>
                             <Link href="/blog" className="text-slate-400 hover:text-white transition-colors w-fit">Blog</Link>
                             <Link href="/contact" className="text-slate-400 hover:text-white transition-colors w-fit">Contact</Link>
                         </div>

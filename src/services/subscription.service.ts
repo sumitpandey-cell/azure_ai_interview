@@ -59,10 +59,10 @@ export const subscriptionService = {
     /**
      * Create a new subscription for user
      */
-    async createSubscription(userId: string, planId: string): Promise<Subscription | null> {
+    async createSubscription(userId: string, planId: string, client = supabase): Promise<Subscription | null> {
         try {
             // Get plan details
-            const { data: plan, error: planError } = await supabase
+            const { data: plan, error: planError } = await client
                 .from("plans")
                 .select("*")
                 .eq("id", planId)
@@ -81,7 +81,7 @@ export const subscriptionService = {
                 current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
             };
 
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("subscriptions")
                 .insert(subscriptionData)
                 .select()
@@ -233,13 +233,13 @@ export const subscriptionService = {
     /**
      * Update subscription plan
      */
-    async updateSubscriptionPlan(userId: string, newPlanId: string): Promise<Subscription | null> {
+    async updateSubscriptionPlan(userId: string, newPlanId: string, client = supabase): Promise<Subscription | null> {
         try {
-            const subscription = await this.getSubscription(userId);
+            const subscription = await this.getSubscription(userId, client);
             if (!subscription) return null;
 
             // Get new plan details
-            const { data: plan, error: planError } = await supabase
+            const { data: plan, error: planError } = await client
                 .from("plans")
                 .select("*")
                 .eq("id", newPlanId)
@@ -248,7 +248,7 @@ export const subscriptionService = {
             if (planError) throw planError;
 
             // Update subscription
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("subscriptions")
                 .update({
                     plan_id: newPlanId,

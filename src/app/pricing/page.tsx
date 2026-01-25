@@ -11,6 +11,9 @@ import { subscriptionService, type Plan } from "@/services/subscription.service"
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Footer } from "@/components/Footer";
+import { useSearchParams } from "next/navigation";
+import { PaymentStatusModal, type PaymentStatus } from "@/components/PaymentStatusModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, any> = {
     "Free": {
@@ -69,9 +72,35 @@ export default function Pricing() {
     // Safely access properties
     const subscriptionType = subscription?.type;
     const currentPlanName = subscription?.plan_name;
-
+    const { user } = useAuth();
     const [fetchedPlans, setFetchedPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
+    const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(null);
+    const [paymentModal, setPaymentModal] = useState<{
+        isOpen: boolean;
+        status: PaymentStatus;
+        details?: string;
+    }>({ isOpen: false, status: "success" });
+    const searchParams = useSearchParams();
+
+    // Handle payment feedback
+    useEffect(() => {
+        const status = searchParams.get('payment') as PaymentStatus | null;
+        if (!status) return;
+
+        // Skip success/pending on pricing page as they redirect to dashboard
+        if (status === 'success' || status === 'pending') return;
+
+        setPaymentModal({
+            isOpen: true,
+            status,
+            details: searchParams.get('reason') || undefined
+        });
+
+        // Clear the query params
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+    }, [searchParams]);
 
     useEffect(() => {
         const loadPlans = async () => {
@@ -88,9 +117,56 @@ export default function Pricing() {
         loadPlans();
     }, []);
 
-    const handleSubscribe = (plan: Plan) => {
+    const handleSubscribe = async (plan: Plan) => {
         if (plan.name === "Free") return;
-        toast.info(`The ${plan.name} plan is coming soon! Payments are currently on hold.`);
+
+        if (!user) {
+            toast.error("Please sign in to upgrade your plan");
+            return;
+        }
+
+        setSubscribingPlanId(plan.id);
+        try {
+            const response = await fetch("/api/payments/create-order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    planId: plan.id,
+                    amount: plan.price_monthly,
+                    customerName: user.user_metadata?.full_name || user.email?.split('@')[0],
+                    customerEmail: user.email,
+                    customerPhone: user.user_metadata?.phone || "9999999999",
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to create order");
+            }
+
+            const { payment_session_id } = data;
+
+            // Import load here to avoid SSR issues if any, or at the top
+            const { load } = await import("@cashfreepayments/cashfree-js");
+            const cashfree = await load({
+                mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV as "sandbox" | "production") || "sandbox",
+            });
+
+            if (cashfree) {
+                await cashfree.checkout({
+                    paymentSessionId: payment_session_id,
+                    redirectTarget: "_self",
+                });
+            }
+        } catch (error: any) {
+            console.error("Payment Error:", error);
+            toast.error(error.message || "Payment initialization failed");
+        } finally {
+            setSubscribingPlanId(null);
+        }
     };
 
     return (
@@ -195,9 +271,10 @@ export default function Pricing() {
                                                 )}
                                                 variant={isCurrentPlan ? "ghost" : "default"}
                                                 onClick={() => handleSubscribe(plan)}
-                                                disabled={isCurrentPlan}
+                                                disabled={isCurrentPlan || !!subscribingPlanId}
                                             >
-                                                <span className="relative z-10">
+                                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                                    {subscribingPlanId === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
                                                     {isCurrentPlan ? "Active Protocol" : `Upgrade to ${plan.name}`}
                                                 </span>
                                             </Button>
@@ -216,6 +293,13 @@ export default function Pricing() {
             </main>
 
             <Footer />
+
+            <PaymentStatusModal
+                isOpen={paymentModal.isOpen}
+                onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}
+                status={paymentModal.status}
+                details={paymentModal.details}
+            />
         </div>
     );
 }

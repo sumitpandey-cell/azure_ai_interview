@@ -494,7 +494,7 @@ const Leaderboard = () => {
               Leaderboard
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              See how you stack up against the global developer community.
+              See how you stack up against the global network of developers.
             </p>
 
             {!loading && users.length > 0 && (

@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
 import { TransitionButton } from "@/components/TransitionButton";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -43,21 +44,9 @@ const SectionWrapper = ({ children, className, id }: { children: React.ReactNode
 };
 
 export default function Landing() {
-  const [scrolled, setScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const heroHeight = window.innerHeight;
-
-      setScrolled(scrollY > 20);
-      // Hide navbar when scrolled past the hero section (with a small buffer)
-      setHidden(scrollY > heroHeight - 100);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    setMounted(true);
   }, []);
 
   const features = [
@@ -185,6 +174,18 @@ export default function Landing() {
     restDelta: 0.001
   });
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        {/* Simple loader or just the background to prevent flash */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
+          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-purple-600/20 rounded-full blur-[120px] translate-x-1/4" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
       {/* JSON-LD Structured Data for SEO */}
@@ -216,108 +217,7 @@ export default function Landing() {
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]"
         style={{ scaleX }}
       /> */}
-      {/* Navbar */}
-      {/* Navbar */}
-      <header
-        className={`fixed left-0 right-0 z-50 transition-all duration-500 ease-in-out ${hidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-          } ${scrolled
-            ? "top-4 flex justify-center px-3"
-            : "top-0 py-6"
-          }`}
-      >
-        <div
-          className={`transition-all duration-500 ease-in-out flex items-center justify-between ${scrolled
-            ? "bg-[#0f1117]/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-4xl ring-1 ring-white/5"
-            : "w-full container mx-auto px-4 sm:px-6 bg-transparent border-transparent border ring-0"
-            }`}
-        >
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-            <div className="relative">
-              <img
-                src="/arjuna-icon.png"
-                alt="Arjuna AI"
-                className="h-9 w-9 object-contain drop-shadow-lg"
-              />
-            </div>
-            <span className={`bg-clip-text text-transparent transition-all duration-300 ${scrolled
-              ? "bg-gradient-to-r from-white to-slate-400"
-              : "bg-gradient-to-r from-white to-indigo-200"
-              }`}>
-              Arjuna AI
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className={`hidden md:flex items-center gap-8 text-sm font-medium transition-colors duration-300 ${scrolled ? "text-slate-300" : "text-slate-300"
-            }`}>
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">
-              How It Works
-            </a>
-            <a href="#testimonials" className="hover:text-white transition-colors">
-              Testimonials
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block">
-              <TransitionButton
-                variant={scrolled ? "ghost" : "secondary"}
-                href="/auth"
-                className={`transition-all duration-300 ${scrolled
-                  ? "text-white hover:bg-white/10 rounded-full px-6"
-                  : "bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.45)]"
-                  } font-medium border-0`}
-              >
-                {scrolled ? "Login" : "Get Started"}
-              </TransitionButton>
-            </div>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              className={`md:hidden p-2 text-white transition-colors hover:bg-white/10 rounded-full`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="absolute top-full left-4 right-4 mt-2 bg-[#0f1117] border border-white/10 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-5 z-50">
-            <a
-              href="#features"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              How It Works
-            </a>
-            <a
-              href="#testimonials"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Testimonials
-            </a>
-            <TransitionButton
-              href="/auth"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-            >
-              Get Started
-            </TransitionButton>
-          </div>
-        )}
-      </header>
+      <PublicHeader />
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
         {/* Animated Background Effects - Cool Blue/Purple/Indigo Theme */}
@@ -1199,7 +1099,7 @@ export default function Landing() {
               </h2>
 
               <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Join a community of developers, product managers, and designers who are acing their interviews with Aura. Real stories, real results.
+                Join thousands of developers, product managers, and designers who are acing their interviews with Arjuna AI. Real stories, real results.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-8 pt-6">

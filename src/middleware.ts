@@ -14,9 +14,7 @@ const PUBLIC_ROUTES = [
     '/faq',
     '/terms',
     '/privacy',
-    '/careers',
     '/blog',
-    '/community',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated
