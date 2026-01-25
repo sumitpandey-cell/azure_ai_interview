@@ -1,9 +1,6 @@
 "use client";
 
-// Force dynamic rendering - prevents static generation during build
-export const dynamic = 'force-dynamic';
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -67,7 +64,7 @@ interface UserMetadata {
   gender?: string;
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -745,5 +742,21 @@ export default function Dashboard() {
         details={paymentModal.details}
       />
     </>
+  );
+}
+
+// Wrap in Suspense to handle useSearchParams properly
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="relative">
+          <div className="h-16 w-16 border-4 border-primary/20 rounded-full animate-ping absolute" />
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent relative z-10" />
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

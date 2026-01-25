@@ -1,9 +1,6 @@
 "use client";
 
-// Force dynamic rendering - prevents static generation during build
-export const dynamic = 'force-dynamic';
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +65,7 @@ const PLAN_DETAILS: Record<string, any> = {
     }
 };
 
-export default function Pricing() {
+function PricingContent() {
     // We try to get subscription info, but it might be null if not logged in. 
     // We should handle that.
     const subscription = useSubscription();
@@ -304,5 +301,21 @@ export default function Pricing() {
                 details={paymentModal.details}
             />
         </div>
+    );
+}
+
+// Wrap in Suspense to handle useSearchParams properly
+export default function Pricing() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-[#0A0A0B]">
+                <div className="relative">
+                    <div className="h-16 w-16 border-4 border-indigo-500/20 rounded-full animate-ping absolute" />
+                    <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent relative z-10" />
+                </div>
+            </div>
+        }>
+            <PricingContent />
+        </Suspense>
     );
 }
