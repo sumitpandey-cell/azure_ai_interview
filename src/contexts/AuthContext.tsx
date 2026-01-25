@@ -20,6 +20,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,16 +100,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      router.push("/");
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
       setUser(null);
       setSession(null);
       toast.success("Signed out successfully");
+      router.push("/");
     } catch (error: any) {
+      console.error("Sign out error:", error);
       toast.error(error.message || "Failed to sign out");
-      throw error;
     }
   };
 
@@ -130,9 +132,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password reset email sent! Please check your inbox.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+      throw error;
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password updated successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signUp, signIn, signOut, signInWithGoogle }}
+      value={{ user, session, loading, signUp, signIn, signOut, signInWithGoogle, resetPassword, updatePassword }}
     >
       {children}
     </AuthContext.Provider>

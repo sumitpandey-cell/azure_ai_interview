@@ -187,6 +187,30 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Arjuna AI",
+            "operatingSystem": "Web",
+            "applicationCategory": "EducationalApplication",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "description": "Arjuna AI is an AI-powered interview coaching platform that helps candidates practice real-time interviews with instant scoring and personalized feedback.",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "ratingCount": "20000"
+            }
+          })
+        }}
+      />
       {/* Scroll Progress Bar - Disabled */}
       {/* <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]"

@@ -48,7 +48,7 @@ import "@/styles/arjuna-animations.css";
 interface LiveInterviewSessionProps {
     sessionId: string;
     userId: string;
-    onEndSession: (hintsUsed?: number) => void;
+    onEndSession: (hintsToUse?: number, skipRedirect?: boolean) => void;
     remainingMinutes: number;
     remainingSeconds: number;
     isLowTime: boolean;
@@ -60,6 +60,7 @@ interface LiveInterviewSessionProps {
     sessionData?: InterviewSession | null;
     onAgentReady?: () => void;
     onHintsUpdate?: (count: number) => void;
+    isEnding?: boolean;
 }
 
 export function LiveInterviewSession({
@@ -74,6 +75,7 @@ export function LiveInterviewSession({
     sessionData = null,
     onAgentReady,
     onHintsUpdate,
+    isEnding = false,
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
     const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
@@ -100,11 +102,6 @@ export function LiveInterviewSession({
 
     const [showTranscript, setShowTranscript] = useState(true);
     const [isEndCallDialogOpen, setIsEndCallDialogOpen] = useState(false);
-    const [sentimentData, setSentimentData] = useState<{
-        sentiment: string;
-        confidence: number;
-        scores: { positive: number; neutral: number; negative: number };
-    } | null>(null);
 
     // Set initial mic/camera state
     useEffect(() => {
@@ -169,22 +166,6 @@ export function LiveInterviewSession({
                 } catch (error) {
                     console.error("❌ [HINT DEBUG] Failed to parse hint response:", error);
                     setIsHintLoading(false);
-                }
-            } else if (topic === "sentiment_update") {
-                try {
-                    const decoder = new TextDecoder();
-                    const message = decoder.decode(payload);
-                    const data = JSON.parse(message);
-                    if (data.type === "sentiment_update") {
-                        console.log("📊 Sentiment Update Received:", data);
-                        setSentimentData({
-                            sentiment: data.sentiment,
-                            confidence: data.confidence,
-                            scores: data.scores
-                        });
-                    }
-                } catch (error) {
-                    console.error("Failed to parse sentiment update:", error);
                 }
             } else {
                 console.log("ℹ️ [HINT DEBUG] Ignoring data with topic:", topic);
@@ -276,10 +257,10 @@ export function LiveInterviewSession({
                 sessionId={sessionId}
                 userId={userId}
                 agentAudioTrack={agentAudioTrack}
-                sentimentData={sentimentData}
+                isEnding={isEnding}
             />
 
-            <div className="min-h-screen lg:h-screen w-screen bg-background text-muted-foreground flex flex-col p-3 lg:p-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden font-sans select-none relative">
+            <div className="min-h-screen lg:h-screen w-screen bg-background text-muted-foreground flex flex-col p-3 lg:p-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden font-sans relative">
 
                 {/* Background Ambient Glows */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">

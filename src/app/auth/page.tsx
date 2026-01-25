@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const signUpSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -34,8 +35,13 @@ const signInSchema = z.object({
     password: z.string().min(1, "Password is required"),
 });
 
+const forgotPasswordSchema = z.object({
+    email: z.string().email("Invalid email address"),
+});
+
 type SignUpForm = z.infer<typeof signUpSchema>;
 type SignInForm = z.infer<typeof signInSchema>;
+type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
 function AuthContent() {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -44,7 +50,8 @@ function AuthContent() {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
-    const { signUp, signIn, signInWithGoogle, user } = useAuth();
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const { signUp, signIn, signInWithGoogle, resetPassword, user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirectTo') || '/dashboard';
@@ -84,6 +91,13 @@ function AuthContent() {
         defaultValues: {
             email: "",
             password: "",
+        },
+    });
+
+    const forgotPasswordForm = useForm<ForgotPasswordForm>({
+        resolver: zodResolver(forgotPasswordSchema),
+        defaultValues: {
+            email: "",
         },
     });
 
@@ -190,6 +204,16 @@ function AuthContent() {
             await signIn(values.email, values.password);
         } catch (error) {
             pendingRedirect.current = false;
+        }
+    };
+
+    const handleForgotPassword = async (values: ForgotPasswordForm) => {
+        try {
+            await resetPassword(values.email);
+            setShowForgotPassword(false);
+            forgotPasswordForm.reset();
+        } catch (error) {
+            // Error is handled in the context
         }
     };
 
@@ -456,9 +480,13 @@ function AuthContent() {
                                             />
 
                                             <div className="text-right">
-                                                <Link href="/forgot-password" className="text-xs text-white/60 hover:text-white transition-colors">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowForgotPassword(true)}
+                                                    className="text-xs text-white/60 hover:text-white transition-colors"
+                                                >
                                                     Forgot Password?
-                                                </Link>
+                                                </button>
                                             </div>
 
                                             <Button type="submit" className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all" disabled={signInForm.formState.isSubmitting}>
@@ -619,6 +647,71 @@ function AuthContent() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Forgot Password Dialog */}
+            <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+                <DialogContent className="sm:max-w-md bg-[#0A0F1E] border-white/10 text-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">
+                            Reset Password
+                        </DialogTitle>
+                        <DialogDescription className="text-white/60">
+                            Enter your email address and we'll send you a link to reset your password.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form {...forgotPasswordForm}>
+                        <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-4 mt-4">
+                            <FormField
+                                control={forgotPasswordForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-white text-sm">Email Address</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                                <Input
+                                                    placeholder="johndoe@gmail.com"
+                                                    className="h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 pl-10"
+                                                    {...field}
+                                                />
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowForgotPassword(false);
+                                        forgotPasswordForm.reset();
+                                    }}
+                                    className="flex-1 h-12 bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-xl"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1 h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all"
+                                    disabled={forgotPasswordForm.formState.isSubmitting}
+                                >
+                                    {forgotPasswordForm.formState.isSubmitting ? (
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                            Sending...
+                                        </div>
+                                    ) : (
+                                        "Send Reset Link"
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -33,9 +33,9 @@ export const subscriptionService = {
     /**
      * Get user's current subscription
      */
-    async getSubscription(userId: string): Promise<Subscription | null> {
+    async getSubscription(userId: string, client = supabase): Promise<Subscription | null> {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("subscriptions")
                 .select("*")
                 .eq("user_id", userId)
@@ -100,7 +100,7 @@ export const subscriptionService = {
      * Track usage for a user
      * Updates the seconds_used in the database using an atomic RPC call
      */
-    async trackUsage(userId: string, seconds: number): Promise<boolean> {
+    async trackUsage(userId: string, seconds: number, client = supabase): Promise<boolean> {
         try {
             console.log(`📊 trackUsage called: userId=${userId}, seconds=${seconds}`);
 
@@ -108,9 +108,10 @@ export const subscriptionService = {
 
             // Use the atomic RPC function to increment usage
             // This is safer as it prevents race conditions and handles both subscription and daily_usage
-            const { error } = await (supabase as any).rpc('increment_usage', {
+            const { error } = await (client as any).rpc('increment_usage', {
                 user_uuid: userId,
-                seconds_to_add: Math.round(seconds)
+                seconds_to_add: Math.round(seconds),
+                p_event_id: null
             });
 
             if (error) {
@@ -118,7 +119,7 @@ export const subscriptionService = {
 
                 // Fallback: Try manual update if RPC fails
                 // 1. Update subscriptions table
-                const { data: subscriptions } = await supabase
+                const { data: subscriptions } = await client
                     .from("subscriptions")
                     .select("id, seconds_used")
                     .eq("user_id", userId)
@@ -128,7 +129,7 @@ export const subscriptionService = {
                 if (subscriptions && subscriptions.length > 0) {
                     const sub = subscriptions[0];
                     const newSecondsUsed = (sub.seconds_used || 0) + seconds;
-                    const { error: updateError } = await supabase
+                    const { error: updateError } = await client
                         .from("subscriptions")
                         .update({
                             seconds_used: Math.round(newSecondsUsed),
@@ -228,7 +229,7 @@ export const subscriptionService = {
         return remainingSeconds < 300 && remainingSeconds > 0;
     },
 
-    
+
     /**
      * Update subscription plan
      */

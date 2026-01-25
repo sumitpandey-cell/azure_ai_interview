@@ -48,4 +48,6 @@ database
 .gemini
 .agent
 
+supabase/*
+remove_bg.py
 

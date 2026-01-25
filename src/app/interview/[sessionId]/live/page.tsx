@@ -29,9 +29,10 @@ export default function LiveInterview() {
     const [shouldConnect, setShouldConnect] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isTimerActive, setIsTimerActive] = useState(false);
-    const [sessionStartTime] = useState(Date.now());
+    const lastSyncTimeRef = useRef(Date.now());
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [hintsUsed, setHintsUsed] = useState(0);
+    const isSyncingRef = useRef(false);
 
     const { setCurrentSessionId } = useInterviewStore();
     const currentSessionId = sessionId as string;
@@ -45,9 +46,6 @@ export default function LiveInterview() {
     // Track if session is being ended to prevent duplicate redirects
     const isEndingSession = useRef(false);
 
-    // Track current segment timing locally (don't create resumption on connect)
-    const sessionSegmentStart = useRef<Date | null>(null);
-    const sessionStartTranscriptIndex = useRef<number>(0);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [isDisconnected, setIsDisconnected] = useState(false);
     const [reconnectCountdown, setReconnectCountdown] = useState(60);
@@ -55,7 +53,7 @@ export default function LiveInterview() {
     const reconnectAttempts = useRef(0);
 
     // Will be assigned after being defined
-    let handleEndSession: (hintsUsed?: number) => void;
+    let handleEndSession: (hintsToUse?: number, skipRedirect?: boolean) => void;
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
@@ -64,6 +62,11 @@ export default function LiveInterview() {
         warnAt: [5, 2, 1],
         isActive: isTimerActive,
     });
+
+    const hintsUsedRef = useRef(hintsUsed);
+    useEffect(() => {
+        hintsUsedRef.current = hintsUsed;
+    }, [hintsUsed]);
 
     // Load Session & Token
     useEffect(() => {
@@ -178,174 +181,160 @@ export default function LiveInterview() {
     // Provide a stable reference for the setter to prevent effect flickering
     const setRemainingSeconds = subscriptionTimer.setRemainingSeconds;
 
-    // Unified function to save the current segment duration and resumptions
-    // This is called by onDisconnected, handleEndSession, or unmount cleanup
-    const saveCurrentSegment = useCallback(async (tag: string) => {
-        if (!sessionSegmentStart.current) {
-            console.log(`ℹ️ [${tag}] No active segment to save.`);
-            return 0;
-        }
+    // Shared sync function to avoid duplication
+    const syncDuration = useCallback(async (reason: string) => {
+        if (isEndingSession.current || isSyncingRef.current) return;
 
-        // Capture values and clear ref synchronously to prevent double-tracking
-        const startTime = sessionSegmentStart.current;
-        const startIdx = sessionStartTranscriptIndex.current;
-        sessionSegmentStart.current = null; // Mark as processed IMMEDIATELY
-
-        const endTime = new Date();
-        const durationSeconds = Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
-
-        console.log(`🚀 [${tag}] Saving segment via API: ${durationSeconds} seconds`);
-
-        const data = {
-            sessionId: currentSessionId,
-            durationSeconds,
-            startTranscriptIndex: startIdx,
-            resumedAt: startTime.toISOString(),
-            endedAt: endTime.toISOString()
-        };
-
+        isSyncingRef.current = true;
         try {
-            // Use keepalive: true for cleanup/disconnected tags to ensure it finishes even if tab closes
-            const useKeepAlive = tag === 'cleanup' || tag === 'onDisconnected';
+            const now = Date.now();
+            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
 
-            const response = await fetch('/api/interview/cleanup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-                keepalive: useKeepAlive
-            });
-
-            if (!response.ok) {
-                throw new Error(`API failed with status ${response.status}`);
+            if (deltaSeconds >= 1) {
+                console.log(`⏱️ ${reason}: ${deltaSeconds}s for session ${currentSessionId}`);
+                lastSyncTimeRef.current = now;
+                await interviewService.updateSession(currentSessionId, {
+                    durationSeconds: deltaSeconds
+                });
             }
-
-            const result = await response.json();
-
-            if (result.alreadyProcessed) {
-                console.log(`✅ [${tag}] Segment was already processed (Idempotency skip).`);
-                return 0; // Or return the actual duration if available
-            }
-
-            if (!result.success) {
-                console.error(`❌ [${tag}] Error saving segment via API: ${result.error}`);
-                if (result.remainingSeconds !== undefined) {
-                    setRemainingSeconds(result.remainingSeconds);
-                }
-                return durationSeconds; // Still return duration for local tracking if needed
-            }
-
-            console.log(`✅ [${tag}] Segment saved successfully via API. Actual duration: ${result.actualDuration}s. Remaining: ${result.remainingSeconds}s.`);
-            if (result.remainingSeconds !== undefined) {
-                setRemainingSeconds(result.remainingSeconds);
-            }
-            return result.actualDuration;
         } catch (err) {
-            console.error(`❌ [${tag}] Error saving segment via API:`, err);
-            return durationSeconds;
+            console.error(`❌ Failed to sync duration (${reason}):`, err);
+        } finally {
+            isSyncingRef.current = false;
         }
-    }, [currentSessionId, setRemainingSeconds]);
+    }, [currentSessionId]);
 
-    // Handle browser navigation (back button, close tab, etc.)
+    // Periodic usage and duration sync
     useEffect(() => {
-        const handleBeforeUnload = () => {
-            if (sessionSegmentStart.current && !isEndingSession.current) {
-                // We use a simplified non-async version here because beforeunload doesn't wait
-                const startTime = sessionSegmentStart.current;
-                const endTime = new Date();
-                const durationSeconds = Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
+        if (!isTimerActive || isEndingSession.current) return;
 
-                const data = {
-                    sessionId: currentSessionId,
-                    durationSeconds,
-                    startTranscriptIndex: sessionStartTranscriptIndex.current,
-                    resumedAt: startTime.toISOString(),
-                    endedAt: endTime.toISOString()
-                };
+        console.log("⏱️ Starting periodic usage sync interval");
+        const syncInterval = setInterval(async () => {
+            if (isEndingSession.current) return;
 
-                // CRITICAL: keepalive: true ensures the request is sent even if the page is destroyed
-                fetch('/api/interview/cleanup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                    keepalive: true
-                }).catch(err => console.error('Fire-and-forget cleanup failed:', err));
+            const now = Date.now();
+            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+
+            // Sync every 30 seconds
+            if (deltaSeconds >= 30) {
+                await syncDuration("Periodic sync");
             }
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
+        }, 10000); // Check every 10s
 
         return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            // ONLY track here if it hasn't been tracked already by EndSession or Disconnect
-            if (sessionSegmentStart.current && !isEndingSession.current) {
-                console.log("🔌 Component unmounting, triggered auto-save");
-                saveCurrentSegment("cleanup");
+            console.log("⏱️ Clearing periodic usage sync interval");
+            clearInterval(syncInterval);
+        };
+    }, [isTimerActive, currentSessionId, syncDuration]);
+
+    // Handle mobile browser backgrounding (iOS Safari/Chrome)
+    // Force sync when tab visibility changes to prevent inaccurate duration tracking
+    useEffect(() => {
+        if (!isTimerActive || isEndingSession.current) return;
+
+        const handleVisibilityChange = async () => {
+            if (document.hidden) {
+                // Tab is being hidden/backgrounded - sync immediately
+                console.log("📱 Tab backgrounded - forcing duration sync");
+                await syncDuration("Tab backgrounded");
+            } else {
+                // Tab is being shown/foregrounded - update last sync time
+                console.log("📱 Tab foregrounded - resetting sync timer");
+                lastSyncTimeRef.current = Date.now();
             }
         };
-    }, [saveCurrentSegment, currentSessionId]);
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [isTimerActive, syncDuration]);
 
     // Handle Session End
     const { generateFeedbackInBackground } = useFeedback();
 
     // Handle Session End
-    handleEndSession = useCallback(async (hintsUsed: number = 0) => {
-        // Prevent duplicate calls
+    handleEndSession = useCallback(async (hintsToUse: number = 0, skipRedirect: boolean = false) => {
+        if (!currentSessionId) {
+            console.warn("⚠️ [handleEndSession] No sessionId provided, ignoring end call.");
+            return;
+        }
         if (isEndingSession.current) return;
         isEndingSession.current = true;
-        setIsRedirecting(true); // Show loader immediately
+        if (!skipRedirect) setIsRedirecting(true);
 
         try {
-            console.log("🚀 Ending session intentionally:", currentSessionId);
+            console.log("🚀 Ending isolated session:", currentSessionId);
 
-            // Step 1: Save the final segment
-            const lastSegmentDuration = await saveCurrentSegment("handleEndSession");
-            console.log(`⏱️ Final segment duration: ${lastSegmentDuration}s`);
+            // Calculate final segment duration
+            const now = Date.now();
+            const deltaSeconds = Math.max(1, Math.round((now - lastSyncTimeRef.current) / 1000));
 
-            // Step 2: Get the updated total duration
-            let totalDuration = 0;
+            console.log(`⏱️ Final segment duration: ${deltaSeconds}s`);
+
+            // Fetch current session for total duration threshold check
             const session = await interviewService.getSessionById(currentSessionId);
-            if (session) {
-                totalDuration = session.duration_seconds || 0;
-                console.log(`⏱️ Total session duration from DB: ${totalDuration}s`);
-            }
+            const totalDuration = (session?.duration_seconds || 0) + deltaSeconds;
 
-            // Check thresholds from config
+            // Track user turns for quality check
             const userTurns = await interviewService.getUserTurnCount(currentSessionId);
             const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
                 userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
 
             if (metThreshold) {
-                // Complete the session normally
-                await interviewService.completeSession(currentSessionId, {
-                    totalHintsUsed: hintsUsed
+                const completedSession = await interviewService.completeSession(currentSessionId, {
+                    totalHintsUsed: hintsToUse,
+                    durationSeconds: deltaSeconds
                 });
-                console.log(`✅ Session completed with threshold met, hints used: ${hintsUsed}`);
 
-                // Trigger BACKGROUND feedback generation
-                generateFeedbackInBackground(currentSessionId);
-                toast.success("Interview ending. Generating your report...");
+                if (completedSession) {
+                    generateFeedbackInBackground(currentSessionId);
+                    toast.success("Interview complete. Generating report...");
+                } else {
+                    console.error("❌ Failed to complete session - Feedback cannot be generated.");
+                    toast.error("Failed to save results. You can try manually from your dashboard.");
+                }
             } else {
-                // Complete but mark as insufficient
                 await interviewService.completeSession(currentSessionId, {
+                    durationSeconds: deltaSeconds,
                     feedback: {
                         note: "Insufficient data for report generation",
                         reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
                     }
                 });
-                console.log("⚠️ Session completed but threshold NOT met");
-                const minMins = Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60);
-                toast.warning(`Session too short for report generation (Min ${minMins} mins & ${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} responses required).`);
+                toast.warning("Session too short for a full report.");
             }
 
-            // Redirect immediately
-            router.replace(`/dashboard`);
 
+            if (!skipRedirect) router.replace(`/dashboard`);
         } catch (err) {
             console.error("Error ending session:", err);
-            // Force redirect to dashboard anyway
-            router.replace(`/dashboard`);
+            if (!skipRedirect) router.replace(`/dashboard`);
         }
-    }, [currentSessionId, router, generateFeedbackInBackground, saveCurrentSegment]);
+    }, [currentSessionId, router, generateFeedbackInBackground]);
+
+    // Handle Window Close/Navigation Cleanup
+    useEffect(() => {
+        const onBeforeUnload = () => {
+            if (!isEndingSession.current && isTimerActive) {
+                // Best effort for tab close - standard fetch might not finish
+                // but we can try to trigger the end session logic
+                handleEndSession(hintsUsedRef.current, true);
+            }
+        };
+
+        window.addEventListener("beforeunload", onBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", onBeforeUnload);
+            // This captures SPA navigation (like back button)
+            if (!isEndingSession.current && isTimerActive) {
+                console.log("🚶 User leaving live session, auto-completing...");
+                handleEndSession(hintsUsedRef.current, true);
+            }
+        };
+    }, [isTimerActive, handleEndSession]);
 
 
     // Error State
@@ -406,42 +395,24 @@ export default function LiveInterview() {
                 setIsSessionLoading(false);
                 console.log(`✅ Room connected. Waiting for agent ready...`);
             }}
-            onDisconnected={async () => {
+            onDisconnected={() => {
                 console.log("🔌 Room disconnected");
+                if (isEndingSession.current) return;
 
-                // If we're intentionally ending (user clicked end button), do nothing here
-                if (isEndingSession.current) {
-                    return;
-                }
-
-                // Unexpected disconnection - save resumption record
-                try {
-                    if (sessionSegmentStart.current) {
-                        await saveCurrentSegment("onDisconnected");
-                    }
-                } catch (error) {
-                    console.error("Error saving resumption on disconnect:", error);
-                }
-
-                // Start reconnection window instead of redirecting
                 setIsDisconnected(true);
                 setReconnectCountdown(60);
-
                 if (countdownInterval.current) clearInterval(countdownInterval.current);
 
                 countdownInterval.current = setInterval(() => {
                     setReconnectCountdown(prev => {
                         if (prev <= 1) {
                             if (countdownInterval.current) clearInterval(countdownInterval.current);
-                            toast.error("Reconnection timed out. Ending session.");
                             router.replace("/dashboard");
                             return 0;
                         }
                         return prev - 1;
                     });
                 }, 1000);
-
-                toast.warning("Connection lost. Trying to stabilize...");
             }}
             data-lk-theme="default"
         >
@@ -456,26 +427,9 @@ export default function LiveInterview() {
                         initialTranscripts={(session?.transcript as any) || []}
                         onEndSession={handleEndSession}
                         onAgentReady={async () => {
-                            // 1. UI Timer: Only start once
                             if (!isTimerActive) {
-                                console.log("⏱️ Starting session timer UI - Agent Ready");
+                                lastSyncTimeRef.current = Date.now();
                                 setIsTimerActive(true);
-                            }
-
-                            // 2. Segment Tracking: Resume if we don't have an active segment
-                            if (!sessionSegmentStart.current) {
-                                console.log("🚀 Starting new usage segment - Agent Ready");
-                                sessionSegmentStart.current = new Date();
-                                try {
-                                    const transcriptCount = await (interviewService as any).getTranscriptCount(currentSessionId);
-                                    sessionStartTranscriptIndex.current = transcriptCount;
-                                    console.log(`🚀 Usage segment started at index ${transcriptCount}`);
-                                } catch (e) {
-                                    console.error("Failed to get transcript count, defaulting to 0", e);
-                                    sessionStartTranscriptIndex.current = 0;
-                                }
-                            } else {
-                                console.log("ℹ️ Segment tracking already active.");
                             }
                         }}
                         remainingMinutes={subscriptionTimer.remainingMinutes}
@@ -486,6 +440,7 @@ export default function LiveInterview() {
                         initialMicEnabled={initialMicEnabled}
                         initialCameraEnabled={initialCameraEnabled}
                         onHintsUpdate={setHintsUsed}
+                        isEnding={isEndingSession.current}
                     />
 
                     {isDisconnected && (

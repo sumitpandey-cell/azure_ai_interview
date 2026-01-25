@@ -50,17 +50,39 @@ export const analyticsService = {
             const skillMap = new Map<string, { totalScore: number; count: number }>();
 
             sessions?.forEach(session => {
-                const feedback = session.feedback as FeedbackData | null;
+                let feedback = session.feedback as FeedbackData | null;
 
-                // Check for technicalSkills (new format)
-                const skills = feedback?.technicalSkills || feedback?.skills || [];
+                // Handle nested structure (v2.0): { overall: { ... }, resumptions: [ ... ] }
+                if (feedback && typeof feedback === 'object') {
+                    // If we have the new standardized structure, use 'overall'
+                    if ((feedback as any).overall && typeof (feedback as any).overall === 'object') {
+                        feedback = (feedback as any).overall;
+                    }
+                    // If we have the old nested structure for multi-resumption (backward compatibility)
+                    else if ((feedback as any).resumptions && Array.isArray((feedback as any).resumptions) && (feedback as any).resumptions.length > 0) {
+                        if (!(feedback as any).overall || Object.keys((feedback as any).overall).length === 0) {
+                            feedback = (feedback as any).resumptions[0];
+                        }
+                    }
+                }
 
-                skills.forEach((skill: any) => {
-                    const existing = skillMap.get(skill.name) || { totalScore: 0, count: 0 };
-                    skillMap.set(skill.name, {
-                        totalScore: existing.totalScore + skill.score,
-                        count: existing.count + 1
-                    });
+                if (!feedback) return;
+
+                // Check for technicalSkills (new format) and overallSkills
+                const technicalSkills = feedback.technicalSkills || [];
+                const overallSkills = (feedback as any).overallSkills || feedback.skills || [];
+
+                // Combine both technical and overall skills
+                const allSkills = [...technicalSkills, ...overallSkills];
+
+                allSkills.forEach((skill: any) => {
+                    if (skill && skill.name && typeof skill.score === 'number') {
+                        const existing = skillMap.get(skill.name) || { totalScore: 0, count: 0 };
+                        skillMap.set(skill.name, {
+                            totalScore: existing.totalScore + skill.score,
+                            count: existing.count + 1
+                        });
+                    }
                 });
             });
 
@@ -142,7 +164,7 @@ export const analyticsService = {
     /**
      * Calculate current and longest streak
      */
-    async calculateStreak(userId: string): Promise<StreakData> {
+    async calculateStreak(userId: string, client = supabase): Promise<StreakData> {
         try {
             console.log(`[StreakDebug] Starting calculation for user: ${userId}`);
 
@@ -164,7 +186,7 @@ export const analyticsService = {
             };
 
             // 1. Fetch official profile data
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await client
                 .from('profiles')
                 .select('streak_count, last_activity_date')
                 .eq('id', userId)
@@ -174,7 +196,7 @@ export const analyticsService = {
             console.log(`[StreakDebug] Raw Profile Data:`, profile);
 
             // 2. Fetch session history
-            const { data: sessions, error: sessionError } = await supabase
+            const { data: sessions, error: sessionError } = await client
                 .from('interview_sessions')
                 .select('created_at')
                 .eq('user_id', userId); // Removed order as uniqueDates will handle sorting

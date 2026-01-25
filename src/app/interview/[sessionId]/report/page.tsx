@@ -106,11 +106,7 @@ export default function InterviewReport() {
                 const data = await fetchSessionDetail(sessionId, forceRefresh);
                 if (data) {
                     setSession(data as InterviewSession);
-                    // Automatically trigger generation if report is missing
-                    if (data.status === 'completed' && !data.feedback) {
-                        console.log("🔍 [ReportPage] Report missing, triggering generation...");
-                        generateFeedbackInBackground(sessionId);
-                    }
+                    // Automatic generation removed - relying on manual trigger for missing reports
                 } else {
                     toast.error("Interview session not found. Redirecting to dashboard.");
                     router.push("/dashboard");
@@ -233,6 +229,69 @@ export default function InterviewReport() {
                     <Button onClick={() => router.push("/dashboard")} className="mt-4">
                         Back to Dashboard
                     </Button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // Check for missing feedback (completed but no feedback)
+    // We only show this if NOT currently generating to avoid flashing the button
+    if (session.status === 'completed' && !session.feedback && !isFeedbackGenerating && !errorState) {
+        return (
+            <DashboardLayout>
+                <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+                    <div className="max-w-xl w-full relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <Card className="border-none shadow-2xl bg-card/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-purple-500/50 shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]" />
+
+                            <CardContent className="p-8 sm:p-12 text-center space-y-10">
+                                {/* Animated Icon */}
+                                <div className="relative mx-auto h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-2xl animate-pulse" />
+                                    <div className="relative h-20 w-20 rounded-3xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-2xl shadow-primary/20">
+                                        <Sparkles className="h-10 w-10 text-primary" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-[0.2em]">
+                                        Analysis Pending
+                                    </div>
+                                    <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tighter uppercase leading-none">
+                                        Report <span className="text-primary">Not Generated</span>
+                                    </h2>
+                                    <p className="text-muted-foreground font-bold text-sm tracking-wide leading-relaxed max-w-sm mx-auto uppercase opacity-80">
+                                        Use the button below to generate your detailed performance analysis.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-4">
+                                    <Button
+                                        onClick={() => {
+                                            if (sessionId) {
+                                                generateFeedbackInBackground(sessionId);
+                                            }
+                                        }}
+                                        className="w-full h-16 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
+                                    >
+                                        <Sparkles className="mr-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
+                                        Generate Report Now
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => router.push("/dashboard")}
+                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                        Return to Dashboard
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </DashboardLayout>
         );
@@ -691,7 +750,6 @@ export default function InterviewReport() {
                 ...dbFeedback,
                 ...instant,
                 comparisons: (instant.comparisons && instant.comparisons.length > 0) ? instant.comparisons : dbFeedback.comparisons,
-                confidenceFlow: (instant.confidenceFlow && instant.confidenceFlow.length > 0) ? instant.confidenceFlow : dbFeedback.confidenceFlow,
                 // ensure generatedAt is set to the latest
                 generatedAt: instant.generatedAt || dbFeedback.generatedAt,
             };
@@ -800,7 +858,6 @@ export default function InterviewReport() {
                 { id: 1, speaker: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
             ],
         comparisons: feedbackData.comparisons || [],
-        confidenceFlow: feedbackData.confidenceFlow || []
     };
 
     return (
@@ -810,10 +867,6 @@ export default function InterviewReport() {
                 <div className="relative mb-2">
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 relative z-10">
                         <div className="space-y-2 sm:space-y-3">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-[0.2em] shadow-sm animate-in fade-in slide-in-from-left duration-1000">
-                                <Bot className="h-3.5 w-3.5" />
-                                Performance Profile
-                            </div>
                             <div className="space-y-2">
                                 <h1 className="text-xl sm:text-2xl md:text-2xl font-bold tracking-tight text-foreground leading-[1.1]">
                                     {reportData.candidateName} <span className="text-primary">Reports</span>
@@ -994,94 +1047,7 @@ export default function InterviewReport() {
 
                     <TabsContent value="insights" className="space-y-4 sm:space-y-6 md:space-y-8 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
                         {/* Performance Consistency Graph */}
-                        {reportData.confidenceFlow && reportData.confidenceFlow.length > 0 && (
-                            <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/confidence">
-                                <div className="absolute inset-0 bg-grid-foreground/[0.02] pointer-events-none" />
-                                <CardHeader className="p-4 sm:p-6 md:p-8 pb-0 relative z-10">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <div className="space-y-1.5">
-                                            <h3 className="text-lg sm:text-xl font-bold tracking-tight uppercase text-foreground flex items-center gap-2.5">
-                                                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                                                    <Activity className="h-4 w-4 text-primary" />
-                                                </div>
-                                                Performance <span className="text-primary">Consistency</span>
-                                            </h3>
-                                            <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-[0.4em] ml-1">Behavioral Stability • Response Momentum</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                            <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-500" />
-                                            <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-500">Live Analysis Tracking</span>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-4 sm:p-6 md:p-8 pt-6 sm:pt-8 relative z-10">
-                                    <div className="h-[250px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={reportData.confidenceFlow} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                                <defs>
-                                                    <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#A855F7" stopOpacity={0.3} />
-                                                        <stop offset="95%" stopColor="#A855F7" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                                <XAxis
-                                                    dataKey="segment"
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 900 }}
-                                                    dy={10}
-                                                />
-                                                <YAxis
-                                                    domain={[0, 100]}
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontWeight: 900 }}
-                                                    dx={-10}
-                                                />
-                                                <Tooltip
-                                                    contentStyle={{
-                                                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                                        borderColor: 'rgba(168, 85, 247, 0.2)',
-                                                        borderRadius: '16px',
-                                                        backdropFilter: 'blur(12px)',
-                                                        borderWidth: '2px',
-                                                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                                                    }}
-                                                    itemStyle={{ color: '#A855F7', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
-                                                    labelStyle={{ color: 'white', fontWeight: 900, marginBottom: '4px', textTransform: 'uppercase', fontSize: '11px' }}
-                                                    cursor={{ stroke: 'rgba(168, 85, 247, 0.5)', strokeWidth: 2 }}
-                                                />
-                                                <Area
-                                                    type="monotone"
-                                                    dataKey="score"
-                                                    stroke="#A855F7"
-                                                    strokeWidth={4}
-                                                    fillOpacity={1}
-                                                    fill="url(#colorConfidence)"
-                                                    animationDuration={2000}
-                                                />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
 
-                                    {/* Sentiment Markers */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 mt-8">
-                                        {reportData.confidenceFlow.map((item: any, i: number) => (
-                                            <div key={i} className="space-y-2 text-center group/marker">
-                                                <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest line-clamp-1 group-hover/marker:text-primary transition-colors">{item.segment}</div>
-                                                <div className={cn(
-                                                    "h-1.5 w-full rounded-full transition-all duration-500",
-                                                    item.score >= 80 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
-                                                        item.score >= 60 ? "bg-primary shadow-[0_0_10px_rgba(168,85,247,0.3)]" : "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
-                                                )} />
-                                                <div className="text-[9px] font-bold text-foreground/60 uppercase group-hover/marker:text-foreground transition-colors">{item.score}%</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                             {/* Strengths Card */}

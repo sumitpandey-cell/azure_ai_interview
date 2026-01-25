@@ -299,15 +299,6 @@ export function useOptimizedQueries() {
     }
 
     try {
-      // Get fresh user to ensure we have the latest metadata (sentiment preference)
-      const { data: { user: freshUser } } = await supabase.auth.getUser();
-      const metadata = freshUser?.user_metadata || user?.user_metadata || {};
-
-      // Sync sentiment analysis preference from global settings
-      const isSentimentEnabled =
-        metadata.sentiment_analysis_enabled === true ||
-        metadata.sentimentAnalysisEnabled === true;
-
       const session = await interviewService.createSession({
         userId: user.id,
         interviewType: sessionData.interview_type,
@@ -316,7 +307,6 @@ export function useOptimizedQueries() {
         jobDescription: sessionData.jobDescription || sessionData.config?.jobDescription,
         config: {
           ...(sessionData.config || {}),
-          sentimentAnalysisEnabled: isSentimentEnabled
         },
       });
 

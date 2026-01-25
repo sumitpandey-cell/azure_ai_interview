@@ -98,18 +98,20 @@ export default function Dashboard() {
     generateFeedbackInBackground
   } = useFeedback();
 
-  // Sort sessions: generating feedback first, then by date
+  // Sort sessions: generating feedback first, then by date, filtering only completed or truly in_progress
   const displaySessions = useMemo(() => {
     if (!sessions) return [];
 
-    return [...sessions].sort((a, b) => {
-      const aGenerating = a.status === 'completed' && !a.feedback;
-      const bGenerating = b.status === 'completed' && !b.feedback;
+    return [...sessions]
+      .filter(s => s.status === 'completed' || s.status === 'in_progress')
+      .sort((a, b) => {
+        const aGenerating = a.status === 'completed' && !a.feedback;
+        const bGenerating = b.status === 'completed' && !b.feedback;
 
-      if (aGenerating && !bGenerating) return -1;
-      if (!aGenerating && bGenerating) return 1;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    }).slice(0, 5); // Limit to top 5
+        if (aGenerating && !bGenerating) return -1;
+        if (!aGenerating && bGenerating) return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }).slice(0, 5); // Limit to top 5
   }, [sessions]);
 
   // Helper to check if a session is currently generating feedback
@@ -580,10 +582,10 @@ export default function Dashboard() {
                     <div
                       key={session.id}
                       onClick={() => {
-                        if (session.status === 'in_progress') {
-                          router.push(`/interview/${session.id}/setup`);
-                        } else {
+                        if (session.status === 'completed') {
                           router.push(`/interview/${session.id}/report`);
+                        } else if (session.status === 'in_progress') {
+                          toast.info("This session was not completed and is no longer accessible.");
                         }
                       }}
                       className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:border-primary/50 transition-all duration-300 cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1"
@@ -595,10 +597,10 @@ export default function Dashboard() {
                         {/* Header: Type Badge & Status */}
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            {session.config && (session.config as any).companyId ? (
+                            {session.config && (session.config as any).companyInterviewConfig ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 uppercase tracking-wide">
                                 <Building2 className="h-3 w-3" />
-                                Corporate
+                                Company Specific
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-wide">
@@ -651,10 +653,10 @@ export default function Dashboard() {
                                 )}
                                 <div className="flex flex-col">
                                   <span className="text-xs font-bold text-foreground">
-                                    {session.status === 'in_progress' ? "In Progress" : "Analyzing"}
+                                    {session.status === 'in_progress' ? "Interrupted" : "Analyzing"}
                                   </span>
                                   <span className="text-[10px] font-medium text-muted-foreground">
-                                    {session.status === 'in_progress' ? "Resume now" : "Please wait"}
+                                    {session.status === 'in_progress' ? "Session Incomplete" : "Please wait"}
                                   </span>
                                 </div>
                               </div>
@@ -665,13 +667,13 @@ export default function Dashboard() {
                           <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center border transition-all duration-300 transform group-hover:scale-110",
                             session.status === 'in_progress'
-                              ? "bg-amber-500 text-white border-amber-600 shadow-lg shadow-amber-500/20"
+                              ? "bg-muted text-muted-foreground border-border opacity-50"
                               : score !== null
                                 ? "bg-foreground text-background border-foreground shadow-lg group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground"
                                 : "bg-muted text-muted-foreground border-border"
                           )}>
                             {session.status === 'in_progress' ? (
-                              <Play className="h-4 w-4 fill-current ml-0.5" />
+                              <Clock className="h-4 w-4" />
                             ) : (
                               <ArrowRight className="h-4 w-4 -rotate-45 group-hover:rotate-0 transition-transform" />
                             )}

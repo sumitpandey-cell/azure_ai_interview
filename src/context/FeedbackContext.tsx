@@ -46,7 +46,7 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
 
             try {
                 // Generate feedback with progress callback
-                const success = await interviewService.generateAllResumptionFeedback(
+                const success = await interviewService.generateSessionFeedback(
                     sessionId,
                     (p, text) => {
                         setProgress(p);

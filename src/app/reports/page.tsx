@@ -458,10 +458,11 @@ export default function Reports() {
                     <div
                       key={session.id}
                       onClick={() => {
-                        if (session.status === 'completed' && session.score !== null) {
+                        if (session.status === 'completed') {
                           router.push(`/interview/${session.id}/report`);
                         } else {
-                          router.push(`/interview/${session.id}/live`);
+                          const toast = import('sonner').then(m => m.toast);
+                          toast.then(t => t.info("This session was not completed and is no longer accessible."));
                         }
                       }}
                       className="group grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-muted/20 active:bg-muted/30 transition-colors cursor-pointer"
@@ -498,15 +499,20 @@ export default function Reports() {
 
                       {/* Status */}
                       <div className="col-span-2">
-                        {session.status === 'completed' ? (
+                        {session.status === 'completed' && session.score !== null ? (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
                             <CheckCircle2 className="h-3 w-3" />
                             Completed
                           </div>
+                        ) : session.status === 'completed' && session.score === null ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                            <Clock className="h-3 w-3" />
+                            Report Pending
+                          </div>
                         ) : (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold border border-blue-500/20 animate-pulse">
-                            <Play className="h-3 w-3" />
-                            In Progress
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold border border-border">
+                            <Clock className="h-3 w-3" />
+                            Incomplete
                           </div>
                         )}
                       </div>

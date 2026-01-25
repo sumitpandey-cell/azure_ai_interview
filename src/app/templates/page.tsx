@@ -14,7 +14,6 @@ import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { CompanyTemplate } from "@/types/company-types";
 import { toast } from "sonner";
 import { interviewService, subscriptionService } from "@/services";
-import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
 import {
   Search,
   Code2,
@@ -46,9 +45,6 @@ export default function Templates() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { createInterviewSession, profile, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
-  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
-  const [conflictSession, setConflictSession] = useState<any>(null);
-  const [pendingAction, setPendingAction] = useState<{ type: 'general' | 'company', data: any } | null>(null);
 
   // Fetch general templates on mount
   useEffect(() => {
@@ -152,17 +148,6 @@ export default function Templates() {
         return;
       }
 
-      // Check for existing sessions
-      const existingSessions = await interviewService.getInProgressSessions(user.id);
-
-      if (existingSessions && existingSessions.length > 0) {
-        setConflictSession(existingSessions[0]);
-        setPendingAction({ type: 'general', data: template });
-        setConflictDialogOpen(true);
-        setLoadingTemplate(null);
-        return;
-      }
-
       await executeStartGeneralInterview(template);
     } catch (error: any) {
       console.error('Error starting interview:', error);
@@ -234,17 +219,6 @@ export default function Templates() {
         return;
       }
 
-      // Check for existing sessions
-      const existingSessions = await interviewService.getInProgressSessions(user.id);
-
-      if (existingSessions && existingSessions.length > 0) {
-        setConflictSession(existingSessions[0]);
-        setPendingAction({ type: 'company', data: { company, role } });
-        setConflictDialogOpen(true);
-        setLoadingTemplate(null);
-        return;
-      }
-
       await executeStartCompanyInterview(company, role);
     } catch (error: any) {
       console.error('Error starting company interview:', error);
@@ -288,38 +262,6 @@ export default function Templates() {
     }
   };
 
-  const handleContinuePrevious = () => {
-    if (!conflictSession) return;
-    toast.info("Redirecting to previous interview...");
-    const stage = (conflictSession.config as any)?.currentStage || 'setup';
-    router.push(`/interview/${conflictSession.id}/${stage}`);
-    setConflictDialogOpen(false);
-  };
-
-  const handleStartNewAfterAbandon = async () => {
-    if (!conflictSession || !pendingAction) return;
-
-    setConflictDialogOpen(false);
-
-    try {
-      // Abandon previous session using service
-      const abandoned = await interviewService.abandonSession(conflictSession.id);
-
-      if (abandoned) {
-        toast.success("Previous interview abandoned. Starting new session...");
-        if (pendingAction.type === 'general') {
-          await executeStartGeneralInterview(pendingAction.data);
-        } else {
-          await executeStartCompanyInterview(pendingAction.data.company, pendingAction.data.role);
-        }
-      } else {
-        toast.error("Failed to abandon previous session. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error abandoning session:", error);
-      toast.error("An error occurred. Please try again.");
-    }
-  };
 
   // Filter company templates based on search
   const filteredCompanyTemplates = companyTemplates.filter(template =>
@@ -658,17 +600,6 @@ export default function Templates() {
           </TabsContent>
         </Tabs>
       </div >
-      <InterviewConflictDialog
-        isOpen={conflictDialogOpen}
-        onClose={() => setConflictDialogOpen(false)}
-        onContinue={handleContinuePrevious}
-        onStartNew={handleStartNewAfterAbandon}
-        sessionDetails={conflictSession ? {
-          position: conflictSession.position,
-          type: conflictSession.interview_type,
-          startedAt: new Date(conflictSession.created_at).toLocaleString()
-        } : null}
-      />
     </DashboardLayout >
   );
 }

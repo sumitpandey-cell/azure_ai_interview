@@ -36,7 +36,6 @@ import { useCompanyQuestions } from "@/hooks/use-company-questions";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { interviewService, subscriptionService } from "@/services";
-import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
 import { cn } from "@/lib/utils";
 import { parseFile } from "@/lib/file-parser";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
@@ -95,6 +94,7 @@ function StartInterviewContent() {
     const [skillsList, setSkillsList] = useState<string[]>([]);
     const [skillInput, setSkillInput] = useState("");
     const [jobDescriptionType, setJobDescriptionType] = useState<'upload' | 'manual'>('upload');
+    const [positionInputType, setPositionInputType] = useState<'select' | 'custom'>('select');
     const [interviewMode, setInterviewMode] = useState<'general' | 'company'>(
         searchParams.get('mode') === 'company' ? 'company' : 'general'
     );
@@ -102,9 +102,6 @@ function StartInterviewContent() {
     const { fetchCompanyTemplates, createInterviewSession } = useOptimizedQueries();
     const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
     const { setCurrentSession } = useInterviewStore();
-    const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
-    const [conflictSession, setConflictSession] = useState<any>(null);
-    const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
     const [isParsing, setIsParsing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -243,19 +240,6 @@ function StartInterviewContent() {
                 return;
             }
 
-            // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
-            const existingSessions = await interviewService.getInProgressSessions(user.id);
-
-            // If there is ANY in-progress session, show dialog
-            if (existingSessions && existingSessions.length > 0) {
-                const activeSession = existingSessions[0];
-                setConflictSession(activeSession);
-                setPendingValues(values);
-                setConflictDialogOpen(true);
-                setIsLoading(false);
-                return;
-            }
-
             await executeStartInterview(values);
         } catch (error) {
             console.error("Error in onSubmit:", error);
@@ -264,37 +248,6 @@ function StartInterviewContent() {
         }
     };
 
-    const handleContinuePrevious = () => {
-        if (!conflictSession) return;
-        toast.info("Redirecting to previous interview...");
-        const stage = (conflictSession.config as any)?.currentStage || 'setup';
-        router.push(`/interview/${conflictSession.id}/${stage}`);
-        setConflictDialogOpen(false);
-    };
-
-    const handleStartNewAfterAbandon = async () => {
-        if (!conflictSession || !pendingValues) return;
-
-        setConflictDialogOpen(false);
-        setIsLoading(true);
-
-        try {
-            // Abandon previous session using service
-            const abandoned = await interviewService.abandonSession(conflictSession.id);
-
-            if (abandoned) {
-                toast.success("Previous interview abandoned. Starting new session...");
-                await executeStartInterview(pendingValues);
-            } else {
-                toast.error("Failed to abandon previous session. Please try again.");
-                setIsLoading(false);
-            }
-        } catch (error) {
-            console.error("Error abandoning session:", error);
-            toast.error("An error occurred. Please try again.");
-            setIsLoading(false);
-        }
-    };
 
     const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
         try {
@@ -302,17 +255,13 @@ function StartInterviewContent() {
             const { data: { user: freshUser } } = await supabase.auth.getUser();
             const metadata = freshUser?.user_metadata || user?.user_metadata || {};
 
-            // Sync sentiment analysis preference from global profile settings
-            const isSentimentEnabled =
-                metadata.sentiment_analysis_enabled === true ||
-                metadata.sentimentAnalysisEnabled === true;
+
 
             // Continue with creating new session
             const config: any = {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
                 difficulty: values.difficulty,
-                sentimentAnalysisEnabled: isSentimentEnabled,
             };
 
             console.log("📝 Final Session Config:", config);
@@ -539,29 +488,67 @@ function StartInterviewContent() {
                                                 name="position"
                                                 render={({ field }) => (
                                                     <FormItem className="md:col-span-2">
-                                                        <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                            Target Position
-                                                        </FormLabel>
-                                                        <Select onValueChange={(value) => {
-                                                            field.onChange(value);
-                                                            handleRoleSelection(value);
-                                                        }} defaultValue={field.value}>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                                                            <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                                Target Position
+                                                            </FormLabel>
+                                                            <div className="inline-flex p-1 bg-muted/40 rounded-xl border border-border/50">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPositionInputType('select')}
+                                                                    className={cn(
+                                                                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                                                                        positionInputType === 'select' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                                    )}
+                                                                >
+                                                                    Quick Select
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPositionInputType('custom')}
+                                                                    className={cn(
+                                                                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                                                                        positionInputType === 'custom' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                                    )}
+                                                                >
+                                                                    Custom
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {positionInputType === 'select' ? (
+                                                            <Select onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                handleRoleSelection(value);
+                                                            }} value={field.value || ""}>
+                                                                <FormControl>
+                                                                    <div className="relative group">
+                                                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground z-10 transition-colors group-focus-within:text-primary" />
+                                                                        <SelectTrigger className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary text-xs sm:text-sm font-bold">
+                                                                            <SelectValue placeholder="e.g. Senior Frontend Engineer" />
+                                                                        </SelectTrigger>
+                                                                    </div>
+                                                                </FormControl>
+                                                                <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
+                                                                    {COMMON_ROLES.map((role) => (
+                                                                        <SelectItem key={role} value={role} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
+                                                                            {role}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        ) : (
                                                             <FormControl>
                                                                 <div className="relative group">
                                                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground z-10 transition-colors group-focus-within:text-primary" />
-                                                                    <SelectTrigger className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary text-xs sm:text-sm font-bold">
-                                                                        <SelectValue placeholder="e.g. Senior Frontend Engineer" />
-                                                                    </SelectTrigger>
+                                                                    <Input
+                                                                        {...field}
+                                                                        placeholder="e.g. Senior Frontend Engineer, Product Designer..."
+                                                                        className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus-visible:ring-primary text-xs sm:text-sm font-bold"
+                                                                    />
                                                                 </div>
                                                             </FormControl>
-                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                                {COMMON_ROLES.map((role) => (
-                                                                    <SelectItem key={role} value={role} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
-                                                                        {role}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        )}
                                                         <FormMessage className="text-[10px] font-bold" />
                                                     </FormItem>
                                                 )}
@@ -873,17 +860,6 @@ function StartInterviewContent() {
                     </CardContent>
                 </Card>
             </div >
-            <InterviewConflictDialog
-                isOpen={conflictDialogOpen}
-                onClose={() => setConflictDialogOpen(false)}
-                onContinue={handleContinuePrevious}
-                onStartNew={handleStartNewAfterAbandon}
-                sessionDetails={conflictSession ? {
-                    position: conflictSession.position,
-                    type: conflictSession.interview_type,
-                    startedAt: new Date(conflictSession.created_at).toLocaleString()
-                } : null}
-            />
         </DashboardLayout >
     );
 }

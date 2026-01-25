@@ -38,11 +38,6 @@ export const FeedbackSchema = z.object({
         eliteAnswer: z.string().min(1),
         explanation: z.string().min(1)
     })).optional().default([]),
-    confidenceFlow: z.array(z.object({
-        segment: z.string().min(1),
-        score: z.number().min(0).max(100),
-        sentiment: z.string().min(1)
-    })).optional().default([]),
     // Deprecated: kept for backward compatibility
     skills: z.array(SkillSchema).optional()
 });

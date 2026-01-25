@@ -73,8 +73,7 @@ export default function Settings() {
     // Privacy settings
     const [isPublic, setIsPublic] = useState(false);
 
-    // AI Lab features
-    const [sentimentEnabled, setSentimentEnabled] = useState(user?.user_metadata?.sentiment_analysis_enabled || false);
+
 
     const router = useRouter();
 
@@ -91,7 +90,7 @@ export default function Settings() {
                 if (profile) setIsPublic(profile.is_public);
             });
 
-            setSentimentEnabled(user.user_metadata?.sentiment_analysis_enabled || false);
+
 
             // Set notification states
             setEmailNotifications(user.user_metadata?.email_notifications ?? true);
@@ -213,25 +212,7 @@ export default function Settings() {
         }
     };
 
-    const handleToggleSentiment = async (checked: boolean) => {
-        if (!user?.id) return;
 
-        try {
-            setLoading(true);
-            const { error } = await supabase.auth.updateUser({
-                data: { sentiment_analysis_enabled: checked }
-            });
-
-            if (error) throw error;
-            setSentimentEnabled(checked);
-            toast.success(`Confidence Analysis ${checked ? 'Enabled' : 'Disabled'}`);
-        } catch (error: any) {
-            console.error("Error toggling sentiment:", error);
-            toast.error(error.message || "Failed to update AI settings");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleUpdatePassword = async () => {
         // Check if user signed up with OAuth (no password set)
@@ -508,21 +489,7 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border shadow-sm">
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <CardTitle>AI Analysis Features</CardTitle>
-                                            <CardDescription>Enable experimental features like sentiment analysis.</CardDescription>
-                                        </div>
-                                        <Switch
-                                            checked={sentimentEnabled}
-                                            onCheckedChange={handleToggleSentiment}
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                </CardHeader>
-                            </Card>
+
                         </div>
                     )}
 
