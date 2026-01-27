@@ -91,14 +91,12 @@ export default function InterviewSetup() {
 
             // 1. Check store first
             if (currentSession && currentSession.id === sessionId) {
-                console.log("📦 Found session in store:", currentSession.id);
                 sessionData = currentSession;
             } else {
                 // 2. Fetch from DB if not in store
                 const data = await interviewService.getSessionById(sessionId);
                 if (!data) throw new Error('Session not found');
 
-                console.log("🔍 Fetched session from DB:", data.id);
                 sessionData = data;
 
                 // Update store with fetched session
@@ -327,11 +325,9 @@ export default function InterviewSetup() {
                         currentStage: 'live',
                     }
                 });
-                console.log("✓ Session stage updated to 'live', avatar:", selectedAvatar.name);
             }
 
             // Pre-fetch LiveKit token to speed up connection on live page
-            console.log("🚀 Pre-fetching LiveKit token...");
             const tokenResponse = await fetch(`/api/livekit_token?sessionId=${sessionId}`);
 
             if (tokenResponse.ok) {
@@ -345,7 +341,6 @@ export default function InterviewSetup() {
                     timestamp: Date.now() // Track when token was generated
                 }));
 
-                console.log("✅ LiveKit token pre-fetched and cached");
             } else {
                 console.warn("⚠️ Failed to pre-fetch token, live page will fetch it");
             }
@@ -357,7 +352,6 @@ export default function InterviewSetup() {
         setIsLoading(false);
         toast.success(`Starting interview with ${selectedAvatar.name}...`);
         router.replace(`/interview/${sessionId}/live?mic=${isMicOn}&camera=${isCameraOn}`);
-        console.log("Starting interview for session:", sessionId);
     };
 
     if (fetchingSession) {

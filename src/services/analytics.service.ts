@@ -121,7 +121,6 @@ export const analyticsService = {
                 throw error;
             }
 
-            console.log(`[WeeklyActivity] Sessions found for last 7 days: ${sessions?.length || 0}`);
 
             // Initialize all 7 days with 0 count
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -166,7 +165,6 @@ export const analyticsService = {
      */
     async calculateStreak(userId: string, client = supabase): Promise<StreakData> {
         try {
-            console.log(`[StreakDebug] Starting calculation for user: ${userId}`);
 
             // UTILITIES
             const parseSafeDate = (dateStr: string | null) => {
@@ -193,7 +191,6 @@ export const analyticsService = {
                 .maybeSingle(); // Changed to maybeSingle as per instruction
 
             if (profileError) console.error('[StreakDebug] Profile fetch error:', profileError);
-            console.log(`[StreakDebug] Raw Profile Data:`, profile);
 
             // 2. Fetch session history
             const { data: sessions, error: sessionError } = await client
@@ -202,7 +199,6 @@ export const analyticsService = {
                 .eq('user_id', userId); // Removed order as uniqueDates will handle sorting
 
             if (sessionError) console.error('[StreakDebug] Sessions fetch error:', sessionError);
-            console.log(`[StreakDebug] Sessions found: ${sessions?.length || 0}`);
 
             const now = new Date();
             const todayStr = getLocalDateString(now);
@@ -210,7 +206,6 @@ export const analyticsService = {
             yesterdayDate.setDate(now.getDate() - 1);
             const yesterdayStr = getLocalDateString(yesterdayDate);
 
-            console.log(`[StreakDebug] Reference - Today: ${todayStr}, Yesterday: ${yesterdayStr}`);
 
             let currentStreak = 0;
             let longestFromHistory = 0;
@@ -219,13 +214,10 @@ export const analyticsService = {
             if (profile) {
                 const profileLastActivityDate = profile.last_activity_date ? parseSafeDate(profile.last_activity_date) : null;
                 const profileLastDay = profileLastActivityDate ? getLocalDateString(profileLastActivityDate) : null;
-                console.log(`[StreakDebug] Profile Last Activity Date (Raw): ${profile?.last_activity_date}, Parsed Day: ${profileLastDay}`);
 
                 if (profileLastDay === todayStr || profileLastDay === yesterdayStr) {
                     currentStreak = profile.streak_count || 0;
-                    console.log(`[StreakDebug] Current Streak validated from Profile: ${currentStreak}`);
                 } else {
-                    console.log(`[StreakDebug] Profile streak not active for today/yesterday. Profile last day: ${profileLastDay}`);
                 }
             }
 
@@ -235,7 +227,6 @@ export const analyticsService = {
                     sessions.map(s => getLocalDateString(parseSafeDate(s.created_at)))
                 )).sort((a, b) => b.localeCompare(a)); // Sort descending for current streak calculation
 
-                console.log(`[StreakDebug] Unique Session Dates (most recent 5):`, uniqueDates.slice(0, 5));
 
                 const mostRecentSessionDate = uniqueDates[0];
 
@@ -253,9 +244,7 @@ export const analyticsService = {
                             checkDate = expected;
                         } else break;
                     }
-                    console.log(`[StreakDebug] Current Streak recalculated from Sessions: ${currentStreak}`);
                 } else if (currentStreak === 0) {
-                    console.log(`[StreakDebug] No active streak found from sessions (most recent: ${mostRecentSessionDate}).`);
                 }
 
                 // 5. Calculate Longest Streak from full history
@@ -278,11 +267,9 @@ export const analyticsService = {
                         temp = 1;
                     }
                 }
-                console.log(`[StreakDebug] Longest streak calculated from sessions: ${longestFromHistory}`);
             }
 
             const finalLongest = Math.max(profile?.streak_count || 0, longestFromHistory, currentStreak);
-            console.log(`[StreakDebug] Final Values -> Current: ${currentStreak}, Longest: ${finalLongest}`);
 
             return { currentStreak, longestStreak: finalLongest };
         } catch (error) {

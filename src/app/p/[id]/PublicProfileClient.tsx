@@ -116,7 +116,6 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 score: session.score
             }))
 
-        console.log('Chart data:', validInterviews)
         return validInterviews
     }, [recentInterviews])
 

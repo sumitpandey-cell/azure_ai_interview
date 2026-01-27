@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        console.log(`Generating roadmap for user: ${user.id} (${user.email})`);
 
         // Get inputs from request
         const body = await request.json().catch(() => ({}));

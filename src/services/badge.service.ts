@@ -58,7 +58,6 @@ export const badgeService = {
      */
     async awardBadge(userId: string, badgeSlug: string, client = supabase): Promise<(UserBadge & { badge: Badge }) | null> {
         try {
-            console.log(`[BadgeService] Attempting to award badge: ${badgeSlug} to user: ${userId}`);
 
             // First, get the badge details from slug
             const { data: badge, error: badgeError } = await client
@@ -86,7 +85,6 @@ export const badgeService = {
                 .maybeSingle();
 
             if (existing) {
-                console.log(`[BadgeService] User already has badge: ${badgeSlug}`);
                 return null;
             }
 
@@ -105,7 +103,6 @@ export const badgeService = {
                 // If it's a duplicate key error, it means we hit a race condition 
                 // but the end result is the same: the user has the badge.
                 if (error.code === '23505') {
-                    console.log(`[BadgeService] Race condition handled: Badge ${badgeSlug} was already awarded.`);
                     // Fetch the existing record to return it
                     const { data: existingRecord } = await client
                         .from("user_badges")
@@ -120,7 +117,6 @@ export const badgeService = {
                 return null;
             }
 
-            console.log(`✓ [BadgeService] Successfully awarded badge: ${badgeSlug}`);
             return data as any;
         } catch (error) {
             console.error("[BadgeService] Unexpected error in awardBadge:", error);
@@ -144,7 +140,6 @@ export const badgeService = {
             const streakData = await analyticsService.calculateStreak(userId, client);
             const currentStreak = streakData.currentStreak;
 
-            console.log(`Badge Service: Calculated streak for user ${userId} is ${currentStreak}`);
 
             // Get user's completed sessions
             const { data: sessions } = await client
@@ -262,7 +257,6 @@ export const badgeService = {
             const userData = await this.getUserBadgeData(userId, client);
             const earnedSlugs = new Set(userData.earnedBadges);
 
-            console.log(`[BadgeService] Checking eligibility for ${BADGE_DEFINITIONS.length} defined badges. User has ${earnedSlugs.size} earned.`);
 
             // Iterate through all badge definitions
             for (const definition of BADGE_DEFINITIONS) {
@@ -271,7 +265,6 @@ export const badgeService = {
 
                 // Check condition
                 if (definition.checkCondition(userData)) {
-                    console.log(`[BadgeService] User eligible for badge: ${definition.id}`);
                     const awarded = await this.awardBadge(userId, definition.id, client);
                     if (awarded && awarded.badge) {
                         newlyAwarded.push(awarded.badge);
@@ -280,7 +273,6 @@ export const badgeService = {
             }
 
             if (newlyAwarded.length > 0) {
-                console.log(`[BadgeService] Awarded ${newlyAwarded.length} new badges in this check cycle.`);
             }
 
             return newlyAwarded;

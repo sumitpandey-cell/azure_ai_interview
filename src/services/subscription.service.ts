@@ -62,9 +62,8 @@ export const subscriptionService = {
      */
     async createSubscription(userId: string, planId: string, client = supabase): Promise<Subscription | null> {
         try {
-            console.log(`🎬 createSubscription started: userId=${userId}, planId=${planId}`);
 
-            // 1. Get plan details first so we know how many seconds to add
+            // 1. Get plan details (just to get the seconds for the insert)
             const { data: plan, error: planError } = await client
                 .from("plans")
                 .select("*")
@@ -73,25 +72,24 @@ export const subscriptionService = {
 
             if (planError) throw planError;
 
-            // 2. Call the updated RPC that handles BOTH balance and history
-            const { data, error } = await (client as any).rpc('update_user_credits', {
-                user_uuid: userId,
-                seconds_to_add: plan.plan_seconds,
-                transaction_type: 'purchase',
-                transaction_description: `Plan purchase: ${plan.name}`,
-                p_metadata: { plan_id: planId } // Passing plan_id for the database to use
-            });
+            // 2. Simply insert into subscriptions table
+            // THE DATABASE TRIGGER WILL AUTOMATICALLY ADD THE CREDITS!
+            const { data, error } = await client
+                .from("subscriptions")
+                .insert({
+                    user_id: userId,
+                    plan_id: planId,
+                    plan_seconds: plan.plan_seconds,
+                })
+                .select()
+                .single();
 
             if (error) {
-                console.error("❌ Database Error updating credits:", error);
+                console.error("❌ Error inserting into subscriptions table:", error);
                 throw error;
             }
 
-            console.log("✅ Credits added and Purchase history recorded via RPC");
-
-            // Return a mock object or fetch the latest if needed, 
-            // but for tracking success this is enough
-            return { id: 'success' } as any;
+            return data;
         } catch (error) {
             console.error("❌ Critical error in createSubscription:", error);
             return null;
@@ -108,7 +106,6 @@ export const subscriptionService = {
      */
     async trackUsage(userId: string, seconds: number, client = supabase): Promise<boolean> {
         try {
-            console.log(`📊 trackUsage (Credit System): userId=${userId}, seconds=${seconds}`);
 
             if (seconds <= 0) return true;
 
@@ -143,13 +140,11 @@ export const subscriptionService = {
                     if (updateError) {
                         console.error("❌ Fallback profile update failed:", updateError);
                     } else {
-                        console.log("✅ Fallback profile balance update successful");
                     }
                 }
                 return !error;
             }
 
-            console.log(`✅ Usage tracked successfully via RPC for user ${userId}: -${seconds} seconds`);
 
             // Trigger global refresh for hooks
             if (typeof window !== 'undefined') {
@@ -181,7 +176,6 @@ export const subscriptionService = {
                 .single();
 
             if (error || !profile) {
-                console.info('ℹ️ No profile found or error fetching balance, using default limits');
                 return {
                     hasLimit: false,
                     remainingSeconds: 6000, // 100 minutes default
@@ -196,7 +190,6 @@ export const subscriptionService = {
             const totalAllowance = subscription?.plan_seconds || 6000;
             const percentageUsed = Math.min(100, Math.max(0, Math.round(((totalAllowance - remainingSeconds) / totalAllowance) * 100)));
 
-            console.log(`📊 Credit balance: ${remainingSeconds} seconds remaining`);
 
             return {
                 hasLimit: remainingSeconds <= 0,

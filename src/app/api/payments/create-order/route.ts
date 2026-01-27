@@ -32,7 +32,6 @@ export async function POST(req: Request) {
         };
 
         const response = await cashfree.PGCreateOrder(request);
-        console.log("Cashfree create order response:", response.status, response.data);
         return NextResponse.json(response.data);
     } catch (error: any) {
         console.error("Cashfree Order Error:", error.response?.data || error.message || error);

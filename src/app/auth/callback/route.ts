@@ -40,10 +40,26 @@ export async function GET(request: Request) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error && data.session) {
-            console.log('✅ Auth callback: Session exchanged successfully');
+            // Check if account is deactivated
+            let redirectPath = next;
+            try {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('is_active')
+                    .eq('id', data.session.user.id)
+                    .maybeSingle();
+
+                // If account is deactivated, redirect to reactivate page
+                if (profile && profile.is_active === false) {
+                    redirectPath = '/reactivate';
+                }
+            } catch (profileError) {
+                console.error('Error checking account status:', profileError);
+                // Continue to dashboard on error
+            }
 
             // Create a response with the redirect
-            const redirectUrl = `${origin}${next}`;
+            const redirectUrl = `${origin}${redirectPath}`;
             const response = NextResponse.redirect(redirectUrl);
 
             // Ensure cookies are set in the response

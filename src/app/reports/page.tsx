@@ -81,19 +81,15 @@ export default function Reports() {
         // Use cached sessions if available, otherwise fetch
         let sessionsData = cachedSessions;
         if (!isCached.sessions || cachedSessions.length === 0) {
-          console.log('🔄 Fetching sessions data...');
           sessionsData = await fetchSessions();
         } else {
-          console.log('📦 Using cached sessions data');
         }
 
         // Use cached profile if available, otherwise fetch
         let profileData = cachedProfile;
         if (!isCached.profile || !cachedProfile) {
-          console.log('🔄 Fetching profile data...');
           profileData = await fetchProfile();
         } else {
-          console.log('📦 Using cached profile data');
         }
 
         setSessions(sessionsData);

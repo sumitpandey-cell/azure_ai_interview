@@ -17,7 +17,6 @@ export async function POST(req: Request) {
         cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
 
         const event = JSON.parse(rawBody);
-        console.log("🔔 Cashfree Webhook Received:", event.type);
 
         if (event.type === "PAYMENT_SUCCESS_WEBHOOK") {
             const { order, customer_details } = event.data;
@@ -27,16 +26,13 @@ export async function POST(req: Request) {
             const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1].trim() : null;
 
             if (userId && planId) {
-                console.log(`✅ Webhook: Payment success for user ${userId}, plan ${planId}`);
 
                 // Use admin client for webhooks as there is no user session
                 const supabase = await createAdminClient();
 
                 // Create subscription record (adds credits + creates purchase history)
-                console.log(`📡 Webhook: Processing purchase for ${userId}, plan ${planId}`);
                 const result = await subscriptionService.createSubscription(userId, planId, supabase);
                 if (result) {
-                    console.log(`✅ Webhook: Credits added and purchase recorded for user ${userId}`);
                 } else {
                     console.error(`❌ Webhook: Failed to record purchase for user ${userId}`);
                 }

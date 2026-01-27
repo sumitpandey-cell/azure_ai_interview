@@ -94,7 +94,6 @@ export function LiveInterviewSession({
 
     useEffect(() => {
         if (!hasSignaledReady && agentState !== 'idle' && agentState !== 'connecting') {
-            console.log("🤖 Agent is ready, signaling timer start...");
             setHasSignaledReady(true);
             onAgentReady?.();
         }
@@ -144,31 +143,24 @@ export function LiveInterviewSession({
         if (!room) return;
 
         const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic?: string) => {
-            console.log("🔔 [HINT DEBUG] Data received - Topic:", topic, "Participant:", participant);
 
             if (topic === "hint_response") {
                 try {
                     const decoder = new TextDecoder();
                     const message = decoder.decode(payload);
-                    console.log("📨 [HINT DEBUG] Raw message:", message);
                     const data = JSON.parse(message);
 
-                    console.log("💡 Hint response received:", data);
 
                     if (data.type === "hint_response" && data.hint) {
-                        console.log("✅ [HINT DEBUG] Setting hint and showing dialog");
                         setCurrentHint(data.hint);
                         setShowHintDialog(true);
                         setIsHintLoading(false);
                     } else {
-                        console.warn("⚠️ [HINT DEBUG] Data missing type or hint:", data);
                     }
                 } catch (error) {
-                    console.error("❌ [HINT DEBUG] Failed to parse hint response:", error);
                     setIsHintLoading(false);
                 }
             } else {
-                console.log("ℹ️ [HINT DEBUG] Ignoring data with topic:", topic);
             }
         };
 

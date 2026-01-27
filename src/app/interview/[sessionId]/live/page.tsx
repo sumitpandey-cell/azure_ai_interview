@@ -122,9 +122,7 @@ export default function LiveInterview() {
                             url = cachedUrl;
                             authToken = cachedToken;
                             sessionStorage.removeItem('livekit_prefetched_token');
-                            console.log("📦 Using valid prefetched token.");
                         } else {
-                            console.log("⚠️ Prefetched token expired or near expiration, fetching fresh.");
                             sessionStorage.removeItem('livekit_prefetched_token');
                         }
                     } catch (e) {
@@ -162,7 +160,6 @@ export default function LiveInterview() {
     }, [authLoading, user, currentSessionId, router, setCurrentSessionId]);
 
     const handleReconnect = useCallback(async () => {
-        console.log("🔄 Attempting manual reconnection...");
         reconnectAttempts.current += 1;
         setIsDisconnected(false);
         setShouldConnect(false);
@@ -191,7 +188,6 @@ export default function LiveInterview() {
             const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
 
             if (deltaSeconds >= 1) {
-                console.log(`⏱️ ${reason}: ${deltaSeconds}s for session ${currentSessionId}`);
                 lastSyncTimeRef.current = now;
                 await interviewService.updateSession(currentSessionId, {
                     durationSeconds: deltaSeconds
@@ -208,7 +204,6 @@ export default function LiveInterview() {
     useEffect(() => {
         if (!isTimerActive || isEndingSession.current) return;
 
-        console.log("⏱️ Starting periodic usage sync interval");
         const syncInterval = setInterval(async () => {
             if (isEndingSession.current) return;
 
@@ -222,7 +217,6 @@ export default function LiveInterview() {
         }, 10000); // Check every 10s
 
         return () => {
-            console.log("⏱️ Clearing periodic usage sync interval");
             clearInterval(syncInterval);
         };
     }, [isTimerActive, currentSessionId, syncDuration]);
@@ -235,11 +229,9 @@ export default function LiveInterview() {
         const handleVisibilityChange = async () => {
             if (document.hidden) {
                 // Tab is being hidden/backgrounded - sync immediately
-                console.log("📱 Tab backgrounded - forcing duration sync");
                 await syncDuration("Tab backgrounded");
             } else {
                 // Tab is being shown/foregrounded - update last sync time
-                console.log("📱 Tab foregrounded - resetting sync timer");
                 lastSyncTimeRef.current = Date.now();
             }
         };
@@ -265,13 +257,11 @@ export default function LiveInterview() {
         if (!skipRedirect) setIsRedirecting(true);
 
         try {
-            console.log("🚀 Ending isolated session:", currentSessionId);
 
             // Calculate final segment duration
             const now = Date.now();
             const deltaSeconds = Math.max(1, Math.round((now - lastSyncTimeRef.current) / 1000));
 
-            console.log(`⏱️ Final segment duration: ${deltaSeconds}s`);
 
             // Fetch current session for total duration threshold check
             const session = await interviewService.getSessionById(currentSessionId);
@@ -330,7 +320,6 @@ export default function LiveInterview() {
             window.removeEventListener("beforeunload", onBeforeUnload);
             // This captures SPA navigation (like back button)
             if (!isEndingSession.current && isTimerActive) {
-                console.log("🚶 User leaving live session, auto-completing...");
                 handleEndSession(hintsUsedRef.current, true);
             }
         };
@@ -393,10 +382,8 @@ export default function LiveInterview() {
 
                 // Room connected successfully
                 setIsSessionLoading(false);
-                console.log(`✅ Room connected. Waiting for agent ready...`);
             }}
             onDisconnected={() => {
-                console.log("🔌 Room disconnected");
                 if (isEndingSession.current) return;
 
                 setIsDisconnected(true);

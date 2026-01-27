@@ -54,7 +54,6 @@ export function TranscriptTracker({
             processedSegments.current.add(s.id);
 
             // Log debug
-            console.log(`📝 Saving transcript: [${name}] ${s.text}`);
 
             // Fire and forget save
             interviewService.addTranscriptEntry(sessionId, userId, {
@@ -97,7 +96,6 @@ export function TranscriptTracker({
                 // Note: agent identity might not be localParticipant
                 const role = isSelf ? 'user' : 'assistant';
 
-                console.log(`📝 Saving chat message: [${role}] ${msg.message}`);
 
                 interviewService.addTranscriptEntry(sessionId, userId, {
                     role,
@@ -127,7 +125,6 @@ export function TranscriptTracker({
                     const msg = decoder.decode(payload);
                     const data = JSON.parse(msg);
 
-                    console.log("📨 [Tracker] Received transcript data:", data);
 
                     // Expecting format: { type: 'transcription', text: '...', isFinal: true, role: 'user' }
                     if ((data.type === 'transcription' || data.role === 'user') && data.text) {
@@ -154,7 +151,6 @@ export function TranscriptTracker({
                             // Determine participant for logic (if user role, use localParticipant)
                             const targetParticipant = isSelf ? localParticipant : participant;
 
-                            console.log(`🎤 [Tracker] Processing DATA transcript for ${isSelf ? 'User' : 'Agent'}:`, data.text);
                             processSegment(syntheticSegment, targetParticipant);
                         }
                     }

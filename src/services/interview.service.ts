@@ -52,7 +52,6 @@ export const interviewService = {
             // This ensures a fresh "isolated" session every time.
             const inProgress = await this.getInProgressSessions(config.userId);
             for (const oldSession of inProgress) {
-                console.log("♻️ Auto-abandoning previous session:", oldSession.id);
                 await this.abandonSession(oldSession.id);
             }
 
@@ -82,7 +81,6 @@ export const interviewService = {
                 throw error;
             }
 
-            console.log("✓ Interview session created:", data.id);
             return data;
         } catch (error) {
             console.error("Error creating interview session:", error);
@@ -136,7 +134,6 @@ export const interviewService = {
                 // Track usage in user subscription
                 if (updates.durationSeconds > 0) {
                     try {
-                        console.log(`📊 Tracking usage for user ${session.user_id} via updateSession: +${updates.durationSeconds}s`);
                         await subscriptionService.trackUsage(session.user_id, updates.durationSeconds);
                     } catch (usageError) {
                         console.error("❌ Error tracking usage in updateSession:", usageError);
@@ -174,8 +171,6 @@ export const interviewService = {
      */
     async completeSession(sessionId: string, completionData: CompleteSessionData, client = supabase): Promise<InterviewSession | null> {
         try {
-            console.log("🔧 [completeSession] Starting completion for:", sessionId);
-
             // 1. Fetch current session to ensure it exists and get user_id
             const session = await this.getSessionById(sessionId, client);
             if (!session) {
@@ -194,15 +189,12 @@ export const interviewService = {
             // This prevents revenue leak where session is completed but user isn't charged
             if (durationSeconds !== undefined && durationSeconds > 0) {
                 try {
-                    console.log(`📊 [completeSession] Tracking usage BEFORE completion for user ${session.user_id}: +${durationSeconds}s`);
                     const usageTracked = await subscriptionService.trackUsage(session.user_id, durationSeconds, client);
 
                     if (!usageTracked) {
                         console.error("❌ [completeSession] Failed to track usage - ABORTING session completion to prevent revenue leak");
                         throw new Error("Usage tracking failed - cannot complete session");
                     }
-
-                    console.log("✅ [completeSession] Usage tracked successfully, proceeding with session completion");
                 } catch (usageError) {
                     console.error("❌ [completeSession] CRITICAL: Usage tracking failed:", usageError);
                     // Re-throw to prevent session completion
@@ -229,8 +221,6 @@ export const interviewService = {
             if (otherData.feedback !== undefined) updateData.feedback = otherData.feedback;
             if (otherData.transcript !== undefined) updateData.transcript = otherData.transcript;
 
-            console.log("🔧 [completeSession] Final update data:", updateData);
-
             // 4. Now mark session as completed (usage already tracked)
             const { data, error } = await client
                 .from("interview_sessions")
@@ -249,7 +239,6 @@ export const interviewService = {
             }
 
             const updatedSession = data[0];
-            console.log("✓ Interview session completed:", sessionId);
 
             // 5. Check and award badges after completion (non-critical, can fail)
             try {
@@ -358,7 +347,6 @@ export const interviewService = {
                 .select();
 
             if (error) throw error;
-            console.log("✓ Session abandoned:", sessionId);
             return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error abandoning session:", error);
@@ -483,7 +471,6 @@ export const interviewService = {
             });
 
             if (response.ok) {
-                console.log("✅ Feedback generated for session:", sessionId);
                 return true;
             } else {
                 console.error("❌ Failed to generate feedback for session:", sessionId);
@@ -560,7 +547,6 @@ export const interviewService = {
                 .eq("id", sessionId);
 
             if (error) throw error;
-            console.log("✓ Interview session deleted:", sessionId);
             return true;
         } catch (error) {
             console.error("Error deleting interview session:", error);
@@ -727,7 +713,6 @@ export const interviewService = {
             if (onProgress) onProgress(10, "Fetching session data...");
             const session = await this.getSessionById(sessionId, client);
             if (!session || session.status !== 'completed') {
-                console.log("Session must be completed to generate feedback");
                 return false;
             }
 

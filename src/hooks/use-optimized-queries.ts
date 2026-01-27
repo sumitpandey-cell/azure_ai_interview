@@ -41,11 +41,9 @@ export function useOptimizedQueries() {
 
     // Return cached data if valid and not forcing refresh
     if (!forceRefresh && isSessionsCacheValid() && sessions.length > 0) {
-      console.log('📦 Using cached sessions data');
       return sessions;
     }
 
-    console.log('🔄 Fetching sessions from database');
     try {
       const data = await interviewService.getUserSessions(user.id);
 
@@ -68,11 +66,9 @@ export function useOptimizedQueries() {
 
     // Return cached stats if valid and not forcing refresh
     if (!forceRefresh && isStatsCacheValid() && stats) {
-      console.log('📦 Using cached stats data');
       return stats;
     }
 
-    console.log('🔄 Calculating stats from database');
     try {
       // Get fresh sessions data for stats calculation
       const sessionsData = await fetchSessions(forceRefresh);
@@ -110,11 +106,9 @@ export function useOptimizedQueries() {
 
     // Return cached profile if valid and not forcing refresh
     if (!forceRefresh && isProfileCacheValid() && profile) {
-      console.log('📦 Using cached profile data');
       return profile;
     }
 
-    console.log('🔄 Fetching profile from database');
     try {
       const data = await profileService.getProfile(user.id);
 
@@ -143,11 +137,9 @@ export function useOptimizedQueries() {
 
     // Return cached session if valid and not forcing refresh
     if (!forceRefresh && isSessionDetailCacheValid(sessionId) && sessionDetails[sessionId]) {
-      console.log(`📦 Using cached session detail for ${sessionId}`);
       return sessionDetails[sessionId];
     }
 
-    console.log(`🔄 Fetching session detail from database: ${sessionId}`);
     try {
       const data = await interviewService.getSessionById(sessionId);
 
@@ -167,11 +159,9 @@ export function useOptimizedQueries() {
   const fetchLeaderboard = useCallback(async (forceRefresh = false) => {
     // Return cached leaderboard if valid and not forcing refresh
     if (!forceRefresh && isLeaderboardCacheValid() && leaderboard.length > 0) {
-      console.log('📦 Using cached leaderboard data');
       return leaderboard;
     }
 
-    console.log('🔄 Fetching leaderboard from database');
     try {
       // 1. Fetch all completed interview sessions
       const { data: sessions, error: sessionsError } = await supabase
@@ -317,7 +307,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we added a new interview
       onInterviewCreated();
 
-      console.log('✅ Interview session created, cache invalidated');
       return session;
     } catch (error) {
       console.error('Error creating interview session:', error);
@@ -347,7 +336,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we updated an interview
       onInterviewCompleted(sessionId);
 
-      console.log(`✅ Interview ${sessionId} completed, cache invalidated`);
       return session;
     } catch (error) {
       console.error('Error completing interview session:', error);
@@ -370,7 +358,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we updated an interview
       onInterviewUpdated(sessionId);
 
-      console.log(`✅ Interview ${sessionId} updated, cache invalidated`);
       return session;
     } catch (error) {
       console.error('Error updating interview session:', error);
@@ -385,7 +372,6 @@ export function useOptimizedQueries() {
     }
 
     try {
-      console.log(`🗑️ Attempting to delete session ${sessionId}`);
 
       const success = await interviewService.deleteSession(sessionId);
 
@@ -396,7 +382,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we deleted an interview
       onInterviewUpdated(sessionId);
 
-      console.log(`✅ Interview ${sessionId} deleted successfully, cache invalidated`);
       return true;
     } catch (error) {
       console.error('Error deleting interview session:', error);
@@ -421,13 +406,11 @@ export function useOptimizedQueries() {
     }
 
     try {
-      console.log('🔍 Fetching recent performance metrics for user:', user.id);
 
       // Fetch last 3 completed interviews with feedback
       const data = await interviewService.getRecentPerformanceMetrics(user.id, 3);
 
       if (!data || data.length === 0) {
-        console.log('📊 No previous interview data found');
         return {
           recentInterviews: [],
           averageScores: {
@@ -441,7 +424,6 @@ export function useOptimizedQueries() {
         };
       }
 
-      console.log(`📊 Found ${data.length} previous interviews with feedback`);
 
       // Extract performance metrics from each session
       const recentInterviews: PerformanceMetrics[] = data.map((session) => {
@@ -497,7 +479,6 @@ export function useOptimizedQueries() {
         else trend = 'consistent';
       }
 
-      console.log('📈 Performance metrics calculated:', {
         totalInterviews,
         averageScores,
         trend,

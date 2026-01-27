@@ -264,7 +264,6 @@ function StartInterviewContent() {
                 difficulty: values.difficulty,
             };
 
-            console.log("📝 Final Session Config:", config);
 
             // Add company-specific config if company interview
             if (values.interviewMode === 'company' && values.companyId) {
@@ -291,7 +290,6 @@ function StartInterviewContent() {
 
             if (session) {
                 // Store complete session data in Zustand for immediate access
-                console.log("💾 Storing session in Zustand:", session.id);
                 setCurrentSession({
                     id: session.id,
                     user_id: session.user_id,

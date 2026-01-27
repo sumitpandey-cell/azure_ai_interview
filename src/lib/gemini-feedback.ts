@@ -236,8 +236,6 @@ export async function generateFeedback(
     transcript: Message[],
     sessionData: InterviewSessionData
 ): Promise<FeedbackData> {
-    console.log("Analyzing interview transcript:", transcript.length, "messages");
-    console.log("Session data:", sessionData);
 
     // Extract session context
     const { position, interview_type: interviewType, config } = sessionData;
@@ -252,11 +250,9 @@ export async function generateFeedback(
 
     // Analyze interview length before processing
     const lengthAnalysis = analyzeInterviewLength(transcript);
-    console.log("Interview analysis:", lengthAnalysis);
 
     // Return early if interview is too short
     if (lengthAnalysis.category === 'too-short') {
-        console.log("Interview too short - returning minimal feedback");
         return getTooShortInterviewFeedback(position, lengthAnalysis);
     }
 
@@ -442,7 +438,6 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
         }
 
         const qualityScore = calculateFeedbackQuality(validation.data!, lengthAnalysis.category);
-        console.log(`✅ Feedback validated successfully (quality: ${qualityScore}/100, length: ${lengthAnalysis.category})`);
 
         return validation.data! as FeedbackData;
     } catch (error) {

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
+import { DeactivateAccountModal } from "@/components/DeactivateAccountModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import imageCompression from 'browser-image-compression';
@@ -87,6 +88,9 @@ export default function Settings() {
     // Billing settings
     const [transactions, setTransactions] = useState<TransactionItem[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
+
+    // Deactivation modal
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
 
 
 
@@ -293,32 +297,34 @@ export default function Settings() {
         }
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeactivateAccount = async (reason?: string) => {
         if (!user?.id) return;
-
-        const confirmed = window.confirm(
-            "Are you sure you want to delete your data? This will remove your interview history. To fully delete your account, please contact support."
-        );
-
-        if (!confirmed) return;
 
         try {
             setLoading(true);
 
-            // Get all user sessions
-            const sessions = await interviewService.getUserSessions(user.id);
-
-            // Delete all sessions using service
-            for (const session of sessions) {
-                await interviewService.deleteSession(session.id);
-            }
-
-            toast.success("Interview data removed", {
-                description: "Your session history has been cleared. Contact support for full account closure."
+            const response = await fetch("/api/account/deactivate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ reason }),
             });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                toast.success("Account deactivated", {
+                    description: "You can reactivate anytime by logging back in."
+                });
+                // User will be signed out by the API
+                router.push("/");
+            } else {
+                toast.error(data.error || "Failed to deactivate account");
+            }
         } catch (error: any) {
-            console.error("Error deleting data:", error);
-            toast.error(error.message || "Failed to clear data");
+            console.error("Error deactivating account:", error);
+            toast.error(error.message || "Failed to deactivate account");
         } finally {
             setLoading(false);
         }
@@ -645,20 +651,28 @@ export default function Settings() {
 
                             <Card className="border-red-200 dark:border-red-900/50 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle className="text-destructive">Delete Account</CardTitle>
+                                    <CardTitle className="text-destructive">Deactivate Account</CardTitle>
                                     <CardDescription>
-                                        Permanently remove your account and all associated data. This action cannot be undone.
+                                        Temporarily deactivate your account. You can reactivate it anytime by logging back in. All your data will be preserved.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <Button
                                         variant="destructive"
-                                        onClick={handleDeleteAccount}
+                                        onClick={() => setShowDeactivateModal(true)}
+                                        disabled={loading}
                                     >
-                                        Delete My Account
+                                        Deactivate My Account
                                     </Button>
                                 </CardContent>
                             </Card>
+
+                            {/* Deactivate Account Modal */}
+                            <DeactivateAccountModal
+                                isOpen={showDeactivateModal}
+                                onClose={() => setShowDeactivateModal(false)}
+                                onConfirm={handleDeactivateAccount}
+                            />
                         </div>
                     )}
 

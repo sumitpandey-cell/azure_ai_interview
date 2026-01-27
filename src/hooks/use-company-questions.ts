@@ -37,7 +37,6 @@ export function useCompanyQuestions({
         setError(null);
 
         try {
-            console.log('Fetching questions for:', { companyId, role, questionType });
             // Build query for company_questions table
             let query = supabase
                 .from('company_questions')
@@ -45,11 +44,9 @@ export function useCompanyQuestions({
                 .eq('company_id', companyId)
                 .eq('is_active', true);
 
-            console.log("sfnkjnskjgnksngjk",query)
             // Add role filter if provided
             if (role) {
                 query = query.or(`role.eq.${role},role.is.null`);
-                console.log(query)
             }
 
             // Add question type filter if provided
@@ -60,7 +57,6 @@ export function useCompanyQuestions({
             // Fetch all matching questions first
             const { data: allQuestions, error: fetchError } = await query;
 
-            console.log('Supabase response:', { allQuestions, fetchError });
 
             if (fetchError) {
                 throw fetchError;
@@ -76,7 +72,6 @@ export function useCompanyQuestions({
                     .slice(0, count);
             }
 
-            console.log('Final selected questions:', selectedQuestions);
             setQuestions(selectedQuestions as unknown as CompanyQuestion[]);
         } catch (err: any) {
             console.error('Error fetching company questions:', err);

@@ -67,7 +67,6 @@ export async function GET(request: NextRequest) {
         const staleThreshold = new Date();
         staleThreshold.setMinutes(staleThreshold.getMinutes() - STALE_SESSION_THRESHOLD_MINUTES);
 
-        console.log(`🔍 Looking for zombie sessions older than ${staleThreshold.toISOString()}`);
 
         const { data: zombieSessions, error: fetchError } = await supabase
             .from('interview_sessions')
@@ -86,7 +85,6 @@ export async function GET(request: NextRequest) {
         }
 
         if (!zombieSessions || zombieSessions.length === 0) {
-            console.log('✅ No zombie sessions found');
             return NextResponse.json({
                 success: true,
                 message: 'No zombie sessions found',
@@ -96,7 +94,6 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        console.log(`🧟 Found ${zombieSessions.length} zombie sessions`);
 
         // 4. Process each zombie session
         const results = {
@@ -119,7 +116,6 @@ export async function GET(request: NextRequest) {
                 const existingDuration = session.duration_seconds || 0;
                 const additionalDuration = Math.max(0, cappedDuration - existingDuration);
 
-                console.log(`🔧 Processing zombie session ${session.id}: +${additionalDuration}s (total: ${cappedDuration}s)`);
 
                 if (additionalDuration > 0) {
                     const { error: rpcError } = await supabase.rpc('update_user_credits', {
@@ -132,7 +128,6 @@ export async function GET(request: NextRequest) {
                     if (rpcError) {
                         console.error(`❌ Failed to track usage for session ${session.id}:`, rpcError);
                     } else {
-                        console.log(`✅ Usage tracked for session ${session.id}`);
                     }
                 }
 
@@ -158,7 +153,6 @@ export async function GET(request: NextRequest) {
                     results.errors.push(`Session ${session.id}: ${updateError.message}`);
                 } else {
                     results.completed++;
-                    console.log(`✅ Completed zombie session ${session.id}`);
                 }
 
             } catch (sessionError) {
@@ -168,7 +162,6 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        console.log(`✅ Zombie cleanup complete: ${results.completed}/${results.processed} sessions completed`);
 
         return NextResponse.json({
             success: true,

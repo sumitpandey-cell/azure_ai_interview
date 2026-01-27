@@ -155,7 +155,6 @@ export const profileService = {
                 .eq("id", userId);
 
             if (error) throw error;
-            console.log("✓ Profile deleted:", userId);
             return true;
         } catch (error) {
             console.error("Error deleting profile:", error);
@@ -211,11 +210,95 @@ export const profileService = {
                 .eq("id", userId);
 
             if (error) throw error;
-            console.log(`✓ Profile visibility for ${userId} set to: ${isPublic}`);
             return true;
         } catch (error) {
             console.error("Error setting profile visibility:", error);
             return false;
+        }
+    },
+
+    /**
+     * Deactivate user account
+     * Sets is_active to false and records deactivation timestamp
+     */
+    async deactivateAccount(userId: string, reason?: string): Promise<boolean> {
+        try {
+            const updateData = {
+                is_active: false,
+                deactivated_at: new Date().toISOString(),
+                deactivation_reason: reason || null,
+                updated_at: new Date().toISOString()
+            };
+
+            // Don't use .select() because RLS will block reading deactivated profiles
+            const { error, count } = await supabase
+                .from("profiles")
+                .update(updateData)
+                .eq("id", userId);
+
+            if (error) {
+                console.error('❌ Supabase error:', error);
+                throw error;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Error deactivating account:", error);
+            return false;
+        }
+    },
+
+    /**
+     * Reactivate user account
+     * Sets is_active to true and clears deactivation data
+     */
+    async reactivateAccount(userId: string): Promise<boolean> {
+        try {
+            const { error } = await supabase
+                .from("profiles")
+                .update({
+                    is_active: true,
+                    deactivated_at: null,
+                    deactivation_reason: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", userId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error("Error reactivating account:", error);
+            return false;
+        }
+    },
+
+    /**
+     * Check account status
+     * Returns whether account is active and deactivation details if applicable
+     */
+    async checkAccountStatus(userId: string): Promise<{
+        isActive: boolean;
+        deactivatedAt: string | null;
+        deactivationReason: string | null;
+    } | null> {
+        try {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("is_active, deactivated_at, deactivation_reason")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (error) throw error;
+            if (!data) return null;
+
+            return {
+                isActive: data.is_active,
+                deactivatedAt: data.deactivated_at,
+                deactivationReason: data.deactivation_reason
+            };
+        } catch (error) {
+            console.error("Error checking account status:", error);
+            return null;
         }
     }
 };

@@ -130,7 +130,6 @@ export default function InterviewReport() {
     useEffect(() => {
         if (!isFeedbackGenerating || !sessionId) return;
 
-        console.log("📡 Setting up real-time listener for feedback...");
 
         // 1. Subscribe to changes for this specific session
         const channel = supabase
@@ -146,7 +145,6 @@ export default function InterviewReport() {
                 (payload) => {
                     const newData = payload.new as InterviewSession;
                     if (newData.feedback) {
-                        console.log("✅ Feedback received via real-time!");
                         setSession(newData);
                         setErrorState(null);
                         setRetryAttempt(0);
@@ -159,7 +157,6 @@ export default function InterviewReport() {
         // 2. Fallback Timeout (60s)
         const timeoutId = setTimeout(() => {
             if (isFeedbackGenerating) {
-                console.log("⏱️ Feedback generation timed out");
                 setFeedbackTimeout(true);
                 toast.error("Feedback generation is taking longer than expected.");
             }
@@ -772,7 +769,6 @@ export default function InterviewReport() {
         // If we have the old nested structure for multi-resumption (backward compatibility)
         else if (rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
             if (!rawFeedback.overall || Object.keys(rawFeedback.overall).length === 0 || !rawFeedback.executiveSummary) {
-                console.log('📊 Using first resumption as fallback for legacy nested structure');
                 rawFeedback = rawFeedback.resumptions[0];
             }
         }

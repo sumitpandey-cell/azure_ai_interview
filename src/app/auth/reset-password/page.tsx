@@ -51,7 +51,6 @@ function ResetPasswordContent() {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (session) {
-                    console.log('✅ Valid session found');
                     setIsValidToken(true);
                     return;
                 }
@@ -62,7 +61,6 @@ function ResetPasswordContent() {
                 const refreshToken = hashParams.get('refresh_token');
                 const type = hashParams.get('type');
 
-                console.log('🔍 Checking URL params:', {
                     hasAccessToken: !!accessToken,
                     hasRefreshToken: !!refreshToken,
                     type
@@ -70,7 +68,6 @@ function ResetPasswordContent() {
 
                 // If we have a recovery token, exchange it for a session
                 if (accessToken && type === 'recovery') {
-                    console.log('🔄 Exchanging recovery token for session...');
 
                     const { data, error } = await supabase.auth.setSession({
                         access_token: accessToken,
@@ -84,14 +81,12 @@ function ResetPasswordContent() {
                     }
 
                     if (data.session) {
-                        console.log('✅ Session created successfully');
                         setIsValidToken(true);
                         return;
                     }
                 }
 
                 // No valid token or session found
-                console.log('❌ No valid token or session');
                 setIsValidToken(false);
             } catch (error) {
                 console.error('❌ Error checking session:', error);
@@ -103,7 +98,6 @@ function ResetPasswordContent() {
 
         // Also listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('🔔 Auth state changed:', event);
             if (event === 'PASSWORD_RECOVERY') {
                 setIsValidToken(true);
             } else if (event === 'SIGNED_OUT') {

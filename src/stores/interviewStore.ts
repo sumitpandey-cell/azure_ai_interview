@@ -56,7 +56,6 @@ export const useInterviewStore = create<InterviewStore>((set, get) => ({
         );
 
         if (isDuplicate) {
-            console.log("🔄 Duplicate transcript detected, skipping");
             return state;
         }
 
@@ -99,7 +98,6 @@ export const useInterviewStore = create<InterviewStore>((set, get) => ({
     recentFeedback: null,
 
     setRecentFeedback: (feedback) => {
-        console.log("💾 Storing feedback in Zustand:", feedback.sessionId);
         set({ recentFeedback: feedback });
     },
 
@@ -110,7 +108,6 @@ export const useInterviewStore = create<InterviewStore>((set, get) => ({
     currentSessionData: null,
     setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
     setCurrentSessionData: (sessionData) => {
-        console.log("💾 Storing session data in Zustand:", sessionData.id);
         set({
             currentSessionData: sessionData,
             currentSessionId: sessionData.id

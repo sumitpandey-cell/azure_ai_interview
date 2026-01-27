@@ -83,7 +83,6 @@ export function validateFeedback(
         );
 
         if (hasAllowedPlaceholders) {
-            console.log('✅ Short interview contains appropriate limitation language');
         }
 
         // Check if executive summary mentions question count limitation

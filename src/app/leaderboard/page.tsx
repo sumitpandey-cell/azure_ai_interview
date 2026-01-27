@@ -55,14 +55,12 @@ const Leaderboard = () => {
 
         // Check if we have cached data
         if (isCached.leaderboard && leaderboard.length > 0) {
-          console.log('📦 Using cached leaderboard data');
           setUsers(leaderboard);
           setLoading(false);
           return;
         }
 
         // Fetch fresh data
-        console.log('🔄 Fetching fresh leaderboard data');
         const data = await fetchLeaderboard();
         setUsers(data);
       } catch (error) {

@@ -23,7 +23,6 @@ export const notificationService = {
             if (error) throw error;
 
             const result = data && data.length > 0 ? data[0] : null;
-            if (result) console.log("✓ Notification created:", result.id);
             return result;
         } catch (error) {
             console.error("Error creating notification:", error);
@@ -106,7 +105,6 @@ export const notificationService = {
                 .eq("is_read", false);
 
             if (error) throw error;
-            console.log("✓ All notifications marked as read for user:", userId);
             return true;
         } catch (error) {
             console.error("Error marking all notifications as read:", error);
@@ -143,7 +141,6 @@ export const notificationService = {
                 .eq("user_id", userId);
 
             if (error) throw error;
-            console.log("✓ All notifications deleted for user:", userId);
             return true;
         } catch (error) {
             console.error("Error deleting all notifications:", error);

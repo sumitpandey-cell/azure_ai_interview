@@ -44,7 +44,6 @@ export function useSubscriptionTimer({
             try {
                 const remainingSeconds = await subscriptionService.getRemainingSeconds(userId);
                 setTotalRemainingSeconds(remainingSeconds);
-                console.log(`⏱️ Initial remaining time: ${remainingSeconds} seconds`);
             } catch (error) {
                 console.error('Error fetching remaining time:', error);
                 // Default to 15 minutes on error
@@ -73,7 +72,6 @@ export function useSubscriptionTimer({
     useEffect(() => {
         if (loading || !isActive || totalRemainingSeconds <= 0) return;
 
-        console.log("⏱️ Starting stable subscription timer interval");
 
         const interval = setInterval(() => {
             setTotalRemainingSeconds((prev) => {
@@ -116,7 +114,6 @@ export function useSubscriptionTimer({
         }, 1000);
 
         return () => {
-            console.log("⏱️ Clearing subscription timer interval");
             clearInterval(interval);
         };
     }, [loading, isActive]);

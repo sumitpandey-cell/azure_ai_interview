@@ -362,6 +362,9 @@ export type Database = {
           is_public: boolean
           profile_slug: string | null
           balance_seconds: number
+          is_active: boolean
+          deactivated_at: string | null
+          deactivation_reason: string | null
         }
         Insert: {
           id: string

@@ -95,6 +95,31 @@ export async function middleware(req: NextRequest) {
     // Check if the current route is an auth route (excluding callback)
     const isAuthRoute = pathname === '/auth';
 
+    // Check if user is trying to access reactivate page
+    const isReactivateRoute = pathname === '/reactivate';
+
+    // If user is authenticated, check if account is deactivated
+    // Don't redirect if it's already the reactivate route OR an API route
+    const isApiRoute = pathname.startsWith('/api/');
+    if (session && !isReactivateRoute && !isApiRoute) {
+        try {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_active')
+                .eq('id', session.user.id)
+                .maybeSingle();
+
+            // If account is deactivated, redirect to reactivate page
+            if (profile && profile.is_active === false) {
+                const reactivateUrl = new URL('/reactivate', req.url);
+                return NextResponse.redirect(reactivateUrl);
+            }
+        } catch (error) {
+            console.error('Error checking account status in middleware:', error);
+            // Continue on error to avoid blocking legitimate users
+        }
+    }
+
     // If user is authenticated and trying to access auth page, redirect to dashboard
     if (session && isAuthRoute) {
         const dashboardUrl = new URL('/dashboard', req.url);
@@ -102,7 +127,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // If user is not authenticated and trying to access protected routes, redirect to auth
-    if (!session && !isPublicRoute) {
+    if (!session && !isPublicRoute && !isReactivateRoute) {
         const authUrl = new URL('/auth', req.url);
         // Store the original URL to redirect back after login
         authUrl.searchParams.set('redirectTo', pathname);

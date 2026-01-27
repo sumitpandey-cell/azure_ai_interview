@@ -39,8 +39,6 @@ export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (
                 // Use English for technical content regardless of user's default language preference
                 recognitionRef.current.lang = 'en-US'; // Always use English for technical interviews
 
-                console.log(`🌐 Speech recognition configured for technical interview in English (en-US) to prevent transcription mixing`);
-
                 recognitionRef.current.onresult = (event: any) => {
                     let finalTranscript = '';
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -48,7 +46,6 @@ export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (
                             finalTranscript += event.results[i][0].transcript;
                             // NOTE: We're now handling transcription via Gemini Live API's inputTranscription
                             // So we don't need to dispatch events from here anymore
-                            console.log(`Speech recognition final result (English forced for technical interview):`, event.results[i][0].transcript);
                             if (onTranscript) {
                                 onTranscript(event.results[i][0].transcript);
                             }

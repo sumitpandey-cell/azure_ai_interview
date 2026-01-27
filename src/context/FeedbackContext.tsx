@@ -42,7 +42,6 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
         setShouldRefreshDashboard(false);
 
         const processFeedback = async () => {
-            console.log("🚀 [FeedbackContext] STARTING background feedback generation for:", sessionId);
 
             try {
                 // Generate feedback with progress callback
@@ -55,7 +54,6 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
                 );
 
                 if (success) {
-                    console.log("✅ [Background] Feedback generated successfully");
                     setProgress(100);
                     setStatusText("Report ready!");
                     setFeedbackReady(true);

@@ -49,13 +49,11 @@ export function useSubscription() {
         // Check cache first
         const cached = subscriptionCache.get(user.id);
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            console.log('📦 Using cached subscription data');
             setStatus(cached.data);
             return;
         }
 
         try {
-            console.log('🔄 Fetching fresh credit balance');
             // Fetch usage limit from service which now uses balance_seconds
             const { remainingSeconds, remainingMinutes, percentageUsed, hasLimit } = await subscriptionService.checkUsageLimit(user.id);
 
@@ -75,8 +73,6 @@ export function useSubscription() {
                 plan_id: subscription?.plan_id || undefined,
                 loading: false
             };
-
-            console.log('📊 Final Credit Status:', newStatus);
 
             setStatus(newStatus);
 
@@ -130,7 +126,6 @@ export function useSubscription() {
     useEffect(() => {
         const handleGlobalUpdate = () => {
             if (user?.id) {
-                console.log('🔔 Subscription update event received, refreshing...');
                 subscriptionCache.delete(user.id);
                 checkEligibility();
             }
