@@ -16,38 +16,35 @@ import { PaymentStatusModal, type PaymentStatus } from "@/components/PaymentStat
 import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, any> = {
-    "Free": {
+    "Free Trial": {
         description: "Great for basic practice",
         features: [
             "100 minutes interview time",
             "Core AI Interviewer",
             "Basic performance report",
-            "Email support",
-            "No credit expiration"
+            "Email support"
         ],
         popular: false
     },
-    "Basic": {
+    "Interview Prep Pack": {
         description: "For serious job seekers",
         features: [
             "300 minutes interview time",
             "Advanced AI feedback",
-            "In-depth performance analytics",
+            "Performance analytics",
             "Priority support",
-            "Unlimited daily practice",
-            "All industry templates"
+            "All templates"
         ],
         popular: false
     },
-    "Pro": {
+    "Mastery Bundle": {
         description: "Excellent for power users",
         features: [
             "1,000 minutes interview time",
             "Premium AI analysis",
-            "Behavioral & technical coaching",
-            "Resume optimization advice",
-            "24/7 Priority support",
-            "Personalized interview paths"
+            "Technical coaching",
+            "Resume advice",
+            "24/7 Priority support"
         ],
         popular: true
     },
@@ -56,10 +53,9 @@ const PLAN_DETAILS: Record<string, any> = {
         features: [
             "10,000 interview minutes",
             "Full Pro features",
-            "Custom interview branding",
-            "Team coordination tools",
-            "Account manager support",
-            "API for hiring workflows"
+            "Custom branding",
+            "Account manager",
+            "API Access"
         ],
         popular: false
     }
@@ -237,7 +233,7 @@ function PricingContent() {
                                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10 w-fit mt-2">
                                                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
                                                     <span className="text-xs font-bold text-slate-300">
-                                                        {plan.plan_seconds >= 3600000 ? "10,000 mins" : `${minutes.toLocaleString()} mins`}
+                                                        {`${minutes.toLocaleString()} mins`}
                                                     </span>
                                                 </div>
                                             </div>

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
             const userId = customer_details.customer_id;
 
             const note = order.order_note || "";
-            const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1] : null;
+            const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1].trim() : null;
 
             if (userId && planId) {
                 console.log(`✅ Webhook: Payment success for user ${userId}, plan ${planId}`);
@@ -33,8 +33,13 @@ export async function POST(req: Request) {
                 const supabase = await createAdminClient();
 
                 // Create subscription record (adds credits + creates purchase history)
-                await subscriptionService.createSubscription(userId, planId, supabase);
-                console.log(`✅ Credits added and purchase recorded for user ${userId}`);
+                console.log(`📡 Webhook: Processing purchase for ${userId}, plan ${planId}`);
+                const result = await subscriptionService.createSubscription(userId, planId, supabase);
+                if (result) {
+                    console.log(`✅ Webhook: Credits added and purchase recorded for user ${userId}`);
+                } else {
+                    console.error(`❌ Webhook: Failed to record purchase for user ${userId}`);
+                }
             }
         }
 

@@ -62,6 +62,8 @@ export const subscriptionService = {
      */
     async createSubscription(userId: string, planId: string, client = supabase): Promise<Subscription | null> {
         try {
+            console.log(`🎬 createSubscription started: userId=${userId}, planId=${planId}`);
+
             // Get plan details
             const { data: plan, error: planError } = await client
                 .from("plans")
@@ -69,10 +71,14 @@ export const subscriptionService = {
                 .eq("id", planId)
                 .single();
 
-            if (planError) throw planError;
+            if (planError) {
+                console.error("❌ Error fetching plan details:", planError);
+                throw planError;
+            }
+            console.log(`📋 Plan found: ${plan.name} (${plan.plan_seconds} seconds)`);
 
             // 2. Add credits via RPC
-            console.log(`📡 Adding ${plan.plan_seconds} credits to user ${userId} via RPC...`);
+            console.log(`📡 Adding credits to user ${userId} via RPC...`);
             const { error: rpcError } = await (client as any).rpc('update_user_credits', {
                 user_uuid: userId,
                 seconds_to_add: plan.plan_seconds,
@@ -87,23 +93,29 @@ export const subscriptionService = {
             console.log("✅ Credits added successfully via RPC");
 
             // 3. Create purchase record (History)
+            console.log("📝 Creating subscription record in database...");
             const subscriptionData: SubscriptionInsert = {
                 user_id: userId,
                 plan_id: planId,
                 plan_seconds: plan.plan_seconds,
             };
+            console.log("📤 Subscription data to insert:", JSON.stringify(subscriptionData));
 
-            const { data, error } = await client
+            const { data, error: insertError } = await client
                 .from("subscriptions")
                 .insert(subscriptionData)
                 .select()
                 .single();
 
-            if (error) throw error;
-            console.log("✓ Purchase record created:", data.id);
+            if (insertError) {
+                console.error("❌ Error inserting into subscriptions table:", insertError);
+                throw insertError;
+            }
+
+            console.log("✅ Purchase record created successfully:", data.id);
             return data;
         } catch (error) {
-            console.error("Error creating subscription:", error);
+            console.error("❌ Critical error in createSubscription:", error);
             return null;
         }
     },
@@ -200,7 +212,7 @@ export const subscriptionService = {
                 };
             }
 
-            const remainingSeconds = profile.balance_seconds;
+            const remainingSeconds = (profile as any).balance_seconds;
             // For percentage, we'll calculate based on the current subscription plan's last purchase
             const subscription = await this.getSubscription(userId);
             const totalAllowance = subscription?.plan_seconds || 6000;

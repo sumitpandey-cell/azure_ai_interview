@@ -49,7 +49,7 @@ export async function GET(req: Request) {
                 return NextResponse.redirect(new URL(`/roadmap?payment=success&order_id=${orderId}`, req.url));
             }
 
-            const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1] : null;
+            const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1].trim() : null;
 
             if (userId && planId) {
                 console.log(`✅ Verify: Processing purchase for user ${userId}, plan ${planId}`);
