@@ -32,16 +32,9 @@ export async function POST(req: Request) {
                 // Use admin client for webhooks as there is no user session
                 const supabase = await createAdminClient();
 
-                // Check if subscription exists using the admin client
-                const subscription = await subscriptionService.getSubscription(userId, supabase);
-
-                if (subscription) {
-                    await subscriptionService.updateSubscriptionPlan(userId, planId, supabase);
-                    console.log(`✅ Subscription updated for user ${userId}`);
-                } else {
-                    await subscriptionService.createSubscription(userId, planId, supabase);
-                    console.log(`✅ New subscription created for user ${userId}`);
-                }
+                // Create subscription record (adds credits + creates purchase history)
+                await subscriptionService.createSubscription(userId, planId, supabase);
+                console.log(`✅ Credits added and purchase recorded for user ${userId}`);
             }
         }
 
