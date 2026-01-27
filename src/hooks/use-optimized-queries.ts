@@ -7,7 +7,6 @@ import { PerformanceHistory, PerformanceMetrics } from '@/types/performance-type
 import { interviewService } from '@/services/interview.service';
 import { companyService } from '@/services/company.service';
 import { profileService } from '@/services/profile.service';
-import { leaderboardService } from '@/services/leaderboard.service';
 import { templateService, Template } from '@/services/template.service';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -479,12 +478,9 @@ export function useOptimizedQueries() {
         else trend = 'consistent';
       }
 
-        totalInterviews,
-        averageScores,
-        trend,
-      });
 
       return {
+
         recentInterviews,
         averageScores,
         trend,
