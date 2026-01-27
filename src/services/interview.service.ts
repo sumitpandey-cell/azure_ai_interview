@@ -1,5 +1,5 @@
 import { supabase, publicSupabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
 import { subscriptionService } from "./subscription.service";
 import { badgeService } from "./badge.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
@@ -15,9 +15,9 @@ export interface InterviewSessionFrontendUpdate {
     durationSeconds?: number;
     totalHintsUsed?: number;
     averagePerformanceScore?: number;
-    feedback?: any;
-    transcript?: any;
-    config?: any;
+    feedback?: Json;
+    transcript?: Json;
+    config?: Json;
 }
 
 export interface CreateSessionConfig {
@@ -26,13 +26,13 @@ export interface CreateSessionConfig {
     position: string;
     difficulty?: string;
     jobDescription?: string;
-    config?: any;
+    config?: Json;
 }
 
 export interface CompleteSessionData {
     score?: number;
-    feedback?: any;
-    transcript?: any;
+    feedback?: Json;
+    transcript?: Json;
     durationSeconds?: number;
     totalHintsUsed?: number;
     averagePerformanceScore?: number;
@@ -55,14 +55,16 @@ export const interviewService = {
                 await this.abandonSession(oldSession.id);
             }
 
-            const sessionData: any = {
+            const sessionData: InterviewSessionInsert = {
                 user_id: config.userId,
                 interview_type: config.interviewType,
                 position: config.position,
-                difficulty: config.difficulty || config.config?.difficulty || "Intermediate",
-                job_description: config.jobDescription || config.config?.jobDescription || null,
+                difficulty: config.difficulty || (config.config as Record<string, unknown>)?.difficulty as string | undefined || "Intermediate",
                 status: "in_progress",
-                config: config.config || {},
+                config: {
+                    ...(config.config as Record<string, unknown> || {}),
+                    jobDescription: config.jobDescription || (config.config as Record<string, unknown>)?.jobDescription as string | undefined || null,
+                } as Json,
                 created_at: new Date().toISOString(),
             };
 
@@ -111,7 +113,7 @@ export const interviewService = {
     /**
      * Update interview session (for ongoing changes like transcript updates)
      */
-    async updateSession(sessionId: string, updates: InterviewSessionFrontendUpdate, client = supabase): Promise<InterviewSession | null> {
+    async updateSession(sessionId: string, updates: InterviewSessionFrontendUpdate): Promise<InterviewSession | null> {
         try {
             // Fetch session to get user_id for trigger compatibility
             const session = await this.getSessionById(sessionId);
@@ -124,7 +126,7 @@ export const interviewService = {
             }
 
             // Explicitly map allowed updates to snake_case
-            const mappedUpdates: any = {};
+            const mappedUpdates: InterviewSessionUpdate = {};
             if (updates.status) mappedUpdates.status = updates.status;
             if (updates.score !== undefined) mappedUpdates.score = updates.score;
             if (updates.durationSeconds !== undefined) {
@@ -203,7 +205,7 @@ export const interviewService = {
             }
 
             // 3. Prepare update data explicitly with snake_case columns
-            const updateData: any = {
+            const updateData: InterviewSessionUpdate = {
                 status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                 completed_at: new Date().toISOString(),
             };
@@ -418,17 +420,17 @@ export const interviewService = {
     ): Promise<boolean> {
         try {
             // Use the atomic RPC to append to transcript
-            const { error } = await (supabase as any).rpc('append_transcript_entry', {
+            const { error } = await (supabase as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }> }).rpc('append_transcript_entry', {
                 p_session_id: sessionId,
                 p_user_id: userId,
-                p_entry: entry as any
+                p_entry: entry as unknown as Record<string, unknown>
             });
 
             if (error) throw error;
             return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Silence aborted requests during unmount
-            if (error?.name === 'AbortError' || error?.message === 'Fetch is aborted') {
+            if (error && typeof error === 'object' && ('name' in error && error.name === 'AbortError' || 'message' in error && (error.message === 'Fetch is aborted' || (error.message as string).includes('aborted')))) {
                 return false;
             }
             console.error("Error adding transcript entry:", error instanceof Error ? error.message : error);
@@ -449,8 +451,12 @@ export const interviewService = {
             if (!session) return null;
 
             // Return transcript array or empty array
-            const transcript = session.transcript as any[];
-            return Array.isArray(transcript) ? transcript : [];
+            const transcript = session.transcript;
+            return Array.isArray(transcript) ? (transcript as unknown as Array<{
+                speaker: "user" | "ai";
+                text: string;
+                timestamp: number;
+            }>) : [];
         } catch (error) {
             console.error("Error getting transcripts:", error);
             return null;
@@ -500,7 +506,7 @@ export const interviewService = {
             for (const session of sessions || []) {
                 try {
                     // Check if session has transcripts
-                    const transcripts = (session.transcript as any[]) || [];
+                    const transcripts = (session.transcript as unknown[]) || [];
 
                     if (transcripts.length > 0) {
                         // Complete the session and generate feedback
@@ -508,7 +514,7 @@ export const interviewService = {
 
                         await this.completeSession(session.id, {
                             durationSeconds,
-                            transcript: transcripts
+                            transcript: transcripts as unknown as Json
                         });
 
                         // Try to generate feedback
@@ -631,7 +637,7 @@ export const interviewService = {
         interview_type: string;
         completed_at: string | null;
         score: number | null;
-        feedback: any;
+        feedback: Json;
     }[]> {
         try {
             const { data, error } = await supabase
@@ -655,7 +661,7 @@ export const interviewService = {
     /**
      * Get session configuration (for API routes and server-side usage)
      */
-    async getSessionConfig(sessionId: string): Promise<Record<string, any> | null> {
+    async getSessionConfig(sessionId: string): Promise<Record<string, unknown> | null> {
         try {
             const { data, error } = await supabase
                 .from('interview_sessions')
@@ -664,7 +670,7 @@ export const interviewService = {
                 .single();
 
             if (error) throw error;
-            return (data?.config as Record<string, any>) || null;
+            return (data?.config as Record<string, unknown>) || null;
         } catch (error) {
             console.error("Error fetching session config:", error);
             return null;
@@ -692,7 +698,7 @@ export const interviewService = {
             const transcripts = await this.getTranscripts(sessionId, client);
             if (!Array.isArray(transcripts)) return 0;
 
-            return transcripts.filter((t: any) =>
+            return transcripts.filter((t: { role?: string; speaker?: string; sender?: string }) =>
                 (t.role === 'user' || t.speaker === 'user' || t.sender === 'user')
             ).length;
         } catch (error) {
@@ -729,8 +735,8 @@ export const interviewService = {
                 id: sessionId,
                 interview_type: session.interview_type,
                 position: session.position,
-                config: (session.config as any) || {},
-            };
+                config: (session.config as unknown as Record<string, unknown>) || {},
+            } as unknown as Parameters<typeof generateFeedback>[1];
 
             const feedback = await generateFeedback(transcripts, sessionData);
             if (onProgress) onProgress(80, "Finalizing report...");
@@ -749,7 +755,7 @@ export const interviewService = {
             };
 
             await this.updateSession(sessionId, {
-                feedback: updatedFeedback as any,
+                feedback: updatedFeedback as Json,
                 score,
             });
 
@@ -802,7 +808,7 @@ export const interviewService = {
     /**
      * Get safe recent interviews for a public profile
      */
-    async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<any[]> {
+    async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<unknown[]> {
         try {
             const { data, error } = await publicSupabase!
                 .from("interview_sessions")

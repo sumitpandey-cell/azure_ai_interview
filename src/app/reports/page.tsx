@@ -4,20 +4,16 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, Download, MessageSquare, ExternalLink, Calendar, Clock, TrendingUp, Filter, SortAsc, SortDesc, Play, BarChart3, CheckCircle2, Target, Timer, Bell, Settings as SettingsIcon, LogOut, ArrowRight, Sparkles, Star, ThumbsUp, ThumbsDown, MoreHorizontal, Trash2, Briefcase, LineChart as LineChartIcon, ChevronDown, ChevronUp } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2 } from "lucide-react";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
+import { type Json } from "@/integrations/supabase/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ReportsPageSkeleton } from "@/components/ReportsPageSkeleton";
-import { interviewService } from "@/services/interview.service";
-import { formatDuration, formatDurationShort } from "@/lib/format-duration";
-import { useAnalytics } from "@/hooks/use-analytics";
-import { useFeedback } from "@/context/FeedbackContext";
+import { formatDurationShort } from "@/lib/format-duration";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,11 +39,11 @@ interface InterviewSession {
   created_at: string;
   completed_at: string | null;
   duration_seconds: number | null;
-  config?: any; // JSONB field for storing interview configuration
+  config?: Json; // JSONB field for storing interview configuration
 }
 
 export default function Reports() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { sessions: cachedSessions, profile: cachedProfile, fetchSessions, fetchProfile, isCached } = useOptimizedQueries();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
@@ -55,12 +51,6 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-
-  // Get analytics data from cache
-  const { skillProgress, performanceData, streakData } = useAnalytics(user?.id);
-  const currentStreak = streakData?.currentStreak || 0;
-  const { generateFeedbackInBackground } = useFeedback();
 
   // Filtering and sorting state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -147,11 +137,7 @@ export default function Reports() {
     }
   };
 
-  const handleDeleteInterview = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteId(sessionId);
-    setIsDeleteDialogOpen(true);
-  };
+
 
   // Filtered and sorted sessions - optimized to reduce re-calculations
   const filteredAndSortedSessions = useMemo(() => {
@@ -214,65 +200,7 @@ export default function Reports() {
     return positions.sort();
   }, [sessions]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
-  const getScoreColor = (score: number | null) => {
-    if (!score) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
-    if (score >= 80) return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-    return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-  };
-
-  const getStatusBadge = (status: string, score: number | null) => {
-    switch (status) {
-      case 'completed':
-        return score !== null ? (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Completed
-          </Badge>
-        ) : (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Report Pending
-          </Badge>
-        );
-      case 'in_progress':
-        return (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            In Progress
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            {status}
-          </Badge>
-        );
-    }
-  };
-
-  // Helper to render stars based on score
-  const renderStars = (score: number | null) => {
-    if (score === null) return <span className="text-muted-foreground">-</span>;
-    const stars = Math.round(score / 20); // 0-5 stars
-    return (
-      <div className="flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${i < stars ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-          />
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -301,16 +229,11 @@ export default function Reports() {
     ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
     : 0;
 
-  const filteredCompletedSessions = filteredAndSortedSessions.filter(s => s.status === 'completed' && s.score !== null);
-  const filteredAverageScore = filteredCompletedSessions.length > 0
-    ? Math.round(filteredCompletedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / filteredCompletedSessions.length)
-    : 0;
+
 
   return (
     <DashboardLayout>
       <div className="max-w-[1600px] mx-auto sm:pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden pb-12 sm:pt-0">
-        {/* Header Section */}
-        {/* Header Section */}
         {/* Header Section */}
         <div className="space-y-2 mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -355,7 +278,7 @@ export default function Reports() {
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">No Reports Found</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-              You haven't completed any interviews yet. Start a new session to begin tracking your performance.
+              You haven&apos;t completed any interviews yet. Start a new session to begin tracking your performance.
             </p>
             <Button asChild variant="outline" className="h-11 px-8 rounded-full border-primary/20 hover:bg-primary/5 text-primary">
               <Link href="/start-interview">Start Your First Interview</Link>
@@ -450,7 +373,7 @@ export default function Reports() {
                     <div className="text-center py-16 text-muted-foreground">
                       No sessions match your filters.
                     </div>
-                  ) : filteredAndSortedSessions.map((session, i) => (
+                  ) : filteredAndSortedSessions.map((session) => (
                     <div
                       key={session.id}
                       onClick={() => {

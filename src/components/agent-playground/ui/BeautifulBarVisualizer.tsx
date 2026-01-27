@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { TrackPublication } from "livekit-client";
 
 interface BeautifulBarVisualizerProps {
@@ -20,7 +20,6 @@ export function BeautifulBarVisualizer({
     const animationFrameRef = useRef<number>();
     const analyserRef = useRef<AnalyserNode | null>(null);
     const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
-    const [bars, setBars] = useState<number[]>(new Array(barCount).fill(0));
 
     useEffect(() => {
         const canvas = canvasRef.current;

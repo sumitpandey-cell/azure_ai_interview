@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function POST(request: Request) {
+export async function POST() {
     try {
         const cookieStore = await cookies();
 
@@ -13,8 +13,8 @@ export async function POST(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -33,8 +33,8 @@ export async function POST(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -58,9 +58,9 @@ export async function POST(request: Request) {
             message: "Account reactivated successfully"
         });
 
-    } catch (error: any) {
+    } catch (err: unknown) {
         return NextResponse.json(
-            { error: error.message || "Internal server error" },
+            { error: (err as Error).message || "Internal server error" },
             { status: 500 }
         );
     }

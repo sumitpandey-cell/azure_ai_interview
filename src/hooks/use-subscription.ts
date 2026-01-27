@@ -55,14 +55,15 @@ export function useSubscription() {
 
         try {
             // Fetch usage limit from service which now uses balance_seconds
-            const { remainingSeconds, remainingMinutes, percentageUsed, hasLimit } = await subscriptionService.checkUsageLimit(user.id);
+            const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(user.id);
 
             const subscription = await subscriptionService.getSubscription(user.id);
-            const planName = subscription?.plan_id ? (await (supabase as any)
+            const planResponse = subscription?.plan_id ? await (supabase as unknown as { from: (t: string) => { select: (p: string) => { eq: (f: string, v: string) => { single: () => Promise<{ data: { name: string } | null }> } } } })
                 .from('plans')
                 .select('name')
                 .eq('id', subscription.plan_id)
-                .single()).data?.name || 'Free' : 'Free';
+                .single() : null;
+            const planName = planResponse?.data?.name || 'Free';
 
             const newStatus: SubscriptionStatus = {
                 type: planName !== 'Free' ? 'paid' : 'free',

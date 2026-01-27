@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useTrackTranscription, useLocalParticipant, TrackReferenceOrPlaceholder, useRoomContext, useChat } from "@livekit/components-react";
 import { Track, LocalParticipant, Participant, TranscriptionSegment } from "livekit-client";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
@@ -35,7 +35,7 @@ export function TranscriptTracker({
     });
 
     // Helper to process and save
-    const processSegment = (s: TranscriptionSegment, participant: Participant | undefined) => {
+    const processSegment = useCallback((s: TranscriptionSegment, participant: Participant | undefined) => {
         if (!participant) return;
 
         const isSelf = participant instanceof LocalParticipant;
@@ -63,19 +63,19 @@ export function TranscriptTracker({
                 timestamp: s.firstReceivedTime || Date.now(),
             }).catch(err => console.error("Failed to save transcript:", err));
         }
-    };
+    }, [addOrUpdateTranscript, isEnding, sessionId, userId]);
 
     // Agent Effect
     useEffect(() => {
         if (agentAudioTrack && agentAudioTrack.participant) {
             agentMessages.segments.forEach(s => processSegment(s, agentAudioTrack.participant));
         }
-    }, [agentMessages.segments, agentAudioTrack]);
+    }, [agentMessages.segments, agentAudioTrack, processSegment]);
 
     // Local Effect
     useEffect(() => {
         localMessages.segments.forEach(s => processSegment(s, localParticipant));
-    }, [localMessages.segments, localParticipant]);
+    }, [localMessages.segments, localParticipant, processSegment]);
 
     // Chat Persistance Effect
     useEffect(() => {
@@ -106,7 +106,7 @@ export function TranscriptTracker({
             });
             lastChatLength.current = chatMessages.length;
         }
-    }, [chatMessages, localParticipant, sessionId, userId]);
+    }, [chatMessages, localParticipant, sessionId, userId, isEnding]);
 
     // ------------------------------------------------------------------------
     // FALLBACK: Listen for explicit "transcription" data messages from Server
@@ -117,7 +117,7 @@ export function TranscriptTracker({
     useEffect(() => {
         if (!room) return;
 
-        const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic?: string) => {
+        const handleDataReceived = (payload: Uint8Array, participant: Participant | undefined, _kind: unknown, topic?: string) => {
             // Check for transcription topic
             if (topic === "transcription" || topic === "user_transcription") {
                 try {
@@ -164,7 +164,7 @@ export function TranscriptTracker({
         return () => {
             room.off('dataReceived', handleDataReceived);
         };
-    }, [room, localParticipant]);
+    }, [room, localParticipant, processSegment]);
 
     return null; // Invisible component
 }

@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, Area, ComposedChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PerformanceAnalysisChartProps {
@@ -17,12 +16,6 @@ interface PerformanceAnalysisChartProps {
 
 export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisChartProps) {
     const hasData = data.some(d => d.interviewCount > 0);
-
-    // Calculate Trend (Mock logic for display purposes if real historical data isn't deep enough)
-    const currentScore = data[data.length - 1]?.averageScore || 0;
-    const previousScore = data[data.length - 2]?.averageScore || 0;
-    const trend = currentScore - previousScore;
-    const trendPercentage = previousScore > 0 ? ((trend / previousScore) * 100).toFixed(1) : 0;
 
     if (loading || !hasData) {
         return (

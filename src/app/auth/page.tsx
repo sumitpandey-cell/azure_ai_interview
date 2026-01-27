@@ -5,15 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain, Mail, Lock, User, Eye, EyeOff, CheckCircle2, Upload, Users, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mail, Eye, EyeOff, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Progress } from "@/components/ui/progress";
 import imageCompression from 'browser-image-compression';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,7 +46,6 @@ type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 function AuthContent() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [passwordStrength, setPasswordStrength] = useState(0);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -101,28 +100,6 @@ function AuthContent() {
         },
     });
 
-    // Calculate password strength
-    const calculatePasswordStrength = (password: string) => {
-        let strength = 0;
-        if (password.length >= 6) strength += 25;
-        if (password.length >= 10) strength += 25;
-        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-        if (/[0-9]/.test(password)) strength += 15;
-        if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
-        return Math.min(strength, 100);
-    };
-
-    // Watch password field for strength calculation
-    const watchPassword = signUpForm.watch("password");
-    useEffect(() => {
-        if (isSignUp && watchPassword) {
-            setPasswordStrength(calculatePasswordStrength(watchPassword));
-        } else {
-            setPasswordStrength(0);
-        }
-    }, [watchPassword, isSignUp]);
-
-    // Redirect if already logged in or after successful sign-in
     useEffect(() => {
         if (user && (pendingRedirect.current || !isSignUp)) {
             pendingRedirect.current = false;
@@ -195,6 +172,7 @@ function AuthContent() {
             setAvatarPreview(null);
         } catch (error) {
             // Error is handled in the context
+            console.error("Error signing up:", error);
         }
     };
 
@@ -204,6 +182,7 @@ function AuthContent() {
             await signIn(values.email, values.password);
         } catch (error) {
             pendingRedirect.current = false;
+            console.error("Error signing in:", error);
         }
     };
 
@@ -214,23 +193,12 @@ function AuthContent() {
             forgotPasswordForm.reset();
         } catch (error) {
             // Error is handled in the context
+            console.error("Error resetting password:", error);
         }
     };
 
     const switchMode = (mode: boolean) => {
         setIsSignUp(mode);
-    };
-
-    const getPasswordStrengthColor = () => {
-        if (passwordStrength < 40) return "bg-red-500/50";
-        if (passwordStrength < 70) return "bg-yellow-500/50";
-        return "bg-green-500/50";
-    };
-
-    const getPasswordStrengthText = () => {
-        if (passwordStrength < 40) return "Weak";
-        if (passwordStrength < 70) return "Medium";
-        return "Strong";
     };
 
     const handleGoogleSignIn = async () => {
@@ -265,7 +233,13 @@ function AuthContent() {
 
                 {/* Header Logo */}
                 <Link href="/" className="relative z-20 flex items-center text-lg font-medium tracking-tight mb-6 sm:mb-8 lg:mb-12 hover:opacity-80 transition-opacity">
-                    <img src="/arjuna-icon.png" alt="Arjuna AI Logo" className="mr-2 sm:mr-3 h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
+                    <Image
+                        src="/arjuna-icon.png"
+                        alt="Arjuna AI Logo"
+                        width={36}
+                        height={36}
+                        className="mr-2 sm:mr-3 h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                    />
                     <span className="text-base sm:text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">Arjuna AI</span>
                 </Link>
 
@@ -533,7 +507,7 @@ function AuthContent() {
                         </div>
 
                         <p className="text-center text-xs sm:text-sm text-white/60 mt-4 sm:mt-6">
-                            {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                            {isSignUp ? "Already have an account? " : "Don&apos;t have an account? "}
                             <button
                                 onClick={() => switchMode(!isSignUp)}
                                 className="text-primary hover:text-primary/80 font-semibold transition-colors"
@@ -576,7 +550,7 @@ function AuthContent() {
                                 className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 text-gray-900 shadow-xl"
                             >
                                 <p className="text-lg mb-6 leading-relaxed">
-                                    "{testimonials[currentTestimonial].quote}"
+                                    &quot;{testimonials[currentTestimonial].quote}&quot;
                                 </p>
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -641,7 +615,7 @@ function AuthContent() {
                             Reset Password
                         </DialogTitle>
                         <DialogDescription className="text-white/60">
-                            Enter your email address and we'll send you a link to reset your password.
+                            Enter your email address and we&apos;ll send you a link to reset your password.
                         </DialogDescription>
                     </DialogHeader>
                     <Form {...forgotPasswordForm}>

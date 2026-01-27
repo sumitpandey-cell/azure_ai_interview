@@ -1,4 +1,5 @@
 'use client'
+import Image from "next/image"
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -6,24 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyTemplateCard } from "@/components/CompanyTemplateCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { CompanyTemplate } from "@/types/company-types";
 import { toast } from "sonner";
-import { interviewService, subscriptionService } from "@/services";
+import { subscriptionService } from "@/services";
 import {
   Search,
   Code2,
   Loader2,
-  Settings as SettingsIcon,
   ChevronLeft,
   Code,
   Clock,
   Briefcase,
-  CheckCircle2,
   ArrowRight,
   Sparkles
 } from "lucide-react";
@@ -43,8 +42,8 @@ export default function Templates() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const router = useRouter();
-  const { user, signOut } = useAuth();
-  const { createInterviewSession, profile, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
+  const { user } = useAuth();
+  const { createInterviewSession, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
 
   // Fetch general templates on mount
   useEffect(() => {
@@ -93,7 +92,7 @@ export default function Templates() {
 
   // Get icon component from icon name string
   const getIconComponent = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[iconName];
+    const IconComponent = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName];
     return IconComponent || Code2; // Fallback to Code2 if icon not found
   };
 
@@ -149,7 +148,8 @@ export default function Templates() {
       }
 
       await executeStartGeneralInterview(template);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error starting interview:', error);
       toast.error(error.message || "Failed to start interview");
       setLoadingTemplate(null);
@@ -177,7 +177,8 @@ export default function Templates() {
 
       toast.success(`Starting ${template.title} interview...`);
       router.push(`/interview/${session.id}/setup`);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error in executeStartGeneralInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
@@ -185,15 +186,6 @@ export default function Templates() {
     }
   };
 
-  // Get difficulty badge color
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner": return "bg-green-100 text-green-800";
-      case "Intermediate": return "bg-yellow-100 text-yellow-800";
-      case "Advanced": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
 
   // Function to start interview with company and role
   const startCompanyRoleInterview = async (company: CompanyTemplate, role: string) => {
@@ -220,7 +212,8 @@ export default function Templates() {
       }
 
       await executeStartCompanyInterview(company, role);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error starting company interview:', error);
       toast.error(error.message || "Failed to start interview");
       setLoadingTemplate(null);
@@ -254,7 +247,8 @@ export default function Templates() {
 
       toast.success(`Starting ${role} interview at ${company.name}...`);
       router.push(`/interview/${session.id}/setup`);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error in executeStartCompanyInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
@@ -338,7 +332,7 @@ export default function Templates() {
               <>
                 {searchTerm && (
                   <p className="text-sm text-muted-foreground mb-4">
-                    Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                    Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching &quot;{searchTerm}&quot;
                   </p>
                 )}
 
@@ -449,7 +443,7 @@ export default function Templates() {
 
                 {searchTerm && (
                   <p className="text-sm text-muted-foreground mb-4">
-                    Found {filteredCompanyTemplates.length} company{filteredCompanyTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                    Found {filteredCompanyTemplates.length} company{filteredCompanyTemplates.length !== 1 ? 's' : ''} matching &quot;{searchTerm}&quot;
                   </p>
                 )}
 
@@ -511,11 +505,14 @@ export default function Templates() {
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
                       <div className="h-20 w-20 rounded-lg border bg-muted p-2 flex items-center justify-center shrink-0">
                         {selectedCompany.logo_url ? (
-                          <img
-                            src={selectedCompany.logo_url}
-                            alt={`${selectedCompany.name} logo`}
-                            className="w-full h-full object-contain"
-                          />
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={selectedCompany.logo_url}
+                              alt={`${selectedCompany.name} logo`}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
                         ) : (
                           <Briefcase className="h-8 w-8 text-muted-foreground" />
                         )}

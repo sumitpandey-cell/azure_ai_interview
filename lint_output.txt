@@ -1,0 +1,570 @@
+
+> interviewer-nextjs@0.1.0 lint
+> eslint .
+
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/about/page.tsx
+    2:10  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+    2:39  warning  'BookOpen' is defined but never used      @typescript-eslint/no-unused-vars
+    2:49  warning  'Award' is defined but never used         @typescript-eslint/no-unused-vars
+    2:56  warning  'ArrowRight' is defined but never used    @typescript-eslint/no-unused-vars
+    2:81  warning  'Briefcase' is defined but never used     @typescript-eslint/no-unused-vars
+  179:10  warning  'Globe' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/account/reactivate/route.ts
+   5:28   warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  16:141  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  17:133  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  36:141  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  37:133  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/account/status/route.ts
+   5:27   warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  16:141  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  17:133  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  35:141  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+  36:133  warning  'error' is defined but never used    @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/livekit_token/route.ts
+  14:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  31:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/roadmap/check-eligibility/route.ts
+  26:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/roadmap/generate/route.ts
+  33:18  warning  'e' is defined but never used        @typescript-eslint/no-unused-vars
+  82:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/api/roadmap/payment/pending/route.ts
+  3:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/auth/page.tsx
+    8:10  warning  'Brain' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    8:23  warning  'Lock' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    8:29  warning  'User' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    8:48  warning  'CheckCircle2' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    8:70  warning  'Users' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    8:77  warning  'ArrowRight' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+    8:89  warning  'ArrowLeft' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   16:10  warning  'Progress' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  196:18  warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  205:18  warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  215:18  warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  224:11  warning  'getPasswordStrengthColor' is assigned a value but never used                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  230:11  warning  'getPasswordStrengthText' is assigned a value but never used                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  268:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/auth/reset-password/page.tsx
+    7:10  warning  'Lock' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   36:11  warning  'searchParams' is assigned a value but never used                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  143:18  warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  245:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/badges/page.tsx
+    6:10  warning  'Badge' is defined but never used                      @typescript-eslint/no-unused-vars
+    7:23  warning  'Trophy' is defined but never used                     @typescript-eslint/no-unused-vars
+    7:69  warning  'Info' is defined but never used                       @typescript-eslint/no-unused-vars
+    7:75  warning  'Share2' is defined but never used                     @typescript-eslint/no-unused-vars
+   11:29  warning  'getRarityColor' is defined but never used             @typescript-eslint/no-unused-vars
+   11:45  warning  'getRarityBorderColor' is defined but never used       @typescript-eslint/no-unused-vars
+   11:67  warning  'getRarityGlowColor' is defined but never used         @typescript-eslint/no-unused-vars
+   45:10  warning  'allBadges' is assigned a value but never used         @typescript-eslint/no-unused-vars
+   99:9   warning  'getBadgeIcon' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  110:9   warning  'handleShareBadge' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  252:41  warning  'index' is defined but never used                      @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/blog/[slug]/page.tsx
+    8:20  warning  'User' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   82:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  180:49  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/blog/page.tsx
+    5:32  warning  'User' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   48:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   86:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  157:49  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/contact/page.tsx
+  6:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/dashboard/page.tsx
+    7:10  warning  'Badge' is defined but never used                                                                                             @typescript-eslint/no-unused-vars
+   12:3   warning  'Calendar' is defined but never used                                                                                          @typescript-eslint/no-unused-vars
+   15:3   warning  'Loader2' is defined but never used                                                                                           @typescript-eslint/no-unused-vars
+   25:3   warning  'TrendingUp' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   46:10  warning  'interviewService' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   47:15  warning  'InterviewSession' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   54:10  warning  'BadgeProgressWidget' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   79:5   warning  'profile' is assigned a value but never used                                                                                  @typescript-eslint/no-unused-vars
+   86:10  warning  'earnedBadges' is assigned a value but never used                                                                             @typescript-eslint/no-unused-vars
+   88:10  warning  'subscription' is assigned a value but never used                                                                             @typescript-eslint/no-unused-vars
+   89:10  warning  'remainingSeconds' is assigned a value but never used                                                                         @typescript-eslint/no-unused-vars
+   98:5   warning  'resetFeedbackState' is assigned a value but never used                                                                       @typescript-eslint/no-unused-vars
+  101:5   warning  'generateFeedbackInBackground' is assigned a value but never used                                                             @typescript-eslint/no-unused-vars
+  111:9   warning  'displaySessions' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+  203:6   warning  React Hook useEffect has missing dependencies: 'loadData' and 'sessions'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  210:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+  237:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+  257:9   warning  'renderStars' is assigned a value but never used                                                                              @typescript-eslint/no-unused-vars
+  611:25  warning  'isInsufficientData' is assigned a value but never used                                                                       @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/faq/page.tsx
+  4:16  warning  'Minus' is defined but never used       @typescript-eslint/no-unused-vars
+  4:31  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/interview/[sessionId]/live/page.tsx
+  205:30  warning  'e' is defined but never used                             @typescript-eslint/no-unused-vars
+  256:11  warning  'setRemainingSeconds' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/interview/[sessionId]/page.tsx
+   10:29  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars
+   10:41  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars
+   10:52  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+   32:60  warning  'Clock' is defined but never used            @typescript-eslint/no-unused-vars
+  201:35  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/interview/[sessionId]/report/page.tsx
+   10:10   warning  'Progress' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   12:87   warning  'ExternalLink' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   12:149  warning  'Building2' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   12:186  warning  'TrendingUp' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   12:231  warning  'FileText' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   12:241  warning  'Share2' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   12:265  warning  'ChevronRight' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   13:94   warning  'LineChart' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   13:105  warning  'Line' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   13:111  warning  'XAxis' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   13:118  warning  'YAxis' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   13:125  warning  'CartesianGrid' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   13:140  warning  'Tooltip' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   13:149  warning  'Area' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   13:155  warning  'AreaChart' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   14:10   warning  'Skeleton' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   41:10   warning  'classifyError' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   41:55   warning  'shouldRetry' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   41:68   warning  'getRetryDelay' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   41:83   warning  'getRetryMessage' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+   55:30   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+   96:71   warning  'isSaving' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+   96:81   warning  'saveError' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  102:12   warning  'retryAttempt' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+  103:11   warning  'MAX_RETRIES' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+  109:8    warning  React Hook useEffect has a missing dependency: 'fetchSession'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  664:61   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  664:90   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  677:61   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  679:71   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  744:40   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  744:54   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  843:31   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  847:28   error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/interview/[sessionId]/setup/page.tsx
+    5:10  warning  'Brain' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    5:82  warning  'Settings' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   26:10  warning  'supabase' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   73:8   warning  React Hook useEffect has a missing dependency: 'fetchSession'. Either include it or remove the dependency array                                                                                                                                                                          react-hooks/exhaustive-deps
+  378:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/leaderboard/page.tsx
+    4:29   warning  'CardHeader' is defined but never used                  @typescript-eslint/no-unused-vars
+    4:41   warning  'CardTitle' is defined but never used                   @typescript-eslint/no-unused-vars
+    8:18   warning  'Medal' is defined but never used                       @typescript-eslint/no-unused-vars
+    8:25   warning  'Loader2' is defined but never used                     @typescript-eslint/no-unused-vars
+    8:80   warning  'SettingsIcon' is defined but never used                @typescript-eslint/no-unused-vars
+    8:94   warning  'LogOut' is defined but never used                      @typescript-eslint/no-unused-vars
+    8:102  warning  'Share2' is defined but never used                      @typescript-eslint/no-unused-vars
+    8:133  warning  'Crown' is defined but never used                       @typescript-eslint/no-unused-vars
+   14:24   warning  'getInitials' is defined but never used                 @typescript-eslint/no-unused-vars
+   47:9    warning  'router' is assigned a value but never used             @typescript-eslint/no-unused-vars
+   48:17   warning  'signOut' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  330:9    warning  'handleNativeShare' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  616:56   warning  'index' is defined but never used                       @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/p/[id]/PublicProfileClient.tsx
+   11:16  warning  'CardContent' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   16:49  warning  'Zap' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   18:5   warning  'ExternalLink' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   22:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   80:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  104:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  179:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  443:60  warning  'i' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  546:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/page.tsx
+     4:16   warning  'CardContent' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+     5:100  warning  'Users' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+     5:107  warning  'Clock' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+     5:120  warning  'Menu' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+     5:126  warning  'X' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+     5:129  warning  'Plus' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+     5:146  warning  'Github' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+     5:154  warning  'Twitter' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+     5:163  warning  'Linkedin' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+     5:173  warning  'Instagram' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+     5:184  warning  'Mail' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+     5:231  warning  'Rocket' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+     8:31   warning  'useRef' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+     9:18   warning  'AnimatePresence' is defined but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+     9:46   warning  'useTransform' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    52:9    warning  'features' is assigned a value but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+    91:9    warning  'steps' is assigned a value but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   118:9    warning  'testimonials' is assigned a value but never used                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   163:9    warning  'stats' is assigned a value but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   171:9    warning  'scaleX' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   270:19   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   345:19   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   647:23   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   657:23   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   664:23   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1125:25   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1217:25   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1283:25   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/pricing/page.tsx
+    7:10  warning  'useSubscription' is defined but never used  @typescript-eslint/no-unused-vars
+  194:54  warning  'i' is defined but never used                @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/privacy/page.tsx
+  1:10  warning  'Button' is defined but never used     @typescript-eslint/no-unused-vars
+  2:39  warning  'ArrowLeft' is defined but never used  @typescript-eslint/no-unused-vars
+  3:8   warning  'Link' is defined but never used       @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/reactivate/page.tsx
+  23:8  warning  React Hook useEffect has a missing dependency: 'checkAccountStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/reports/page.tsx
+    7:20   warning  'Download' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:45   warning  'ExternalLink' is defined but never used                           @typescript-eslint/no-unused-vars
+    7:76   warning  'TrendingUp' is defined but never used                             @typescript-eslint/no-unused-vars
+    7:88   warning  'Filter' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:96   warning  'SortAsc' is defined but never used                                @typescript-eslint/no-unused-vars
+    7:105  warning  'SortDesc' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:115  warning  'Play' is defined but never used                                   @typescript-eslint/no-unused-vars
+    7:121  warning  'BarChart3' is defined but never used                              @typescript-eslint/no-unused-vars
+    7:154  warning  'Timer' is defined but never used                                  @typescript-eslint/no-unused-vars
+    7:161  warning  'Bell' is defined but never used                                   @typescript-eslint/no-unused-vars
+    7:179  warning  'SettingsIcon' is defined but never used                           @typescript-eslint/no-unused-vars
+    7:193  warning  'LogOut' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:213  warning  'Sparkles' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:229  warning  'ThumbsUp' is defined but never used                               @typescript-eslint/no-unused-vars
+    7:239  warning  'ThumbsDown' is defined but never used                             @typescript-eslint/no-unused-vars
+    7:251  warning  'MoreHorizontal' is defined but never used                         @typescript-eslint/no-unused-vars
+    7:275  warning  'Briefcase' is defined but never used                              @typescript-eslint/no-unused-vars
+    7:299  warning  'LineChartIcon' is defined but never used                          @typescript-eslint/no-unused-vars
+    7:314  warning  'ChevronDown' is defined but never used                            @typescript-eslint/no-unused-vars
+    7:327  warning  'ChevronUp' is defined but never used                              @typescript-eslint/no-unused-vars
+    8:10   warning  'LineChart' is defined but never used                              @typescript-eslint/no-unused-vars
+    8:21   warning  'Line' is defined but never used                                   @typescript-eslint/no-unused-vars
+    8:27   warning  'XAxis' is defined but never used                                  @typescript-eslint/no-unused-vars
+    8:34   warning  'YAxis' is defined but never used                                  @typescript-eslint/no-unused-vars
+    8:41   warning  'CartesianGrid' is defined but never used                          @typescript-eslint/no-unused-vars
+    8:56   warning  'Tooltip' is defined but never used                                @typescript-eslint/no-unused-vars
+    8:65   warning  'ResponsiveContainer' is defined but never used                    @typescript-eslint/no-unused-vars
+    8:86   warning  'BarChart' is defined but never used                               @typescript-eslint/no-unused-vars
+    8:96   warning  'Bar' is defined but never used                                    @typescript-eslint/no-unused-vars
+    8:101  warning  'Cell' is defined but never used                                   @typescript-eslint/no-unused-vars
+   18:10   warning  'interviewService' is defined but never used                       @typescript-eslint/no-unused-vars
+   19:10   warning  'formatDuration' is defined but never used                         @typescript-eslint/no-unused-vars
+   51:17   warning  'signOut' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+   59:10   warning  'isFilterExpanded' is assigned a value but never used              @typescript-eslint/no-unused-vars
+   59:28   warning  'setIsFilterExpanded' is assigned a value but never used           @typescript-eslint/no-unused-vars
+   62:11   warning  'skillProgress' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+   62:26   warning  'performanceData' is assigned a value but never used               @typescript-eslint/no-unused-vars
+   63:9    warning  'currentStreak' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+   64:11   warning  'generateFeedbackInBackground' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  151:9    warning  'handleDeleteInterview' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  218:9    warning  'formatDate' is assigned a value but never used                    @typescript-eslint/no-unused-vars
+  228:9    warning  'getScoreColor' is assigned a value but never used                 @typescript-eslint/no-unused-vars
+  235:9    warning  'getStatusBadge' is assigned a value but never used                @typescript-eslint/no-unused-vars
+  263:9    warning  'renderStars' is assigned a value but never used                   @typescript-eslint/no-unused-vars
+  306:9    warning  'filteredAverageScore' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  454:63   warning  'i' is defined but never used                                      @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/roadmap/page.tsx
+   7:10  warning  'cn' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   8:35  warning  'AlertTitle' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   9:29  warning  'CardDescription' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   9:46  warning  'CardHeader' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   9:58  warning  'CardTitle' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  11:10  warning  'RoadmapOverview' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+  13:10  warning  'RoadmapMilestones' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+  17:10  warning  'SkillTree' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  18:10  warning  'Tabs' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  18:16  warning  'TabsContent' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  18:29  warning  'TabsList' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  18:39  warning  'TabsTrigger' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  26:18  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  69:8   warning  React Hook useEffect has a missing dependency: 'handleGenerate'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/sample-report/page.tsx
+    6:10  warning  'Tabs' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    6:16  warning  'TabsContent' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    6:29  warning  'TabsList' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+    6:39  warning  'TabsTrigger' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    7:34  warning  'User' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    7:40  warning  'Briefcase' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    7:90  warning  'Code' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    7:96  warning  'Award' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   61:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  251:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/settings/page.tsx
+   18:5   warning  'Trash2' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   19:5   warning  'Upload' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   22:17  warning  'SettingsIcon' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   23:5   warning  'ChevronRight' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   25:5   warning  'Lock' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   26:5   warning  'Mail' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   27:5   warning  'Globe' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   31:5   warning  'BarChart3' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   45:10  warning  'interviewService' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   48:10  warning  'formatDurationShort' is defined but never used                                                                       @typescript-eslint/no-unused-vars
+   51:24  warning  'ArrowDownLeft' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   51:48  warning  'Clock' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   59:28  warning  'authLoading' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+  125:8   warning  React Hook useEffect has a missing dependency: 'fetchTransactions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/start-interview/page.tsx
+    9:29   warning  'CardHeader' is defined but never used           @typescript-eslint/no-unused-vars
+    9:41   warning  'CardTitle' is defined but never used            @typescript-eslint/no-unused-vars
+    9:52   warning  'CardDescription' is defined but never used      @typescript-eslint/no-unused-vars
+   29:10   warning  'Switch' is defined but never used               @typescript-eslint/no-unused-vars
+   33:60   warning  'Clock' is defined but never used                @typescript-eslint/no-unused-vars
+   33:67   warning  'FileText' is defined but never used             @typescript-eslint/no-unused-vars
+   33:98   warning  'Building2' is defined but never used            @typescript-eslint/no-unused-vars
+   33:109  warning  'Target' is defined but never used               @typescript-eslint/no-unused-vars
+   35:10   warning  'useCompanyQuestions' is defined but never used  @typescript-eslint/no-unused-vars
+   38:10   warning  'interviewService' is defined but never used     @typescript-eslint/no-unused-vars
+  256:19   warning  'metadata' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/templates/page.tsx
+    9:10  warning  'Avatar' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+    9:18  warning  'AvatarFallback' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    9:34  warning  'AvatarImage' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   16:10  warning  'interviewService' is defined but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   21:15  warning  'SettingsIcon' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   26:3   warning  'CheckCircle2' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   46:17  warning  'signOut' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   47:35  warning  'profile' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   96:43  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  152:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  180:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  189:9   warning  'getDifficultyColor' is assigned a value but never used                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  223:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  257:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  514:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/app/terms/page.tsx
+  2:10  warning  'FileText' is defined but never used      @typescript-eslint/no-unused-vars
+  2:27  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+  2:54  warning  'ArrowLeft' is defined but never used     @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/AvatarSelection.tsx
+  3:17  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  4:22  warning  'Code' is defined but never used      @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/BadgeProgressWidget.tsx
+   4:10  warning  'Badge' is defined but never used                @typescript-eslint/no-unused-vars
+   5:18  warning  'Award' is defined but never used                @typescript-eslint/no-unused-vars
+   5:25  warning  'TrendingUp' is defined but never used           @typescript-eslint/no-unused-vars
+   7:45  warning  'getRarityGlowColor' is defined but never used   @typescript-eslint/no-unused-vars
+   9:10  warning  'Zap' is defined but never used                  @typescript-eslint/no-unused-vars
+  32:11  warning  'badgeScore' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  70:60  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  75:58  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/CodingChallengeModal.tsx
+  60:8  warning  React Hook useEffect has a missing dependency: 'startTime'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  78:8  warning  React Hook useEffect has a missing dependency: 'handleAutoSubmit'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/CompanyTemplateCard.tsx
+  31:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/DashboardLayout.tsx
+   11:3   warning  'LogOut' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   17:3   warning  'Flame' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   38:17  warning  'signOut' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   61:9   warning  'streak' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  152:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  170:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/FeedbackGenerationOverlay.tsx
+  6:29  warning  'X' is defined but never used             @typescript-eslint/no-unused-vars
+  6:32  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+  8:10  warning  'Button' is defined but never used        @typescript-eslint/no-unused-vars
+  9:10  warning  'cn' is defined but never used            @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/Footer.tsx
+  20:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/LowTimeWarningBanner.tsx
+  28:11  warning  'isWarning' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/MiniBarChart.tsx
+  15:5  warning  'gap' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/NotificationBell.tsx
+  14:33  warning  'Notification' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/PerformanceAnalysisChart.tsx
+   5:22  warning  'TrendingDown' is defined but never used              @typescript-eslint/no-unused-vars
+   5:36  warning  'Minus' is defined but never used                     @typescript-eslint/no-unused-vars
+   5:43  warning  'Info' is defined but never used                      @typescript-eslint/no-unused-vars
+   6:10  warning  'cn' is defined but never used                        @typescript-eslint/no-unused-vars
+  25:11  warning  'trendPercentage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/PublicHeader.tsx
+   3:10  warning  'Button' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  64:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/PublicProfileClient.tsx
+    9:10  warning  'Badge' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   10:16  warning  'CardContent' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   15:49  warning  'Zap' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   17:5   warning  'ExternalLink' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   20:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   36:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   42:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   43:40  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   44:62  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  154:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  456:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/ReportPageSkeleton.tsx
+  2:10  warning  'Tabs' is defined but never used         @typescript-eslint/no-unused-vars
+  2:16  warning  'TabsList' is defined but never used     @typescript-eslint/no-unused-vars
+  2:26  warning  'TabsTrigger' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/ReportsPageSkeleton.tsx
+  2:10  warning  'Tabs' is defined but never used         @typescript-eslint/no-unused-vars
+  2:16  warning  'TabsList' is defined but never used     @typescript-eslint/no-unused-vars
+  2:26  warning  'TabsTrigger' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/TemplatesPageSkeleton.tsx
+  2:10  warning  'Tabs' is defined but never used         @typescript-eslint/no-unused-vars
+  2:16  warning  'TabsList' is defined but never used     @typescript-eslint/no-unused-vars
+  2:26  warning  'TabsTrigger' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/ThemeToggle.tsx
+  14:12  warning  'theme' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/TransitionButton.tsx
+  12:42  warning  'transitionColor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/HintDialog.tsx
+   2:60  warning  'DialogDescription' is defined but never used        @typescript-eslint/no-unused-vars
+   4:26  warning  'X' is defined but never used                        @typescript-eslint/no-unused-vars
+   5:10  warning  'cn' is defined but never used                       @typescript-eslint/no-unused-vars
+  15:12  warning  'autoCloseTimer' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/LiveInterviewSession.tsx
+    8:5   warning  'BarVisualizer' is defined but never used             @typescript-eslint/no-unused-vars
+   10:27  warning  'LocalParticipant' is defined but never used          @typescript-eslint/no-unused-vars
+   12:5   warning  'Mic' is defined but never used                       @typescript-eslint/no-unused-vars
+   13:5   warning  'MicOff' is defined but never used                    @typescript-eslint/no-unused-vars
+   23:5   warning  'LifeBuoy' is defined but never used                  @typescript-eslint/no-unused-vars
+   28:10  warning  'LoadingSVG' is defined but never used                @typescript-eslint/no-unused-vars
+   30:10  warning  'interviewService' is defined but never used          @typescript-eslint/no-unused-vars
+   31:10  warning  'Avatar' is defined but never used                    @typescript-eslint/no-unused-vars
+   31:18  warning  'AvatarFallback' is defined but never used            @typescript-eslint/no-unused-vars
+   31:34  warning  'AvatarImage' is defined but never used               @typescript-eslint/no-unused-vars
+   32:10  warning  'Button' is defined but never used                    @typescript-eslint/no-unused-vars
+   33:10  warning  'ArjunaLoader' is defined but never used              @typescript-eslint/no-unused-vars
+   33:24  warning  'BowLoader' is defined but never used                 @typescript-eslint/no-unused-vars
+   82:61  warning  'agent' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  145:71  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  145:82  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  160:26  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+  550:7   warning  'connectionState' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/chat/ChatMessage.tsx
+  12:5  warning  'accentColor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/chat/ChatMessageInput.tsx
+  14:5  warning  'accentColor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/transcriptions/TranscriptTracker.tsx
+   73:8  warning  React Hook useEffect has a missing dependency: 'processSegment'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   78:8  warning  React Hook useEffect has a missing dependency: 'processSegment'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  109:8  warning  React Hook useEffect has a missing dependency: 'isEnding'. Either include it or remove the dependency array        react-hooks/exhaustive-deps
+  167:8  warning  React Hook useEffect has a missing dependency: 'processSegment'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/transcriptions/TranscriptionTile.tsx
+   6:5   warning  'useTrackTranscription' is defined but never used                                                                   @typescript-eslint/no-unused-vars
+  11:5   warning  'Track' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  14:31  warning  'useRef' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+  61:8   warning  React Hook useEffect has a missing dependency: 'agentAudioTrack'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  74:10  warning  'segmentToChatMessage' is defined but never used                                                                    @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/agent-playground/ui/BeautifulBarVisualizer.tsx
+  23:12  warning  'bars' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  23:18  warning  'setBars' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/PaymentPendingModal.tsx
+  11:10  warning  'AlertCircle' is defined but never used       @typescript-eslint/no-unused-vars
+  12:10  warning  'Alert' is defined but never used             @typescript-eslint/no-unused-vars
+  12:17  warning  'AlertDescription' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/RoadmapMilestones.tsx
+  1:29  warning  'CardHeader' is defined but never used  @typescript-eslint/no-unused-vars
+  1:41  warning  'CardTitle' is defined but never used   @typescript-eslint/no-unused-vars
+  2:58  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/RoadmapOverview.tsx
+  33:11  warning  'getTrendColor' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/RoadmapPhases.tsx
+  2:10  warning  'Card' is defined but never used             @typescript-eslint/no-unused-vars
+  2:16  warning  'CardContent' is defined but never used      @typescript-eslint/no-unused-vars
+  2:29  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  2:46  warning  'CardHeader' is defined but never used       @typescript-eslint/no-unused-vars
+  2:58  warning  'CardTitle' is defined but never used        @typescript-eslint/no-unused-vars
+  6:54  warning  'Circle' is defined but never used           @typescript-eslint/no-unused-vars
+  6:85  warning  'Lightbulb' is defined but never used        @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/RoadmapWizard.tsx
+  12:5   warning  'Layers' is defined but never used                 @typescript-eslint/no-unused-vars
+  52:11  warning  'isStep1Valid' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/roadmap/SkillTree.tsx
+    4:10  warning  'Target' is defined but never used             @typescript-eslint/no-unused-vars
+    4:18  warning  'Star' is defined but never used               @typescript-eslint/no-unused-vars
+    4:24  warning  'Brain' is defined but never used              @typescript-eslint/no-unused-vars
+    4:31  warning  'Lightbulb' is defined but never used          @typescript-eslint/no-unused-vars
+    4:50  warning  'Lock' is defined but never used               @typescript-eslint/no-unused-vars
+    4:79  warning  'Zap' is defined but never used                @typescript-eslint/no-unused-vars
+    4:84  warning  'ArrowDown' is defined but never used          @typescript-eslint/no-unused-vars
+  164:11  warning  'isLocked' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/ui/calendar.tsx
+  45:25  warning  '_props' is defined but never used  @typescript-eslint/no-unused-vars
+  46:26  warning  '_props' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/components/ui/chart.tsx
+  62:55  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/config/badges.ts
+  1:27  warning  'UserBadgeData' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/hooks/use-notifications.ts
+  96:7  warning  'title' is defined but never used    @typescript-eslint/no-unused-vars
+  97:7  warning  'message' is defined but never used  @typescript-eslint/no-unused-vars
+  98:7  warning  'type' is defined but never used     @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/hooks/use-prevent-navigation.ts
+  27:33  warning  'event' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/hooks/use-subscription-timer.ts
+  119:8  warning  React Hook useEffect has a missing dependency: 'totalRemainingSeconds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/sumit/Documents/ArjunaAi/interview/src/hooks/use-toast.ts
+  15:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+/home/sumit/Documents/ArjunaAi/interview/src/services/leaderboard.service.ts
+  34:17  warning  'dateFilter' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 421 problems (27 errors, 394 warnings)
+

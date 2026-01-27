@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 type Theme = "dark" | "light" | "system"
 
 export function ThemeToggle() {
-    const [theme, setTheme] = useState<Theme>("light")
+    const [, setTheme] = useState<Theme>("light")
 
     useEffect(() => {
         const savedTheme = localStorage.getItem("theme") as Theme

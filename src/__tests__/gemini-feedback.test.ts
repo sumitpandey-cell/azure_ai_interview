@@ -1,7 +1,7 @@
 // Mock environment variable BEFORE importing the module
 process.env.NEXT_PUBLIC_GEMINI_API_KEY = 'test-api-key-123';
 
-import { generateFeedback, analyzeInterviewLength, INTERVIEW_THRESHOLDS } from '../lib/gemini-feedback';
+import { generateFeedback, analyzeInterviewLength, INTERVIEW_CONFIG, Message, InterviewSessionData } from '../lib/gemini-feedback';
 
 // Mock the fetch API
 global.fetch = jest.fn();
@@ -13,9 +13,9 @@ describe('Feedback Generation Tests', () => {
 
     describe('analyzeInterviewLength', () => {
         it('should correctly analyze a too-short interview', () => {
-            const transcript: any = [
-                { speaker: 'ai', text: 'Hello', timestamp: 1 },
-                { speaker: 'user', text: 'Hi', timestamp: 2 },
+            const transcript: Message[] = [
+                { speaker: 'ai' as const, text: 'Hello', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Hi', timestamp: 2 },
             ];
 
             const analysis = analyzeInterviewLength(transcript);
@@ -27,26 +27,28 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should correctly analyze a short interview', () => {
-            const transcript: any = [
-                { speaker: 'ai', text: 'Question 1', timestamp: 1 },
-                { speaker: 'user', text: 'Answer 1', timestamp: 2 },
-                { speaker: 'ai', text: 'Question 2', timestamp: 3 },
-                { speaker: 'user', text: 'Answer 2', timestamp: 4 },
-                { speaker: 'ai', text: 'Question 3', timestamp: 5 },
-                { speaker: 'user', text: 'Answer 3', timestamp: 6 },
+            const transcript: Message[] = [
+                { speaker: 'ai' as const, text: 'Question 1', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Answer 1', timestamp: 2 },
+                { speaker: 'ai' as const, text: 'Question 2', timestamp: 3 },
+                { speaker: 'user' as const, text: 'Answer 2', timestamp: 4 },
+                { speaker: 'ai' as const, text: 'Question 3', timestamp: 5 },
+                { speaker: 'user' as const, text: 'Answer 3', timestamp: 6 },
+                { speaker: 'ai' as const, text: 'Question 4', timestamp: 7 },
+                { speaker: 'user' as const, text: 'Answer 4', timestamp: 8 },
             ];
 
             const analysis = analyzeInterviewLength(transcript);
 
             expect(analysis.category).toBe('short');
-            expect(analysis.totalTurns).toBe(6);
-            expect(analysis.userTurns).toBe(3);
-            expect(analysis.aiTurns).toBe(3);
+            expect(analysis.totalTurns).toBe(8);
+            expect(analysis.userTurns).toBe(4);
+            expect(analysis.aiTurns).toBe(4);
         });
 
         it('should correctly analyze a medium interview', () => {
-            const transcript: any = Array.from({ length: 12 }, (_, i) => ({
-                speaker: i % 2 === 0 ? 'ai' : 'user',
+            const transcript: Message[] = Array.from({ length: 15 }, (_, i) => ({
+                speaker: i % 2 === 0 ? 'ai' as const : 'user' as const,
                 text: `Message ${i}`,
                 timestamp: i,
             }));
@@ -54,12 +56,12 @@ describe('Feedback Generation Tests', () => {
             const analysis = analyzeInterviewLength(transcript);
 
             expect(analysis.category).toBe('medium');
-            expect(analysis.totalTurns).toBe(12);
+            expect(analysis.totalTurns).toBe(15);
         });
 
         it('should correctly analyze a long interview', () => {
-            const transcript: any = Array.from({ length: 30 }, (_, i) => ({
-                speaker: i % 2 === 0 ? 'ai' : 'user',
+            const transcript: Message[] = Array.from({ length: 40 }, (_, i) => ({
+                speaker: i % 2 === 0 ? 'ai' as const : 'user' as const,
                 text: `Message ${i}`,
                 timestamp: i,
             }));
@@ -67,22 +69,22 @@ describe('Feedback Generation Tests', () => {
             const analysis = analyzeInterviewLength(transcript);
 
             expect(analysis.category).toBe('long');
-            expect(analysis.totalTurns).toBe(30);
+            expect(analysis.totalTurns).toBe(40);
         });
 
         it('should handle both "speaker" and "sender" field names', () => {
-            const transcriptWithSpeaker: any = [
-                { speaker: 'ai', text: 'Hello', timestamp: 1 },
-                { speaker: 'user', text: 'Hi', timestamp: 2 },
-                { speaker: 'ai', text: 'How are you?', timestamp: 3 },
-                { speaker: 'user', text: 'Good', timestamp: 4 },
+            const transcriptWithSpeaker: Message[] = [
+                { speaker: 'ai' as const, text: 'Hello', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Hi', timestamp: 2 },
+                { speaker: 'ai' as const, text: 'How are you?', timestamp: 3 },
+                { speaker: 'user' as const, text: 'Good', timestamp: 4 },
             ];
 
-            const transcriptWithSender: any = [
-                { sender: 'ai', text: 'Hello', id: 1 },
-                { sender: 'user', text: 'Hi', id: 2 },
-                { sender: 'ai', text: 'How are you?', id: 3 },
-                { sender: 'user', text: 'Good', id: 4 },
+            const transcriptWithSender: Message[] = [
+                { sender: 'ai' as const, speaker: 'ai' as const, text: 'Hello', timestamp: 1 },
+                { sender: 'user' as const, speaker: 'user' as const, text: 'Hi', timestamp: 2 },
+                { sender: 'ai' as const, speaker: 'ai' as const, text: 'How are you?', timestamp: 3 },
+                { sender: 'user' as const, speaker: 'user' as const, text: 'Good', timestamp: 4 },
             ];
 
             const analysisSpeaker = analyzeInterviewLength(transcriptWithSpeaker);
@@ -95,9 +97,9 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should calculate average user response length', () => {
-            const transcript: any = [
-                { speaker: 'user', text: 'Short', timestamp: 1 },
-                { speaker: 'user', text: 'This is a longer response', timestamp: 2 },
+            const transcript: Message[] = [
+                { speaker: 'user' as const, text: 'Short', timestamp: 1 },
+                { speaker: 'user' as const, text: 'This is a longer response', timestamp: 2 },
             ];
 
             const analysis = analyzeInterviewLength(transcript);
@@ -106,9 +108,9 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should count total words correctly', () => {
-            const transcript: any = [
-                { speaker: 'ai', text: 'Hello world', timestamp: 1 },
-                { speaker: 'user', text: 'Hi there friend', timestamp: 2 },
+            const transcript: Message[] = [
+                { speaker: 'ai' as const, text: 'Hello world', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Hi there friend', timestamp: 2 },
             ];
 
             const analysis = analyzeInterviewLength(transcript);
@@ -118,7 +120,7 @@ describe('Feedback Generation Tests', () => {
     });
 
     describe('generateFeedback', () => {
-        const mockSessionData: any = {
+        const mockSessionData: InterviewSessionData = {
             id: 'test-session-123',
             interview_type: 'technical',
             position: 'Full Stack Developer',
@@ -129,9 +131,9 @@ describe('Feedback Generation Tests', () => {
         };
 
         it('should return minimal feedback for too-short interviews', async () => {
-            const transcript: any = [
-                { speaker: 'ai', text: 'Hello', timestamp: 1 },
-                { speaker: 'user', text: 'Hi', timestamp: 2 },
+            const transcript: Message[] = [
+                { speaker: 'ai' as const, text: 'Hello', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Hi', timestamp: 2 },
             ];
 
             const feedback = await generateFeedback(transcript, mockSessionData);
@@ -143,30 +145,30 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should handle database transcript format with speaker field', async () => {
-            const transcript: any = [
+            const transcript: Message[] = [
                 {
                     text: 'Hello',
-                    speaker: 'user',
+                    speaker: 'user' as const,
                     timestamp: 1766315782704,
                 },
                 {
-                    text: 'Hello and welcome! I\'m Arjuna AI.',
-                    speaker: 'ai',
+                    text: "Hello and welcome! I'm Arjuna AI.",
+                    speaker: 'ai' as const,
                     timestamp: 1766315784853,
                 },
                 {
-                    text: 'My name is Smith Pandey and I\'m a full stack developer.',
-                    speaker: 'user',
+                    text: "My name is Smith Pandey and I'm a full stack developer.",
+                    speaker: 'user' as const,
                     timestamp: 1766315818400,
                 },
                 {
                     text: 'Great, Smith. Could you explain React?',
-                    speaker: 'ai',
+                    speaker: 'ai' as const,
                     timestamp: 1766315824968,
                 },
                 {
                     text: 'React is a JavaScript library for building user interfaces.',
-                    speaker: 'user',
+                    speaker: 'user' as const,
                     timestamp: 1766315830000,
                 },
             ];
@@ -207,8 +209,8 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should call Gemini API with correct parameters', async () => {
-            const transcript: any = Array.from({ length: 10 }, (_, i) => ({
-                speaker: i % 2 === 0 ? 'ai' : 'user',
+            const transcript: Message[] = Array.from({ length: 10 }, (_, i) => ({
+                speaker: i % 2 === 0 ? 'ai' as const : 'user' as const,
                 text: `Message ${i}`,
                 timestamp: Date.now() + i,
             }));
@@ -254,8 +256,8 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should return fallback feedback on API error', async () => {
-            const transcript: any = Array.from({ length: 10 }, (_, i) => ({
-                speaker: i % 2 === 0 ? 'ai' : 'user',
+            const transcript: Message[] = Array.from({ length: 10 }, (_, i) => ({
+                speaker: i % 2 === 0 ? 'ai' as const : 'user' as const,
                 text: `Message ${i}`,
                 timestamp: Date.now() + i,
             }));
@@ -270,7 +272,7 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should handle company-specific interview context', async () => {
-            const sessionWithCompany: any = {
+            const sessionWithCompany: InterviewSessionData = {
                 ...mockSessionData,
                 config: {
                     ...mockSessionData.config,
@@ -283,8 +285,8 @@ describe('Feedback Generation Tests', () => {
                 },
             };
 
-            const transcript: any = Array.from({ length: 10 }, (_, i) => ({
-                speaker: i % 2 === 0 ? 'ai' : 'user',
+            const transcript: Message[] = Array.from({ length: 10 }, (_, i) => ({
+                speaker: i % 2 === 0 ? 'ai' as const : 'user' as const,
                 text: `Message ${i}`,
                 timestamp: Date.now() + i,
             }));
@@ -326,11 +328,11 @@ describe('Feedback Generation Tests', () => {
         });
 
         it('should filter out internal thoughts from transcript', async () => {
-            const transcript: any = [
-                { speaker: 'ai', text: '**Greeting**\nHello there', timestamp: 1 },
-                { speaker: 'user', text: 'Hi\n* internal thought\nHow are you?', timestamp: 2 },
-                { speaker: 'ai', text: 'Good\n(thinking)', timestamp: 3 },
-                { speaker: 'user', text: 'Great', timestamp: 4 },
+            const transcript: Message[] = [
+                { speaker: 'ai' as const, text: '**Greeting**\nHello there', timestamp: 1 },
+                { speaker: 'user' as const, text: 'Hi\n* internal thought\nHow are you?', timestamp: 2 },
+                { speaker: 'ai' as const, text: 'Good\n(thinking)', timestamp: 3 },
+                { speaker: 'user' as const, text: 'Great', timestamp: 4 },
             ];
 
             // Mock successful API response
@@ -372,12 +374,12 @@ describe('Feedback Generation Tests', () => {
         });
     });
 
-    describe('INTERVIEW_THRESHOLDS', () => {
+    describe('INTERVIEW_CONFIG', () => {
         it('should have correct threshold values', () => {
-            expect(INTERVIEW_THRESHOLDS.MINIMUM_TURNS).toBe(4);
-            expect(INTERVIEW_THRESHOLDS.SHORT_INTERVIEW).toBe(8);
-            expect(INTERVIEW_THRESHOLDS.MEDIUM_INTERVIEW).toBe(15);
-            expect(INTERVIEW_THRESHOLDS.LONG_INTERVIEW).toBe(25);
+            expect(INTERVIEW_CONFIG.LENGTH_CATEGORIES.TOO_SHORT).toBe(6);
+            expect(INTERVIEW_CONFIG.LENGTH_CATEGORIES.SHORT).toBe(12);
+            expect(INTERVIEW_CONFIG.LENGTH_CATEGORIES.MEDIUM).toBe(20);
+            expect(INTERVIEW_CONFIG.LENGTH_CATEGORIES.LONG).toBe(35);
         });
     });
 });

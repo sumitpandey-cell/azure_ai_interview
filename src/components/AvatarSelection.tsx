@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Mic, Brain, Code, Sparkles, ChevronRight, Zap, Heart, Target, Award } from 'lucide-react';
+import React from 'react';
+import { Mic, Brain, Sparkles, ChevronRight, Zap, Heart, Target, Award } from 'lucide-react';
 import { INTERVIEWER_AVATARS, type InterviewerAvatar } from '@/config/interviewer-avatars';
 
 interface AvatarSelectionProps {
@@ -180,7 +180,7 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default',
                                                 {/* Personality Quote */}
                                                 <div className="mb-6 p-3 bg-muted/50 rounded-lg border-l-2 border-primary/50">
                                                     <p className="text-xs text-muted-foreground italic">
-                                                        "{avatar.personality}"
+                                                        &quot;{avatar.personality}&quot;
                                                     </p>
                                                 </div>
 

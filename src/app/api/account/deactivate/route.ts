@@ -13,8 +13,8 @@ export async function POST(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -37,8 +37,8 @@ export async function POST(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -66,9 +66,10 @@ export async function POST(request: Request) {
             message: "Account deactivated successfully"
         });
 
-    } catch (error: any) {
+    } catch (err: unknown) {
+        console.error("❌ Account Deactivation Error:", (err as Error).message);
         return NextResponse.json(
-            { error: error.message || "Internal server error" },
+            { error: (err as Error).message || "Internal server error" },
             { status: 500 }
         );
     }

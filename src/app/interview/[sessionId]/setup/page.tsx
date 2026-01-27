@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Brain, Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Settings, Zap } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -23,7 +24,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
 
 interface SessionConfig {
     skills?: string[];
@@ -43,6 +43,7 @@ interface SessionData {
     id: string;
     interview_type: string;
     position: string;
+    status: string;
     duration_seconds?: number | null;
     config?: SessionConfig | null;
 }
@@ -69,6 +70,7 @@ export default function InterviewSetup() {
         if (sessionId) {
             fetchSession();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionId]);
 
     // Load selected avatar from session config
@@ -87,7 +89,7 @@ export default function InterviewSetup() {
                 throw new Error('Invalid session ID');
             }
 
-            let sessionData: any;
+            let sessionData: SessionData;
 
             // 1. Check store first
             if (currentSession && currentSession.id === sessionId) {
@@ -97,7 +99,7 @@ export default function InterviewSetup() {
                 const data = await interviewService.getSessionById(sessionId);
                 if (!data) throw new Error('Session not found');
 
-                sessionData = data;
+                sessionData = data as unknown as SessionData;
 
                 // Update store with fetched session
                 setCurrentSession({
@@ -119,8 +121,9 @@ export default function InterviewSetup() {
             }
 
             setSession(sessionData as SessionData);
-        } catch (error) {
-            console.error("Error fetching session:", error);
+        } catch (err: unknown) {
+            const error = err as Error;
+            console.error("Stream error:", error);
             toast.error("Session not found. Redirecting to start interview.");
             router.replace("/start-interview");
         } finally {
@@ -143,8 +146,9 @@ export default function InterviewSetup() {
                     setStream(audioStream);
                 }
                 setIsMicOn(true);
-            } catch (error: any) {
-                console.error('Error starting mic:', error);
+            } catch (err: unknown) {
+                const error = err as Error;
+                console.error("Error starting session:", error);
                 toast.error('Microphone access denied or unavailable.');
             }
         } else {
@@ -183,12 +187,13 @@ export default function InterviewSetup() {
                     audio: true
                 });
                 updateStreamAndState(mediaStream, true, true);
-            } catch (error: any) {
-                console.warn('Initial dual-media request failed, trying fallbacks:', error.name);
+            } catch (error: unknown) {
+                const mediaError = error as Error;
+                console.warn('Initial dual-media request failed, trying fallbacks:', mediaError.name);
 
                 // If video failed but audio might still work
-                if (error.name === 'NotAllowedError' || error.name === 'NotFoundError' || error.name === 'NotReadableError' || error.name === 'OverconstrainedError') {
-                    setCameraError(getSpecificErrorMessage(error));
+                if (mediaError.name === 'NotAllowedError' || mediaError.name === 'NotFoundError' || mediaError.name === 'NotReadableError' || mediaError.name === 'OverconstrainedError') {
+                    setCameraError(getSpecificErrorMessage(mediaError));
 
                     // IF we already have mic check it or try to get it
                     try {
@@ -203,7 +208,7 @@ export default function InterviewSetup() {
                     throw error;
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             handleMediaError(error);
         }
     };
@@ -236,16 +241,18 @@ export default function InterviewSetup() {
         if (audioGranted) setIsMicOn(true);
     };
 
-    const getSpecificErrorMessage = (error: any) => {
-        if (error.name === 'NotAllowedError') return 'Camera permission denied.';
-        if (error.name === 'NotFoundError') return 'No camera found.';
-        if (error.name === 'NotReadableError') return 'Camera is busy.';
+    const getSpecificErrorMessage = (error: unknown) => {
+        const err = error as { name?: string };
+        if (err.name === 'NotAllowedError') return 'Camera permission denied.';
+        if (err.name === 'NotFoundError') return 'No camera found.';
+        if (err.name === 'NotReadableError') return 'Camera is busy.';
         return 'Camera access failed.';
     };
 
-    const handleMediaError = (error: any) => {
+    const handleMediaError = (error: unknown) => {
         console.error('Error accessing media:', error);
-        if (error.name === 'NotAllowedError') {
+        const err = error as { name?: string };
+        if (err.name === 'NotAllowedError') {
             toast.error('Media access denied. Please check browser permissions.');
         } else {
             toast.error('Unexpected error accessing camera/microphone.');
@@ -316,7 +323,7 @@ export default function InterviewSetup() {
         try {
             // Update session config to track current stage and selected avatar
             if (sessionId && typeof sessionId === 'string') {
-                const currentConfig = (session?.config as Record<string, any>) || {};
+                const currentConfig = (session?.config as Record<string, unknown>) || {};
                 await interviewService.updateSession(sessionId, {
                     config: {
                         ...currentConfig,
@@ -369,7 +376,7 @@ export default function InterviewSetup() {
                 <div className="flex items-center gap-4">
                     <div className="relative group cursor-pointer" onClick={() => router.push('/dashboard')}>
                         <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-all"></div>
-                        <img src="/favicon.ico" alt="Arjuna AI" className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                        <Image src="/favicon.ico" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-none">

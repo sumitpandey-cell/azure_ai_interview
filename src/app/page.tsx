@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy, Map, BarChart3, Rocket } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Target, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Star, Building2, Mic, PlayCircle, Trophy, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Footer } from "@/components/Footer";
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { TransitionButton } from "@/components/TransitionButton";
 import { PublicHeader } from "@/components/PublicHeader";
 
@@ -49,130 +50,6 @@ export default function Landing() {
     setMounted(true);
   }, []);
 
-  const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Interviews",
-      description: "Practice with advanced AI that adapts to your responses and simulates real interview scenarios",
-      gradient: "from-indigo-500 to-blue-500",
-    },
-    {
-      icon: Target,
-      title: "Personalized Feedback",
-      description: "Get detailed analysis with actionable improvement suggestions after each session",
-      gradient: "from-blue-500 to-cyan-500",
-    },
-    {
-      icon: Map,
-      title: "Adaptive AI Roadmap",
-      description: "AI-generated learning paths tailored to your interview performance and career goals",
-      gradient: "from-purple-500 to-indigo-500",
-    },
-    {
-      icon: MessageSquare,
-      title: "Real-Time Coaching",
-      description: "Receive intelligent guidance during practice sessions to learn on the go",
-      gradient: "from-cyan-500 to-blue-500",
-    },
-    {
-      icon: Award,
-      title: "Earn Achievements",
-      description: "Unlock badges and milestones as you master different interview skills",
-      gradient: "from-blue-500 to-indigo-500",
-    },
-    {
-      icon: Zap,
-      title: "Daily Free Practice",
-      description: "Get 30 minutes of free daily practice time to perfect your skills",
-      gradient: "from-indigo-500 to-purple-500",
-    },
-  ];
-
-  const steps = [
-    {
-      number: "01",
-      title: "Choose Your Role",
-      description: "Select the job position you're preparing for",
-      icon: Target,
-    },
-    {
-      number: "02",
-      title: "Start Interview",
-      description: "Begin your AI-powered practice session",
-      icon: MessageSquare,
-    },
-    {
-      number: "03",
-      title: "Get Feedback",
-      description: "Receive detailed analysis and improvement tips",
-      icon: TrendingUp,
-    },
-    {
-      number: "04",
-      title: "Improve & Repeat",
-      description: "Track progress and keep practicing",
-      icon: Award,
-    },
-  ];
-
-  const testimonials = [
-    {
-      text: "I was skeptical about AI interviews at first, but Aura blew me away. The voice interaction feels so natural, and the feedback on my tone and pacing was something I couldn't get from just practicing with friends. It really helped me polish my soft skills for the Google behavioral round.",
-      name: "Sarah Chen",
-      role: "Software Engineer at Google",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "The system design templates are gold. I used to struggle with structuring my answers, but the step-by-step guidance here gave me a solid framework. I felt much more in control during my actual interview at Meta. Definitely worth it.",
-      name: "Michael Rodriguez",
-      role: "Product Manager at Meta",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "What I love is the specificity of the feedback. It doesn't just say 'good job', it points out exactly where I missed an edge case or could have optimized my code better. It's like having a senior engineer reviewing your code 24/7.",
-      name: "Priya Sharma",
-      role: "Data Scientist at Amazon",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "As a UX designer, I get nervous explaining my design decisions. Aura helped me practice articulating my thought process clearly. The 'why' behind the design is just as important as the design itself, and this tool really gets that.",
-      name: "James Wilson",
-      role: "UX Designer at Apple",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "I had a gap in my resume and was terrified of the 'tell me about yourself' question. I practiced it 50 times on Aura until I nailed the delivery. The confidence boost was real, and I think that's what got me the offer.",
-      name: "Emily Taylor",
-      role: "Marketing Manager at Netflix",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "The daily challenges kept me consistent. It's easy to slack off on prep, but seeing my streak grow and my scores improve became a fun little game. It turned a stressful process into something actually manageable.",
-      name: "David Kim",
-      role: "Senior Dev at Microsoft",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-  ];
-
-  const stats = [
-    { value: "50K+", label: "Active Users" },
-    { value: "500K+", label: "Interviews Completed" },
-    { value: "95%", label: "Success Rate" },
-    { value: "4.9/5", label: "User Rating" },
-  ];
-
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
 
   if (!mounted) {
     return (
@@ -267,10 +144,12 @@ export default function Landing() {
                   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&q=80&fit=crop&crop=faces",
                   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&fit=crop&crop=faces"
                 ].map((src, i) => (
-                  <img
+                  <Image
                     key={i}
                     src={src}
                     alt="User"
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full border-2 border-[#0A0A0B] object-cover"
                   />
                 ))}
@@ -342,9 +221,11 @@ export default function Landing() {
                 </div>
 
                 <div className="relative z-0 bg-[#0f1117]">
-                  <img
+                  <Image
                     src="/dashboard-preview.png"
                     alt="Dashboard Preview"
+                    width={1920}
+                    height={1080}
                     className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
@@ -644,7 +525,7 @@ export default function Landing() {
                   {/* Rank 2 */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-slate-200 mb-2 overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" alt="Rank 2" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" alt="Rank 2" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-16 w-12 bg-slate-100 rounded-t-lg flex items-center justify-center text-slate-600 font-bold text-sm">2</div>
                   </div>
@@ -654,14 +535,14 @@ export default function Landing() {
                       <Award className="h-6 w-6 fill-yellow-500" />
                     </div>
                     <div className="w-14 h-14 rounded-full bg-yellow-500/20 border-2 border-yellow-500 mb-2 overflow-hidden ring-4 ring-yellow-500/10">
-                      <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Rank 1" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Rank 1" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-24 w-16 bg-gradient-to-b from-yellow-500/20 to-yellow-500/5 rounded-t-lg flex items-center justify-center text-yellow-500 font-bold text-lg border-t border-yellow-500/30">1</div>
                   </div>
                   {/* Rank 3 */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-slate-200 mb-2 overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" alt="Rank 3" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" alt="Rank 3" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-12 w-12 bg-slate-100 rounded-t-lg flex items-center justify-center text-slate-600 font-bold text-sm">3</div>
                   </div>
@@ -888,7 +769,7 @@ export default function Landing() {
               Crack the <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Big Tech</span> Code
             </h2>
             <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Don't practice randomly. Train with the exact questions, patterns, and evaluation criteria used by top tech giants.
+              Don&apos;t practice randomly. Train with the exact questions, patterns, and evaluation criteria used by top tech giants.
             </p>
           </div>
 
@@ -917,7 +798,7 @@ export default function Landing() {
 
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">Google</h3>
                 <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                  Master the art of "Googleyness", dynamic programming, and scalable system design.
+                  Master the art of &quot;Googleyness&quot;, dynamic programming, and scalable system design.
                 </p>
 
                 <div className="flex flex-col gap-1 mb-8">
@@ -1122,7 +1003,7 @@ export default function Landing() {
                       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
                     ].map((src, i) => (
                       <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0A0B] overflow-hidden">
-                        <img src={src} alt="User" className="w-full h-full object-cover" />
+                        <Image src={src} alt="User" width={100} height={100} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
@@ -1212,11 +1093,13 @@ export default function Landing() {
                       className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:-rotate-1 hover:scale-[1.02]"
                     >
 
-                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">"{testimonial.text}"</p>
+                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <img
+                        <Image
                           src={testimonial.image}
                           alt={testimonial.name}
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
                         />
                         <div>
@@ -1278,11 +1161,13 @@ export default function Landing() {
                       key={`col2-${i}`}
                       className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:scale-[1.02] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:rotate-1"
                     >
-                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">"{testimonial.text}"</p>
+                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <img
+                        <Image
                           src={testimonial.image}
                           alt={testimonial.name}
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
                         />
                         <div>

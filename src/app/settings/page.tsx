@@ -15,20 +15,12 @@ import {
     User,
     Bell,
     Shield,
-    Trash2,
-    Upload,
     CreditCard,
     Palette,
-    Settings as SettingsIcon,
-    ChevronRight,
     Sparkles,
-    Lock,
-    Mail,
-    Globe,
     ExternalLink,
     Copy,
-    Loader2,
-    BarChart3
+    Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
@@ -42,13 +34,13 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { getPreferredLanguage, type LanguageOption } from "@/lib/language-config";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { profileService } from "@/services/profile.service";
-import { interviewService } from "@/services/interview.service";
+
 import { useRouter } from "next/navigation";
 import { useSubscription } from "@/hooks/use-subscription";
-import { formatDurationShort } from "@/lib/format-duration";
+
 import { subscriptionService } from "@/services/subscription.service";
 import { Tables } from "@/integrations/supabase/types";
-import { ArrowUpRight, ArrowDownLeft, Receipt, Clock } from "lucide-react";
+import { ArrowUpRight, Receipt } from "lucide-react";
 import { format } from "date-fns";
 
 type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
@@ -56,7 +48,7 @@ type SettingsSection = "general" | "appearance" | "notifications" | "security" |
 type TransactionItem = Tables<"subscriptions"> & { plans?: { name: string } | null };
 
 export default function Settings() {
-    const { user, loading: authLoading } = useAuth();
+    const { user } = useAuth();
     const { fetchProfile } = useOptimizedQueries();
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<SettingsSection>("general");
@@ -119,23 +111,22 @@ export default function Settings() {
 
             // Fetch transactions if on billing section
             if (activeSection === "billing") {
+                const fetchTransactions = async () => {
+                    if (!user?.id) return;
+                    try {
+                        setTransactionsLoading(true);
+                        const data = await subscriptionService.getTransactions(user.id);
+                        setTransactions(data);
+                    } catch (error) {
+                        console.error("Error fetching transactions:", error);
+                    } finally {
+                        setTransactionsLoading(false);
+                    }
+                };
                 fetchTransactions();
             }
         }
     }, [user, activeSection]);
-
-    const fetchTransactions = async () => {
-        if (!user?.id) return;
-        try {
-            setTransactionsLoading(true);
-            const data = await subscriptionService.getTransactions(user.id);
-            setTransactions(data);
-        } catch (error) {
-            console.error("Error fetching transactions:", error);
-        } finally {
-            setTransactionsLoading(false);
-        }
-    };
 
     const handleLanguageChange = (language: LanguageOption) => {
         setSelectedLanguage(language);
@@ -186,9 +177,10 @@ export default function Settings() {
             setAvatarUrl(publicUrl);
             await fetchProfile(true); // Refresh cache
             toast.success("Profile picture updated successfully!");
-        } catch (error: any) {
-            console.error("Error updating profile picture:", error);
-            toast.error(error.message || "Failed to update profile picture");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating profile picture:", err);
+            toast.error(err.message || "Failed to update profile picture");
         } finally {
             setLoading(false);
         }
@@ -221,9 +213,10 @@ export default function Settings() {
 
             await fetchProfile(true); // Refresh cache
             toast.success("Profile updated successfully!");
-        } catch (error: any) {
-            console.error("Error updating profile:", error);
-            toast.error(error.message || "Failed to update profile");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating profile:", err);
+            toast.error(err.message || "Failed to update profile");
         } finally {
             setLoading(false);
         }
@@ -241,9 +234,10 @@ export default function Settings() {
             } else {
                 throw new Error("Failed to update visibility");
             }
-        } catch (error: any) {
-            console.error("Error toggling privacy:", error);
-            toast.error(error.message || "Failed to update privacy settings");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error toggling privacy:", err);
+            toast.error(err.message || "Failed to update privacy settings");
         } finally {
             setLoading(false);
         }
@@ -289,9 +283,10 @@ export default function Settings() {
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (error: any) {
-            console.error("Error updating password:", error);
-            toast.error(error.message || "Failed to update password");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating password:", err);
+            toast.error(err.message || "Failed to update password");
         } finally {
             setLoading(false);
         }
@@ -322,9 +317,10 @@ export default function Settings() {
             } else {
                 toast.error(data.error || "Failed to deactivate account");
             }
-        } catch (error: any) {
-            console.error("Error deactivating account:", error);
-            toast.error(error.message || "Failed to deactivate account");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error deactivating account:", err);
+            toast.error(err.message || "Failed to deactivate account");
         } finally {
             setLoading(false);
         }
@@ -344,9 +340,10 @@ export default function Settings() {
 
             if (error) throw error;
             toast.success("Notification preferences saved!");
-        } catch (error: any) {
-            console.error("Error saving notifications:", error);
-            toast.error(error.message || "Failed to save notification preferences");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error saving notifications:", err);
+            toast.error(err.message || "Failed to save notification preferences");
         } finally {
             setLoading(false);
         }
@@ -711,7 +708,7 @@ export default function Settings() {
                                         </div>
                                         <div className="space-y-4 pt-2">
                                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                                Out of credits? Top up your balance anytime. Your purchased minutes are permanent and won't expire at the end of the month.
+                                                Out of credits? Top up your balance anytime. Your purchased minutes are permanent and won&apos;t expire at the end of the month.
                                             </p>
                                             <Button className="w-full sm:w-auto" onClick={() => router.push('/pricing')}>
                                                 Top Up Balance

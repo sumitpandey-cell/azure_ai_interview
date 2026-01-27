@@ -39,15 +39,15 @@ export interface UserBadgeData {
     wasInactive: boolean;
     earnedBadges: string[];
     // Extended fields used by badge definitions
-    highestScore?: number;
-    averageScore?: number;
-    communicationScore?: number;
-    skillMastery?: number;
-    technicalScore?: number;
-    fastestTime?: number; // in minutes
-    interviewTypes?: number; // count of unique types
-    morningInterviews?: number;
-    nightInterviews?: number;
+    highestScore: number;
+    averageScore: number;
+    communicationScore: number;
+    skillMastery: number;
+    technicalScore: number;
+    fastestTime: number; // in minutes
+    interviewTypes: number; // count of unique types
+    morningInterviews: number;
+    nightInterviews: number;
 }
 
 export interface BadgeEarnedEvent {

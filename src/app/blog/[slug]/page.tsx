@@ -5,8 +5,9 @@ import { getPostBySlug, blogPosts } from "@/lib/blog-data";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Footer } from "@/components/Footer";
 import { GlobalBackground } from "@/components/GlobalBackground";
-import { Calendar, User, Clock, ArrowLeft, Share2, Twitter, Linkedin, Facebook, ArrowRight, Tag, TrendingUp, Mail, Search } from "lucide-react";
+import { Calendar, Clock, ArrowLeft, Share2, Twitter, Linkedin, Facebook, ArrowRight, Tag, TrendingUp, Mail, Search } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export default function BlogPostPage() {
@@ -18,7 +19,7 @@ export default function BlogPostPage() {
         return (
             <div className="min-h-screen bg-[#0A0A0B] text-white flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl font-bold mb-4 text-gradient">Post Not Found</h1>
-                <p className="text-slate-400 mb-8">The article you're looking for doesn't exist.</p>
+                <p className="text-slate-400 mb-8">The article you&apos;re looking for doesn&apos;t exist.</p>
                 <Button asChild className="rounded-full bg-white text-black hover:bg-slate-200">
                     <Link href="/blog">Back to Blog</Link>
                 </Button>
@@ -79,10 +80,12 @@ export default function BlogPostPage() {
                             {/* Featured Image */}
                             <div className="relative aspect-[21/9] rounded-[2.5rem] overflow-hidden mb-16 border border-white/10 shadow-2xl">
                                 <div className="absolute inset-0 bg-indigo-900/10 mix-blend-overlay" />
-                                <img
+                                <Image
                                     src={post.image}
                                     alt={post.title}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
+                                    priority
                                 />
                             </div>
 
@@ -176,8 +179,13 @@ export default function BlogPostPage() {
                                 <div className="space-y-8">
                                     {blogPosts.filter(p => p.slug !== post.slug).slice(0, 3).map((p, i) => (
                                         <Link href={`/blog/${p.slug}`} key={i} className="group flex gap-5">
-                                            <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                                                <img src={p.image} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                                            <div className="h-20 w-20 shrink-0 rounded-2xl overflow-hidden border border-white/10 shadow-lg relative">
+                                                <Image
+                                                    src={p.image}
+                                                    alt=""
+                                                    fill
+                                                    className="object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+                                                />
                                             </div>
                                             <div className="flex flex-col justify-center">
                                                 <h4 className="text-sm font-bold text-white line-clamp-2 group-hover:text-indigo-400 transition-colors leading-tight mb-2">

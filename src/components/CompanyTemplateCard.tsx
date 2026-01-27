@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CompanyTemplate } from "@/types/company-types";
 import { Building2, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface CompanyTemplateCardProps {
     template: CompanyTemplate;
@@ -28,15 +29,14 @@ export function CompanyTemplateCard({ template, onSelect, isLoading }: CompanyTe
                     <div className="flex gap-4">
                         <div className="relative h-14 w-14 rounded-lg bg-muted border flex items-center justify-center shrink-0">
                             {template.logo_url ? (
-                                <img
-                                    src={template.logo_url}
-                                    alt={`${template.name} logo`}
-                                    className="w-8 h-8 object-contain"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                    }}
-                                />
+                                <div className="relative h-8 w-8">
+                                    <Image
+                                        src={template.logo_url}
+                                        alt={`${template.name} logo`}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
                             ) : null}
                             <Building2 className={`h-6 w-6 text-muted-foreground ${template.logo_url ? 'hidden' : ''}`} />
                             <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-primary text-primary-foreground rounded-full flex items-center justify-center ring-2 ring-card">

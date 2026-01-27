@@ -1,12 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Award, TrendingUp, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BADGE_DEFINITIONS, getRarityColor, getRarityGlowColor } from "@/config/badges";
+import { BADGE_DEFINITIONS, getRarityColor } from "@/config/badges";
+import { UserBadgeData } from "@/types/badge-types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap } from "lucide-react";
 
 interface BadgeProgressWidgetProps {
     earnedBadges: string[];
@@ -28,18 +27,6 @@ export function BadgeProgressWidget({
     const earnedCount = earnedBadges.length;
     const progressPercentage = totalBadges > 0 ? Math.round((earnedCount / totalBadges) * 100) : 0;
 
-    // Calculate badge score (weighted by rarity)
-    const badgeScore = BADGE_DEFINITIONS.reduce((score, badge) => {
-        if (!earnedBadges.includes(badge.id)) return score;
-        const rarityPoints = {
-            bronze: 10,
-            silver: 25,
-            gold: 50,
-            platinum: 100,
-            special: 75,
-        };
-        return score + (rarityPoints[badge.rarity] || 0);
-    }, 0);
 
     // Get recently earned badges from real data
     // We sort the definitions by those that are in the earnedBadges list
@@ -50,7 +37,7 @@ export function BadgeProgressWidget({
         .reverse();
 
     // Get next achievable badges
-    const mockUserData = {
+    const mockUserData: UserBadgeData = {
         streak: currentStreak,
         totalInterviews,
         weeklyRank: null,
@@ -62,17 +49,24 @@ export function BadgeProgressWidget({
         earnedBadges,
         highestScore: averageScore,
         averageScore,
+        communicationScore: 0,
+        skillMastery: 0,
+        technicalScore: 0,
+        fastestTime: 0,
+        interviewTypes: 0,
+        morningInterviews: 0,
+        nightInterviews: 0,
     };
 
     const nextBadges = BADGE_DEFINITIONS.filter((badge) => {
         if (earnedBadges.includes(badge.id)) return false;
         if (!badge.getProgress) return false;
-        const progress = badge.getProgress(mockUserData as any);
+        const progress = badge.getProgress(mockUserData);
         return progress.current > 0 && progress.current < progress.max;
     })
         .map((badge) => ({
             ...badge,
-            progress: badge.getProgress!(mockUserData as any),
+            progress: badge.getProgress!(mockUserData),
         }))
         .sort((a, b) => {
             const aPercent = (a.progress.current / a.progress.max) * 100;

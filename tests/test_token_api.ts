@@ -30,7 +30,7 @@ async function testTokenApi() {
             return;
         }
 
-        const data = await response.json() as any;
+        const data = await response.json() as { token?: string; url?: string };
 
         if (data.token && data.url) {
             console.log('✅ Success: Received token and URL');
@@ -42,8 +42,8 @@ async function testTokenApi() {
         console.log('\nCheck your terminal logs where the dev server is running to see "Session context prepared for agent"');
         console.log('It should now include "questions" and "isCompanySpecific: true" if the session is a company interview.');
 
-    } catch (error: any) {
-        console.error('❌ API Error:', error.message);
+    } catch (err: unknown) {
+        console.error('❌ API Error:', (err as Error).message);
     }
 }
 

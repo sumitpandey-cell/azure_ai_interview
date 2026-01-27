@@ -5,12 +5,9 @@ import {
     useLocalParticipant,
     useVoiceAssistant,
     useRoomContext,
-    BarVisualizer,
 } from "@livekit/components-react";
-import { ConnectionState, LocalParticipant, Track } from "livekit-client";
+import { ConnectionState, Track } from "livekit-client";
 import {
-    Mic,
-    MicOff,
     PhoneOff,
     Video,
     VideoOff,
@@ -20,17 +17,12 @@ import {
     Brain,
     AlertTriangle,
     Zap,
-    LifeBuoy,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
 import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
-import { LoadingSVG } from "./ui/LoadingSVG";
 import { CircularBlobVisualizer } from "./ui/CircularBlobVisualizer";
-import { interviewService, type InterviewSession } from "@/services/interview.service";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ArjunaLoader, BowLoader } from "@/components/ArjunaLoader";
+import { type InterviewSession } from "@/services/interview.service";
 import { TranscriptProvider, TranscriptEntry } from "@/contexts/TranscriptContext";
 import { HintDialog } from "./HintDialog";
 import {
@@ -79,7 +71,7 @@ export function LiveInterviewSession({
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
     const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
-    const { state: agentState, audioTrack: agentAudioTrack, agent } =
+    const { state: agentState, audioTrack: agentAudioTrack } =
         useVoiceAssistant();
     const room = useRoomContext();
 
@@ -142,7 +134,7 @@ export function LiveInterviewSession({
     useEffect(() => {
         if (!room) return;
 
-        const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic?: string) => {
+        const handleDataReceived = (payload: Uint8Array, _participant: unknown, _kind: unknown, topic?: string) => {
 
             if (topic === "hint_response") {
                 try {
@@ -157,7 +149,7 @@ export function LiveInterviewSession({
                         setIsHintLoading(false);
                     } else {
                     }
-                } catch (error) {
+                } catch {
                     setIsHintLoading(false);
                 }
             } else {
@@ -547,4 +539,3 @@ export function LiveInterviewSession({
     );
 }
 
-const connectionState = ConnectionState;

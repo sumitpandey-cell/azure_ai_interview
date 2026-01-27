@@ -1,6 +1,5 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -61,9 +60,11 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
                 <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
                     <div className="relative">
                         <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <img
+                        <Image
                             src="/arjuna-icon.png"
                             alt="Arjuna AI"
+                            width={36}
+                            height={36}
                             className="h-9 w-9 object-contain drop-shadow-lg relative z-10"
                         />
                     </div>

@@ -9,7 +9,6 @@ import {
     BarChart,
     Palette,
     Briefcase,
-    Layers,
     Target,
     Zap
 } from 'lucide-react';
@@ -49,7 +48,6 @@ export function RoadmapWizard({ onGenerate, isLoading }: RoadmapWizardProps) {
     const handleNext = () => setStep(s => s + 1);
     const handleBack = () => setStep(s => s - 1);
 
-    const isStep1Valid = !!domain;
     const isStep2Valid = role.length >= 3;
     const isStep3Valid = !!level;
 
@@ -113,7 +111,7 @@ export function RoadmapWizard({ onGenerate, isLoading }: RoadmapWizardProps) {
                             <div className="space-y-2">
                                 <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 uppercase tracking-widest text-[10px] py-1 px-3">Step 2: Target Goal</Badge>
                                 <h3 className="text-2xl font-bold tracking-tight">What is your target role?</h3>
-                                <p className="text-muted-foreground text-sm">Be specific, e.g., "Fullstack React Developer" or "Content Strategist".</p>
+                                <p className="text-muted-foreground text-sm">Be specific, e.g., &quot;Fullstack React Developer&quot; or &quot;Content Strategist&quot;.</p>
                             </div>
 
                             <div className="space-y-4">

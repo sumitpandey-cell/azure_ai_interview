@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { redirect } from "next/navigation";
 import { cashfree } from "@/lib/cashfree";
 import { subscriptionService } from "@/services/subscription.service";
 import { createAdminClient } from "@/integrations/supabase/server";
@@ -28,10 +27,10 @@ export async function GET(req: Request) {
         const payments = paymentsResponse.data;
 
         // Find specific payment statuses
-        const successPayment = payments?.find((p: any) => p.payment_status === "SUCCESS");
-        const pendingPayment = payments?.find((p: any) => p.payment_status === "PENDING");
-        const cancelledPayment = payments?.find((p: any) => p.payment_status === "CANCELLED");
-        const failedPayment = payments?.find((p: any) => p.payment_status === "FAILED");
+        const successPayment = payments?.find((p: unknown) => (p as { payment_status?: string }).payment_status === "SUCCESS");
+        const pendingPayment = payments?.find((p: unknown) => (p as { payment_status?: string }).payment_status === "PENDING");
+        const cancelledPayment = payments?.find((p: unknown) => (p as { payment_status?: string }).payment_status === "CANCELLED");
+        const failedPayment = payments?.find((p: unknown) => (p as { payment_status?: string }).payment_status === "FAILED");
 
         if (successPayment && order) {
             const userId = order.customer_details?.customer_id;
@@ -56,7 +55,7 @@ export async function GET(req: Request) {
         }
 
         if (pendingPayment) {
-            const reason = pendingPayment.payment_message || "Processing with bank";
+            const reason = (pendingPayment as { payment_message?: string }).payment_message || "Processing with bank";
             const note = order?.order_note || "";
             const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/dashboard";
             return NextResponse.redirect(new URL(`${redirectPath}?payment=pending&reason=${encodeURIComponent(reason)}`, req.url));
@@ -65,7 +64,7 @@ export async function GET(req: Request) {
             const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
             return NextResponse.redirect(new URL(`${redirectPath}?payment=cancelled`, req.url));
         } else if (failedPayment) {
-            const reason = failedPayment.payment_message || "Transaction declined";
+            const reason = (failedPayment as { payment_message?: string }).payment_message || "Transaction declined";
             const note = order?.order_note || "";
             const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
             return NextResponse.redirect(new URL(`${redirectPath}?payment=failed&reason=${encodeURIComponent(reason)}`, req.url));
@@ -74,8 +73,8 @@ export async function GET(req: Request) {
             const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
             return NextResponse.redirect(new URL(`${redirectPath}?payment=failed`, req.url));
         }
-    } catch (error: any) {
-        console.error("Cashfree Verification Error:", error);
+    } catch (err: unknown) {
+        console.error(err);
         return NextResponse.redirect(new URL("/pricing?payment=error", req.url));
     }
 }

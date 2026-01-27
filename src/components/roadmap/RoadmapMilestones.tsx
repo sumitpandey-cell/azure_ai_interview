@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Circle, Target, Calendar, Trophy, ArrowRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle2, Circle, Target, Calendar, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Milestone {
@@ -11,9 +11,15 @@ interface Milestone {
     estimated_date: string;
 }
 
+interface ProgressItem {
+    milestone_id: string;
+    item_type: 'goal' | 'interview' | 'resource' | 'milestone';
+    completed_at: string;
+}
+
 interface RoadmapMilestonesProps {
     milestones: Milestone[];
-    progress: any[];
+    progress: ProgressItem[];
 }
 
 export function RoadmapMilestones({ milestones, progress }: RoadmapMilestonesProps) {

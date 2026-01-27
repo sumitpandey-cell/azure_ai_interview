@@ -1,56 +1,78 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, RefreshCw, Sparkles, AlertCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from "@/lib/utils";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { RoadmapOverview } from '@/components/roadmap/RoadmapOverview';
 import { RoadmapPhases } from '@/components/roadmap/RoadmapPhases';
-import { RoadmapMilestones } from '@/components/roadmap/RoadmapMilestones';
 import { RoadmapSkeleton } from '@/components/roadmap/RoadmapSkeleton';
 import { PaymentPendingModal } from '@/components/roadmap/PaymentPendingModal';
 import { RoadmapWizard } from '@/components/roadmap/RoadmapWizard';
-import { SkillTree } from '@/components/roadmap/SkillTree';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface Goal {
+    id: string;
+    description: string;
+    success_criteria: string;
+}
+
+interface RecommendedInterview {
+    template_id: string;
+    template_title: string;
+    difficulty: string;
+    frequency: string;
+    focus_areas: string[];
+}
+
+interface LearningResource {
+    type: string;
+    title: string;
+    description: string;
+    url?: string;
+    estimated_time_minutes?: number;
+}
+
+interface Phase {
+    phase_number: number;
+    title: string;
+    description: string;
+    duration_weeks: number;
+    goals: Goal[];
+    recommended_interviews: RecommendedInterview[];
+    learning_resources: LearningResource[];
+}
+
+interface Roadmap {
+    id: string;
+    generated_at: string;
+    overall_level?: string;
+    roadmap_data?: {
+        status?: string;
+        phases?: Phase[];
+    };
+}
+
+interface ProgressItem {
+    milestone_id: string;
+    item_type: 'goal' | 'interview' | 'resource';
+    completed_at: string;
+}
 
 export default function RoadmapPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const [roadmap, setRoadmap] = useState<any>(null);
-    const [progress, setProgress] = useState<any[]>([]);
+    const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+    const [progress, setProgress] = useState<ProgressItem[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showWizard, setShowWizard] = useState(false);
-    const [lastWizardData, setLastWizardData] = useState<any>(null);
+    const [lastWizardData, setLastWizardData] = useState<Record<string, unknown> | null>(null);
 
-    // Fetch existing roadmap on mount
-    useEffect(() => {
-        fetchRoadmap();
-    }, []);
 
-    // Handle payment return
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const paymentStatus = params.get('payment');
-        const orderId = params.get('order_id');
-
-        if (paymentStatus === 'success' && orderId) {
-            import('sonner').then(({ toast }) => toast.success("Payment verified! Generating your roadmap..."));
-            handleGenerate(null, orderId);
-
-            // Clean URL
-            window.history.replaceState({}, '', '/roadmap');
-        } else if (paymentStatus === 'failed') {
-            import('sonner').then(({ toast }) => toast.error("Payment failed. Please try again."));
-            window.history.replaceState({}, '', '/roadmap');
-        }
-    }, []);
 
     const fetchRoadmap = async (isPolling = false) => {
         try {
@@ -75,8 +97,9 @@ export default function RoadmapPage() {
             } else {
                 setError(data.error || 'Failed to fetch roadmap');
             }
-        } catch (err: any) {
-            console.error('Error fetching roadmap:', err);
+        } catch (err: unknown) {
+            const error = err as Error;
+            console.error('Error fetching roadmap:', error);
             setError('Failed to load roadmap');
         } finally {
             if (!isPolling) setLoading(false);
@@ -85,7 +108,7 @@ export default function RoadmapPage() {
 
     // Polling logic
     useEffect(() => {
-        let intervalId: any;
+        let intervalId: NodeJS.Timeout | undefined;
         if (generating) {
             intervalId = setInterval(() => {
                 fetchRoadmap(true);
@@ -96,7 +119,7 @@ export default function RoadmapPage() {
         };
     }, [generating]);
 
-    const handleGenerate = async (wizardData?: any, paymentId?: string) => {
+    const handleGenerate = useCallback(async (wizardData?: Record<string, unknown>, paymentId?: string) => {
         try {
             setGenerating(true);
             setError(null);
@@ -130,13 +153,37 @@ export default function RoadmapPage() {
             } else {
                 setError(data.message || 'Failed to generate roadmap');
             }
-        } catch (err: any) {
-            console.error('Error generating roadmap:', err);
+        } catch (err: unknown) {
+            const error = err as Error;
+            console.error('Error generating roadmap:', error);
             setError('Failed to generate roadmap. Please try again.');
         } finally {
             setGenerating(false);
         }
-    };
+    }, [lastWizardData]);
+
+    // Fetch existing roadmap on mount
+    useEffect(() => {
+        fetchRoadmap();
+    }, []);
+
+    // Handle payment return
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get('payment');
+        const orderId = params.get('order_id');
+
+        if (paymentStatus === 'success' && orderId) {
+            import('sonner').then(({ toast }) => toast.success("Payment verified! Generating your roadmap..."));
+            handleGenerate(undefined, orderId);
+
+            // Clean URL
+            window.history.replaceState({}, '', '/roadmap');
+        } else if (paymentStatus === 'failed') {
+            import('sonner').then(({ toast }) => toast.error("Payment failed. Please try again."));
+            window.history.replaceState({}, '', '/roadmap');
+        }
+    }, [handleGenerate]);
 
     const handleRefresh = async () => {
         try {
@@ -159,18 +206,13 @@ export default function RoadmapPage() {
             } else {
                 setError(data.message || 'Failed to refresh roadmap');
             }
-        } catch (err: any) {
-            console.error('Error refreshing roadmap:', err);
+        } catch (err: unknown) {
+            const error = err as Error;
+            console.error('Error refreshing roadmap:', error);
             setError('Failed to refresh roadmap. Please try again.');
         } finally {
             setRefreshing(false);
         }
-    };
-
-    const handlePaymentModalContinue = async () => {
-        setShowPaymentModal(false);
-        // Continue with last attempt
-        await handleGenerate();
     };
 
     if (loading) {
@@ -283,7 +325,7 @@ export default function RoadmapPage() {
                             </div>
                             <h2 className="text-2xl font-bold tracking-tight mb-4 text-foreground">Building Your Professional Blueprint</h2>
                             <p className="text-muted-foreground text-base mb-12">
-                                We're cross-referencing industry standards with your target profile to build an optimal learning path.
+                                We&apos;re cross-referencing industry standards with your target profile to build an optimal learning path.
                             </p>
                             <div className="w-full max-w-sm space-y-4">
                                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -377,7 +419,7 @@ export default function RoadmapPage() {
                         <section className="space-y-6">
 
                             <RoadmapPhases
-                                phases={roadmap.roadmap_data?.phases || []}
+                                phases={(roadmap.roadmap_data?.phases || []) as Phase[]}
                                 progress={progress}
                                 roadmapId={roadmap.id}
                                 onProgressUpdate={fetchRoadmap}
@@ -411,7 +453,6 @@ export default function RoadmapPage() {
                     <PaymentPendingModal
                         isOpen={showPaymentModal}
                         onClose={() => setShowPaymentModal(false)}
-                        onContinue={handlePaymentModalContinue}
                     />
                 </div>
             </div>

@@ -40,8 +40,8 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ status: "ok" });
-    } catch (err: any) {
-        console.error("❌ Cashfree Webhook Error:", err.message);
+    } catch (err: unknown) {
+        console.error("❌ Cashfree Webhook Error:", (err as Error).message);
         return NextResponse.json({ error: "Invalid signature or processing error" }, { status: 400 });
     }
 }

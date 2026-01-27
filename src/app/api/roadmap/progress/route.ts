@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
         );
 
         return NextResponse.json({ progress }, { status: 200 });
-    } catch (error: any) {
-        console.error('Progress tracking error:', error);
+    } catch (err: unknown) {
+        console.error(err);
         return NextResponse.json(
-            { error: error.message || 'Failed to track progress' },
+            { error: (err as Error).message || 'Failed to track progress' },
             { status: 500 }
         );
     }

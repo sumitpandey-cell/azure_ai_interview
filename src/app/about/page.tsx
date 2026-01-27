@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Target, Users, BookOpen, Award, ArrowRight, Zap, Shield, Briefcase } from "lucide-react";
+import { Target, Users, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -25,7 +25,7 @@ export default function AboutPage() {
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700">
-                            We're building the <br className="hidden md:block" />
+                            We&apos;re building the <br className="hidden md:block" />
                             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">future of career growth</span>
                         </h1>
 
@@ -151,7 +151,7 @@ export default function AboutPage() {
                                 <span className="text-indigo-400">next interview?</span>
                             </h2>
                             <p className="text-xl text-slate-400 mb-10 leading-relaxed">
-                                Join the thousands of high-performers who trust Arjuna AI to help them land offers at the world's most competitive companies.
+                                Join the thousands of high-performers who trust Arjuna AI to help them land offers at the world&apos;s most competitive companies.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <Button size="lg" className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105" asChild>
@@ -173,26 +173,4 @@ export default function AboutPage() {
             <Footer />
         </div>
     );
-}
-
-// Needed for the GlobeIcon used above - Lucide exports it as Globe
-function Globe({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" x2="22" y1="12" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-    )
 }

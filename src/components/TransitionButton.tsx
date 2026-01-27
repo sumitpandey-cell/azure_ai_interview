@@ -6,10 +6,10 @@ import { Button, ButtonProps } from "@/components/ui/button"
 
 interface TransitionButtonProps extends ButtonProps {
     href: string
-    transitionColor?: string // Kept for compatibility but unused
+    // transitionColor?: string // Kept for compatibility but unused - Removed as it's unused
 }
 
-export function TransitionButton({ href, transitionColor, children, onClick, ...props }: TransitionButtonProps) {
+export function TransitionButton({ href, children, onClick, ...props }: TransitionButtonProps) {
     const router = useRouter()
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {

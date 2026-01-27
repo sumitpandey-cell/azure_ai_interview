@@ -2,22 +2,20 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 import { profileService } from "@/services/profile.service"
 import { interviewService } from "@/services/interview.service"
 import { leaderboardService } from "@/services/leaderboard.service"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getAvatarUrl, getInitials } from "@/lib/avatar-utils"
 import {
     Check, Trophy, Target, ArrowRight, ShieldCheck,
-    Globe, Share2, Sparkles, TrendingUp, Award, Zap,
+    Globe, Share2, Sparkles, TrendingUp, Award,
     Diamond, Flame, History, ChevronDown, Calendar,
-    ExternalLink,
     Lock
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -32,16 +30,36 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+interface Profile {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    created_at: string;
+    profile_slug: string | null;
+    streak_count: number | null;
+}
+
+interface Stats {
+    averageScore?: number;
+}
+
+interface Interview {
+    id: string;
+    position: string;
+    score: number;
+    completed_at: string;
+}
+
 interface PublicProfileClientProps {
-    initialProfile: any | null;
+    initialProfile: Profile | null;
 }
 
 export default function PublicProfileClient({ initialProfile }: PublicProfileClientProps) {
     const { id } = useParams()
     const [loading, setLoading] = useState(!initialProfile)
-    const [profile, setProfile] = useState<any>(initialProfile)
-    const [stats, setStats] = useState<any>(null)
-    const [recentInterviews, setRecentInterviews] = useState<any[]>([])
+    const [profile, setProfile] = useState<Profile | null>(initialProfile)
+    const [stats, setStats] = useState<Stats | null>(null)
+    const [recentInterviews, setRecentInterviews] = useState<Interview[]>([])
     const [rank, setRank] = useState<number | null>(null)
     const [performanceView, setPerformanceView] = useState<'Recent' | 'Top'>('Recent')
 
@@ -76,7 +94,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
             ])
 
             setStats(statsData)
-            setRecentInterviews(interviews)
+            setRecentInterviews(interviews as Interview[])
             setRank(userRank)
         }
 
@@ -151,7 +169,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 <Link href="/" className="flex items-center gap-3 group">
                     <div className="relative">
                         <div className="absolute inset-0 bg-indigo-500 rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <img src="/favicon.ico" alt="Arjuna AI" className="relative h-10 w-10 object-contain" />
+                        <Image src="/favicon.ico" alt="Arjuna AI" width={40} height={40} className="relative h-10 w-10 object-contain" />
                     </div>
                     <div>
                         <div className="text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
@@ -453,7 +471,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 {/* Platform Footer */}
                 <footer className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
                     <div className="flex items-center gap-4">
-                        <img src="/favicon.ico" alt="" className="h-6 w-6" />
+                        <Image src="/favicon.ico" alt="" width={24} height={24} className="h-6 w-6" />
                         <div className="text-[10px] font-black uppercase tracking-[0.2em]">
                             © {new Date().getFullYear()} ARJUNA AI PLATFORM • THE FUTURE OF TECH HIRING
                         </div>

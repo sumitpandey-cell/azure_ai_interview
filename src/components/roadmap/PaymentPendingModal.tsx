@@ -8,17 +8,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Sparkles, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Sparkles, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface PaymentPendingModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onContinue: () => void; // This will now be used after success if needed, or we can just redirect
 }
-
 export function PaymentPendingModal({ isOpen, onClose }: PaymentPendingModalProps) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -62,7 +59,8 @@ export function PaymentPendingModal({ isOpen, onClose }: PaymentPendingModalProp
                     redirectTarget: "_self", // Redirect to our verify route
                 });
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             console.error("Payment Error:", error);
             toast.error(error.message || "Payment initialization failed");
         } finally {

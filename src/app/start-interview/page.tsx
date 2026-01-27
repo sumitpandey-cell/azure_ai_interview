@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -26,16 +26,15 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2, Target, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2 } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
-import { useCompanyQuestions } from "@/hooks/use-company-questions";
+
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
-import { interviewService, subscriptionService } from "@/services";
+import { subscriptionService } from "@/services";
 import { cn } from "@/lib/utils";
 import { parseFile } from "@/lib/file-parser";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
@@ -49,7 +48,7 @@ const formSchema = z.object({
     role: z.string().optional(),
     experienceLevel: z.string().optional(),
     skills: z.string().optional(),
-    jobDescription: z.any().optional(),
+    jobDescription: z.string().optional(),
 });
 
 const COMMON_ROLES = [
@@ -251,14 +250,8 @@ function StartInterviewContent() {
 
     const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
         try {
-            // Get fresh user to avoid stale metadata issues
-            const { data: { user: freshUser } } = await supabase.auth.getUser();
-            const metadata = freshUser?.user_metadata || user?.user_metadata || {};
-
-
-
             // Continue with creating new session
-            const config: any = {
+            const config: Record<string, unknown> = {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
                 difficulty: values.difficulty,
@@ -296,7 +289,7 @@ function StartInterviewContent() {
                     position: session.position,
                     interview_type: session.interview_type,
                     status: session.status,
-                    config: (session.config as any) || {},
+                    config: (session.config as Record<string, unknown>) || {},
                     created_at: session.created_at
                 });
 
@@ -753,57 +746,65 @@ function StartInterviewContent() {
                                                     accept=".pdf,.docx,.txt"
                                                     multiple={false}
                                                 />
-                                                {form.watch('jobDescription') && typeof form.watch('jobDescription') === 'string' && form.watch('jobDescription').startsWith('Attached file:') ? (
-                                                    <div className="flex flex-col items-center">
-                                                        <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                            <CheckCircle2 className="h-5 w-5" />
-                                                        </div>
-                                                        <h3 className="text-sm font-bold mb-1 text-emerald-500">File Attached</h3>
-                                                        <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest px-4 truncate max-w-full">
-                                                            {form.watch('jobDescription').split('\n')[0].replace('Attached file: ', '')}
-                                                        </p>
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    fileInputRef.current?.click();
-                                                                }}
-                                                                className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest bg-background"
-                                                            >
-                                                                Change
+                                                {(() => {
+                                                    const jd = form.watch('jobDescription');
+                                                    if (jd && typeof jd === 'string' && jd.startsWith('Attached file:')) {
+                                                        return (
+                                                            <>
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                                        <CheckCircle2 className="h-5 w-5" />
+                                                                    </div>
+                                                                    <h3 className="text-sm font-bold mb-1 text-emerald-500">File Attached</h3>
+                                                                    <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest px-4 truncate max-w-full">
+                                                                        {jd.split('\n')[0].replace('Attached file: ', '')}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            fileInputRef.current?.click();
+                                                                        }}
+                                                                        className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest bg-background"
+                                                                    >
+                                                                        Change
+                                                                    </Button>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="destructive"
+                                                                        size="sm"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            form.setValue('jobDescription', '');
+                                                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                                                        }}
+                                                                        className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest"
+                                                                    >
+                                                                        Remove
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <div onClick={() => fileInputRef.current?.click()}>
+                                                            <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                                                                {isParsing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+                                                            </div>
+                                                            <h3 className="text-sm font-bold mb-1">Upload JD</h3>
+                                                            <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest">
+                                                                PDF, DOCX up to 5MB
+                                                            </p>
+                                                            <Button type="button" variant="outline" size="sm" className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground">
+                                                                {isParsing ? "Analyzing..." : "Choose File"}
                                                             </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    form.setValue('jobDescription', '');
-                                                                    if (fileInputRef.current) fileInputRef.current.value = '';
-                                                                }}
-                                                                className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest"
-                                                            >
-                                                                Remove
-                                                            </Button>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div onClick={() => fileInputRef.current?.click()}>
-                                                        <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                                                            {isParsing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                                                        </div>
-                                                        <h3 className="text-sm font-bold mb-1">Upload JD</h3>
-                                                        <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest">
-                                                            PDF, DOCX up to 5MB
-                                                        </p>
-                                                        <Button type="button" variant="outline" size="sm" className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground">
-                                                            {isParsing ? "Analyzing..." : "Choose File"}
-                                                        </Button>
-                                                    </div>
-                                                )}
+                                                    );
+                                                })()}
 
                                                 {isParsing && (
                                                     <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px] flex items-center justify-center">

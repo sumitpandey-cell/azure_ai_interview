@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanyQuestion } from '@/types/company-types';
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ export function useCompanyQuestions({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchQuestions = async () => {
+    const fetchQuestions = useCallback(async () => {
         if (!companyId) {
             setQuestions([]);
             return;
@@ -73,19 +73,19 @@ export function useCompanyQuestions({
             }
 
             setQuestions(selectedQuestions as unknown as CompanyQuestion[]);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error fetching company questions:', err);
-            const errorMessage = err.message || 'Failed to fetch company questions';
+            const errorMessage = (err as { message?: string }).message || 'Failed to fetch company questions';
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [companyId, count, role, questionType]);
 
     useEffect(() => {
         fetchQuestions();
-    }, [companyId, count, role, questionType]);
+    }, [fetchQuestions]);
 
     return {
         questions,

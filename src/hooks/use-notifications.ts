@@ -92,12 +92,10 @@ export function useNotifications() {
       }
       return result;
     },
-    sendNotificationToAll: async (
-      title: string,
-      message: string,
-      type: 'info' | 'success' | 'warning' | 'error'
-    ) => {
+    sendNotificationToAll: async (title: string, message: string, type: 'info' | 'success' | 'warning' | 'error') => {
       // This would typically be a server-side or admin function
+      console.log('Sending broadcast notification:', { title, message, type });
+      toast.error('Global broadcasting is not yet implemented.');
     },
   };
 }

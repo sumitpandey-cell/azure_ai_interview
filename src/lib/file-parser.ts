@@ -8,7 +8,6 @@ export async function parsePDF(file: File): Promise<string> {
 
     try {
         // Use the legacy build of pdfjs-dist which is much more stable in Next.js
-        // @ts-ignore
         const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
         // version is now 4.4.168
@@ -28,17 +27,18 @@ export async function parsePDF(file: File): Promise<string> {
 
             // Extract text from items
             const pageText = textContent.items
-                .map((item: any) => (item as any).str)
+                .map((item: unknown) => (item as { str: string }).str)
                 .join(' ');
 
             fullText += pageText + '\n';
         }
 
         return fullText.trim();
-    } catch (error: any) {
+    } catch (err: unknown) {
+        const error = err as { message?: string; name?: string };
         console.error("PDF Parsing Error:", error);
 
-        if (error?.message?.includes('Object.defineProperty')) {
+        if (error.message?.includes('Object.defineProperty')) {
             throw new Error("PDF compatibility issue. Please try copying the text or use a .txt/.docx file.");
         }
 

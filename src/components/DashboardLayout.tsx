@@ -8,18 +8,17 @@ import {
   FileText,
   BarChart3,
   Settings,
-  LogOut,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Flame,
   Trophy,
   BellRing,
   Medal,
   Map,
 } from "lucide-react";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -35,7 +34,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, headerControls }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     remaining_seconds,
@@ -57,8 +56,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   });
 
   // Get streak data from analytics cache
-  const { streakData, refetch: refetchAnalytics } = useAnalytics(user?.id);
-  const streak = streakData?.currentStreak || 0;
+  const { refetch: refetchAnalytics } = useAnalytics(user?.id);
 
   // sidebar persistence
   useEffect(() => {
@@ -149,9 +147,11 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-all duration-700 animate-pulse"></div>
                 <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-2xl">
-                  <img
+                  <Image
                     src="/favicon.ico"
                     alt="Arjuna AI"
+                    width={48}
+                    height={48}
                     className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
@@ -167,9 +167,11 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
             <div className="relative flex-shrink-0 group">
               <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
               <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <img
+                <Image
                   src="/favicon.ico"
                   alt="Arjuna AI"
+                  width={48}
+                  height={48}
                   className="h-full w-full object-contain"
                 />
               </div>

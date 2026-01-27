@@ -1,4 +1,4 @@
-import { BadgeDefinition, UserBadgeData } from '@/types/badge-types';
+import { BadgeDefinition } from '@/types/badge-types';
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     // STREAK BADGES
@@ -67,8 +67,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'bronze',
         icon: '⭐',
         requirement: 'Score 80%+',
-        checkCondition: (data) => (data as any).highestScore >= 80,
-        getProgress: (data) => ({ current: Math.min((data as any).highestScore || 0, 80), max: 80 }),
+        checkCondition: (data) => (data).highestScore >= 80,
+        getProgress: (data) => ({ current: Math.min((data).highestScore || 0, 80), max: 80 }),
     },
     {
         id: 'excellence',
@@ -78,8 +78,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'silver',
         icon: '🌟',
         requirement: 'Score 90%+',
-        checkCondition: (data) => (data as any).highestScore >= 90,
-        getProgress: (data) => ({ current: Math.min((data as any).highestScore || 0, 90), max: 90 }),
+        checkCondition: (data) => (data).highestScore >= 90,
+        getProgress: (data) => ({ current: Math.min((data).highestScore || 0, 90), max: 90 }),
     },
     {
         id: 'perfect-score',
@@ -89,8 +89,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'gold',
         icon: '💯',
         requirement: 'Score 100%',
-        checkCondition: (data) => (data as any).highestScore >= 100,
-        getProgress: (data) => ({ current: Math.min((data as any).highestScore || 0, 100), max: 100 }),
+        checkCondition: (data) => (data).highestScore >= 100,
+        getProgress: (data) => ({ current: Math.min((data).highestScore || 0, 100), max: 100 }),
     },
     {
         id: 'consistent-performer',
@@ -100,8 +100,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'gold',
         icon: '📊',
         requirement: '75%+ avg (5 interviews)',
-        checkCondition: (data) => (data as any).averageScore >= 75 && data.totalInterviews >= 5,
-        getProgress: (data) => ({ current: Math.min((data as any).averageScore || 0, 75), max: 75 }),
+        checkCondition: (data) => (data).averageScore >= 75 && data.totalInterviews >= 5,
+        getProgress: (data) => ({ current: Math.min((data).averageScore || 0, 75), max: 75 }),
     },
 
     // MILESTONE BADGES
@@ -181,8 +181,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'gold',
         icon: '💬',
         requirement: 'High communication score',
-        checkCondition: (data) => (data as any).communicationScore >= 85,
-        getProgress: (data) => ({ current: Math.min((data as any).communicationScore || 0, 85), max: 85 }),
+        checkCondition: (data) => (data).communicationScore >= 85,
+        getProgress: (data) => ({ current: Math.min((data).communicationScore || 0, 85), max: 85 }),
     },
     {
         id: 'articulate',
@@ -192,8 +192,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'silver',
         icon: '🗣️',
         requirement: 'Clear communication',
-        checkCondition: (data) => (data as any).communicationScore >= 75,
-        getProgress: (data) => ({ current: Math.min((data as any).communicationScore || 0, 75), max: 75 }),
+        checkCondition: (data) => (data).communicationScore >= 75,
+        getProgress: (data) => ({ current: Math.min((data).communicationScore || 0, 75), max: 75 }),
     },
 
     // SKILL MASTERY BADGES
@@ -205,8 +205,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'gold',
         icon: '🎓',
         requirement: 'Skill mastery',
-        checkCondition: (data) => (data as any).skillMastery >= 90,
-        getProgress: (data) => ({ current: Math.min((data as any).skillMastery || 0, 90), max: 90 }),
+        checkCondition: (data) => (data).skillMastery >= 90,
+        getProgress: (data) => ({ current: Math.min((data).skillMastery || 0, 90), max: 90 }),
     },
     {
         id: 'technical-wizard',
@@ -216,8 +216,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'platinum',
         icon: '🧙',
         requirement: 'Technical excellence',
-        checkCondition: (data) => (data as any).technicalScore >= 95,
-        getProgress: (data) => ({ current: Math.min((data as any).technicalScore || 0, 95), max: 95 }),
+        checkCondition: (data) => (data).technicalScore >= 95,
+        getProgress: (data) => ({ current: Math.min((data).technicalScore || 0, 95), max: 95 }),
     },
 
     // LEADERBOARD BADGES
@@ -267,7 +267,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'bronze',
         icon: '⚡',
         requirement: 'Complete in <15 min',
-        checkCondition: (data) => data.totalInterviews > 0 && (data as any).fastestTime > 0 && (data as any).fastestTime <= 15,
+        checkCondition: (data) => data.totalInterviews > 0 && (data).fastestTime > 0 && (data).fastestTime <= 15,
     },
     {
         id: 'lightning-fast',
@@ -277,7 +277,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'silver',
         icon: '⚡',
         requirement: 'Complete in <10 min',
-        checkCondition: (data) => data.totalInterviews > 0 && (data as any).fastestTime > 0 && (data as any).fastestTime <= 10,
+        checkCondition: (data) => data.totalInterviews > 0 && (data).fastestTime > 0 && (data).fastestTime <= 10,
     },
 
     // DIVERSITY BADGES
@@ -289,8 +289,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'silver',
         icon: '🎭',
         requirement: '3 interview types',
-        checkCondition: (data) => (data as any).interviewTypes >= 3,
-        getProgress: (data) => ({ current: Math.min((data as any).interviewTypes || 0, 3), max: 3 }),
+        checkCondition: (data) => (data).interviewTypes >= 3,
+        getProgress: (data) => ({ current: Math.min((data).interviewTypes || 0, 3), max: 3 }),
     },
     {
         id: 'jack-of-all-trades',
@@ -300,8 +300,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'gold',
         icon: '🌈',
         requirement: '5 interview types',
-        checkCondition: (data) => (data as any).interviewTypes >= 5,
-        getProgress: (data) => ({ current: Math.min((data as any).interviewTypes || 0, 5), max: 5 }),
+        checkCondition: (data) => (data).interviewTypes >= 5,
+        getProgress: (data) => ({ current: Math.min((data).interviewTypes || 0, 5), max: 5 }),
     },
 
     // SPECIAL BADGES
@@ -329,8 +329,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'special',
         icon: '🌅',
         requirement: 'Morning interviews',
-        checkCondition: (data) => (data as any).morningInterviews >= 5,
-        getProgress: (data) => ({ current: Math.min((data as any).morningInterviews || 0, 5), max: 5 }),
+        checkCondition: (data) => (data).morningInterviews >= 5,
+        getProgress: (data) => ({ current: Math.min((data).morningInterviews || 0, 5), max: 5 }),
     },
     {
         id: 'night-owl',
@@ -340,8 +340,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
         rarity: 'special',
         icon: '🦉',
         requirement: 'Night interviews',
-        checkCondition: (data) => (data as any).nightInterviews >= 5,
-        getProgress: (data) => ({ current: Math.min((data as any).nightInterviews || 0, 5), max: 5 }),
+        checkCondition: (data) => (data).nightInterviews >= 5,
+        getProgress: (data) => ({ current: Math.min((data).nightInterviews || 0, 5), max: 5 }),
     },
 ];
 

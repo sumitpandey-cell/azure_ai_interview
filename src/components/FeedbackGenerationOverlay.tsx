@@ -3,10 +3,8 @@
 import React from "react";
 import { useFeedback } from "@/context/FeedbackContext";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, Loader2, X, ChevronRight } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 export function FeedbackGenerationOverlay() {

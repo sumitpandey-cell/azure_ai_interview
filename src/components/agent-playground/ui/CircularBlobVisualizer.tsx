@@ -37,7 +37,7 @@ export function CircularBlobVisualizer({
         const audioTrack = agentTrackRef?.publication?.track;
         if (audioTrack && audioTrack.kind === "audio") {
             const mediaStreamTrack = audioTrack.mediaStreamTrack;
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([mediaStreamTrack]));
             const analyser = audioContext.createAnalyser();
@@ -58,7 +58,7 @@ export function CircularBlobVisualizer({
     // Setup Local Audio
     useEffect(() => {
         if (localTrack && localTrack.kind === "audio") {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([localTrack]));
             const analyser = audioContext.createAnalyser();
@@ -123,7 +123,8 @@ export function CircularBlobVisualizer({
                 if (agentAnalyserRef.current.context.state === 'suspended') {
                     (agentAnalyserRef.current.context as AudioContext).resume();
                 }
-                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current as any);
+                // @ts-expect-error - Uint8Array type mismatch in some TS versions with AudioContext
+                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
                 let sum = 0;
                 for (let i = 0; i < agentDataRef.current.length; i++) sum += agentDataRef.current[i];
                 agentVolume = sum / agentDataRef.current.length;
@@ -133,7 +134,8 @@ export function CircularBlobVisualizer({
                 if (localAnalyserRef.current.context.state === 'suspended') {
                     (localAnalyserRef.current.context as AudioContext).resume();
                 }
-                localAnalyserRef.current.getByteFrequencyData(localDataRef.current as any);
+                // @ts-expect-error - Uint8Array type mismatch in some TS versions with AudioContext
+                localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
                 let sum = 0;
                 for (let i = 0; i < localDataRef.current.length; i++) sum += localDataRef.current[i];
                 localVolume = sum / localDataRef.current.length;

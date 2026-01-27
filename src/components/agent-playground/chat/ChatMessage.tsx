@@ -9,7 +9,6 @@ type ChatMessageProps = {
 export const ChatMessage = ({
     name,
     message,
-    accentColor,
     isSelf,
     hideName,
 }: ChatMessageProps) => {

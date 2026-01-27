@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     try {
       // 5 requests per minute per IP to prevent token spamming
       await limiters.livekit.check(null, 5, ip);
-    } catch (e) {
+    } catch {
       return NextResponse.json(
         { error: 'Too many requests for LiveKit tokens. Please try again in a minute.' },
         { status: 429 }
@@ -28,7 +28,27 @@ export async function GET(request: Request) {
     // Fetch session config to get avatar selection and session context
     let selectedVoice = 'alloy'; // Default voice
     let selectedAvatar = 'default'; // Default avatar ID
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let sessionContext: any = null;
+
+    interface SessionConfig {
+      selectedVoice?: string;
+      selectedAvatar?: string;
+      skills?: string[];
+      difficulty?: string;
+      duration?: number;
+      companyName?: string;
+      role?: string;
+      experienceLevel?: string;
+      company?: { name: string };
+      companyInterviewConfig?: {
+        companyName: string;
+        role: string;
+        experienceLevel: string;
+        companyId?: string;
+        companyTemplateId?: string;
+      };
+    }
 
     if (sessionId) {
       // Initialize Supabase Client with cookies to authenticate as user
@@ -63,7 +83,7 @@ export async function GET(request: Request) {
         .single();
 
       if (session && !error) {
-        const config = typeof session.config === 'object' && session.config !== null ? session.config as any : {};
+        const config = (typeof session.config === 'object' && session.config !== null ? session.config : {}) as SessionConfig;
 
         if (config.selectedVoice) {
           const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
@@ -81,13 +101,13 @@ export async function GET(request: Request) {
           position: session.position,
           interviewType: session.interview_type,
           companyName: isCompanyInterview
-            ? config.companyInterviewConfig.companyName
+            ? config.companyInterviewConfig!.companyName
             : (config.companyName || config.company?.name || null),
           role: isCompanyInterview
-            ? config.companyInterviewConfig.role
+            ? config.companyInterviewConfig!.role
             : (config.role || session.position),
           experienceLevel: isCompanyInterview
-            ? config.companyInterviewConfig.experienceLevel
+            ? config.companyInterviewConfig!.experienceLevel
             : (config.experienceLevel || 'Mid'),
           skills: config.skills || [],
           difficulty: config.difficulty || 'Intermediate',
@@ -127,16 +147,17 @@ export async function GET(request: Request) {
         maxParticipants: 10,
         metadata: JSON.stringify({ sessionId, createdAt: new Date().toISOString() })
       });
-    } catch (err: any) {
-      if (!err.message?.includes('already exists')) {
-        console.warn(`Room creation warning:`, err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (!error.message?.includes('already exists')) {
+        console.warn(`Room creation warning:`, error);
       }
     }
 
     try {
       const dispatchClient = new AgentDispatchClient(lkUrl!, lkKey!, lkSecret!);
       await dispatchClient.createDispatch(roomName, 'Arjuna-Interview-AI');
-    } catch (dispatchErr: any) {
+    } catch (dispatchErr: unknown) {
       console.warn(`Agent dispatch warning:`, dispatchErr);
     }
 
@@ -172,7 +193,7 @@ export async function GET(request: Request) {
       expiresAt: expiresAt
     });
   } catch (error) {
-    console.error('Error in livekit_token route:', error);
+    console.error(error);
     return NextResponse.json(
       { error: 'Failed to generate token' },
       { status: 500 }

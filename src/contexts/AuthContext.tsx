@@ -76,9 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success(
         "Account created successfully! Please check your email to verify.",
       );
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to create account");
-      throw error;
+      throw err;
     }
   };
 
@@ -92,9 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       toast.success("Welcome back!");
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to sign in");
-      throw error;
+      throw err;
     }
   };
 
@@ -117,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast.success("Signed out successfully");
       router.push("/");
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       console.error("Sign out error:", error);
       toast.error(error.message || "Failed to sign out");
     }
@@ -136,9 +139,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to sign in with Google");
-      throw error;
+      throw err;
     }
   };
 
@@ -153,9 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       toast.success("Password reset email sent! Please check your inbox.");
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to send reset email");
-      throw error;
+      throw err;
     }
   };
 
@@ -168,9 +173,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       toast.success("Password updated successfully!");
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to update password");
-      throw error;
+      throw err;
     }
   };
 

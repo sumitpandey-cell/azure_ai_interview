@@ -19,38 +19,38 @@ export default function ReactivatePage() {
     } | null>(null);
 
     useEffect(() => {
-        checkAccountStatus();
-    }, []);
+        const checkAccountStatus = async () => {
+            try {
+                setChecking(true);
+                const response = await fetch("/api/account/status");
+                const data = await response.json();
 
-    const checkAccountStatus = async () => {
-        try {
-            setChecking(true);
-            const response = await fetch("/api/account/status");
-            const data = await response.json();
+                if (response.ok && data.success) {
+                    setAccountStatus({
+                        isActive: data.isActive,
+                        deactivatedAt: data.deactivatedAt,
+                        deactivationReason: data.deactivationReason,
+                    });
 
-            if (response.ok && data.success) {
-                setAccountStatus({
-                    isActive: data.isActive,
-                    deactivatedAt: data.deactivatedAt,
-                    deactivationReason: data.deactivationReason,
-                });
-
-                // If account is already active, redirect to dashboard
-                if (data.isActive) {
-                    router.push("/dashboard");
+                    // If account is already active, redirect to dashboard
+                    if (data.isActive) {
+                        router.push("/dashboard");
+                    }
+                } else {
+                    toast.error("Failed to check account status");
+                    router.push("/auth");
                 }
-            } else {
-                toast.error("Failed to check account status");
+            } catch (error) {
+                console.error("Error checking account status:", error);
+                toast.error("Something went wrong");
                 router.push("/auth");
+            } finally {
+                setChecking(false);
             }
-        } catch (error) {
-            console.error("Error checking account status:", error);
-            toast.error("Something went wrong");
-            router.push("/auth");
-        } finally {
-            setChecking(false);
-        }
-    };
+        };
+
+        checkAccountStatus();
+    }, [router]);
 
     const handleReactivate = async () => {
         try {

@@ -15,6 +15,7 @@ import { useSubscriptionTimer } from "@/hooks/use-subscription-timer"
 import { useFeedback } from "@/context/FeedbackContext";
 import type { InterviewSession } from "@/services/interview.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
+import { TranscriptEntry } from "@/contexts/TranscriptContext";
 
 export default function LiveInterview() {
     const { sessionId } = useParams();
@@ -52,13 +53,89 @@ export default function LiveInterview() {
     const countdownInterval = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttempts = useRef(0);
 
-    // Will be assigned after being defined
-    let handleEndSession: (hintsToUse?: number, skipRedirect?: boolean) => void;
+    // Shared sync function to avoid duplication
+    const syncDuration = useCallback(async (reason: string) => {
+        if (isEndingSession.current || isSyncingRef.current) return;
+
+        isSyncingRef.current = true;
+        try {
+            const now = Date.now();
+            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+
+            if (deltaSeconds >= 1) {
+                lastSyncTimeRef.current = now;
+                await interviewService.updateSession(currentSessionId, {
+                    durationSeconds: deltaSeconds
+                });
+            }
+        } catch (err) {
+            console.error(`❌ Failed to sync duration (${reason}):`, err);
+        } finally {
+            isSyncingRef.current = false;
+        }
+    }, [currentSessionId]);
+
+    // Handle Session End
+    const { generateFeedbackInBackground } = useFeedback();
+
+    const handleEndSession = useCallback(async (hintsToUse: number = 0, skipRedirect: boolean = false) => {
+        if (!currentSessionId) {
+            console.warn("⚠️ [handleEndSession] No sessionId provided, ignoring end call.");
+            return;
+        }
+        if (isEndingSession.current) return;
+        isEndingSession.current = true;
+        if (!skipRedirect) setIsRedirecting(true);
+
+        try {
+            // Calculate final segment duration
+            const now = Date.now();
+            const deltaSeconds = Math.max(1, Math.round((now - lastSyncTimeRef.current) / 1000));
+
+            // Fetch current session for total duration threshold check
+            const session = await interviewService.getSessionById(currentSessionId);
+            const totalDuration = (session?.duration_seconds || 0) + deltaSeconds;
+
+            // Track user turns for quality check
+            const userTurns = await interviewService.getUserTurnCount(currentSessionId);
+            const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
+                userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
+
+            if (metThreshold) {
+                const completedSession = await interviewService.completeSession(currentSessionId, {
+                    totalHintsUsed: hintsToUse,
+                    durationSeconds: deltaSeconds
+                });
+
+                if (completedSession) {
+                    generateFeedbackInBackground(currentSessionId);
+                    toast.success("Interview complete. Generating report...");
+                } else {
+                    console.error("❌ Failed to complete session - Feedback cannot be generated.");
+                    toast.error("Failed to save results. You can try manually from your dashboard.");
+                }
+            } else {
+                await interviewService.completeSession(currentSessionId, {
+                    durationSeconds: deltaSeconds,
+                    feedback: {
+                        note: "Insufficient data for report generation",
+                        reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
+                    }
+                });
+                toast.warning("Session too short for a full report.");
+            }
+
+            if (!skipRedirect) router.replace(`/dashboard`);
+        } catch (err) {
+            console.error("Error ending session:", err);
+            if (!skipRedirect) router.replace(`/dashboard`);
+        }
+    }, [currentSessionId, router, generateFeedbackInBackground]);
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
         userId: user?.id,
-        onTimeExpired: () => handleEndSession?.(hintsUsed),
+        onTimeExpired: () => handleEndSession(hintsUsed),
         warnAt: [5, 2, 1],
         isActive: isTimerActive,
     });
@@ -122,10 +199,8 @@ export default function LiveInterview() {
                             url = cachedUrl;
                             authToken = cachedToken;
                             sessionStorage.removeItem('livekit_prefetched_token');
-                        } else {
-                            sessionStorage.removeItem('livekit_prefetched_token');
                         }
-                    } catch (e) {
+                    } catch {
                         sessionStorage.removeItem('livekit_prefetched_token');
                     }
                 }
@@ -175,30 +250,9 @@ export default function LiveInterview() {
         }, 300);
     }, []);
 
-    // Provide a stable reference for the setter to prevent effect flickering
-    const setRemainingSeconds = subscriptionTimer.setRemainingSeconds;
 
-    // Shared sync function to avoid duplication
-    const syncDuration = useCallback(async (reason: string) => {
-        if (isEndingSession.current || isSyncingRef.current) return;
 
-        isSyncingRef.current = true;
-        try {
-            const now = Date.now();
-            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
 
-            if (deltaSeconds >= 1) {
-                lastSyncTimeRef.current = now;
-                await interviewService.updateSession(currentSessionId, {
-                    durationSeconds: deltaSeconds
-                });
-            }
-        } catch (err) {
-            console.error(`❌ Failed to sync duration (${reason}):`, err);
-        } finally {
-            isSyncingRef.current = false;
-        }
-    }, [currentSessionId]);
 
     // Periodic usage and duration sync
     useEffect(() => {
@@ -243,66 +297,7 @@ export default function LiveInterview() {
         };
     }, [isTimerActive, syncDuration]);
 
-    // Handle Session End
-    const { generateFeedbackInBackground } = useFeedback();
 
-    // Handle Session End
-    handleEndSession = useCallback(async (hintsToUse: number = 0, skipRedirect: boolean = false) => {
-        if (!currentSessionId) {
-            console.warn("⚠️ [handleEndSession] No sessionId provided, ignoring end call.");
-            return;
-        }
-        if (isEndingSession.current) return;
-        isEndingSession.current = true;
-        if (!skipRedirect) setIsRedirecting(true);
-
-        try {
-
-            // Calculate final segment duration
-            const now = Date.now();
-            const deltaSeconds = Math.max(1, Math.round((now - lastSyncTimeRef.current) / 1000));
-
-
-            // Fetch current session for total duration threshold check
-            const session = await interviewService.getSessionById(currentSessionId);
-            const totalDuration = (session?.duration_seconds || 0) + deltaSeconds;
-
-            // Track user turns for quality check
-            const userTurns = await interviewService.getUserTurnCount(currentSessionId);
-            const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
-                userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
-
-            if (metThreshold) {
-                const completedSession = await interviewService.completeSession(currentSessionId, {
-                    totalHintsUsed: hintsToUse,
-                    durationSeconds: deltaSeconds
-                });
-
-                if (completedSession) {
-                    generateFeedbackInBackground(currentSessionId);
-                    toast.success("Interview complete. Generating report...");
-                } else {
-                    console.error("❌ Failed to complete session - Feedback cannot be generated.");
-                    toast.error("Failed to save results. You can try manually from your dashboard.");
-                }
-            } else {
-                await interviewService.completeSession(currentSessionId, {
-                    durationSeconds: deltaSeconds,
-                    feedback: {
-                        note: "Insufficient data for report generation",
-                        reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
-                    }
-                });
-                toast.warning("Session too short for a full report.");
-            }
-
-
-            if (!skipRedirect) router.replace(`/dashboard`);
-        } catch (err) {
-            console.error("Error ending session:", err);
-            if (!skipRedirect) router.replace(`/dashboard`);
-        }
-    }, [currentSessionId, router, generateFeedbackInBackground]);
 
     // Handle Window Close/Navigation Cleanup
     useEffect(() => {
@@ -411,7 +406,7 @@ export default function LiveInterview() {
                         sessionId={currentSessionId}
                         userId={user?.id || ""}
                         sessionData={session}
-                        initialTranscripts={(session?.transcript as any) || []}
+                        initialTranscripts={(session?.transcript as unknown as TranscriptEntry[]) || []}
                         onEndSession={handleEndSession}
                         onAgentReady={async () => {
                             if (!isTimerActive) {

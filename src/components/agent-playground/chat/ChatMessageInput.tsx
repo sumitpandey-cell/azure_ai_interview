@@ -11,7 +11,6 @@ type ChatMessageInputProps = {
 
 export const ChatMessageInput = ({
     placeholder,
-    accentColor,
     height,
     onSend,
 }: ChatMessageInputProps) => {

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileText, Scale, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Scale, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 
@@ -36,12 +36,12 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-2xl font-bold text-white mb-4">2. Use License</h2>
                             <p>
-                                Permission is granted to temporarily use the materials (information or software) on Arjuna AI's website for personal, non-commercial transitory viewing only.
+                                Permission is granted to temporarily use the materials (information or software) on Arjuna AI&apos;s website for personal, non-commercial transitory viewing only.
                             </p>
                             <ul className="list-disc pl-6 mt-4 space-y-2">
                                 <li>You may not modify or copy the materials.</li>
                                 <li>You may not use the materials for any commercial purpose or for any public display.</li>
-                                <li>You may not attempt to decompile or reverse engineer any software contained on Arjuna AI's website.</li>
+                                <li>You may not attempt to decompile or reverse engineer any software contained on Arjuna AI&apos;s website.</li>
                                 <li>You may not remove any copyright or other proprietary notations from the materials.</li>
                             </ul>
                         </section>
@@ -63,7 +63,7 @@ export default function TermsPage() {
                         <section>
                             <h2 className="text-2xl font-bold text-white mb-4">5. Limitation of Liability</h2>
                             <p>
-                                In no event shall Arjuna AI or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Arjuna AI's website.
+                                In no event shall Arjuna AI or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Arjuna AI&apos;s website.
                             </p>
                         </section>
 

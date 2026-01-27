@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from "react"
+import Image from "next/image"
 import { useParams } from "next/navigation"
 import { profileService } from "@/services/profile.service"
 import { interviewService } from "@/services/interview.service"
@@ -8,18 +9,16 @@ import { leaderboardService } from "@/services/leaderboard.service"
 import { analyticsService } from "@/services/analytics.service"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getAvatarUrl, getInitials } from "@/lib/avatar-utils"
 import {
     Check, Trophy, Target, ArrowRight, ShieldCheck,
-    Globe, Share2, Sparkles, TrendingUp, Award, Zap,
+    Globe, Share2, Sparkles, TrendingUp, Award,
     Diamond, Flame, History, ChevronDown, Calendar,
-    ExternalLink,
     Lock,
     Clock
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -34,22 +33,45 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-interface PublicProfileClientProps {
-    initialProfile: any | null;
-}
-
 interface SkillData {
     name: string;
     averageScore: number;
     count: number;
 }
 
+interface ProfileData {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+    profile_slug?: string;
+    created_at: string;
+    streak_count?: number;
+}
+
+interface InterviewSession {
+    id: string;
+    position: string;
+    score: number | null;
+    completed_at: string;
+    interview_type?: string;
+    difficulty?: string;
+}
+
+interface ProfileStats {
+    averageScore?: number;
+    completedCount?: number;
+}
+
+interface PublicProfileClientProps {
+    initialProfile: ProfileData | null;
+}
+
 export default function PublicProfileClient({ initialProfile }: PublicProfileClientProps) {
     const { id } = useParams()
     const [loading, setLoading] = useState(!initialProfile)
-    const [profile, setProfile] = useState<any>(initialProfile)
-    const [stats, setStats] = useState<any>(null)
-    const [recentInterviews, setRecentInterviews] = useState<any[]>([])
+    const [profile, setProfile] = useState<ProfileData | null>(initialProfile)
+    const [stats, setStats] = useState<ProfileStats | null>(null)
+    const [recentInterviews, setRecentInterviews] = useState<InterviewSession[]>([])
     const [rank, setRank] = useState<number | null>(null)
     const [skills, setSkills] = useState<SkillData[]>([])
     const [performanceView, setPerformanceView] = useState<'Recent' | 'Top'>('Recent')
@@ -62,7 +84,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 if (!profile) {
                     setLoading(true)
                     const profileData = await profileService.getPublicProfile(id as string)
-                    setProfile(profileData)
+                    setProfile(profileData as ProfileData)
 
                     if (profileData) {
                         fetchExtraData(profileData.id)
@@ -86,7 +108,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
             ])
 
             setStats(statsData)
-            setRecentInterviews(interviews)
+            setRecentInterviews(interviews as InterviewSession[])
             setRank(userRank)
             setSkills(skillsData.slice(0, 4)) // Top 4 skills
         }
@@ -161,7 +183,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 <Link href="/" className="flex items-center gap-3 group">
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <img src="/favicon.ico" alt="Arjuna AI" className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+                        <Image src="/favicon.ico" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain" />
                     </div>
                     <div>
                         <div className="text-lg sm:text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
@@ -332,7 +354,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                                         }}
                                                         labelStyle={{ color: 'rgba(168, 85, 247, 1)', fontWeight: 900, fontSize: 11, textTransform: 'uppercase' }}
                                                         itemStyle={{ color: 'white', fontWeight: 700, fontSize: 12 }}
-                                                        formatter={(value: any) => [`${value}%`, 'Score']}
+                                                        formatter={(value: number) => [`${value}%`, 'Score']}
                                                     />
                                                     <Area
                                                         type="monotone"
@@ -425,7 +447,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:gap-x-12 md:gap-x-16 gap-y-6 sm:gap-y-8 md:gap-y-10">
                                     {skills.length > 0 ? (
-                                        skills.map((skill, i) => (
+                                        skills.map((skill) => (
                                             <SkillProgress
                                                 key={skill.name}
                                                 label={skill.name}
@@ -528,7 +550,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 {/* Platform Footer */}
                 <footer className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
                     <div className="flex items-center gap-4">
-                        <img src="/favicon.ico" alt="" className="h-6 w-6" />
+                        <Image src="/favicon.ico" alt="" width={24} height={24} className="h-6 w-6" />
                         <div className="text-[10px] font-black uppercase tracking-[0.2em]">
                             © {new Date().getFullYear()} ARJUNA AI PLATFORM • THE FUTURE OF TECH HIRING
                         </div>

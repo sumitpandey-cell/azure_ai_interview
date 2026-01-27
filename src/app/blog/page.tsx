@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, User, Search, Tag, TrendingUp, Mail, Twitter, Github, Linkedin, MessageSquare, Clock } from "lucide-react";
+import { ArrowRight, Calendar, Search, Tag, TrendingUp, Mail, Twitter, Github, Linkedin, MessageSquare, Clock } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { Footer } from "@/components/Footer";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -45,10 +46,11 @@ export default function BlogPage() {
                             <Link href={`/blog/${featuredPost.slug}`} className="block group">
                                 <div className="relative aspect-[21/9] rounded-[2.5rem] overflow-hidden border border-white/10 bg-[#13151b] shadow-2xl transition-all duration-500 group-hover:border-indigo-500/30">
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/20 to-transparent z-10" />
-                                    <img
+                                    <Image
                                         src={featuredPost.image}
                                         alt={featuredPost.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                        fill
+                                        className="object-cover group-hover:scale-105 transition-transform duration-700"
                                     />
                                     <div className="absolute inset-0 z-20 p-8 md:p-12 flex flex-col justify-end">
                                         <div className="flex items-center gap-4 text-xs font-bold text-indigo-400 mb-4 uppercase tracking-[0.2em]">
@@ -83,10 +85,11 @@ export default function BlogPage() {
                                     <Link href={`/blog/${post.slug}`} key={i} className="group flex flex-col h-full bg-[#13151b]/40 rounded-3xl overflow-hidden border border-white/5 hover:border-indigo-500/20 hover:bg-[#13151b]/60 transition-all duration-300">
                                         <div className="h-56 overflow-hidden relative">
                                             <div className="absolute inset-0 bg-indigo-900/10 mix-blend-overlay z-10" />
-                                            <img
+                                            <Image
                                                 src={post.image}
                                                 alt={post.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
                                             <div className="absolute top-4 left-4 z-20">
                                                 <span className="bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
@@ -153,8 +156,13 @@ export default function BlogPage() {
                                 <div className="space-y-6">
                                     {blogPosts.slice(0, 3).map((post, i) => (
                                         <Link href={`/blog/${post.slug}`} key={i} className="group flex gap-4">
-                                            <div className="h-16 w-16 shrink-0 rounded-xl overflow-hidden border border-white/10">
-                                                <img src={post.image} alt="" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                                            <div className="h-16 w-16 shrink-0 rounded-xl overflow-hidden border border-white/10 relative">
+                                                <Image
+                                                    src={post.image}
+                                                    alt=""
+                                                    fill
+                                                    className="object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+                                                />
                                             </div>
                                             <div className="flex flex-col justify-center">
                                                 <h4 className="text-xs font-bold text-white line-clamp-2 group-hover:text-indigo-400 transition-colors leading-snug mb-1">

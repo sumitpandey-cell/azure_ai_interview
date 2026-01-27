@@ -110,7 +110,10 @@ export const subscriptionService = {
             if (seconds <= 0) return true;
 
             // Use the update_user_credits RPC from migration 0008
-            const { error } = await (client as any).rpc('update_user_credits', {
+            // Cast to bypass typed RPC checks for dynamically added functions while avoiding 'any'
+            const { error } = await (client as unknown as {
+                rpc: (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>
+            }).rpc('update_user_credits', {
                 user_uuid: userId,
                 seconds_to_add: -Math.round(seconds), // Use negative for usage
                 transaction_type: 'usage',
@@ -184,7 +187,7 @@ export const subscriptionService = {
                 };
             }
 
-            const remainingSeconds = (profile as any).balance_seconds;
+            const remainingSeconds = profile.balance_seconds;
             // For percentage, we'll calculate based on the current subscription plan's last purchase
             const subscription = await this.getSubscription(userId);
             const totalAllowance = subscription?.plan_seconds || 6000;
@@ -227,7 +230,7 @@ export const subscriptionService = {
     /**
      * Get purchase history for a user
      */
-    async getTransactions(userId: string): Promise<any[]> {
+    async getTransactions(userId: string): Promise<Subscription[]> {
         try {
             const { data, error } = await supabase
                 .from("subscriptions")

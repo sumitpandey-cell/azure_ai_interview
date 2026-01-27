@@ -83,7 +83,7 @@ export function DeactivateAccountModal({
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-primary mt-0.5 flex-shrink-0">•</span>
-                                    <span>You won't be able to access your account</span>
+                                    <span>You won&apos;t be able to access your account</span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span>

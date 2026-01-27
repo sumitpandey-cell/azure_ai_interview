@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -7,11 +7,8 @@ import { formatDuration } from "@/lib/format-duration";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, CheckCircle2, XCircle, Calendar, User, Briefcase, Bot, ArrowRight, ExternalLink, MessageSquare, Copy, Trash2, Clock, Play, Code, Building2, RefreshCw, AlertTriangle, TrendingUp, Target, Shield, Award, Activity, FileText, Share2, Sparkles, Star, ChevronRight, Timer } from "lucide-react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from 'recharts';
-import { Skeleton } from "@/components/ui/skeleton";
+import { User, Briefcase, Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, Code, RefreshCw, AlertTriangle, Target, Shield, Award, Activity, Sparkles, Star, Timer, Calendar, XCircle, Download, CheckCircle2 } from "lucide-react";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
@@ -38,10 +35,11 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
-import { classifyError, ErrorSeverity, FeedbackError, shouldRetry, getRetryDelay, getRetryMessage } from "@/lib/feedback-error";
+import { ErrorSeverity, FeedbackError } from "@/lib/feedback-error";
 import { useFeedback } from "@/context/FeedbackContext";
 import { supabase } from "@/integrations/supabase/client";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 
 interface InterviewSession {
     id: string;
@@ -51,9 +49,9 @@ interface InterviewSession {
     status: string;
     created_at: string;
     duration_seconds: number | null;
-    config?: any; // JSONB field for storing interview configuration
-    feedback: any;
-    transcript: any;
+    config?: Record<string, unknown>; // JSONB field for storing interview configuration
+    feedback: Record<string, unknown>;
+    transcript: Array<TranscriptMessage>;
 }
 
 interface Skill {
@@ -66,6 +64,15 @@ interface TranscriptMessage {
     id: string | number;
     speaker: string;
     sender?: string; // Legacy support
+    text: string;
+    timestamp?: string;
+}
+
+interface BaseMessage {
+    id?: string | number;
+    speaker?: string;
+    sender?: string;
+    role?: string;
     text: string;
     timestamp?: string;
 }
@@ -84,28 +91,23 @@ export default function InterviewReport() {
     const { user, loading: authLoading } = useAuth();
     const userMetadata = user?.user_metadata as UserMetadata | undefined;
     const [loading, setLoading] = useState(true);
-    const { feedback: instantFeedback, transcript: instantTranscript, isSaving, saveError, clearFeedback } = useInterviewStore();
+    const { feedback: instantFeedback, transcript: instantTranscript, clearFeedback } = useInterviewStore();
     const { fetchSessionDetail, deleteInterviewSession } = useOptimizedQueries();
     const { generateFeedbackInBackground, isGenerating } = useFeedback();
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
     const [errorState, setErrorState] = useState<FeedbackError | null>(null);
-    const [retryAttempt, setRetryAttempt] = useState(0);
-    const MAX_RETRIES = 5;
 
-    useEffect(() => {
-        if (sessionId) {
-            fetchSession();
-        }
-    }, [sessionId]);
 
-    const fetchSession = async (forceRefresh = false) => {
+
+
+    const fetchSession = useCallback(async (forceRefresh = false) => {
         try {
             setLoading(true);
             if (sessionId) {
                 const data = await fetchSessionDetail(sessionId, forceRefresh);
                 if (data) {
-                    setSession(data as InterviewSession);
+                    setSession(data as unknown as InterviewSession);
                     // Automatic generation removed - relying on manual trigger for missing reports
                 } else {
                     toast.error("Interview session not found. Redirecting to dashboard.");
@@ -119,7 +121,13 @@ export default function InterviewReport() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [sessionId, fetchSessionDetail, router]);
+
+    useEffect(() => {
+        if (sessionId) {
+            fetchSession();
+        }
+    }, [sessionId, fetchSession]);
 
     // Poll for feedback if it's being generated
     const isFeedbackGenerating = session?.status === 'completed' &&
@@ -147,7 +155,6 @@ export default function InterviewReport() {
                     if (newData.feedback) {
                         setSession(newData);
                         setErrorState(null);
-                        setRetryAttempt(0);
                         toast.success("Feedback report is ready!");
                     }
                 }
@@ -295,7 +302,7 @@ export default function InterviewReport() {
     }
 
     // Check for insufficient data
-    if ((session.feedback as any)?.note === 'Insufficient data for report generation') {
+    if ((session.feedback as { note?: string })?.note === 'Insufficient data for report generation') {
         return (
             <DashboardLayout>
                 <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -331,7 +338,7 @@ export default function InterviewReport() {
                                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-1">Feedback Requirements</p>
                                     {[
                                         { label: "Minimum Duration", val: `${Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60)} Minutes`, active: (session.duration_seconds || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS },
-                                        { label: "Conversation Depth", val: `${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} Responses`, active: ((session.transcript as any[])?.filter(m => !['ai', 'agent'].includes(m.speaker?.toLowerCase())).length || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS }
+                                        { label: "Conversation Depth", val: `${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} Responses`, active: ((session.transcript as Array<{ speaker: string }>)?.filter(m => !['ai', 'agent'].includes(m.speaker?.toLowerCase())).length || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS }
                                     ].map((req, i) => (
                                         <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border transition-all hover:bg-muted/50">
                                             <div className="flex flex-col gap-0.5">
@@ -372,7 +379,7 @@ export default function InterviewReport() {
                                 </div>
                                 <div className="bg-muted/40 backdrop-blur-xl rounded-3xl border border-border p-6 max-h-60 overflow-y-auto custom-scrollbar">
                                     <div className="space-y-4">
-                                        {(session.transcript as any[]).map((msg: any, idx: number) => (
+                                        {(session.transcript as Array<TranscriptMessage>).map((msg: TranscriptMessage, idx: number) => (
                                             <div key={idx} className="flex gap-4 group">
                                                 <div className={`text-[9px] font-bold uppercase tracking-widest shrink-0 w-12 ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'text-primary' : 'text-muted-foreground'}`}>
                                                     {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'Candidate'}
@@ -432,14 +439,14 @@ export default function InterviewReport() {
                                 <div>
                                     <h2 className="text-2xl font-bold text-foreground mb-2">Interview In Progress</h2>
                                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                        This interview hasn't been completed yet. Continue your interview to receive detailed feedback and analysis.
+                                        This interview hasn&apos;t been completed yet. Continue your interview to receive detailed feedback and analysis.
                                     </p>
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <Button
                                         onClick={() => {
                                             if (sessionId) {
-                                                const stage = (session.config as any)?.currentStage || 'avatar';
+                                                const stage = (session.config as Record<string, unknown>)?.currentStage as string || 'avatar';
                                                 router.push(`/interview/${sessionId}/${stage}`);
                                             }
                                         }}
@@ -572,7 +579,6 @@ export default function InterviewReport() {
                                         <Button
                                             onClick={() => {
                                                 setErrorState(null);
-                                                setRetryAttempt(0);
                                                 fetchSession();
                                             }}
                                             className="bg-primary hover:bg-primary/90"
@@ -617,7 +623,6 @@ export default function InterviewReport() {
                                             <Button
                                                 onClick={() => {
                                                     setErrorState(null);
-                                                    setRetryAttempt(0);
                                                     fetchSession();
                                                 }}
                                                 variant="outline"
@@ -652,7 +657,7 @@ export default function InterviewReport() {
                                     Your interview conversation was saved. You can review it below while we work on the feedback issue.
                                 </p>
                                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                                    {(session.transcript as any[]).slice(0, 5).map((msg: any, idx: number) => (
+                                    {(session.transcript as TranscriptMessage[]).slice(0, 5).map((msg: TranscriptMessage, idx: number) => (
                                         <div key={idx} className={`p-3 rounded-lg ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase())
                                             ? 'bg-blue-50 dark:bg-blue-950/20'
                                             : 'bg-muted'
@@ -665,9 +670,9 @@ export default function InterviewReport() {
                                             </p>
                                         </div>
                                     ))}
-                                    {(session.transcript as any[]).length > 5 && (
+                                    {(session.transcript as TranscriptMessage[]).length > 5 && (
                                         <p className="text-xs text-center text-muted-foreground">
-                                            + {(session.transcript as any[]).length - 5} more messages
+                                            + {(session.transcript as TranscriptMessage[]).length - 5} more messages
                                         </p>
                                     )}
                                 </div>
@@ -732,13 +737,13 @@ export default function InterviewReport() {
         );
     }
 
-    const mergeFeedback = (dbFeedback: any, instant: any) => {
+    const mergeFeedback = (dbFeedback: Record<string, unknown> | null, instant: Record<string, unknown> | null): Record<string, unknown> => {
         if (!dbFeedback && !instant) return {};
-        if (!dbFeedback) return instant;
-        if (!instant) return dbFeedback;
+        if (!dbFeedback) return instant || {};
+        if (!instant) return dbFeedback || {};
 
-        const dbTs = dbFeedback.generatedAt ? Date.parse(dbFeedback.generatedAt) : 0;
-        const instTs = instant.generatedAt ? Date.parse(instant.generatedAt) : 0;
+        const dbTs = dbFeedback.generatedAt ? Date.parse(String(dbFeedback.generatedAt)) : 0;
+        const instTs = instant.generatedAt ? Date.parse(String(instant.generatedAt)) : 0;
 
         if (instTs >= dbTs) {
             // Instant is newer: shallow-merge, preferring instant fields when present
@@ -746,7 +751,7 @@ export default function InterviewReport() {
             return {
                 ...dbFeedback,
                 ...instant,
-                comparisons: (instant.comparisons && instant.comparisons.length > 0) ? instant.comparisons : dbFeedback.comparisons,
+                comparisons: (Array.isArray(instant.comparisons) && instant.comparisons.length > 0) ? instant.comparisons : dbFeedback.comparisons,
                 // ensure generatedAt is set to the latest
                 generatedAt: instant.generatedAt || dbFeedback.generatedAt,
             };
@@ -764,7 +769,7 @@ export default function InterviewReport() {
     if (rawFeedback) {
         // If we have the new standardized structure, use 'overall'
         if (rawFeedback.overall && typeof rawFeedback.overall === 'object') {
-            rawFeedback = rawFeedback.overall;
+            rawFeedback = rawFeedback.overall as Record<string, unknown>;
         }
         // If we have the old nested structure for multi-resumption (backward compatibility)
         else if (rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
@@ -775,7 +780,8 @@ export default function InterviewReport() {
     }
 
     // merge with potentially more up-to-date instant feedback from Zustand store
-    const feedbackData = mergeFeedback(rawFeedback, instantFeedback);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const feedbackData = mergeFeedback(rawFeedback, instantFeedback as any);
 
     // Use instant transcript if available (more up-to-date), fallback to DB transcript
     let dbTranscript = session?.transcript || [];
@@ -791,14 +797,14 @@ export default function InterviewReport() {
     const transcriptData = instantTranscript.length > 0 ? instantTranscript : (Array.isArray(dbTranscript) ? dbTranscript : []);
 
     // Separate overall skills from technical skills
-    const overallSkills = feedbackData.overallSkills || feedbackData.skills || [
+    const overallSkills = (Array.isArray(feedbackData.overallSkills) ? feedbackData.overallSkills : null) || (Array.isArray(feedbackData.skills) ? feedbackData.skills : null) || [
         { name: "Technical Knowledge", score: 0, feedback: "Pending..." },
         { name: "Communication", score: 0, feedback: "Pending..." },
         { name: "Problem Solving", score: 0, feedback: "Pending..." },
         { name: "Cultural Fit", score: 0, feedback: "Pending..." }
     ];
 
-    const technicalSkills = feedbackData.technicalSkills || [];
+    const technicalSkills = (Array.isArray(feedbackData.technicalSkills) ? feedbackData.technicalSkills : null) || [];
     const calculateGrade = (score: number) => {
         if (score >= 95) return "A+";
         if (score >= 90) return "A";
@@ -811,30 +817,34 @@ export default function InterviewReport() {
         return score > 0 ? "E" : "F";
     };
 
-    const overallScore = session.score || (feedbackData && feedbackData.overallSkills ? Math.round((feedbackData.overallSkills.reduce((acc: any, s: any) => acc + (s.score || 0), 0) / (feedbackData.overallSkills.length || 1))) : 0);
+    const overallScore = session.score || Math.round(overallSkills.reduce((acc: number, s: { score?: number }) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
 
     const reportData = {
         candidateName: userMetadata?.full_name || "Candidate",
         position: session.position,
         overallScore: overallScore,
         date: new Date(session.created_at).toLocaleString(),
-        executiveSummary: feedbackData.executiveSummary || "The interview session has been recorded. Detailed AI analysis is pending.",
+        executiveSummary: (typeof feedbackData.executiveSummary === 'string' ? feedbackData.executiveSummary : null) || "The interview session has been recorded. Detailed AI analysis is pending.",
         rankGrade: calculateGrade(overallScore),
-        strengths: feedbackData.strengths || ["Pending analysis..."],
-        improvements: feedbackData.improvements || ["Pending analysis..."],
+        strengths: (Array.isArray(feedbackData.strengths) ? feedbackData.strengths : null) || ["Pending analysis..."],
+        improvements: (Array.isArray(feedbackData.improvements) ? feedbackData.improvements : null) || ["Pending analysis..."],
         overallSkills: overallSkills,
         technicalSkills: technicalSkills,
         // Deprecated: kept for backward compatibility in downloads
-        skills: feedbackData.skills || overallSkills,
-        actionPlan: feedbackData.actionPlan || ["Wait for full AI report generation."],
+        skills: (Array.isArray(feedbackData.skills) ? feedbackData.skills : null) || overallSkills,
+        actionPlan: (Array.isArray(feedbackData.actionPlan) ? feedbackData.actionPlan : null) || ["Wait for full AI report generation."],
         // Ensure transcript format is consistent and filter AI internal thoughts
         transcript: transcriptData.length > 0
             ? transcriptData
                 // Safely handle potential transcript structure issues
-                .filter((msg: any) => msg && (msg.speaker || msg.sender || msg.role) && msg.text && msg.text.trim())
-                .map((msg: any, i: number) => {
-                    let cleanedText = msg.text.trim();
-                    const speakerRaw = (msg.speaker || msg.sender || msg.role || 'candidate').toLowerCase();
+                .filter((msg: unknown) => {
+                    const m = msg as BaseMessage;
+                    return m && (m.speaker || m.sender || m.role) && m.text && m.text.trim();
+                })
+                .map((msg: unknown, i: number) => {
+                    const m = msg as BaseMessage;
+                    let cleanedText = m.text.trim();
+                    const speakerRaw = (m.speaker || m.sender || m.role || 'candidate').toLowerCase();
                     const speaker = ['ai', 'agent', 'model', 'assistant'].includes(speakerRaw) ? 'ai' : 'user';
 
                     // Remove AI internal thoughts (e.g., **Thinking**, **Analysis**, etc.)
@@ -843,17 +853,17 @@ export default function InterviewReport() {
                     }
 
                     return {
-                        id: msg.id || i,
+                        id: (m.id as string | number) || i,
                         speaker: speaker,
                         text: cleanedText,
-                        timestamp: msg.timestamp || '-'
-                    };
+                        timestamp: m.timestamp || '-'
+                    } as TranscriptMessage;
                 })
-                .filter((msg: any) => msg.text.trim()) // Remove messages that became empty after filtering
+                .filter((msg: TranscriptMessage) => msg.text.trim()) // Remove messages that became empty after filtering
             : [
                 { id: 1, speaker: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
             ],
-        comparisons: feedbackData.comparisons || [],
+        comparisons: (Array.isArray(feedbackData.comparisons) ? feedbackData.comparisons : null) || [],
     };
 
     return (
@@ -1003,14 +1013,14 @@ export default function InterviewReport() {
                                 </div>
 
                                 <p className="text-sm sm:text-base font-medium leading-relaxed max-w-5xl italic border-l-4 border-primary/30 pl-3 sm:pl-4 py-1.5 bg-gradient-to-r from-primary/5 to-transparent rounded-r-xl sm:rounded-r-2xl">
-                                    "{reportData.executiveSummary}"
+                                    &quot;{reportData.executiveSummary}&quot;
                                 </p>
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-auto pt-6 sm:pt-8 border-t border-border">
                                     {[
                                         { label: "Duration", value: formatDuration(session.duration_seconds || 0), icon: Timer, color: "text-amber-600 dark:text-amber-500" },
                                         { label: "Skills Covered", value: reportData.overallSkills.length, icon: Target, color: "text-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]" },
-                                        { label: "Exchanges", value: reportData.transcript.filter((m: any) => ['ai', 'agent', 'model'].includes((m.speaker || m.sender || '').toLowerCase())).length, icon: MessageSquare, color: "text-blue-600 dark:text-blue-500" },
+                                        { label: "Exchanges", value: reportData.transcript.filter((m: TranscriptMessage) => ['ai', 'agent', 'model'].includes((m.speaker || m.sender || '').toLowerCase())).length, icon: MessageSquare, color: "text-blue-600 dark:text-blue-500" },
                                         { label: "Performance Tier", value: reportData.rankGrade, icon: Award, color: "text-emerald-600 dark:text-emerald-500" }
                                     ].map((m, i) => (
                                         <div key={i} className="flex items-center gap-3 group/metric">
@@ -1174,9 +1184,9 @@ export default function InterviewReport() {
                                 </div>
                             </div>
 
-                            {reportData.comparisons && reportData.comparisons.length > 0 ? (
+                            {reportData.comparisons && (reportData.comparisons as Array<Record<string, string>>).length > 0 ? (
                                 <div className="grid grid-cols-1 gap-12">
-                                    {reportData.comparisons.map((item: any, i: number) => (
+                                    {(reportData.comparisons as Array<Record<string, string>>).map((item: Record<string, string>, i: number) => (
                                         <div key={i} className="group/elite relative">
                                             {/* Decorative Number */}
                                             <div className="absolute -top-6 -left-4 text-8xl font-black text-white/[0.02] pointer-events-none group-hover/elite:text-primary/[0.05] transition-colors duration-1000">0{i + 1}</div>
@@ -1198,7 +1208,7 @@ export default function InterviewReport() {
                                                                     Q: {item.question}
                                                                 </div>
                                                                 <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed italic">
-                                                                    "{item.actualAnswer}"
+                                                                    &quot;{item.actualAnswer}&quot;
                                                                 </p>
                                                             </div>
                                                         </div>

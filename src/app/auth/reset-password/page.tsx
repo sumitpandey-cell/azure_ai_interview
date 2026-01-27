@@ -4,9 +4,10 @@ import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -33,7 +34,6 @@ function ResetPasswordContent() {
     const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
     const { updatePassword } = useAuth();
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const form = useForm<ResetPasswordForm>({
         resolver: zodResolver(resetPasswordSchema),
@@ -61,10 +61,8 @@ function ResetPasswordContent() {
                 const refreshToken = hashParams.get('refresh_token');
                 const type = hashParams.get('type');
 
-                    hasAccessToken: !!accessToken,
-                    hasRefreshToken: !!refreshToken,
-                    type
-                });
+
+
 
                 // If we have a recovery token, exchange it for a session
                 if (accessToken && type === 'recovery') {
@@ -144,6 +142,7 @@ function ResetPasswordContent() {
             }, 3000);
         } catch (error) {
             // Error is handled in the context
+            console.error("Error updating password:", error);
         }
     };
 
@@ -244,7 +243,7 @@ function ResetPasswordContent() {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-flex items-center text-lg font-medium tracking-tight mb-6 hover:opacity-80 transition-opacity">
-                            <img src="/arjuna-icon.png" alt="Arjuna AI Logo" className="mr-3 h-9 w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
+                            <Image src="/arjuna-icon.png" alt="Arjuna AI Logo" width={36} height={36} className="mr-3 h-9 w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
                             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">Arjuna AI</span>
                         </Link>
                         <h2 className="text-2xl font-bold text-white mb-2">Set New Password</h2>

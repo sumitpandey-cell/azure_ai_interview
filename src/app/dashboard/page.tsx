@@ -1,18 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Star,
+
   Clock,
   FileText,
-  Calendar,
   Settings,
   LogOut,
-  Loader2,
   Play,
   Building2,
   ArrowRight,
@@ -22,7 +19,6 @@ import {
   Target,
   History,
   ChevronRight,
-  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,15 +39,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakIndicator } from "@/components/StreakIndicator";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
-import { interviewService, subscriptionService, badgeService } from "@/services";
-import type { InterviewSession } from "@/services/interview.service";
+import { subscriptionService, badgeService } from "@/services";
 import { useFeedback } from "@/context/FeedbackContext";
 import { MiniBarChart } from "@/components/MiniBarChart";
 import { SkillProgressChart } from "@/components/SkillProgressChart";
 import { WeeklyActivityChart } from "@/components/WeeklyActivityChart";
 import { PerformanceAnalysisChart } from "@/components/PerformanceAnalysisChart";
 import { useAnalytics } from "@/hooks/use-analytics";
-import { BadgeProgressWidget } from "@/components/BadgeProgressWidget";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
 import { formatDurationShort } from "@/lib/format-duration";
 import { toast } from "sonner";
@@ -76,17 +70,16 @@ function DashboardContent() {
   const {
     sessions,
     stats,
-    profile,
     fetchSessions,
     fetchStats,
     fetchProfile,
     isCached
   } = useOptimizedQueries();
 
-  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
   const [scoreHistory, setScoreHistory] = useState<number[]>([]);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(3600); // Initialize to 1 hour (seconds) to prevent banner flash
+  // const [earnedBadges, setEarnedBadges] = useState<string[]>([]); // Unused
+  // const [subscription, setSubscription] = useState<unknown>(null); // Unused
+  // const [remainingSeconds, setRemainingSeconds] = useState<number>(3600); // Unused
   const [loading, setLoading] = useState(!isCached.sessions);
 
   // Use analytics hook for cached data
@@ -95,10 +88,8 @@ function DashboardContent() {
 
   const {
     shouldRefreshDashboard,
-    resetFeedbackState,
     isGenerating,
     currentSessionId: generatingSessionId,
-    generateFeedbackInBackground
   } = useFeedback();
 
   const [paymentModal, setPaymentModal] = useState<{
@@ -107,28 +98,12 @@ function DashboardContent() {
     details?: string;
   }>({ isOpen: false, status: "success" });
 
-  // Sort sessions: generating feedback first, then by date, filtering only completed or truly in_progress
-  const displaySessions = useMemo(() => {
-    if (!sessions) return [];
-
-    return [...sessions]
-      .filter(s => s.status === 'completed' || s.status === 'in_progress')
-      .sort((a, b) => {
-        const aGenerating = a.status === 'completed' && !a.feedback;
-        const bGenerating = b.status === 'completed' && !b.feedback;
-
-        if (aGenerating && !bGenerating) return -1;
-        if (!aGenerating && bGenerating) return 1;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }).slice(0, 5); // Limit to top 5
-  }, [sessions]);
-
   // Helper to check if a session is currently generating feedback
   const isSessionGenerating = (sessionId: string) => {
     return isGenerating && generatingSessionId === sessionId;
   };
 
-  const loadData = async (force = false) => {
+  const loadData = useCallback(async (force = false) => {
     if (!user?.id) return;
 
     try {
@@ -145,17 +120,17 @@ function DashboardContent() {
       ]);
 
       // Load additional data not yet in optimized queries
-      const [remaining, userBadges, userSubscription] = await Promise.all([
+      /* const [remaining, userBadges, userSubscription] = */ await Promise.all([
         subscriptionService.getRemainingSeconds(user.id),
         badgeService.getUserBadges(user.id),
         subscriptionService.getSubscription(user.id)
       ]);
 
-      setRemainingSeconds(remaining);
-      setSubscription(userSubscription);
+      // setRemainingSeconds(remaining); // Unused
+      // setSubscription(userSubscription); // Unused
 
-      const earnedSlugs = userBadges.map((ub: any) => ub.badge.slug);
-      setEarnedBadges(earnedSlugs);
+      // const earnedSlugs = userBadges.map((ub: { badge: { slug: string } }) => ub.badge.slug);
+      // setEarnedBadges(earnedSlugs); // Unused
 
       // Extract scores for mini chart
       if (recentSessions) {
@@ -169,7 +144,7 @@ function DashboardContent() {
       // Trigger catch-up check for badges (especially if they just finished an interview)
       const newlyAwarded = await badgeService.checkAndAwardBadges(user.id);
       if (newlyAwarded.length > 0) {
-        setEarnedBadges(prev => [...prev, ...newlyAwarded.map(b => b.slug)]);
+        // setEarnedBadges(prev => [...prev, ...newlyAwarded.map(b => b.slug)]); // Unused
         newlyAwarded.forEach(b => {
           toast.success(`Achievement Unlocked!`, {
             description: `You've earned the ${b.name} badge!`,
@@ -182,7 +157,7 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, isCached.sessions, fetchSessions, fetchStats, fetchProfile]);
 
   // Load data on mount and when navigating back to dashboard
   useEffect(() => {
@@ -200,14 +175,14 @@ function DashboardContent() {
         if (scores.length > 0) setScoreHistory(scores);
       }
     }
-  }, [user?.id, isCached.sessions, isCached.stats, isCached.profile]);
+  }, [user?.id, isCached.sessions, isCached.stats, isCached.profile, loadData, sessions]);
 
   // Refresh data when feedback is ready
   useEffect(() => {
     if (shouldRefreshDashboard) {
       loadData(true); // Force refresh
     }
-  }, [shouldRefreshDashboard]);
+  }, [shouldRefreshDashboard, loadData]);
 
   // Use subscription hook for all subscription data
   const { allowed, loading: subscriptionLoading, remaining_seconds, invalidateCache } = useSubscription();
@@ -234,12 +209,12 @@ function DashboardContent() {
     // Clear query params
     const newPath = window.location.pathname;
     window.history.replaceState({}, '', newPath);
-  }, [searchParams, invalidateCache]);
+  }, [searchParams, invalidateCache, loadData]);
 
   const startInterview = async () => {
     // Check balance before proceeding
-    const { remainingSeconds } = await subscriptionService.checkUsageLimit(user?.id || '');
-    if (remainingSeconds < 120) {
+    const { remainingSeconds: remaining } = await subscriptionService.checkUsageLimit(user?.id || '');
+    if (remaining < 120) {
       toast.error("Insufficient balance", {
         description: "You need at least 2 minutes of interview time to start a new session. Please upgrade your plan.",
         duration: 5000,
@@ -253,21 +228,7 @@ function DashboardContent() {
     router.push('/start-interview');
   };
 
-  // Helper to render stars based on score
-  const renderStars = (score: number | null) => {
-    if (score === null) return null;
-    const stars = Math.round(score / 20); // 0-5 stars
-    return (
-      <div className="flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-3 w-3 ${i < stars ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-          />
-        ))}
-      </div>
-    );
-  };
+
 
   // Helper to format time (now accepts seconds and formats them)
   const formatTime = (seconds: number) => {
@@ -519,7 +480,6 @@ function DashboardContent() {
                           data={scoreHistory}
                           height={24}
                           barWidth={3}
-                          gap={2}
                           color="hsl(var(--primary))"
                         />
                       </div>
@@ -608,7 +568,7 @@ function DashboardContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.slice(0, 6).map((session) => {
                   const isGeneratingFeedback = isSessionGenerating(session.id);
-                  const isInsufficientData = (session.feedback as any)?.note === 'Insufficient data for report generation';
+                  // const isInsufficientData = (session.feedback as { note?: string })?.note === 'Insufficient data for report generation';
                   const score = session.score;
 
                   return (
@@ -630,7 +590,7 @@ function DashboardContent() {
                         {/* Header: Type Badge & Status */}
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            {session.config && (session.config as any).companyInterviewConfig ? (
+                            {session.config && (session.config as { companyInterviewConfig?: unknown }).companyInterviewConfig ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 uppercase tracking-wide">
                                 <Building2 className="h-3 w-3" />
                                 Company Specific

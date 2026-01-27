@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Twitter, Github, Linkedin, Instagram, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
     return (
@@ -17,7 +18,7 @@ export function Footer() {
                             <Link href="/" className="flex items-center gap-3 text-2xl font-bold mb-6 group w-fit">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                                    <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-10 w-10 object-contain relative z-10" />
+                                    <Image src="/arjuna-icon.png" alt="Arjuna AI" width={40} height={40} className="h-10 w-10 object-contain relative z-10" />
                                 </div>
                                 <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent group-hover:to-white transition-all">
                                     Arjuna AI

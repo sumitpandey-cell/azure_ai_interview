@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Medal, Lock, Trophy, Award, Zap, Target, Star, TrendingUp, Info, Share2 } from "lucide-react";
+import { Medal, Lock, Award, Zap, Target, Star, TrendingUp } from "lucide-react";
 import { badgeService } from "@/services/badge.service";
-import type { Badge as BadgeType } from "@/services/badge.service";
 import { useAuth } from "@/contexts/AuthContext";
-import { BADGE_DEFINITIONS, getRarityColor, getRarityBorderColor, getRarityGlowColor } from "@/config/badges";
+import { BADGE_DEFINITIONS } from "@/config/badges";
 import { UserBadgeData } from "@/types/badge-types";
 import type { BadgeCategory } from "@/types/badge-types";
 import { toast } from "sonner";
@@ -42,9 +40,9 @@ const CATEGORY_LABELS: Record<BadgeCategory, string> = {
 
 export default function Badges() {
   const { user } = useAuth();
-  const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
+
   const [earnedBadges, setEarnedBadges] = useState<Set<string>>(new Set());
-  const [userBadgesData, setUserBadgesData] = useState<any[]>([]);
+  const [userBadgesData, setUserBadgesData] = useState<{ badge: { slug: string } }[]>([]);
   const [userData, setUserData] = useState<UserBadgeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | "all">("all");
@@ -57,13 +55,13 @@ export default function Badges() {
         setLoading(true);
 
         // Load all available badges from DB
-        const badges = await badgeService.getBadges();
-        setAllBadges(badges);
+        // const badges = await badgeService.getBadges();
+        // setAllBadges(badges);
 
         // Load user's earned badges (using slugs for easier lookup)
         const userBadges = await badgeService.getUserBadges(user.id);
         setUserBadgesData(userBadges);
-        const earnedSlugs = new Set(userBadges.map((ub: any) => ub.badge.slug));
+        const earnedSlugs = new Set(userBadges.map((ub: { badge: { slug: string } }) => ub.badge.slug));
         setEarnedBadges(earnedSlugs);
 
         // Load real user stats for progress
@@ -96,28 +94,13 @@ export default function Badges() {
     loadBadges();
   }, [user]);
 
-  const getBadgeIcon = (iconName: string) => {
-    return iconName;
-  };
+
 
   const getBadgeProgress = (badgeId: string) => {
     const definition = BADGE_DEFINITIONS.find((b) => b.id === badgeId);
     if (!definition?.getProgress || !userData) return null;
 
     return definition.getProgress(userData);
-  };
-
-  const handleShareBadge = (badgeName: string) => {
-    if (navigator.share) {
-      navigator.share({
-        title: "Achievement Unlocked!",
-        text: `I just earned the ${badgeName} badge on Arjuna AI! Check it out!`,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(`I just earned the ${badgeName} badge on Arjuna AI!`);
-      toast.success("Link copied to clipboard!");
-    }
   };
 
   const earnedCount = earnedBadges.size;
@@ -249,7 +232,7 @@ export default function Badges() {
         {/* Badge Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           <AnimatePresence mode="popLayout">
-            {filteredBadges.map((badge, index) => {
+            {filteredBadges.map((badge) => {
               const isEarned = earnedBadges.has(badge.id);
               const progress = getBadgeProgress(badge.id);
               const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;

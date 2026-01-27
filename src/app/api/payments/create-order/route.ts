@@ -33,8 +33,9 @@ export async function POST(req: Request) {
 
         const response = await cashfree.PGCreateOrder(request);
         return NextResponse.json(response.data);
-    } catch (error: any) {
-        console.error("Cashfree Order Error:", error.response?.data || error.message || error);
+    } catch (err: unknown) {
+        const error = err as { response?: { data?: unknown }; message?: string };
+        console.error("Cashfree Order Error:", error.response?.data || error.message || err);
         return NextResponse.json(
             { error: "Failed to create order", details: error.response?.data || error.message },
             { status: 500 }

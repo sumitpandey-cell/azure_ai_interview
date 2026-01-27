@@ -1,17 +1,17 @@
 'use client'
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown, ArrowRight, Star } from "lucide-react";
+import { Trophy, Search, TrendingUp, Users, Award, Download, Copy, Check, ArrowRight, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getAvatarUrl, getInitials } from "@/lib/avatar-utils";
+import { getAvatarUrl } from "@/lib/avatar-utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import {
@@ -44,8 +44,7 @@ const Leaderboard = () => {
   const [selectedRank, setSelectedRank] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { profile, leaderboard, fetchLeaderboard, isCached } = useOptimizedQueries();
 
   useEffect(() => {
@@ -327,39 +326,7 @@ const Leaderboard = () => {
     }
   };
 
-  const handleNativeShare = async () => {
-    try {
-      const shareData = {
-        title: `${selectedUser?.fullName || 'Candidate'} - ArjunaAI Interview Profile`,
-        text: `Check out this interview profile on ArjunaAI! Global Rank #${selectedRank} with a score of ${selectedUser?.bayesianScore.toFixed(0)}%`,
-        url: `${window.location.origin}/p/${selectedUser?.userId}`,
-      };
 
-      if (navigator.share && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        toast({
-          title: "Success",
-          description: "Shared successfully!",
-        });
-      } else {
-        // Fallback to copy link
-        await navigator.clipboard.writeText(shareData.url);
-        toast({
-          title: "Link Copied",
-          description: "Share link copied to clipboard!",
-        });
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Error sharing:', error);
-        toast({
-          title: "Error",
-          description: "Failed to share.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleCopyLink = () => {
     const shareUrl = `${window.location.origin}/p/${selectedUser?.userId}`;
@@ -613,7 +580,7 @@ const Leaderboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((leaderboardUser, index) => {
+                  {filteredUsers.map((leaderboardUser) => {
                     const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
                     const isTop3 = actualRank <= 3;
                     const isCurrentUser = leaderboardUser.userId === user?.id;
@@ -691,7 +658,7 @@ const Leaderboard = () => {
                   {filteredUsers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        No matches for "{searchQuery}"
+                        No matches for &quot;{searchQuery}&quot;
                       </TableCell>
                     </TableRow>
                   )}
@@ -725,7 +692,7 @@ const Leaderboard = () => {
                 <div>
                   <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
                   <p className="text-sm text-muted-foreground leading-relaxed italic">
-                    "High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality."
+                    &quot;High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality.&quot;
                   </p>
                 </div>
               </div>

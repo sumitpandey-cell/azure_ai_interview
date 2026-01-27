@@ -116,7 +116,7 @@ export function useSubscriptionTimer({
         return () => {
             clearInterval(interval);
         };
-    }, [loading, isActive]);
+    }, [loading, isActive, totalRemainingSeconds]);
 
     const remainingMinutes = Math.floor(totalRemainingSeconds / 60);
     const remainingSeconds = totalRemainingSeconds % 60;

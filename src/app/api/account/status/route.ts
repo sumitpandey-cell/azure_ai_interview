@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         const cookieStore = await cookies();
 
@@ -13,8 +13,8 @@ export async function GET(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
             {
                 cookies: {
                     get(name: string) { return cookieStore.get(name)?.value; },
-                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { } },
-                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch (error) { } },
+                    set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch { } },
+                    remove(name: string, options: CookieOptions) { try { cookieStore.set({ name, value: '', ...options }); } catch { } },
                 },
             }
         );
@@ -60,10 +60,10 @@ export async function GET(request: Request) {
             deactivationReason: status.deactivation_reason
         });
 
-    } catch (error: any) {
-        console.error("Error in check account status API:", error);
+    } catch (err: unknown) {
+        console.error(err);
         return NextResponse.json(
-            { error: error.message || "Internal server error" },
+            { error: (err as Error).message || "Internal server error" },
             { status: 500 }
         );
     }

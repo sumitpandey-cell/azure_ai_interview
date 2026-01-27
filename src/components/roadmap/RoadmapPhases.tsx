@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { ChevronDown, ChevronUp, Lock, CheckCircle2, Circle, Play, BookOpen, Clock, Lightbulb, Target, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock, CheckCircle2, Play, BookOpen, Clock, Target, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -39,9 +38,15 @@ interface Phase {
     learning_resources: LearningResource[];
 }
 
+interface ProgressItem {
+    milestone_id: string;
+    item_type: 'goal' | 'interview' | 'resource';
+    completed_at: string;
+}
+
 interface RoadmapPhasesProps {
     phases: Phase[];
-    progress: any[];
+    progress: ProgressItem[];
     roadmapId: string;
     onProgressUpdate?: () => void;
 }

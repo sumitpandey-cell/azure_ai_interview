@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface TranscriptEntry {
     speaker: 'user' | 'ai';
@@ -9,7 +10,7 @@ export interface TranscriptEntry {
 
 export interface InterviewFeedback {
     sessionId: string;
-    feedback: any;
+    feedback: Json;
     score: number;
     generatedAt: number;
 }
@@ -19,7 +20,7 @@ export interface SessionData {
     position: string;
     interview_type: string;
     status: string;
-    config: any;
+    config: Json;
     created_at?: string;
 }
 
@@ -42,7 +43,7 @@ interface InterviewStore {
     setCurrentSessionData: (sessionData: SessionData) => void;
 }
 
-export const useInterviewStore = create<InterviewStore>((set, get) => ({
+export const useInterviewStore = create<InterviewStore>((set) => ({
     // Transcripts
     transcripts: [],
 

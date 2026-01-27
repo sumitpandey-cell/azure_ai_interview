@@ -5,8 +5,19 @@ import type { Database } from '@/integrations/supabase/types';
 // Interface for feedback structure
 interface FeedbackData {
     technicalSkills?: Array<{ name: string; score: number }>;
+    overallSkills?: Array<{ name: string; score: number }>;
     skills?: Array<{ name: string; score: number }>;
-    [key: string]: any;
+    overall?: Record<string, unknown> & {
+        technicalSkills?: Array<{ name: string; score: number }>;
+        overallSkills?: Array<{ name: string; score: number }>;
+        skills?: Array<{ name: string; score: number }>;
+    };
+    resumptions?: Array<Record<string, unknown> & {
+        technicalSkills?: Array<{ name: string; score: number }>;
+        overallSkills?: Array<{ name: string; score: number }>;
+        skills?: Array<{ name: string; score: number }>;
+    }>;
+    [key: string]: unknown;
 }
 
 export interface SkillData {
@@ -55,13 +66,13 @@ export const analyticsService = {
                 // Handle nested structure (v2.0): { overall: { ... }, resumptions: [ ... ] }
                 if (feedback && typeof feedback === 'object') {
                     // If we have the new standardized structure, use 'overall'
-                    if ((feedback as any).overall && typeof (feedback as any).overall === 'object') {
-                        feedback = (feedback as any).overall;
+                    if (feedback.overall && typeof feedback.overall === 'object') {
+                        feedback = feedback.overall as unknown as FeedbackData;
                     }
                     // If we have the old nested structure for multi-resumption (backward compatibility)
-                    else if ((feedback as any).resumptions && Array.isArray((feedback as any).resumptions) && (feedback as any).resumptions.length > 0) {
-                        if (!(feedback as any).overall || Object.keys((feedback as any).overall).length === 0) {
-                            feedback = (feedback as any).resumptions[0];
+                    else if (Array.isArray(feedback.resumptions) && feedback.resumptions.length > 0) {
+                        if (!feedback.overall || (typeof feedback.overall === 'object' && Object.keys(feedback.overall as object).length === 0)) {
+                            feedback = feedback.resumptions[0] as unknown as FeedbackData;
                         }
                     }
                 }
@@ -70,12 +81,12 @@ export const analyticsService = {
 
                 // Check for technicalSkills (new format) and overallSkills
                 const technicalSkills = feedback.technicalSkills || [];
-                const overallSkills = (feedback as any).overallSkills || feedback.skills || [];
+                const overallSkills = (feedback.overallSkills as Array<{ name: string; score: number }>) || feedback.skills || [];
 
                 // Combine both technical and overall skills
                 const allSkills = [...technicalSkills, ...overallSkills];
 
-                allSkills.forEach((skill: any) => {
+                allSkills.forEach((skill: { name?: string; score?: number }) => {
                     if (skill && skill.name && typeof skill.score === 'number') {
                         const existing = skillMap.get(skill.name) || { totalScore: 0, count: 0 };
                         skillMap.set(skill.name, {
@@ -378,7 +389,13 @@ export const analyticsService = {
 
             // Calculate average score
             const averageScore = sessions && sessions.length > 0
-                ? sessions.reduce((sum, s) => sum + (s.score || 0), 0) / sessions.length
+                ? sessions.reduce((sum, s) => {
+                    const feedbackObj = s.feedback as unknown as { overallSkills?: Array<{ score: number }> };
+                    if (feedbackObj?.overallSkills && feedbackObj.overallSkills.length > 0) {
+                        return sum + (feedbackObj.overallSkills.reduce((skillSum, skill) => skillSum + skill.score, 0) / feedbackObj.overallSkills.length);
+                    }
+                    return sum + (s.score || 0);
+                }, 0) / sessions.length
                 : 0;
 
             // Calculate completion rate
@@ -391,7 +408,7 @@ export const analyticsService = {
             const strongAreas = new Set<string>();
 
             sessions?.forEach(session => {
-                const feedback = session.feedback as any;
+                const feedback = session.feedback as Record<string, unknown> & { weaknesses?: string[]; strengths?: string[] };
                 if (feedback?.weaknesses) {
                     feedback.weaknesses.forEach((w: string) => weakAreas.add(w));
                 }

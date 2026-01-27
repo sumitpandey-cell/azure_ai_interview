@@ -8,21 +8,20 @@ interface SpeechRecognition extends EventTarget {
     start: () => void;
     stop: () => void;
     abort: () => void;
-    onresult: (event: any) => void;
-    onerror: (event: any) => void;
+    onresult: (event: { resultIndex: number; results: { isFinal: boolean;[index: number]: { transcript: string } }[] }) => void;
+    onerror: (event: { error: string }) => void;
     onend: () => void;
 }
 
 declare global {
     interface Window {
-        SpeechRecognition: any;
-        webkitSpeechRecognition: any;
+        SpeechRecognition: { new(): SpeechRecognition };
+        webkitSpeechRecognition: { new(): SpeechRecognition };
     }
 }
 
 export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (text: string) => void) {
     const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
     const recognitionRef = useRef<SpeechRecognition | null>(null);
 
     // Use provided language or get from preferences
@@ -39,13 +38,9 @@ export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (
                 // Use English for technical content regardless of user's default language preference
                 recognitionRef.current.lang = 'en-US'; // Always use English for technical interviews
 
-                recognitionRef.current.onresult = (event: any) => {
-                    let finalTranscript = '';
+                recognitionRef.current.onresult = (event) => {
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
                         if (event.results[i].isFinal) {
-                            finalTranscript += event.results[i][0].transcript;
-                            // NOTE: We're now handling transcription via Gemini Live API's inputTranscription
-                            // So we don't need to dispatch events from here anymore
                             if (onTranscript) {
                                 onTranscript(event.results[i][0].transcript);
                             }
@@ -53,7 +48,7 @@ export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (
                     }
                 };
 
-                recognitionRef.current.onerror = (event: any) => {
+                recognitionRef.current.onerror = (event) => {
                     console.error('Speech recognition error', event.error);
                     if (event.error === 'language-not-supported') {
                         console.warn(`⚠️ Language not supported, falling back to English for technical interview`);
@@ -67,7 +62,7 @@ export function useSpeechRecognition(language?: LanguageOption, onTranscript?: (
             }
         }
         // Re-initialize when language changes (but force English for technical interviews)
-    }, ['en-US']); // Force English regardless of selectedLanguage
+    }, [onTranscript]); // Force English regardless of selectedLanguage
 
     const startListening = useCallback(() => {
         if (recognitionRef.current && !isListening) {

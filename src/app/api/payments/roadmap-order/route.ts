@@ -33,7 +33,8 @@ export async function POST(req: Request) {
 
         const response = await cashfree.PGCreateOrder(request);
         return NextResponse.json(response.data);
-    } catch (error: any) {
+    } catch (err: unknown) {
+        const error = err as { response?: { data?: unknown }; message?: string };
         console.error("Cashfree Roadmap Order Error:", error.response?.data || error.message);
         return NextResponse.json(
             { error: "Failed to create roadmap order", details: error.response?.data || error.message },

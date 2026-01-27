@@ -46,7 +46,7 @@ export const badgeService = {
                 .order("awarded_at", { ascending: false });
 
             if (error) throw error;
-            return (data || []) as any;
+            return (data || []) as unknown as (UserBadge & { badge: Badge })[];
         } catch (error) {
             console.error("Error fetching user badges:", error);
             return [];
@@ -110,14 +110,14 @@ export const badgeService = {
                         .eq("user_id", userId)
                         .eq("badge_id", badge.id)
                         .maybeSingle();
-                    return existingRecord as any;
+                    return existingRecord as unknown as (UserBadge & { badge: Badge });
                 }
 
                 console.error(`[BadgeService] Failed to insert badge achievement (${badgeSlug}):`, error.message, error.code, error.hint);
                 return null;
             }
 
-            return data as any;
+            return data as unknown as (UserBadge & { badge: Badge });
         } catch (error) {
             console.error("[BadgeService] Unexpected error in awardBadge:", error);
             return null;
@@ -159,7 +159,7 @@ export const badgeService = {
                 `)
                 .eq("user_id", userId);
 
-            const earnedBadgesSlugs = (userBadges || []).map((ub: any) => ub.badge.slug);
+            const earnedBadgesSlugs = ((userBadges || []) as unknown as { badge: { slug: string } | null }[]).map((ub) => ub.badge?.slug).filter(Boolean) as string[];
 
             // Calculate aggregate stats
             let highestScore = 0;
@@ -189,7 +189,7 @@ export const badgeService = {
                 if (hour >= 22 || hour < 2) nightInterviews++;
 
                 // Extract granular scores if available in feedback
-                const feedback = s.feedback as any;
+                const feedback = s.feedback as Record<string, unknown> & { scores?: Record<string, number> };
                 if (feedback && feedback.scores) {
                     if (feedback.scores.communication !== undefined) {
                         totalCommScore += feedback.scores.communication;
@@ -222,7 +222,7 @@ export const badgeService = {
                 communicationScore: Math.round(avgCommScore),
                 technicalScore: Math.round(avgTechScore),
                 skillMastery: Math.round(avgTechScore), // Using tech score as proxy
-                fastestTime: fastestTime === Infinity ? undefined : fastestTime,
+                fastestTime: fastestTime === Infinity ? 0 : fastestTime,
                 interviewTypes: uniqueTypes.size,
                 morningInterviews,
                 nightInterviews,
@@ -241,6 +241,15 @@ export const badgeService = {
                 currentStreak: 0,
                 wasInactive: false,
                 earnedBadges: [],
+                highestScore: 0,
+                averageScore: 0,
+                communicationScore: 0,
+                skillMastery: 0,
+                technicalScore: 0,
+                fastestTime: 0,
+                interviewTypes: 0,
+                morningInterviews: 0,
+                nightInterviews: 0,
             };
         }
     },

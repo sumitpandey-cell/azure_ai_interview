@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -29,7 +29,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2, Search } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, FileText, Code, User, Monitor, Building2, Search } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -45,7 +45,7 @@ const formSchema = z.object({
     role: z.string().optional(),
     experienceLevel: z.string().optional(),
     skills: z.string().optional(),
-    jobDescription: z.any().optional(),
+    jobDescription: z.string().optional(),
 });
 
 export default function StartInterview() {
@@ -171,7 +171,7 @@ export default function StartInterview() {
                 return;
             }
 
-            const config: any = {
+            const config: Record<string, unknown> = {
                 interviewMode: values.interviewMode,
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
@@ -198,7 +198,7 @@ export default function StartInterview() {
                 interview_type: values.interviewType,
                 position: values.position,
                 duration_seconds: 0,
-                config: config
+                config: JSON.parse(JSON.stringify(config))
             });
 
             if (session) {
@@ -218,7 +218,8 @@ export default function StartInterview() {
             } else {
                 throw new Error('Failed to create session');
             }
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             console.error("Error creating session:", error);
             toast.error(error.message || "Failed to create interview session");
         } finally {
@@ -531,14 +532,14 @@ export default function StartInterview() {
                                                 accept=".pdf,.docx,.txt"
                                                 multiple={false}
                                             />
-                                            {form.watch('jobDescription') && typeof form.watch('jobDescription') === 'string' && form.watch('jobDescription').startsWith('Attached file:') ? (
+                                            {form.watch('jobDescription') && typeof form.watch('jobDescription') === 'string' && form.watch('jobDescription')?.startsWith('Attached file:') ? (
                                                 <div className="flex flex-col items-center">
                                                     <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                                                         <Search className="h-7 w-7" />
                                                     </div>
                                                     <h3 className="text-foreground font-semibold mb-1 text-lg text-emerald-600">File Attached</h3>
                                                     <p className="text-muted-foreground text-sm mb-6">
-                                                        {form.watch('jobDescription').split('\n')[0].replace('Attached file: ', '')}
+                                                        {form.watch('jobDescription')?.split('\n')[0].replace('Attached file: ', '')}
                                                     </p>
                                                     <Button type="button" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground font-semibold">Change File</Button>
                                                 </div>

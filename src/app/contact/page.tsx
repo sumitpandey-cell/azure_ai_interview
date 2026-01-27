@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Twitter, Github, Linkedin, Instagram, ArrowRight, Loader2 } from "lucide-react";
-import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { Footer } from "@/components/Footer";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -24,8 +23,8 @@ export default function ContactPage() {
         setIsLoading(true);
 
         try {
-            const { error } = await (supabase
-                .from("contact_submissions" as any) as any)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from("contact_submissions" as any) as any)
                 .insert([
                     {
                         full_name: formData.fullName,
@@ -48,11 +47,11 @@ export default function ContactPage() {
                 topic: "General Inquiry",
                 message: ""
             });
-        } catch (error: any) {
-            console.error("Error submitting contact form:", error);
+        } catch (err: unknown) {
+            console.error("Error submitting contact form:", err);
             toast({
                 title: "Error",
-                description: error.message || "Failed to send message. Please try again.",
+                description: (err as Error).message || "Failed to send message. Please try again.",
                 variant: "destructive"
             });
         } finally {
@@ -69,11 +68,11 @@ export default function ContactPage() {
                     {/* Hero */}
                     <div className="max-w-4xl mx-auto text-center mb-20 animate-in fade-in slide-in-from-bottom-6 duration-700">
                         <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight">
-                            Let's start a <br />
+                            Let&apos;s start a <br />
                             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">conversation</span>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                            Whether you're a candidate looking to ace your interview or an enterprise building a hiring pipeline, we're here to help.
+                            Whether you&apos;re a candidate looking to ace your interview or an enterprise building a hiring pipeline, we&apos;re here to help.
                         </p>
                     </div>
 

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { FeedbackData } from '@/lib/gemini-feedback';
 import { CompanyQuestion } from '@/types/company-types';
 import { CodingChallenge } from '@/types/coding-challenge-types';
+import type { Json } from '@/integrations/supabase/types';
 
 interface Message {
     id: number;
@@ -39,8 +40,8 @@ interface InterviewSessionData {
     };
     created_at: string;
     duration_seconds?: number;
-    transcript?: any;
-    feedback?: any;
+    transcript?: Json;
+    feedback?: Json;
     score?: number;
 }
 
@@ -85,7 +86,7 @@ interface InterviewState {
 
 export const useInterviewStore = create<InterviewState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             // Current session data
             currentSession: null,
 

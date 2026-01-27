@@ -30,17 +30,6 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
         }
     };
 
-    const getTrendColor = () => {
-        switch (data.trend) {
-            case 'improving':
-                return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-            case 'declining':
-                return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-            default:
-                return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-        }
-    };
-
     const getTrendLabelColor = () => {
         switch (data.trend) {
             case 'improving':
@@ -114,7 +103,7 @@ export function RoadmapOverview({ data }: RoadmapOverviewProps) {
                             </div>
                             <div>
                                 <CardTitle className="text-lg font-bold">Key Strengths</CardTitle>
-                                <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">Where you're excelling right now</p>
+                                <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">Where you&apos;re excelling right now</p>
                             </div>
                         </div>
                     </CardHeader>

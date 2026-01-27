@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('❌ Cron job error:', error);
+        console.error(error);
         return NextResponse.json(
             {
                 error: 'Cron job failed',

@@ -9,7 +9,7 @@ declare module '@cashfreepayments/cashfree-js' {
     }
 
     export interface CashfreeInstance {
-        checkout(options: CheckoutOptions): Promise<any>;
+        checkout(options: CheckoutOptions): Promise<unknown>;
     }
 
     export function load(options: CashfreeOptions): Promise<CashfreeInstance>;

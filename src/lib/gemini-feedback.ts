@@ -2,7 +2,7 @@
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
-interface Message {
+export interface Message {
     id?: number;
     speaker: 'user' | 'ai';
     sender?: 'user' | 'ai';  // Legacy support
@@ -11,7 +11,7 @@ interface Message {
     timestamp?: number;
 }
 
-interface InterviewSessionData {
+export interface InterviewSessionData {
     id: string;
     interview_type: string;
     position: string;
@@ -286,14 +286,7 @@ export async function generateFeedback(
         ? `\n\nEXPECTED SKILLS TO ASSESS:\nThis interview was designed to evaluate the following skills: ${skills.join(', ')}.\nFocus your assessment on these specific areas when evaluating the candidate's performance.`
         : '';
 
-    const difficultyContext = difficulty
-        ? `\n\nINTERVIEW DIFFICULTY LEVEL: ${difficulty}\n${difficulty === 'Beginner'
-            ? 'This is a beginner-level interview. Adjust expectations accordingly - focus on fundamental understanding rather than advanced expertise.'
-            : difficulty === 'Intermediate'
-                ? 'This is an intermediate-level interview. Expect solid foundational knowledge and some practical experience.'
-                : 'This is an advanced-level interview. Expect deep technical knowledge, complex problem-solving, and extensive experience.'
-        }`
-        : '';
+    // difficultyContext was defined but never used
 
     const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
 ${skillsContext}${companyContext}${jdContext}
@@ -437,7 +430,7 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
             throw new Error(`Invalid feedback structure: ${validation.error}`);
         }
 
-        const qualityScore = calculateFeedbackQuality(validation.data!, lengthAnalysis.category);
+        calculateFeedbackQuality(validation.data!, lengthAnalysis.category);
 
         return validation.data! as FeedbackData;
     } catch (error) {

@@ -1,6 +1,5 @@
 import { supabase, publicSupabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import { badgeService } from "./badge.service";
 
 export type Profile = Tables<"profiles">;
 export type ProfileInsert = TablesInsert<"profiles">;
@@ -166,7 +165,7 @@ export const profileService = {
      * Get a public profile by ID or slug
      * Only returns a subset of safe, non-sensitive fields
      */
-    async getPublicProfile(idOrSlug: string): Promise<any | null> {
+    async getPublicProfile(idOrSlug: string): Promise<Pick<Profile, "id" | "full_name" | "avatar_url" | "streak_count" | "is_public" | "profile_slug" | "created_at"> | null> {
         try {
             // Check if it's an ID (UUID) or a slug
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
@@ -190,7 +189,8 @@ export const profileService = {
             if (!data || !data.is_public) return null;
 
             return data;
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { message?: string; cause?: unknown };
             console.error("Critical error in getPublicProfile:", error.message || error);
             if (error.cause) {
                 console.error("Detailed Fetch Cause:", error.cause);
@@ -231,7 +231,7 @@ export const profileService = {
             };
 
             // Don't use .select() because RLS will block reading deactivated profiles
-            const { error, count } = await supabase
+            const { error } = await supabase
                 .from("profiles")
                 .update(updateData)
                 .eq("id", userId);

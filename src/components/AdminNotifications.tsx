@@ -81,7 +81,7 @@ export default function AdminNotifications() {
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
               <p className="text-muted-foreground">
-                You don't have permission to access this page.
+                You don&apos;t have permission to access this page.
               </p>
             </CardContent>
           </Card>
@@ -237,8 +237,8 @@ export default function AdminNotifications() {
                     <div className="flex items-start gap-3">
                       <span className="text-lg">
                         {formData.type === 'success' ? '✅' :
-                         formData.type === 'warning' ? '⚠️' :
-                         formData.type === 'error' ? '❌' : 'ℹ️'}
+                          formData.type === 'warning' ? '⚠️' :
+                            formData.type === 'error' ? '❌' : 'ℹ️'}
                       </span>
                       <div className="flex-1">
                         <h4 className="font-medium text-sm">
@@ -284,14 +284,14 @@ export default function AdminNotifications() {
             <div>
               <h4 className="font-medium mb-2">Sending to All Users:</h4>
               <p className="text-sm text-muted-foreground">
-                Select "All Users" to broadcast notifications to everyone using the platform.
+                Select &quot;All Users&quot; to broadcast notifications to everyone using the platform.
                 This is useful for system announcements, feature updates, or important news.
               </p>
             </div>
             <div>
               <h4 className="font-medium mb-2">Sending to Specific User:</h4>
               <p className="text-sm text-muted-foreground">
-                Select "Specific User" and enter their User ID to send a targeted notification.
+                Select &quot;Specific User&quot; and enter their User ID to send a targeted notification.
                 You can find User IDs in your Supabase dashboard under Authentication → Users.
               </p>
             </div>

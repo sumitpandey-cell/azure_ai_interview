@@ -68,7 +68,7 @@ export function PaymentStatusModal({
         invalid: {
             icon: <AlertCircle className="h-12 w-12 text-rose-500" />,
             title: "Invalid Order",
-            defaultMessage: "We couldn't retrieve the details for this transaction.",
+            defaultMessage: "We couldn&apos;t retrieve the details for this transaction.",
             buttonText: "Back to Pricing",
             buttonVariant: "outline" as const,
         },
@@ -95,7 +95,7 @@ export function PaymentStatusModal({
                     <div className="mt-4 p-4 rounded-2xl bg-muted/50 border border-border/50">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Reason from Provider</p>
                         <p className="text-sm font-semibold text-foreground leading-relaxed italic">
-                            "{details}"
+                            &quot;{details}&quot;
                         </p>
                     </div>
                 )}

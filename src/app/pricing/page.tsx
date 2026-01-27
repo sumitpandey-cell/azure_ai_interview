@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSubscription } from "@/hooks/use-subscription"; // Assuming this handles unauth state gracefully
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { subscriptionService, type Plan } from "@/services/subscription.service";
@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { PaymentStatusModal, type PaymentStatus } from "@/components/PaymentStatusModal";
 import { useAuth } from "@/contexts/AuthContext";
 
-const PLAN_DETAILS: Record<string, any> = {
+const PLAN_DETAILS: Record<string, { description: string, features: string[], popular: boolean }> = {
     "Free Trial": {
         description: "Great for basic practice",
         features: [
@@ -155,9 +155,9 @@ function PricingContent() {
                     redirectTarget: "_self",
                 });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Payment Error:", error);
-            toast.error(error.message || "Payment initialization failed");
+            toast.error((error as Error).message || "Payment initialization failed");
         } finally {
             setSubscribingPlanId(null);
         }
@@ -191,7 +191,7 @@ function PricingContent() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
-                            {fetchedPlans.map((plan, i) => {
+                            {fetchedPlans.map((plan) => {
                                 const details = PLAN_DETAILS[plan.name] || {
                                     description: "Custom interview plan",
                                     features: ["AI Interview access", "Session reports"],
@@ -239,7 +239,7 @@ function PricingContent() {
                                             </div>
 
                                             <div className="space-y-4">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What's included</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What&apos;s included</p>
                                                 <ul className="space-y-4">
                                                     {details.features.map((feature: string) => (
                                                         <li key={feature} className="flex items-start gap-3 group/item">

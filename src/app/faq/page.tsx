@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Search, ArrowRight, MessageCircle, HelpCircle } from "lucide-react";
+import { Plus, Search, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { useState } from "react";
@@ -163,7 +163,7 @@ export default function FAQPage() {
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
                                 <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                                    Can't find the answer you're looking for? Please chat to our friendly team.
+                                    Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly team.
                                 </p>
                                 <Button size="lg" className="h-12 px-8 bg-white text-black hover:bg-slate-200 rounded-full font-bold" asChild>
                                     <Link href="/contact">Contact Support</Link>

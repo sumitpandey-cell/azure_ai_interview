@@ -7,8 +7,9 @@ import { PerformanceHistory, PerformanceMetrics } from '@/types/performance-type
 import { interviewService } from '@/services/interview.service';
 import { companyService } from '@/services/company.service';
 import { profileService } from '@/services/profile.service';
-import { templateService, Template } from '@/services/template.service';
+import { templateService } from '@/services/template.service';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export function useOptimizedQueries() {
   const { user } = useAuth();
@@ -31,7 +32,6 @@ export function useOptimizedQueries() {
     onInterviewCreated,
     onInterviewCompleted,
     onInterviewUpdated,
-    onProfileUpdated,
   } = useCacheStore();
 
   // Optimized sessions fetch
@@ -143,7 +143,7 @@ export function useOptimizedQueries() {
       const data = await interviewService.getSessionById(sessionId);
 
       if (data) {
-        setSessionDetail(sessionId, data as any);
+        setSessionDetail(sessionId, data as unknown as Parameters<typeof setSessionDetail>[1]);
         return data;
       }
 
@@ -239,7 +239,8 @@ export function useOptimizedQueries() {
         setLeaderboard([]);
         return [];
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
       console.error("Error in fetchLeaderboard:", error);
       // Handle RLS or permission errors silently for a better user experience
       const isRlsError = error?.code === '42501' || error?.message?.includes('row-level security');
@@ -281,7 +282,7 @@ export function useOptimizedQueries() {
     difficulty?: string;
     duration_seconds?: number;
     jobDescription?: string;
-    config?: any;
+    config?: Json;
   }) => {
     if (!user?.id) {
       throw new Error('User not authenticated');
@@ -292,11 +293,9 @@ export function useOptimizedQueries() {
         userId: user.id,
         interviewType: sessionData.interview_type,
         position: sessionData.position,
-        difficulty: sessionData.difficulty || sessionData.config?.difficulty,
-        jobDescription: sessionData.jobDescription || sessionData.config?.jobDescription,
-        config: {
-          ...(sessionData.config || {}),
-        },
+        difficulty: sessionData.difficulty || (sessionData.config as Record<string, unknown> | undefined)?.difficulty as string | undefined,
+        jobDescription: sessionData.jobDescription || (sessionData.config as Record<string, unknown> | undefined)?.jobDescription as string | undefined,
+        config: (sessionData.config as Json) || {},
       });
 
       if (!session) {
@@ -318,8 +317,8 @@ export function useOptimizedQueries() {
     sessionId: string,
     updateData: {
       score?: number;
-      feedback?: any;
-      transcript?: any;
+      feedback?: Json;
+      transcript?: Json;
       durationSeconds?: number;
       totalHintsUsed?: number;
       averagePerformanceScore?: number;
@@ -345,7 +344,7 @@ export function useOptimizedQueries() {
   // Update interview session with cache invalidation
   const updateInterviewSession = useCallback(async (
     sessionId: string,
-    updateData: Partial<any>
+    updateData: Parameters<typeof interviewService.updateSession>[1]
   ) => {
     try {
       const session = await interviewService.updateSession(sessionId, updateData);
@@ -426,15 +425,15 @@ export function useOptimizedQueries() {
 
       // Extract performance metrics from each session
       const recentInterviews: PerformanceMetrics[] = data.map((session) => {
-        const feedback = session.feedback as any;
-        const skills = feedback?.skills || [];
+        const feedback = session.feedback as Record<string, unknown> | null;
+        const skills = (feedback?.skills as Array<{ name: string; score?: number; feedback?: string }>) || [];
 
         return {
           sessionId: session.id,
           position: session.position,
           interviewType: session.interview_type,
           completedAt: session.completed_at || '',
-          skills: skills.map((skill: any) => ({
+          skills: skills.map((skill) => ({
             name: skill.name,
             score: skill.score || 0,
             feedback: skill.feedback || '',

@@ -24,7 +24,7 @@ export function usePreventNavigation(options: UsePreventNavigationOptions = {}) 
         // Push a state to prevent going back
         window.history.pushState(null, '', window.location.href);
 
-        const handlePopState = (event: PopStateEvent) => {
+        const handlePopState = () => {
             // Push state again to prevent going back
             window.history.pushState(null, '', window.location.href);
 
