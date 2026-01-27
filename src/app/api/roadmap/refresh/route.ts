@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get payment ID from request (if provided)
+        // Get inputs from request
         const body = await request.json().catch(() => ({}));
-        const { paymentId } = body;
+        const { paymentId, domain, role, level } = body;
 
-        const roadmap = await roadmapService.refreshRoadmap(user.id, paymentId, supabase);
+        const roadmap = await roadmapService.refreshRoadmap(user.id, paymentId, supabase, domain, role, level);
 
         return NextResponse.json({ roadmap }, { status: 200 });
     } catch (error: any) {

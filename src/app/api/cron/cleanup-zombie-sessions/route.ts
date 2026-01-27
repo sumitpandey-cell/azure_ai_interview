@@ -121,35 +121,16 @@ export async function GET(request: NextRequest) {
 
                 console.log(`🔧 Processing zombie session ${session.id}: +${additionalDuration}s (total: ${cappedDuration}s)`);
 
-                // Track usage BEFORE marking as completed (prevent revenue leak)
                 if (additionalDuration > 0) {
-                    const { error: rpcError } = await supabase.rpc('increment_usage', {
+                    const { error: rpcError } = await supabase.rpc('update_user_credits', {
                         user_uuid: session.user_id,
-                        seconds_to_add: additionalDuration,
-                        p_event_id: null
+                        seconds_to_add: -Math.round(additionalDuration),
+                        transaction_type: 'usage',
+                        transaction_description: `Zombie session cleanup: ${session.id}`
                     });
 
                     if (rpcError) {
                         console.error(`❌ Failed to track usage for session ${session.id}:`, rpcError);
-                        // Try fallback manual update
-                        const { data: subscriptions } = await supabase
-                            .from('subscriptions')
-                            .select('id, seconds_used')
-                            .eq('user_id', session.user_id)
-                            .eq('status', 'active')
-                            .limit(1);
-
-                        if (subscriptions && subscriptions.length > 0) {
-                            const sub = subscriptions[0];
-                            await supabase
-                                .from('subscriptions')
-                                .update({
-                                    seconds_used: (sub.seconds_used || 0) + additionalDuration,
-                                    updated_at: new Date().toISOString()
-                                })
-                                .eq('id', sub.id);
-                            console.log(`✅ Fallback usage tracking successful for session ${session.id}`);
-                        }
                     } else {
                         console.log(`✅ Usage tracked for session ${session.id}`);
                     }

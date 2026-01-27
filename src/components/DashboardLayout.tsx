@@ -35,11 +35,11 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, headerControls }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
     remaining_seconds,
-    monthly_seconds,
+    plan_seconds,
     plan_name,
     invalidateCache,
     loading: subscriptionLoading
@@ -47,29 +47,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const { currentSession } = useInterviewStore();
   const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
 
-  const isCurrentSessionGenerating = isGenerating && generatingSessionId === currentSession?.id;
-  const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
-  const isCompleted = currentSession?.status === 'completed';
-  const isActive = (path: string) => pathname === path;
-  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
-
-  // Force refresh subscription data when returning to dashboard
-  useEffect(() => {
-    invalidateCache();
-  }, [invalidateCache]);
-
-  // Get streak data from analytics cache
-  const { streakData, refetch: refetchAnalytics } = useAnalytics(user?.id);
-  const streak = streakData?.currentStreak || 0;
-
-  // Force refresh analytical data when returning to dashboard or mounting
-  useEffect(() => {
-    if (user?.id) {
-      refetchAnalytics();
-    }
-  }, [user?.id, refetchAnalytics]);
-
-  // Initialize sidebar state
+  // sidebar state initialization
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("sidebarCollapsed");
@@ -78,11 +56,53 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     return false;
   });
 
+  // Get streak data from analytics cache
+  const { streakData, refetch: refetchAnalytics } = useAnalytics(user?.id);
+  const streak = streakData?.currentStreak || 0;
+
+  // sidebar persistence
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem("sidebarCollapsed", String(sidebarCollapsed));
     }
   }, [sidebarCollapsed]);
+
+  // Auth Guard: Redirect unauthenticated users
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
+
+  // Force refresh subscription data when returning to dashboard
+  useEffect(() => {
+    invalidateCache();
+  }, [invalidateCache]);
+
+  // Force refresh analytical data when returning to dashboard or mounting
+  useEffect(() => {
+    if (user?.id) {
+      refetchAnalytics();
+    }
+  }, [user?.id, refetchAnalytics]);
+
+  // Early return after all hooks
+  if (authLoading || (!user && pathname !== '/')) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-sidebar">
+        <div className="relative">
+          <div className="h-16 w-16 border-4 border-primary/20 rounded-full animate-ping absolute" />
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent relative z-10" />
+        </div>
+      </div>
+    );
+  }
+
+  const isCurrentSessionGenerating = isGenerating && generatingSessionId === currentSession?.id;
+  const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
+  const isCompleted = currentSession?.status === 'completed';
+  const isActive = (path: string) => pathname === path;
+  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
 
   // Check if user is admin
   const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
@@ -325,7 +345,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                         : 'text-sidebar-foreground'
                       }`}>
                       {Math.floor(remaining_seconds / 60)} min
-                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">/ {Math.floor(monthly_seconds / 60)}</span>
+                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">Balance</span>
                     </div>
                   </>
                 )}
@@ -339,7 +359,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                           ? 'bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]'
                           : 'bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]'
                       }`}
-                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_seconds / monthly_seconds) * 100, 100)}%` }}
+                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_seconds / plan_seconds) * 100, 100)}%` }}
                   />
                 </div>
               </div>

@@ -100,11 +100,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // 1. Clear session and local state
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      // 2. Clear stores to prevent stale data flash
+      // We import these dynamically to avoid circular dependencies if any
+      const { useCacheStore } = await import("@/stores/use-cache-store");
+      const { useInterviewStore } = await import("@/stores/use-interview-store");
+
+      useCacheStore.getState().invalidateAllCache();
+      useInterviewStore.getState().clearSession();
+
       setUser(null);
       setSession(null);
+
       toast.success("Signed out successfully");
       router.push("/");
     } catch (error: any) {

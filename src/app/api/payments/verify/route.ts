@@ -30,30 +30,40 @@ export async function GET(req: Request) {
         if (successPayment && order) {
             const userId = order.customer_details?.customer_id;
             const note = order.order_note || "";
+
+            if (note.includes("Roadmap Purchase")) {
+                console.log(`✅ Verify: Roadmap payment success for user ${userId}`);
+                // No need to update DB here, the frontend will see the success and call generateRoadmap(paymentId)
+                return NextResponse.redirect(new URL(`/roadmap?payment=success&order_id=${orderId}`, req.url));
+            }
+
             const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1] : null;
 
             if (userId && planId) {
-                console.log(`✅ Verify: Payment success for user ${userId}, plan ${planId}`);
+                console.log(`✅ Verify: Processing purchase for user ${userId}, plan ${planId}`);
                 const supabase = await createAdminClient();
-                const subscription = await subscriptionService.getSubscription(userId, supabase);
-
-                if (subscription) {
-                    await subscriptionService.updateSubscriptionPlan(userId, planId, supabase);
-                } else {
-                    await subscriptionService.createSubscription(userId, planId, supabase);
-                }
+                // createSubscription now handles: 1. Fetching plan, 2. Updating credits via RPC, 3. Creating history record
+                await subscriptionService.createSubscription(userId, planId, supabase);
             }
             return NextResponse.redirect(new URL("/dashboard?payment=success&refresh=true", req.url));
         } else if (pendingPayment) {
             const reason = pendingPayment.payment_message || "Processing with bank";
-            return NextResponse.redirect(new URL(`/dashboard?payment=pending&reason=${encodeURIComponent(reason)}`, req.url));
+            const note = order?.order_note || "";
+            const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/dashboard";
+            return NextResponse.redirect(new URL(`${redirectPath}?payment=pending&reason=${encodeURIComponent(reason)}`, req.url));
         } else if (cancelledPayment) {
-            return NextResponse.redirect(new URL("/pricing?payment=cancelled", req.url));
+            const note = order?.order_note || "";
+            const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
+            return NextResponse.redirect(new URL(`${redirectPath}?payment=cancelled`, req.url));
         } else if (failedPayment) {
             const reason = failedPayment.payment_message || "Transaction declined";
-            return NextResponse.redirect(new URL(`/pricing?payment=failed&reason=${encodeURIComponent(reason)}`, req.url));
+            const note = order?.order_note || "";
+            const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
+            return NextResponse.redirect(new URL(`${redirectPath}?payment=failed&reason=${encodeURIComponent(reason)}`, req.url));
         } else {
-            return NextResponse.redirect(new URL("/pricing?payment=failed", req.url));
+            const note = order?.order_note || "";
+            const redirectPath = note.includes("Roadmap Purchase") ? "/roadmap" : "/pricing";
+            return NextResponse.redirect(new URL(`${redirectPath}?payment=failed`, req.url));
         }
     } catch (error: any) {
         console.error("Cashfree Verification Error:", error);

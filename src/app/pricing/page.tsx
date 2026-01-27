@@ -17,61 +17,55 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, any> = {
     "Free": {
-        description: "Perfect for getting started",
+        description: "Great for basic practice",
         features: [
-            "100 minutes monthly interview time",
-            "Basic AI Interviewer",
-            "Standard feedback report",
-            "Community support",
-            "Resets every month"
+            "100 minutes interview time",
+            "Core AI Interviewer",
+            "Basic performance report",
+            "Email support",
+            "No credit expiration"
         ],
         popular: false
     },
     "Basic": {
         description: "For serious job seekers",
         features: [
-            "300 minutes monthly interview time",
-            "Advanced AI Interviewer",
-            "Detailed performance analytics",
-            "Priority email support",
-            "No daily limits",
-            "Access to all templates"
+            "300 minutes interview time",
+            "Advanced AI feedback",
+            "In-depth performance analytics",
+            "Priority support",
+            "Unlimited daily practice",
+            "All industry templates"
         ],
         popular: false
     },
     "Pro": {
-        description: "Best for power users",
+        description: "Excellent for power users",
         features: [
-            "1,000 minutes monthly interview time",
-            "Premium AI Voices",
-            "In-depth behavioral analysis",
-            "Resume review assistance",
-            "Priority 24/7 support",
-            "Custom interview scenarios"
+            "1,000 minutes interview time",
+            "Premium AI analysis",
+            "Behavioral & technical coaching",
+            "Resume optimization advice",
+            "24/7 Priority support",
+            "Personalized interview paths"
         ],
         popular: true
     },
     "Business": {
-        description: "Unlimited access",
+        description: "Maximum capacity",
         features: [
-            "Unlimited interview minutes",
-            "All Pro features",
-            "Custom interview scenarios",
-            "Team management dashboard",
-            "Dedicated account manager",
-            "API access"
+            "10,000 interview minutes",
+            "Full Pro features",
+            "Custom interview branding",
+            "Team coordination tools",
+            "Account manager support",
+            "API for hiring workflows"
         ],
         popular: false
     }
 };
 
 function PricingContent() {
-    // We try to get subscription info, but it might be null if not logged in. 
-    // We should handle that.
-    const subscription = useSubscription();
-    // Safely access properties
-    const subscriptionType = subscription?.type;
-    const currentPlanName = subscription?.plan_name;
     const { user } = useAuth();
     const [fetchedPlans, setFetchedPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,7 +82,6 @@ function PricingContent() {
         const status = searchParams.get('payment') as PaymentStatus | null;
         if (!status) return;
 
-        // Skip success/pending on pricing page as they redirect to dashboard
         if (status === 'success' || status === 'pending') return;
 
         setPaymentModal({
@@ -97,7 +90,6 @@ function PricingContent() {
             details: searchParams.get('reason') || undefined
         });
 
-        // Clear the query params
         const newUrl = window.location.pathname;
         window.history.replaceState({}, '', newUrl);
     }, [searchParams]);
@@ -118,7 +110,14 @@ function PricingContent() {
     }, []);
 
     const handleSubscribe = async (plan: Plan) => {
-        if (plan.name === "Free") return;
+        if (plan.name === "Free") {
+            if (!user) {
+                window.location.href = "/auth?source=pricing";
+                return;
+            }
+            window.location.href = "/dashboard";
+            return;
+        }
 
         if (!user) {
             toast.error("Please sign in to upgrade your plan");
@@ -134,10 +133,10 @@ function PricingContent() {
                 },
                 body: JSON.stringify({
                     planId: plan.id,
-                    amount: plan.price_monthly,
+                    amount: plan.price,
                     customerName: user.user_metadata?.full_name || user.email?.split('@')[0],
                     customerEmail: user.email,
-                    customerPhone: user.user_metadata?.phone || "9999999999",
+                    customerPhone: user.user_metadata?.phone || "9000000000",
                 }),
             });
 
@@ -149,7 +148,6 @@ function PricingContent() {
 
             const { payment_session_id } = data;
 
-            // Import load here to avoid SSR issues if any, or at the top
             const { load } = await import("@cashfreepayments/cashfree-js");
             const cashfree = await load({
                 mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV as "sandbox" | "production") || "sandbox",
@@ -178,34 +176,34 @@ function PricingContent() {
                 <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 container mx-auto px-4">
                     {/* Header Section */}
                     <div className="text-center space-y-4 max-w-3xl mx-auto">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest shadow-sm">
                             <Trophy className="h-3.5 w-3.5" />
-                            Strategic Advancement
+                            Premium Practice
                         </div>
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white leading-[1.1]">
-                            Choose Your <span className="text-indigo-400 italic">Trajectory</span>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.1]">
+                            Simple, Transparent <span className="text-indigo-400">Pricing</span>
                         </h1>
                         <p className="text-slate-400 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
-                            Scale your career potential with advanced AI simulation protocols. Select the optimization level that fits your goals.
+                            Get the credits you need to master your next interview. All plan credits are permanent and never expire.
                         </p>
                     </div>
 
                     {loading ? (
                         <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
                             <Loader2 className="h-12 w-12 text-indigo-500 animate-spin" />
-                            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-xs">Initializing Protocols...</p>
+                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Plans...</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
                             {fetchedPlans.map((plan, i) => {
                                 const details = PLAN_DETAILS[plan.name] || {
-                                    description: "Custom optimization protocol",
-                                    features: ["Standard AI Access", "Performance Reports"],
+                                    description: "Custom interview plan",
+                                    features: ["AI Interview access", "Session reports"],
                                     popular: false
                                 };
 
-                                const isCurrentPlan = currentPlanName === plan.name || (plan.name === "Free" && subscriptionType === "free");
-                                const minutes = Math.floor(plan.monthly_seconds / 60);
+                                const isFree = plan.name === "Free";
+                                const minutes = Math.floor(plan.plan_seconds / 60);
 
                                 return (
                                     <Card
@@ -219,40 +217,40 @@ function PricingContent() {
                                     >
                                         {details.popular && (
                                             <div className="absolute top-0 right-0">
-                                                <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-[0.2em]">
-                                                    Peak Value
+                                                <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-bold uppercase tracking-widest">
+                                                    Best Value
                                                 </div>
                                             </div>
                                         )}
 
                                         <CardHeader className="p-8 pb-4">
-                                            <CardTitle className="text-2xl font-black tracking-tight uppercase text-white">{plan.name}</CardTitle>
-                                            <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500">{details.description}</CardDescription>
+                                            <CardTitle className="text-2xl font-bold tracking-tight text-white">{plan.name}</CardTitle>
+                                            <CardDescription className="text-sm font-medium text-slate-500">{details.description}</CardDescription>
                                         </CardHeader>
 
                                         <CardContent className="flex-1 p-8 pt-0 space-y-8">
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-baseline gap-1">
-                                                    <span className="text-5xl font-black tracking-tighter text-white">₹{plan.price_monthly}</span>
-                                                    {plan.price_monthly > 0 && <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">/month</span>}
+                                                    <span className="text-5xl font-bold tracking-tighter text-white">₹{plan.price}</span>
+                                                    {plan.price > 0 && <span className="text-sm font-bold text-slate-600">one-time</span>}
                                                 </div>
                                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10 w-fit mt-2">
                                                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                                        {plan.monthly_seconds >= 3600000 ? "Unlimited" : `${minutes.toLocaleString()} mins/month`}
+                                                    <span className="text-xs font-bold text-slate-300">
+                                                        {plan.plan_seconds >= 3600000 ? "10,000 mins" : `${minutes.toLocaleString()} mins`}
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-4">
-                                                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">Module Access</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What's included</p>
                                                 <ul className="space-y-4">
                                                     {details.features.map((feature: string) => (
                                                         <li key={feature} className="flex items-start gap-3 group/item">
                                                             <div className="h-5 w-5 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover/item:bg-indigo-500 transition-colors">
                                                                 <Check className="h-3 w-3 text-indigo-400 group-hover/item:text-white" />
                                                             </div>
-                                                            <span className="text-xs font-bold text-slate-400 group-hover/item:text-slate-200 transition-colors leading-snug">{feature}</span>
+                                                            <span className="text-xs font-medium text-slate-400 group-hover/item:text-slate-200 transition-colors leading-snug">{feature}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -262,20 +260,17 @@ function PricingContent() {
                                         <CardFooter className="p-8 pt-0">
                                             <Button
                                                 className={cn(
-                                                    "w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all relative overflow-hidden group/btn",
-                                                    isCurrentPlan
-                                                        ? 'bg-white/5 text-slate-500 border-white/10 hover:bg-white/5 cursor-default'
-                                                        : details.popular
-                                                            ? 'bg-white text-black hover:bg-slate-200 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.02]'
-                                                            : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:scale-[1.02]'
+                                                    "w-full h-12 rounded-xl font-bold text-sm transition-all relative overflow-hidden group/btn",
+                                                    details.popular
+                                                        ? 'bg-white text-black hover:bg-slate-200 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.02]'
+                                                        : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:scale-[1.02]'
                                                 )}
-                                                variant={isCurrentPlan ? "ghost" : "default"}
                                                 onClick={() => handleSubscribe(plan)}
-                                                disabled={isCurrentPlan || !!subscribingPlanId}
+                                                disabled={!!subscribingPlanId}
                                             >
                                                 <span className="relative z-10 flex items-center justify-center gap-2">
                                                     {subscribingPlanId === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                                                    {isCurrentPlan ? "Active Protocol" : `Upgrade to ${plan.name}`}
+                                                    {isFree ? "Start Now" : `Purchase ${plan.name} Credits`}
                                                 </span>
                                             </Button>
                                         </CardFooter>
@@ -285,15 +280,18 @@ function PricingContent() {
                         </div>
                     )}
 
-                    {/* Secure Payment Note */}
-                    <p className="text-center text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] pt-8">
-                        Secure Encryption Enabled • Verified Merchant
-                    </p>
+                    {/* Information Note */}
+                    <div className="text-center space-y-4 pt-8 border-t border-white/5">
+                        <p className="text-xs font-medium text-indigo-400 tracking-wide">
+                            ★ Credits Never Expire • Permanent Account Balance ★
+                        </p>
+                        <p className="text-[10px] font-medium text-slate-600 uppercase tracking-widest">
+                            Secure Payments • Instant Credit Activation
+                        </p>
+                    </div>
                 </div>
             </main>
-
             <Footer />
-
             <PaymentStatusModal
                 isOpen={paymentModal.isOpen}
                 onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}

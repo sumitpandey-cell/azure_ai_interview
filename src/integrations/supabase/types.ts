@@ -329,22 +329,22 @@ export type Database = {
         Row: {
           id: string
           name: string
-          monthly_seconds: number
-          price_monthly: number
+          plan_seconds: number
+          price: number
           created_at: string
         }
         Insert: {
           id?: string
           name: string
-          monthly_seconds: number
-          price_monthly: number
+          plan_seconds: number
+          price: number
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
-          monthly_seconds?: number
-          price_monthly?: number
+          plan_seconds?: number
+          price?: number
           created_at?: string
         }
         Relationships: []
@@ -361,6 +361,7 @@ export type Database = {
           last_activity_date: string | null
           is_public: boolean
           profile_slug: string | null
+          balance_seconds: number
         }
         Insert: {
           id: string
@@ -373,6 +374,7 @@ export type Database = {
           last_activity_date?: string | null
           is_public?: boolean
           profile_slug?: string | null
+          balance_seconds?: number
         }
         Update: {
           id?: string
@@ -385,6 +387,7 @@ export type Database = {
           last_activity_date?: string | null
           is_public?: boolean
           profile_slug?: string | null
+          balance_seconds?: number
         }
         Relationships: []
       }
@@ -455,36 +458,24 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          plan_id: string
-          status: string
-          current_period_start: string
-          current_period_end: string
-          monthly_seconds: number
-          seconds_used: number
+          plan_id: string | null
+          plan_seconds: number
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          plan_id: string
-          status?: string
-          current_period_start?: string
-          current_period_end?: string
-          monthly_seconds: number
-          seconds_used?: number
+          plan_id?: string | null
+          plan_seconds: number
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          plan_id?: string
-          status?: string
-          current_period_start?: string
-          current_period_end?: string
-          monthly_seconds?: number
-          seconds_used?: number
+          plan_id?: string | null
+          plan_seconds?: number
           created_at?: string
           updated_at?: string
         }

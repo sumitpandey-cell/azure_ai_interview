@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
 
         console.log(`Generating roadmap for user: ${user.id} (${user.email})`);
 
-        // Get payment ID from request (if provided)
+        // Get inputs from request
         const body = await request.json().catch(() => ({}));
-        const { paymentId } = body;
+        const { paymentId, domain, role, level } = body;
 
-        // Generate roadmap - pass supabase client
-        const roadmap = await roadmapService.generateRoadmap(user.id, paymentId, supabase);
+        // Generate roadmap - pass supabase client and user inputs
+        const roadmap = await roadmapService.generateRoadmap(user.id, paymentId, supabase, false, domain, role, level);
 
         return NextResponse.json({ roadmap }, { status: 200 });
     } catch (error: any) {

@@ -13,6 +13,7 @@ import { RoadmapPhases } from '@/components/roadmap/RoadmapPhases';
 import { RoadmapMilestones } from '@/components/roadmap/RoadmapMilestones';
 import { RoadmapSkeleton } from '@/components/roadmap/RoadmapSkeleton';
 import { PaymentPendingModal } from '@/components/roadmap/PaymentPendingModal';
+import { RoadmapWizard } from '@/components/roadmap/RoadmapWizard';
 import { SkillTree } from '@/components/roadmap/SkillTree';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -25,10 +26,30 @@ export default function RoadmapPage() {
     const [progress, setProgress] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showWizard, setShowWizard] = useState(false);
+    const [lastWizardData, setLastWizardData] = useState<any>(null);
 
     // Fetch existing roadmap on mount
     useEffect(() => {
         fetchRoadmap();
+    }, []);
+
+    // Handle payment return
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get('payment');
+        const orderId = params.get('order_id');
+
+        if (paymentStatus === 'success' && orderId) {
+            import('sonner').then(({ toast }) => toast.success("Payment verified! Generating your roadmap..."));
+            handleGenerate(null, orderId);
+
+            // Clean URL
+            window.history.replaceState({}, '', '/roadmap');
+        } else if (paymentStatus === 'failed') {
+            import('sonner').then(({ toast }) => toast.error("Payment failed. Please try again."));
+            window.history.replaceState({}, '', '/roadmap');
+        }
     }, []);
 
     const fetchRoadmap = async (isPolling = false) => {
@@ -75,14 +96,24 @@ export default function RoadmapPage() {
         };
     }, [generating]);
 
-    const handleGenerate = async () => {
+    const handleGenerate = async (wizardData?: any, paymentId?: string) => {
         try {
             setGenerating(true);
             setError(null);
 
+            if (wizardData) {
+                setLastWizardData(wizardData);
+            }
+
+            const payload = {
+                ...(wizardData || lastWizardData || {}),
+                paymentId: paymentId || null
+            };
+
             const response = await fetch('/api/roadmap/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -90,10 +121,11 @@ export default function RoadmapPage() {
             if (response.ok) {
                 setRoadmap(data.roadmap);
                 setProgress([]);
+                setShowWizard(false);
             } else if (response.status === 400 && data.error === 'insufficient_interviews') {
                 setError('insufficient_interviews');
             } else if (response.status === 402) {
-                // Payment required - show modal
+                // Payment required
                 setShowPaymentModal(true);
             } else {
                 setError(data.message || 'Failed to generate roadmap');
@@ -137,12 +169,8 @@ export default function RoadmapPage() {
 
     const handlePaymentModalContinue = async () => {
         setShowPaymentModal(false);
-        // For now, allow generation without payment (as per requirements)
-        if (generating) {
-            await handleGenerate();
-        } else if (refreshing) {
-            await handleRefresh();
-        }
+        // Continue with last attempt
+        await handleGenerate();
     };
 
     if (loading) {
@@ -223,58 +251,67 @@ export default function RoadmapPage() {
         );
     }
 
-    if (!roadmap || roadmap.roadmap_data?.status === 'generating') {
+    if (!roadmap || roadmap.roadmap_data?.status === 'generating' || showWizard) {
         return (
             <DashboardLayout>
-                <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center max-w-2xl mx-auto">
-                    <div className={cn("h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-8", generating && "animate-pulse")}>
-                        <Sparkles className="w-10 h-10 text-primary" />
-                    </div>
-
-                    <h1 className="text-3xl font-bold tracking-tight mb-4">
-                        {generating ? "Building Your Strategy" : "Generate Your Roadmap"}
-                    </h1>
-
-                    <p className="text-muted-foreground text-lg mb-10 max-w-lg leading-relaxed">
-                        {generating
-                            ? "Analyzing your performance matrices to build a tailored growth plan..."
-                            : "Create a personalized learning path based on your interview performance patterns."}
-                    </p>
-
-                    <Button
-                        size="lg"
-                        onClick={handleGenerate}
-                        disabled={generating}
-                        className="h-12 px-8 rounded-full font-semibold shadow-xl shadow-primary/20 text-base"
-                    >
-                        {generating ? (
-                            <>
-                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                Analyzing...
-                            </>
-                        ) : (
-                            <>
+                <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+                    {!roadmap && !generating && !showWizard ? (
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto">
+                            <div className="h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-8">
+                                <Sparkles className="w-10 h-10 text-primary" />
+                            </div>
+                            <h1 className="text-3xl font-bold tracking-tight mb-4">Master Your Next Interview</h1>
+                            <p className="text-muted-foreground text-lg mb-10 max-w-lg leading-relaxed">
+                                Create a high-performance roadmap tailored to your target position and domain.
+                            </p>
+                            <Button
+                                size="lg"
+                                onClick={() => setShowWizard(true)}
+                                className="h-12 px-8 rounded-full font-semibold shadow-xl shadow-primary/20 text-base"
+                            >
                                 <Sparkles className="w-5 h-5 mr-2 fill-current" />
-                                Generate Roadmap
-                            </>
-                        )}
-                    </Button>
-
-                    {!generating && (
-                        <p className="mt-6 text-xs text-muted-foreground uppercase tracking-widest font-medium">
-                            Free First Generation
-                        </p>
-                    )}
-
-                    {generating && (
-                        <div className="mt-12 w-full max-w-xs space-y-3">
-                            <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-                                <span>Processing</span>
-                                <span>{Math.floor(Math.random() * 30 + 60)}%</span>
+                                Start Personalization
+                            </Button>
+                            <p className="mt-6 text-xs text-muted-foreground uppercase tracking-widest font-medium">
+                                First Roadmap is Free
+                            </p>
+                        </div>
+                    ) : (roadmap?.roadmap_data?.status === 'generating' || generating) && !showWizard ? (
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto animate-in fade-in duration-700">
+                            <div className="h-24 w-24 rounded-3xl bg-primary/5 flex items-center justify-center mb-8 animate-bounce">
+                                <Sparkles className="w-12 h-12 text-primary" />
                             </div>
-                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-primary w-[70%] animate-progress-indeterminate rounded-full" />
+                            <h2 className="text-2xl font-bold tracking-tight mb-4 text-foreground">Building Your Professional Blueprint</h2>
+                            <p className="text-muted-foreground text-base mb-12">
+                                We're cross-referencing industry standards with your target profile to build an optimal learning path.
+                            </p>
+                            <div className="w-full max-w-sm space-y-4">
+                                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary animate-progress-indeterminate rounded-full" />
+                                </div>
+                                <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
+                                    <span>Analyzing Role</span>
+                                    <span>Generating Modules</span>
+                                </div>
                             </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="text-center space-y-2 mb-8">
+                                <h1 className="text-3xl font-bold tracking-tight text-foreground">Personalize Your Path</h1>
+                                <p className="text-muted-foreground">Tell us about your next big opportunity.</p>
+                            </div>
+                            <RoadmapWizard
+                                isLoading={generating}
+                                onGenerate={(data) => handleGenerate(data)}
+                            />
+                            {showWizard && roadmap && (
+                                <div className="flex justify-center mt-6">
+                                    <Button variant="ghost" onClick={() => setShowWizard(false)} className="text-muted-foreground">
+                                        Cancel and return to current roadmap
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -338,7 +375,7 @@ export default function RoadmapPage() {
                     <div className="space-y-10">
                         {/* Execution Plan */}
                         <section className="space-y-6">
-                            
+
                             <RoadmapPhases
                                 phases={roadmap.roadmap_data?.phases || []}
                                 progress={progress}

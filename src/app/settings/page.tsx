@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +27,8 @@ import {
     Globe,
     ExternalLink,
     Copy,
-    Loader2
+    Loader2,
+    BarChart3
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
@@ -41,14 +43,23 @@ import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { profileService } from "@/services/profile.service";
 import { interviewService } from "@/services/interview.service";
 import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
+import { formatDurationShort } from "@/lib/format-duration";
+import { subscriptionService } from "@/services/subscription.service";
+import { Tables } from "@/integrations/supabase/types";
+import { ArrowUpRight, ArrowDownLeft, Receipt, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
+
+type TransactionItem = Tables<"subscriptions"> & { plans?: { name: string } | null };
 
 export default function Settings() {
     const { user, loading: authLoading } = useAuth();
     const { fetchProfile } = useOptimizedQueries();
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<SettingsSection>("general");
+    const { remaining_seconds, plan_name, loading: subscriptionLoading } = useSubscription();
 
     // Profile settings
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || "");
@@ -72,6 +83,10 @@ export default function Settings() {
 
     // Privacy settings
     const [isPublic, setIsPublic] = useState(false);
+
+    // Billing settings
+    const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
 
 
 
@@ -97,8 +112,26 @@ export default function Settings() {
             setInterviewReminders(user.user_metadata?.interview_reminders ?? true);
             setWeeklyReports(user.user_metadata?.weekly_reports ?? true);
             setMarketingEmails(user.user_metadata?.marketing_emails ?? false);
+
+            // Fetch transactions if on billing section
+            if (activeSection === "billing") {
+                fetchTransactions();
+            }
         }
-    }, [user]);
+    }, [user, activeSection]);
+
+    const fetchTransactions = async () => {
+        if (!user?.id) return;
+        try {
+            setTransactionsLoading(true);
+            const data = await subscriptionService.getTransactions(user.id);
+            setTransactions(data);
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
+        } finally {
+            setTransactionsLoading(false);
+        }
+    };
 
     const handleLanguageChange = (language: LanguageOption) => {
         setSelectedLanguage(language);
@@ -630,22 +663,118 @@ export default function Settings() {
                     )}
 
                     {activeSection === "billing" && (
-                        <Card className="border-border shadow-sm">
-                            <div className="p-12 flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                                    <CreditCard className="h-8 w-8 text-muted-foreground" />
+                        <div className="space-y-6">
+                            <Card className="border-border shadow-sm overflow-hidden">
+                                <div className="bg-primary/5 p-8 border-b border-border flex items-center gap-6">
+                                    <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                                        <CreditCard className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl font-bold text-foreground">Current Balance</h3>
+                                        <p className="text-sm text-muted-foreground">Permanent credits that never expire.</p>
+                                    </div>
+                                    <div className="ml-auto text-right">
+                                        <div className="text-3xl font-black text-primary tabular-nums">
+                                            {subscriptionLoading ? <Loader2 className="h-8 w-8 animate-spin inline" /> : `${Math.floor(remaining_seconds / 60)} min`}
+                                        </div>
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Available Time</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-lg font-semibold">Free Plan</h3>
-                                    <p className="text-muted-foreground max-w-sm mx-auto">
-                                        You are currently on the free plan. Upgrade to access premium features and unlimited interviews.
-                                    </p>
-                                </div>
-                                <Button className="mt-4" onClick={() => router.push('/pricing')}>
-                                    View Plans
-                                </Button>
-                            </div>
-                        </Card>
+                                <CardContent className="p-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Active Plan</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg font-bold text-foreground">{plan_name || "Free"}</span>
+                                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">Active</Badge>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Pricing Type</Label>
+                                                <div className="text-foreground font-medium">Pay-as-you-go Credits</div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4 pt-2">
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                Out of credits? Top up your balance anytime. Your purchased minutes are permanent and won't expire at the end of the month.
+                                            </p>
+                                            <Button className="w-full sm:w-auto" onClick={() => router.push('/pricing')}>
+                                                Top Up Balance
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-border shadow-sm">
+                                <CardHeader>
+                                    <CardTitle>Order History</CardTitle>
+                                    <CardDescription>History of your credit purchases and top-ups.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {transactionsLoading ? (
+                                        <div className="p-8 space-y-4">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="flex items-center gap-4">
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                    <div className="space-y-2 flex-1">
+                                                        <Skeleton className="h-4 w-1/4" />
+                                                        <Skeleton className="h-3 w-1/2" />
+                                                    </div>
+                                                    <Skeleton className="h-4 w-16" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : transactions.length > 0 ? (
+                                        <div className="divide-y divide-border">
+                                            {transactions
+                                                .map((tx) => {
+                                                    const isPurchase = !!tx.plan_id;
+                                                    const planName = tx.plans?.name || "Welcome Bonus";
+
+                                                    return (
+                                                        <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors group">
+                                                            <div className={cn(
+                                                                "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border",
+                                                                isPurchase ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                                                                    "bg-indigo-500/10 border-indigo-500/20 text-indigo-500"
+                                                            )}>
+                                                                {isPurchase ? <ArrowUpRight className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+                                                            </div>
+
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm font-bold text-foreground truncate">{planName}</p>
+                                                                    {isPurchase && <Badge variant="outline" className="text-[10px] h-4 px-1.5 uppercase font-black tracking-tighter">Verified</Badge>}
+                                                                </div>
+                                                                <p className="text-[11px] text-muted-foreground font-medium">
+                                                                    {format(new Date(tx.created_at), "MMM d, yyyy • h:mm a")}
+                                                                </p>
+                                                            </div>
+
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-black tabular-nums text-emerald-500">
+                                                                    +{Math.floor(tx.plan_seconds / 60)} min
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{isPurchase ? "Purchase" : "System"}</p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                                            <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                                                <Receipt className="h-8 w-8 opacity-20" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-foreground mb-1">No transactions yet</h3>
+                                            <p className="text-sm max-w-[250px]">Your credit top-ups and usage will appear here.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     )}
                 </div>
             </div>
