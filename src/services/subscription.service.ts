@@ -72,12 +72,19 @@ export const subscriptionService = {
             if (planError) throw planError;
 
             // 2. Add credits via RPC
-            await (client as any).rpc('update_user_credits', {
+            console.log(`📡 Adding ${plan.plan_seconds} credits to user ${userId} via RPC...`);
+            const { error: rpcError } = await (client as any).rpc('update_user_credits', {
                 user_uuid: userId,
                 seconds_to_add: plan.plan_seconds,
                 transaction_type: 'purchase',
                 transaction_description: `Plan purchase: ${plan.name}`
             });
+
+            if (rpcError) {
+                console.error("❌ RPC Error adding credits:", rpcError);
+                throw rpcError;
+            }
+            console.log("✅ Credits added successfully via RPC");
 
             // 3. Create purchase record (History)
             const subscriptionData: SubscriptionInsert = {
