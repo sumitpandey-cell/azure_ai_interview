@@ -48,12 +48,13 @@ export const interviewService = {
      */
     async createSession(config: CreateSessionConfig): Promise<InterviewSession | null> {
         try {
-            // 1. Automatically abandon any existing in-progress sessions for this user
-            // This ensures a fresh "isolated" session every time.
+            // 1. Existing in-progress sessions are now kept so they can be resumed from the dashboard
+            /* 
             const inProgress = await this.getInProgressSessions(config.userId);
             for (const oldSession of inProgress) {
                 await this.abandonSession(oldSession.id);
             }
+            */
 
             const sessionData: InterviewSessionInsert = {
                 user_id: config.userId,

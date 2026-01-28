@@ -129,26 +129,28 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                         <div key={phase.phase_number} className="relative pl-12">
                             {/* Phase Indicator Node */}
                             <div className={cn(
-                                "absolute left-0 top-6 w-10 h-10 rounded-full flex items-center justify-center transition-all bg-background border z-10",
-                                !isUnlocked ? "border-border text-muted-foreground" :
-                                    isCompleted ? "border-emerald-500 text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20" :
-                                        "border-primary text-primary bg-primary/5"
+                                "absolute left-0 top-6 w-10 h-10 rounded-full flex items-center justify-center transition-all bg-background border z-10 shadow-sm",
+                                !isUnlocked ? "border-border/80 dark:border-border text-muted-foreground" :
+                                    isCompleted ? "border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20" :
+                                        "border-primary/80 dark:border-primary text-primary bg-primary/[0.03] dark:bg-primary/5"
                             )}>
                                 {!isUnlocked ? (
                                     <Lock className="w-4 h-4" />
                                 ) : isCompleted ? (
-                                    <CheckCircle2 className="w-5 h-5" />
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                                 ) : (
-                                    <span className="text-sm font-bold">{phase.phase_number}</span>
+                                    <span className="text-sm font-black">{phase.phase_number}</span>
                                 )}
                             </div>
 
+
                             <div
                                 className={cn(
-                                    "rounded-xl border bg-card transition-all duration-200",
-                                    !isUnlocked && "opacity-60 bg-muted/30 border-dashed"
+                                    "rounded-xl border border-border/80 dark:border-border bg-card/80 dark:bg-card shadow-sm transition-all duration-300",
+                                    !isUnlocked && "opacity-60 bg-muted/40 dark:bg-muted/30 border-dashed"
                                 )}
                             >
+
                                 <div
                                     className="p-5 sm:p-6 cursor-pointer flex flex-col md:flex-row gap-6 md:items-start justify-between"
                                     onClick={() => isUnlocked && togglePhase(phase.phase_number)}
@@ -159,10 +161,11 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                 Phase {phase.phase_number}: {phase.title}
                                             </h3>
                                             {isUnlocked && !isCompleted && (
-                                                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-md border border-primary/20">
+                                                <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-md border border-primary/30 dark:border-primary/20">
                                                     Current
                                                 </span>
                                             )}
+
                                         </div>
                                         <p className="text-sm text-muted-foreground leading-relaxed">
                                             {phase.description}
@@ -201,10 +204,11 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                         <label
                                                             key={goal.id}
                                                             className={cn(
-                                                                "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/30",
-                                                                completed ? "bg-muted/30 border-transparent" : "bg-card border-border/40"
+                                                                "flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 dark:hover:bg-muted/30 shadow-sm",
+                                                                completed ? "bg-muted/50 dark:bg-muted/30 border-transparent opacity-70" : "bg-card border-border/80 dark:border-border/40"
                                                             )}
                                                         >
+
                                                             <div className="pt-0.5">
                                                                 <Checkbox
                                                                     disabled={completed}
@@ -235,7 +239,8 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                 </div>
                                                 <div className="space-y-3">
                                                     {phase.recommended_interviews.map((interview, idx) => (
-                                                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card hover:border-primary/20 transition-colors">
+                                                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-border/80 dark:border-border/40 bg-card/50 dark:bg-card hover:border-primary/30 dark:hover:border-primary/20 transition-all shadow-sm">
+
                                                             <div className="space-y-1">
                                                                 <div className="text-sm font-medium">{interview.template_title}</div>
                                                                 <div className="flex gap-2">
@@ -276,9 +281,10 @@ export function RoadmapPhases({ phases, progress, roadmapId, onProgressUpdate }:
                                                             rel="noopener noreferrer"
                                                             className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
                                                         >
-                                                            <div className="mt-1 p-1.5 rounded-md bg-primary/5 text-primary group-hover:bg-primary/10 transition-colors">
+                                                            <div className="mt-1 p-1.5 rounded-md bg-primary/10 dark:bg-primary/5 text-primary group-hover:bg-primary/20 dark:group-hover:bg-primary/10 transition-colors border border-primary/10">
                                                                 <BookOpen className="w-3 h-3" />
                                                             </div>
+
                                                             <div className="space-y-0.5">
                                                                 <div className="text-sm font-medium group-hover:text-primary transition-colors">
                                                                     {resource.title}

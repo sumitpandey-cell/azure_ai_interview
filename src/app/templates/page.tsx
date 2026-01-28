@@ -1,6 +1,6 @@
 'use client'
 import Image from "next/image"
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { CompanyTemplate } from "@/types/company-types";
 import { toast } from "sonner";
-import { subscriptionService } from "@/services";
+import { subscriptionService, interviewService } from "@/services";
 import {
   Search,
   Code2,
@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { TemplatesPageSkeleton, CompanyTemplatesPageSkeleton } from "@/components/TemplatesPageSkeleton";
 import { Template } from "@/services/template.service";
+import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
+import { InProgressSessionModal } from "@/components/InProgressSessionModal";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,12 @@ export default function Templates() {
   const [selectedCompany, setSelectedCompany] = useState<CompanyTemplate | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [showResumeCheck, setShowResumeCheck] = useState(false);
+  const [showInProgressWarning, setShowInProgressWarning] = useState(false);
+  const [existingSession, setExistingSession] = useState<{ id: string, position: string, created_at: string } | null>(null);
+  const [pendingGeneralTemplate, setPendingGeneralTemplate] = useState<Template | null>(null);
+  const [pendingCompanyRole, setPendingCompanyRole] = useState<{ company: CompanyTemplate; role: string } | null>(null);
+
   const router = useRouter();
   const { user } = useAuth();
   const { createInterviewSession, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
@@ -96,33 +104,27 @@ export default function Templates() {
     return IconComponent || Code2; // Fallback to Code2 if icon not found
   };
 
-  // Filter templates based on category
-  const getCategoryTemplates = () => {
-    switch (activeCategory) {
-      case "Popular":
-        return templates.filter(t => t.is_popular);
-      case "Engineer":
-        return templates.filter(t =>
-          t.title.toLowerCase().includes("developer") ||
-          t.title.toLowerCase().includes("engineer") ||
-          t.title.toLowerCase().includes("devops")
-        );
-      case "Marketing":
-        return templates.filter(t =>
-          t.title.toLowerCase().includes("marketing") ||
-          t.title.toLowerCase().includes("content")
-        );
-      default:
-        return templates;
-    }
-  };
+
 
   // Filter templates based on search term and category
-  const filteredTemplates = getCategoryTemplates().filter(template =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (activeCategory === "All") return matchesSearch;
+    if (activeCategory === "Popular") return matchesSearch && template.is_popular;
+    if (activeCategory === "Engineer") return matchesSearch && (
+      template.title.toLowerCase().includes("developer") ||
+      template.title.toLowerCase().includes("engineer") ||
+      template.title.toLowerCase().includes("devops")
+    );
+    if (activeCategory === "Marketing") return matchesSearch && (
+      template.title.toLowerCase().includes("marketing") ||
+      template.title.toLowerCase().includes("content")
+    );
+    return matchesSearch;
+  });
 
   // Function to start interview with selected template
   const startInterviewWithTemplate = async (template: Template) => {
@@ -132,7 +134,6 @@ export default function Templates() {
     }
 
     setLoadingTemplate(template.id);
-
     try {
       // Check balance before creating session (min 2 minutes / 120 seconds)
       const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
@@ -147,11 +148,31 @@ export default function Templates() {
         return;
       }
 
-      await executeStartGeneralInterview(template);
+      // 1. Check for existing in-progress sessions for the same domain
+      const inProgressSessions = await interviewService.getInProgressSessions(user.id);
+
+      const duplicateSession = inProgressSessions?.find((s: { position?: string }) =>
+        s.position?.toLowerCase() === template.title?.toLowerCase()
+      );
+
+      if (duplicateSession) {
+        setExistingSession({
+          id: duplicateSession.id,
+          position: duplicateSession.position || template.title,
+          created_at: duplicateSession.created_at
+        });
+        setShowInProgressWarning(true);
+        return;
+      }
+
+      setPendingGeneralTemplate(template);
+      setPendingCompanyRole(null);
+      setShowResumeCheck(true);
     } catch (err: unknown) {
       const error = err as Error;
       console.error('Error starting interview:', error);
       toast.error(error.message || "Failed to start interview");
+    } finally {
       setLoadingTemplate(null);
     }
   };
@@ -186,7 +207,6 @@ export default function Templates() {
     }
   };
 
-
   // Function to start interview with company and role
   const startCompanyRoleInterview = async (company: CompanyTemplate, role: string) => {
     if (!user) {
@@ -196,7 +216,6 @@ export default function Templates() {
 
     const templateKey = `${company.id}-${role}`;
     setLoadingTemplate(templateKey);
-
     try {
       // Check balance before creating session (min 2 minutes / 120 seconds)
       const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
@@ -211,11 +230,31 @@ export default function Templates() {
         return;
       }
 
-      await executeStartCompanyInterview(company, role);
+      // 1. Check for existing in-progress sessions for the same domain
+      const inProgressSessions = await interviewService.getInProgressSessions(user.id);
+
+      const duplicateSession = inProgressSessions?.find((s: { position?: string }) =>
+        s.position?.toLowerCase() === role?.toLowerCase()
+      );
+
+      if (duplicateSession) {
+        setExistingSession({
+          id: duplicateSession.id,
+          position: duplicateSession.position || role,
+          created_at: duplicateSession.created_at
+        });
+        setShowInProgressWarning(true);
+        return;
+      }
+
+      setPendingCompanyRole({ company, role });
+      setPendingGeneralTemplate(null);
+      setShowResumeCheck(true);
     } catch (err: unknown) {
       const error = err as Error;
       console.error('Error starting company interview:', error);
       toast.error(error.message || "Failed to start interview");
+    } finally {
       setLoadingTemplate(null);
     }
   };
@@ -256,6 +295,14 @@ export default function Templates() {
     }
   };
 
+  const handleResumeContinue = async () => {
+    setShowResumeCheck(false);
+    if (pendingGeneralTemplate) {
+      await executeStartGeneralInterview(pendingGeneralTemplate);
+    } else if (pendingCompanyRole) {
+      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role);
+    }
+  };
 
   // Filter company templates based on search
   const filteredCompanyTemplates = companyTemplates.filter(template =>
@@ -264,6 +311,7 @@ export default function Templates() {
     template.industry?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.common_roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
   return (
     <DashboardLayout>
       <div className="space-y-6 sm:space-y-8 pb-12 sm:pt-0">
@@ -278,20 +326,21 @@ export default function Templates() {
         </div>
 
         <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl border border-border/50 mb-6 w-full sm:w-auto">
+          <TabsList className="inline-flex p-1 bg-muted/60 dark:bg-muted/50 rounded-xl border border-border mb-6 w-full sm:w-auto shadow-sm">
             <TabsTrigger
               value="general"
-              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:ring-1 data-[state=active]:ring-border/50"
             >
               General
             </TabsTrigger>
             <TabsTrigger
               value="company"
-              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:ring-1 data-[state=active]:ring-border/50"
             >
               Companies
             </TabsTrigger>
           </TabsList>
+
 
           {/* Category Tabs and Search Bar */}
           <div className="flex flex-col gap-4 mb-8">
@@ -340,13 +389,15 @@ export default function Templates() {
                   {filteredTemplates.map((template) => {
                     const IconComponent = getIconComponent(template.icon_name);
                     return (
-                      <Card key={template.id} className="flex flex-col h-full hover:shadow-md transition-all">
+                      <Card key={template.id} className="flex flex-col h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 border-border/80 dark:border-border/50 shadow-sm">
+
                         <CardHeader className="space-y-4">
                           <div className="flex justify-between items-start gap-4">
                             <div className="flex gap-4">
-                              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center bg-muted shrink-0", template.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100'))}>
+                              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border border-border/50 shadow-inner", template.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100'), "dark:bg-muted")}>
                                 <IconComponent className={cn("h-5 w-5", template.color)} />
                               </div>
+
                               <div className="space-y-1">
                                 <CardTitle className="text-base font-semibold leading-tight">
                                   {template.title}
@@ -501,22 +552,27 @@ export default function Templates() {
                     Back to Companies
                   </Button>
 
-                  <div className="relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm">
+                  <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-md">
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
-                      <div className="h-20 w-20 rounded-lg border bg-muted p-2 flex items-center justify-center shrink-0">
+                      <div className="h-20 w-20 rounded-lg border border-border bg-muted/30 p-2 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
+
                         {selectedCompany.logo_url ? (
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={selectedCompany.logo_url}
-                              alt={`${selectedCompany.name} logo`}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <Briefcase className="h-8 w-8 text-muted-foreground" />
-                        )}
+                          <Image
+                            src={selectedCompany.logo_url}
+                            alt={`${selectedCompany.name} logo`}
+                            fill
+                            unoptimized
+                            className="object-contain p-2"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              const fallback = (e.target as HTMLImageElement).parentElement?.nextElementSibling;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <Briefcase className={`h-8 w-8 text-muted-foreground ${selectedCompany.logo_url ? 'hidden' : ''}`} />
                       </div>
+
 
                       <div className="flex-1 space-y-2">
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
@@ -596,7 +652,25 @@ export default function Templates() {
             )}
           </TabsContent>
         </Tabs>
-      </div >
-    </DashboardLayout >
+      </div>
+
+      <Suspense fallback={null}>
+        {user?.id && (
+          <>
+            <ResumeCheckDialog
+              isOpen={showResumeCheck}
+              onOpenChange={setShowResumeCheck}
+              userId={user.id}
+              onContinue={handleResumeContinue}
+            />
+            <InProgressSessionModal
+              isOpen={showInProgressWarning}
+              onOpenChange={setShowInProgressWarning}
+              existingSession={existingSession}
+            />
+          </>
+        )}
+      </Suspense>
+    </DashboardLayout>
   );
 }

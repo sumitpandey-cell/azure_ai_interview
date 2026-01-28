@@ -32,10 +32,12 @@ import { toast } from "sonner";
 import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2 } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
 import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
+import { InProgressSessionModal } from "@/components/InProgressSessionModal";
+
 
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
-import { subscriptionService } from "@/services";
+import { subscriptionService, interviewService } from "@/services";
 import { cn } from "@/lib/utils";
 import { parseFile } from "@/lib/file-parser";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
@@ -105,7 +107,10 @@ function StartInterviewContent() {
     const [isParsing, setIsParsing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [showResumeCheck, setShowResumeCheck] = useState(false);
+    const [showInProgressWarning, setShowInProgressWarning] = useState(false);
+    const [existingSession, setExistingSession] = useState<{ id: string, position: string, created_at: string } | null>(null);
     const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -242,6 +247,25 @@ function StartInterviewContent() {
                 return;
             }
 
+            // 1. Check for existing in-progress sessions for the same domain
+            const inProgressSessions = await interviewService.getInProgressSessions(user.id);
+
+            const duplicateSession = inProgressSessions?.find((s: { position?: string; id: string; created_at: string }) =>
+                s.position?.toLowerCase() === values.position?.toLowerCase()
+            );
+
+            if (duplicateSession) {
+                setExistingSession({
+                    id: duplicateSession.id,
+                    position: duplicateSession.position || values.position,
+                    created_at: duplicateSession.created_at
+                });
+                setShowInProgressWarning(true);
+                setIsLoading(false);
+                return;
+            }
+
+
             setPendingValues(values);
             setShowResumeCheck(true);
         } catch (error) {
@@ -250,6 +274,7 @@ function StartInterviewContent() {
             setIsLoading(false);
         }
     };
+
 
     const handleResumeContinue = async () => {
         if (!pendingValues) return;
@@ -871,13 +896,21 @@ function StartInterviewContent() {
             </div >
 
             {user?.id && (
-                <ResumeCheckDialog
-                    isOpen={showResumeCheck}
-                    onOpenChange={setShowResumeCheck}
-                    userId={user.id}
-                    onContinue={handleResumeContinue}
-                />
+                <>
+                    <ResumeCheckDialog
+                        isOpen={showResumeCheck}
+                        onOpenChange={setShowResumeCheck}
+                        userId={user.id}
+                        onContinue={handleResumeContinue}
+                    />
+                    <InProgressSessionModal
+                        isOpen={showInProgressWarning}
+                        onOpenChange={setShowInProgressWarning}
+                        existingSession={existingSession}
+                    />
+                </>
             )}
+
         </DashboardLayout >
     );
 }

@@ -66,7 +66,8 @@ export function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActi
     }
 
     return (
-        <Card className="border-border/40 shadow-xl shadow-amber-500/5 bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-500 group flex flex-col">
+        <Card className="border border-border/80 dark:border-border/40 shadow-xl dark:shadow-amber-500/5 bg-card/80 dark:bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden hover:shadow-2xl transition-all duration-500 group flex flex-col">
+
             <CardHeader className="p-6 pb-2 border-b border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">

@@ -245,10 +245,11 @@ export default function RoadmapPage() {
                             { step: "2", text: "Get Analyzed" },
                             { step: "3", text: "Repeat" }
                         ].map((item, i) => (
-                            <div key={i} className="flex flex-col items-center p-4 rounded-xl border border-border/60 bg-card">
-                                <span className="text-xs font-bold text-primary mb-2">STEP {item.step}</span>
-                                <span className="font-medium text-sm">{item.text}</span>
+                            <div key={i} className="flex flex-col items-center p-4 rounded-xl border border-border/80 dark:border-border/60 bg-card/80 dark:bg-card shadow-sm">
+                                <span className="text-xs font-bold text-primary mb-2 uppercase tracking-widest">STEP {item.step}</span>
+                                <span className="font-bold text-sm text-foreground">{item.text}</span>
                             </div>
+
                         ))}
                     </div>
 
@@ -299,9 +300,10 @@ export default function RoadmapPage() {
                 <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
                     {!roadmap && !generating && !showWizard ? (
                         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto">
-                            <div className="h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-8">
+                            <div className="h-20 w-20 rounded-3xl bg-primary/10 dark:bg-primary/5 flex items-center justify-center mb-8 border border-primary/20 shadow-lg shadow-primary/5">
                                 <Sparkles className="w-10 h-10 text-primary" />
                             </div>
+
                             <h1 className="text-3xl font-bold tracking-tight mb-4">Master Your Next Interview</h1>
                             <p className="text-muted-foreground text-lg mb-10 max-w-lg leading-relaxed">
                                 Create a high-performance roadmap tailored to your target position and domain.
@@ -320,9 +322,10 @@ export default function RoadmapPage() {
                         </div>
                     ) : (roadmap?.roadmap_data?.status === 'generating' || generating) && !showWizard ? (
                         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto animate-in fade-in duration-700">
-                            <div className="h-24 w-24 rounded-3xl bg-primary/5 flex items-center justify-center mb-8 animate-bounce">
+                            <div className="h-24 w-24 rounded-3xl bg-primary/10 dark:bg-primary/5 flex items-center justify-center mb-8 animate-bounce border border-primary/20 shadow-xl shadow-primary/5">
                                 <Sparkles className="w-12 h-12 text-primary" />
                             </div>
+
                             <h2 className="text-2xl font-bold tracking-tight mb-4 text-foreground">Building Your Professional Blueprint</h2>
                             <p className="text-muted-foreground text-base mb-12">
                                 We&apos;re cross-referencing industry standards with your target profile to build an optimal learning path.
@@ -376,10 +379,11 @@ export default function RoadmapPage() {
                             </p>
 
                             <div className="flex items-center gap-2 pt-2">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted/50 border border-border/50 text-xs font-medium text-muted-foreground">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 dark:bg-muted/50 border border-border/80 dark:border-border/50 text-xs font-bold text-muted-foreground shadow-sm">
                                     <Sparkles className="w-3 h-3" />
                                     Updated {new Date(roadmap.generated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
+
                                 {roadmap.overall_level && (
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
                                         Level: {roadmap.overall_level}
@@ -394,7 +398,7 @@ export default function RoadmapPage() {
                                 size="sm"
                                 onClick={handleRefresh}
                                 disabled={refreshing}
-                                className="h-10 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
+                                className="h-10 border-border/80 dark:border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-bold shadow-sm"
                             >
                                 {refreshing ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -403,6 +407,7 @@ export default function RoadmapPage() {
                                 )}
                                 Refresh Path
                             </Button>
+
                         </div>
                     </div>
 
@@ -427,7 +432,8 @@ export default function RoadmapPage() {
                         </section>
 
                         {/* Career Call to Action */}
-                        <Card className="border-primary/20 bg-primary/5 shadow-none rounded-xl overflow-hidden max-w-3xl mx-auto">
+                        <Card className="border border-primary/30 dark:border-primary/20 bg-primary/[0.03] dark:bg-primary/5 shadow-lg dark:shadow-none rounded-2xl overflow-hidden max-w-3xl mx-auto">
+
                             <CardContent className="p-8 text-center">
                                 <div className="max-w-xl mx-auto space-y-4">
                                     <h3 className="text-xl font-bold text-foreground">Ready to Put This Into Practice?</h3>

@@ -173,8 +173,10 @@ export default function LiveInterview() {
                 const fetchedSession = await interviewService.getSessionById(currentSessionId);
                 if (!fetchedSession) {
                     toast.warning("Session not found, creating temporary.");
-                } else if (fetchedSession.status === "completed") {
-                    toast.warning("Session already completed.");
+                } else if (fetchedSession.status === "completed" && fetchedSession.score !== null) {
+                    toast.warning("This session has already been scored and finalized.");
+                    router.replace("/dashboard");
+                    return;
                 }
 
                 setCurrentSessionId(currentSessionId);

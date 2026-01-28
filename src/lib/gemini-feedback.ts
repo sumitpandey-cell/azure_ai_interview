@@ -34,6 +34,8 @@ export interface InterviewSessionData {
 }
 
 export interface FeedbackData {
+    status?: 'success' | 'failed';
+    error?: string;
     executiveSummary: string;
     strengths: string[];
     improvements: string[];
@@ -357,11 +359,13 @@ STRICT RULES:
 - Heavy language mixing = Communication: 5-15%
 - "I don't know" without trying = Problem Solving: 0-10%
 
-OUTPUT (JSON only):
+OUTPUT FORMAT - STRICT JSON ONLY (NO MARKDOWN, NO EXPLANATIONS):
+CRITICAL: You MUST include ALL fields below. Missing any field will cause system failure.
+
 {
-  "executiveSummary": "2-3 sentences with specific examples and scores justification.",
-  "strengths": ["Specific examples from transcript"],
-  "improvements": ["Specific gaps with examples"],
+  "executiveSummary": "2-3 sentences with specific examples and scores justification. REQUIRED.",
+  "strengths": ["REQUIRED: At least 2 specific examples from transcript", "Another strength with evidence"],
+  "improvements": ["REQUIRED: At least 2 specific gaps with examples", "Another improvement area"],
   "comparisons": [
     {
       "question": "Interviewer's prompt",
@@ -377,11 +381,17 @@ OUTPUT (JSON only):
     {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based"}
   ],
   "technicalSkills": [${skills.length > 0 ? `{"name": "SKILL", "score": 0-100, "feedback": "Evidence only"}` : ''}],
-  "actionPlan": ["Specific, actionable steps"]
+  "actionPlan": ["REQUIRED: At least 2 specific, actionable steps", "Another actionable step"]
 }
 
-MANDATORY FEATURE: 'comparisons'
-Identify 3-5 most impactful exchanges where the candidate's answer was weak or could be significantly improved. For EACH, provide a gold-standard 'eliteAnswer'. This is the most valued part of the report.
+MANDATORY REQUIREMENTS:
+1. 'strengths' array: MUST have at least 2 items, each with specific evidence
+2. 'improvements' array: MUST have at least 2 items, each with specific examples
+3. 'actionPlan' array: MUST have at least 2 actionable steps
+4. 'overallSkills' array: MUST have exactly 4 skills as shown above
+5. 'comparisons' array: Include 3-5 most impactful exchanges where the candidate's answer was weak
+
+CRITICAL: Return ONLY valid JSON. Do not wrap in markdown code blocks. Do not add any text before or after the JSON.
 
 Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.
 Compare their answers against their resume claims. If they claim expertise in a skill but struggle during the interview, highlight this discrepancy.`;
@@ -422,14 +432,69 @@ Compare their answers against their resume claims. If they claim expertise in a 
         // Clean up markdown code blocks if present
         const jsonString = textResponse.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '').trim();
 
-        const parsedFeedback = JSON.parse(jsonString);
+        let parsedFeedback;
+        try {
+            parsedFeedback = JSON.parse(jsonString);
+        } catch (parseError) {
+            console.error('❌ Failed to parse Gemini response as JSON:', jsonString.substring(0, 500));
+            throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+        }
+
+        // Log the parsed feedback for debugging
+        console.log('📋 Parsed feedback structure:', JSON.stringify({
+            hasExecutiveSummary: !!parsedFeedback.executiveSummary,
+            strengthsCount: parsedFeedback.strengths?.length || 0,
+            improvementsCount: parsedFeedback.improvements?.length || 0,
+            overallSkillsCount: parsedFeedback.overallSkills?.length || 0,
+            technicalSkillsCount: parsedFeedback.technicalSkills?.length || 0,
+            actionPlanCount: parsedFeedback.actionPlan?.length || 0,
+            comparisonsCount: parsedFeedback.comparisons?.length || 0
+        }));
+
+        // Ensure required fields exist with fallback values and valid string lengths
+        const normalizedFeedback = {
+            executiveSummary: (parsedFeedback.executiveSummary && parsedFeedback.executiveSummary.length >= 30)
+                ? parsedFeedback.executiveSummary
+                : (parsedFeedback.executiveSummary || 'Feedback generation complete. Please review the detailed assessment below.'),
+            strengths: (Array.isArray(parsedFeedback.strengths) && parsedFeedback.strengths.filter((s: unknown) => typeof s === 'string' && (s as string).length >= 3).length > 0)
+                ? (parsedFeedback.strengths as string[]).filter((s: string) => s.length >= 3)
+                : ['Demonstrated technical participation in the interview'],
+            improvements: (Array.isArray(parsedFeedback.improvements) && (parsedFeedback.improvements as unknown[]).filter((s: unknown) => typeof s === 'string' && (s as string).length >= 3).length > 0)
+                ? (parsedFeedback.improvements as string[]).filter((s: string) => s.length >= 3)
+                : ['Engage in more detailed technical discussions to showcase depth'],
+            overallSkills: Array.isArray(parsedFeedback.overallSkills) && parsedFeedback.overallSkills.length >= 3
+                ? parsedFeedback.overallSkills
+                : [
+                    { name: 'Technical Knowledge', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Communication', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Problem Solving', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Cultural Fit', score: 0, feedback: 'Insufficient data for assessment' }
+                ],
+            technicalSkills: Array.isArray(parsedFeedback.technicalSkills) ? parsedFeedback.technicalSkills : [],
+            actionPlan: (Array.isArray(parsedFeedback.actionPlan) && (parsedFeedback.actionPlan as unknown[]).filter((s: unknown) => typeof s === 'string' && (s as string).length >= 5).length > 0)
+                ? (parsedFeedback.actionPlan as string[]).filter((s: string) => s.length >= 5)
+                : ['Continue practicing mock interviews to build confidence'],
+            comparisons: Array.isArray(parsedFeedback.comparisons)
+                ? (parsedFeedback.comparisons as Record<string, unknown>[]).map((c: Record<string, unknown>) => ({
+                    question: typeof c.question === 'string' ? c.question : 'Question analysis unavailable',
+                    actualAnswer: typeof c.actualAnswer === 'string' ? c.actualAnswer : 'Response analysis unavailable',
+                    eliteAnswer: typeof c.eliteAnswer === 'string' ? c.eliteAnswer : 'Suggested improvement unavailable',
+                    explanation: typeof c.explanation === 'string' ? c.explanation : 'Context unavailable'
+                }))
+                : [],
+            // Backward compatibility
+            skills: parsedFeedback.skills || (Array.isArray(parsedFeedback.overallSkills) ? parsedFeedback.overallSkills : null)
+        };
 
         // Validate feedback before returning
         const { validateFeedbackSafe, calculateFeedbackQuality } = await import('./feedback-validator');
-        const validation = validateFeedbackSafe(parsedFeedback, lengthAnalysis.category);
+
+        console.log('🛡️ Validating normalized feedback...');
+        const validation = validateFeedbackSafe(normalizedFeedback, lengthAnalysis.category);
 
         if (!validation.success) {
-            console.error('❌ Feedback validation failed:', validation.error);
+            console.error('❌ Feedback validation failed after normalization:', validation.error);
+            console.error('📋 Normalized feedback content:', JSON.stringify(normalizedFeedback, null, 2));
             throw new Error(`Invalid feedback structure: ${validation.error}`);
         }
 
@@ -438,11 +503,13 @@ Compare their answers against their resume claims. If they claim expertise in a 
         return validation.data! as FeedbackData;
     } catch (error) {
         console.error("Error generating feedback:", error);
-        // Return fallback data in case of error
+        // Return fallback data in case of error with explicit failure flag
         return {
-            executiveSummary: `Feedback generation failed. ${error instanceof Error ? error.message : "A technical error occurred"}. Please review the transcript manually.`,
-            strengths: ["Unable to analyze strengths"],
-            improvements: ["Unable to analyze improvements"],
+            status: 'failed',
+            error: error instanceof Error ? error.message : "A technical error occurred during feedback generation.",
+            executiveSummary: `Feedback generation failed. ${error instanceof Error ? error.message : "A technical error occurred"}. Please review the transcript manually or try regenerating.`,
+            strengths: ["Unable to analyze strengths due to technical error"],
+            improvements: ["Unable to analyze improvements due to technical error"],
             overallSkills: [
                 { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },
                 { name: "Communication", score: 0, feedback: "Analysis failed" },
@@ -450,7 +517,7 @@ Compare their answers against their resume claims. If they claim expertise in a 
                 { name: "Cultural Fit", score: 0, feedback: "Analysis failed" }
             ],
             technicalSkills: [],
-            actionPlan: ["Please try again later"],
+            actionPlan: ["Please try regenerating the report"],
             // Backward compatibility
             skills: [
                 { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },

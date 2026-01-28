@@ -338,9 +338,18 @@ export default function InterviewSetup() {
         setIsLoading(true);
 
         try {
-            // Update session config to track current stage and selected avatar
+            // Pre-complete the session as it starts to prevent "Interrupted" status if closed later
             if (sessionId && typeof sessionId === 'string') {
                 const currentConfig = (session?.config as Record<string, unknown>) || {};
+                await interviewService.completeSession(sessionId, {
+                    durationSeconds: 0,
+                    feedback: {
+                        note: "Insufficient data for report generation",
+                        reason: "session_started_but_not_finished"
+                    }
+                });
+
+                // Still update the config to set currentStage and selected options
                 await interviewService.updateSession(sessionId, {
                     config: {
                         ...currentConfig,

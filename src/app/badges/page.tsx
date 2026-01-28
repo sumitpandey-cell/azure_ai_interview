@@ -176,7 +176,7 @@ export default function Badges() {
             { label: "Latest Badge", value: latestBadge?.name || "-", unit: "", icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/10" },
             { label: "Completion", value: `${progressPercentage}%`, unit: "", icon: Target, color: "text-orange-500", bg: "bg-orange-500/10" }
           ].map((stat, i) => (
-            <div key={i} className="bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
+            <div key={i} className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
               <div className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 opacity-[0.08] group-hover:opacity-15 transition-opacity pointer-events-none">
                 <stat.icon className={cn("h-16 w-16 sm:h-20 sm:w-20", stat.color)} />
               </div>
@@ -191,8 +191,10 @@ export default function Badges() {
           ))}
         </div>
 
+
         {/* Global Progress */}
-        <Card className="p-4 sm:p-5 border-border/50 shadow-sm bg-card/60 backdrop-blur-xl">
+        <Card className="p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-md sm:shadow-sm bg-card/80 dark:bg-card/60 backdrop-blur-xl">
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
             <div>
               <h3 className="font-bold text-sm sm:text-base text-foreground">Overall Progress</h3>
@@ -217,10 +219,10 @@ export default function Badges() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors border whitespace-nowrap shrink-0",
+                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all border whitespace-nowrap shrink-0 shadow-sm",
                 selectedCategory === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-background text-muted-foreground border-border/80 hover:bg-muted"
               )}
             >
               <span className="mr-1.5">{cat === "all" ? "🌐" : CATEGORY_ICONS[cat]}</span>
@@ -228,6 +230,7 @@ export default function Badges() {
             </button>
           ))}
         </div>
+
 
         {/* Badge Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -249,9 +252,10 @@ export default function Badges() {
                   <Card className={cn(
                     "h-full overflow-hidden transition-all duration-300 border",
                     isEarned
-                      ? "border-primary/20 bg-primary/5 shadow-sm hover:border-primary/40"
-                      : "border-border bg-card/50 opacity-80"
+                      ? "border-primary/30 dark:border-primary/20 bg-primary/[0.03] dark:bg-primary/5 shadow-md dark:shadow-sm hover:border-primary/50"
+                      : "border-border/80 dark:border-border bg-card/50 opacity-80"
                   )}>
+
                     <CardContent className="p-5 flex flex-col items-center text-center h-full relative">
                       {isEarned && (
                         <div className="absolute top-3 right-3 text-primary">

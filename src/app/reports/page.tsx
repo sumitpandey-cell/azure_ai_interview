@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2 } from "lucide-react";
+import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2, AlertTriangle, XCircle } from "lucide-react";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +40,7 @@ interface InterviewSession {
   completed_at: string | null;
   duration_seconds: number | null;
   config?: Json; // JSONB field for storing interview configuration
+  feedback?: Json;
 }
 
 export default function Reports() {
@@ -255,7 +256,7 @@ export default function Reports() {
                 { label: "Average Score", value: averageScore, unit: "%", icon: Target, color: "text-primary", bg: "bg-primary/10" },
                 { label: "Practice Time", value: formatDurationShort(sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0)), icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" }
               ].map((stat, i) => (
-                <div key={i} className="bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
+                <div key={i} className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
                   <div className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 opacity-[0.08] group-hover:opacity-15 transition-opacity pointer-events-none">
                     <stat.icon className={cn("h-16 w-16 sm:h-20 sm:w-20", stat.color)} />
                   </div>
@@ -265,6 +266,7 @@ export default function Reports() {
                     {stat.unit && <span className="text-[10px] sm:text-xs font-bold text-muted-foreground/60">{stat.unit}</span>}
                   </div>
                 </div>
+
               ))}
             </div>
           )}
@@ -287,7 +289,8 @@ export default function Reports() {
         ) : (
           <div className="space-y-6">
             {/* Filter Toolbar */}
-            <div className="bg-card p-4 rounded-2xl border border-border/40 shadow-sm">
+            <div className="bg-card dark:bg-card/50 p-4 rounded-2xl border border-border/80 dark:border-border/40 shadow-sm">
+
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                 {/* Search Input */}
                 <div className="relative w-full sm:flex-1 sm:max-w-xs">
@@ -295,15 +298,16 @@ export default function Reports() {
                     placeholder="Search role, company..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11 bg-muted/20 border-border/30 hover:bg-muted/30 focus:bg-muted/30 transition-colors rounded-xl font-medium text-sm"
+                    className="pl-10 h-11 bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 focus:bg-muted/50 dark:focus:bg-muted/30 transition-colors rounded-xl font-medium text-sm"
                   />
-                  <MessageSquare className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <MessageSquare className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+
                 </div>
 
                 {/* Filter Dropdowns */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/20 border-border/30 hover:bg-muted/30 rounded-xl font-medium text-sm">
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
                       <SelectValue placeholder="Status: All" />
                     </SelectTrigger>
                     <SelectContent>
@@ -313,8 +317,9 @@ export default function Reports() {
                     </SelectContent>
                   </Select>
 
+
                   <Select value={positionFilter} onValueChange={setPositionFilter}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/20 border-border/30 hover:bg-muted/30 rounded-xl font-medium text-sm">
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
                       <SelectValue placeholder="Role: All" />
                     </SelectTrigger>
                     <SelectContent>
@@ -325,8 +330,9 @@ export default function Reports() {
                     </SelectContent>
                   </Select>
 
+
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/20 border-border/30 hover:bg-muted/30 rounded-xl font-medium text-sm">
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
                       <SelectValue placeholder="Newest First" />
                     </SelectTrigger>
                     <SelectContent>
@@ -335,6 +341,7 @@ export default function Reports() {
                       <SelectItem value="score-desc">Highest Score</SelectItem>
                     </SelectContent>
                   </Select>
+
 
                   {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
                     <Button
@@ -356,16 +363,18 @@ export default function Reports() {
             </div>
 
             {/* Structured Table List */}
-            <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-x-auto no-scrollbar">
+            <div className="bg-card dark:bg-card/50 rounded-2xl border border-border/80 dark:border-border/60 shadow-md sm:shadow-sm overflow-x-auto no-scrollbar">
+
               <div className="min-w-[850px]">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border/40 bg-muted/10 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border bg-muted/30 dark:bg-muted/10 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   <div className="col-span-4">Role & Protocol</div>
-                  <div className="col-span-2">Date</div>
-                  <div className="col-span-2">Duration</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-2 text-right">Performance</div>
+                  <div className="col-span-2 text-center">Date</div>
+                  <div className="col-span-2 text-center">Duration</div>
+                  <div className="col-span-2 text-center">Status</div>
+                  <div className="col-span-2 text-right px-4">Performance</div>
                 </div>
+
 
                 {/* Table Body */}
                 <div className="divide-y divide-border/40">
@@ -384,8 +393,9 @@ export default function Reports() {
                           toast.then(t => t.info("This session was not completed and is no longer accessible."));
                         }
                       }}
-                      className="group grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-muted/20 active:bg-muted/30 transition-colors cursor-pointer"
+                      className="group grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-muted/30 dark:hover:bg-muted/20 active:bg-muted/40 transition-colors cursor-pointer border-b border-border/40 last:border-0"
                     >
+
                       {/* Role & Protocol */}
                       <div className="col-span-4 flex items-center gap-4">
                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${session.score && session.score >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -424,14 +434,41 @@ export default function Reports() {
                             Completed
                           </div>
                         ) : session.status === 'completed' && session.score === null ? (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
-                            <Clock className="h-3 w-3" />
-                            Report Pending
-                          </div>
+                          (() => {
+                            const feedback = session.feedback as Record<string, unknown> | null;
+                            const isGenerationFailed = feedback?.status === 'failed' ||
+                              (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'));
+                            const isInsufficientData = feedback?.note === 'Insufficient data for report generation';
+
+                            if (isInsufficientData) {
+                              return (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Requirements Not Met
+                                </div>
+                              );
+                            }
+
+                            if (isGenerationFailed) {
+                              return (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold border border-rose-500/20">
+                                  <XCircle className="h-3 w-3" />
+                                  Generation Failed
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                                <Clock className="h-3 w-3" />
+                                Report Pending
+                              </div>
+                            );
+                          })()
                         ) : (
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold border border-border">
                             <Clock className="h-3 w-3" />
-                            Incomplete
+                            In Progress
                           </div>
                         )}
                       </div>
@@ -457,7 +494,14 @@ export default function Reports() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[10px] font-bold text-muted-foreground/60">Report Pending</span>
+                          <span className="text-[10px] font-bold text-muted-foreground/60">
+                            {(() => {
+                              const feedback = session.feedback as Record<string, unknown> | null;
+                              if (feedback?.note === 'Insufficient data for report generation') return "Insufficient Data";
+                              if (feedback?.status === 'failed' || (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'))) return "Generation Error";
+                              return "Report Pending";
+                            })()}
+                          </span>
                         )}
                         <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors ml-1" />
                       </div>

@@ -18,6 +18,7 @@ import {
   Zap,
   Target,
   History,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -420,7 +421,8 @@ function DashboardContent() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
               {/* Interviews Completed */}
-              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+              <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+
                 <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                   <Play className="h-20 w-20 fill-primary/20 text-primary" />
                 </div>
@@ -431,7 +433,8 @@ function DashboardContent() {
               </div>
 
               {/* Time Practiced */}
-              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+              <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+
                 <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                   <Clock className="h-20 w-20 text-accent fill-accent/20" />
                 </div>
@@ -442,7 +445,8 @@ function DashboardContent() {
               </div>
 
               {/* Global Rank */}
-              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+              <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+
                 <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                   <Award className="h-20 w-20 text-blue-500 fill-blue-500/20" />
                 </div>
@@ -453,7 +457,8 @@ function DashboardContent() {
               </div>
 
               {/* Average Score */}
-              <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+              <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+
                 <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                   <Target className="h-20 w-20 text-primary fill-primary/20" />
                 </div>
@@ -557,21 +562,60 @@ function DashboardContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.slice(0, 6).map((session) => {
                   const isGeneratingFeedback = isSessionGenerating(session.id);
-                  // const isInsufficientData = (session.feedback as { note?: string })?.note === 'Insufficient data for report generation';
                   const score = session.score;
+
+                  // Check if the interview was too short by examining the feedback
+                  const feedback = session.feedback as { executiveSummary?: string, note?: string } | null;
+                  const summaryText = feedback?.executiveSummary || '';
+
+                  const isTooShort = summaryText.includes('too brief') ||
+                    summaryText.includes('too short') ||
+                    summaryText.includes('Insufficient interview duration') ||
+                    feedback?.note === 'Insufficient data for report generation';
+
+                  const isFailed = summaryText.includes('Feedback generation failed') ||
+                    summaryText.includes('Invalid feedback structure');
+
+                  // Extract the reason from executiveSummary or note if available
+                  let feedbackReason = '';
+                  if (isTooShort) {
+                    if (feedback?.note === 'Insufficient data for report generation') {
+                      feedbackReason = 'Requirements not met';
+                    } else if (summaryText) {
+                      if (summaryText.includes('too brief')) {
+                        feedbackReason = 'Interview too short';
+                      } else if (summaryText.includes('too short')) {
+                        feedbackReason = 'Session too brief';
+                      } else {
+                        feedbackReason = 'Insufficient duration';
+                      }
+                    } else {
+                      feedbackReason = 'Requirements not met';
+                    }
+                  } else if (isFailed) {
+                    feedbackReason = 'Analysis failed';
+                  }
 
                   return (
                     <div
                       key={session.id}
                       onClick={() => {
                         if (session.status === 'completed') {
+                          if (isTooShort) {
+                            toast.info("Interview was too brief", {
+                              description: "You can view the feedback, but a longer session is needed for a comprehensive assessment.",
+                              duration: 4000
+                            });
+                          }
                           router.push(`/interview/${session.id}/report`);
                         } else if (session.status === 'in_progress') {
-                          toast.info("This session was not completed and is no longer accessible.");
+                          // Allow resuming in-progress sessions
+                          router.push(`/interview/${session.id}/setup`);
                         }
                       }}
-                      className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:border-primary/50 transition-all duration-300 cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1"
+                      className="group relative overflow-hidden rounded-3xl border border-border/80 dark:border-border/60 bg-card/80 dark:bg-card/60 backdrop-blur-xl hover:border-primary/50 transition-all duration-300 cursor-pointer hover:shadow-xl hover:-translate-y-1"
                     >
+
                       {/* Background Gradient Spot */}
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
 
@@ -611,38 +655,70 @@ function DashboardContent() {
                         <div className="mt-auto flex items-end justify-between">
                           {/* Status / Score Indicator */}
                           <div>
-                            {score !== null ? (
-                              <div className="flex flex-col">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider">Score</span>
-                                <div className="flex items-baseline gap-1">
-                                  <span className={cn(
-                                    "text-3xl font-black tracking-tighter tabular-nums",
-                                    score >= 70 ? "text-emerald-500" : score >= 40 ? "text-primary" : "text-rose-500"
+                            {/* Status / Score Indicator */}
+                            <div>
+                              {/* Show "too short" or "failed" message if applicable, even if score is 0 */}
+                              {(isTooShort || isFailed) ? (
+                                <div className="flex items-center gap-2">
+                                  <div className={cn(
+                                    "h-10 w-10 rounded-2xl flex items-center justify-center border",
+                                    isFailed ? "bg-red-500/10 border-red-500/20" : "bg-amber-500/10 border-amber-500/20"
                                   )}>
-                                    {score}
-                                  </span>
-                                  <span className="text-sm font-bold text-muted-foreground/50">%</span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                {isGeneratingFeedback ? (
-                                  <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                                ) : (
-                                  <div className="h-10 w-10 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
-                                    <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                                    {isFailed ? (
+                                      <XCircle className="h-5 w-5 text-red-500" />
+                                    ) : (
+                                      <Clock className="h-5 w-5 text-amber-500" />
+                                    )}
                                   </div>
-                                )}
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-foreground">
-                                    {session.status === 'in_progress' ? "Interrupted" : "Analyzing"}
-                                  </span>
-                                  <span className="text-[10px] font-medium text-muted-foreground">
-                                    {session.status === 'in_progress' ? "Session Incomplete" : "Please wait"}
-                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className={cn(
+                                      "text-xs font-bold",
+                                      isFailed ? "text-red-500" : "text-foreground"
+                                    )}>
+                                      {feedbackReason}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                      {isFailed ? "Please try again" : "Complete longer session"}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              ) : score !== null ? (
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider">Score</span>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className={cn(
+                                      "text-3xl font-black tracking-tighter tabular-nums",
+                                      score >= 70 ? "text-emerald-500" : score >= 40 ? "text-primary" : "text-rose-500"
+                                    )}>
+                                      {score}
+                                    </span>
+                                    <span className="text-sm font-bold text-muted-foreground/50">%</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {isGeneratingFeedback ? (
+                                    <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                                  ) : (
+                                    <div className="h-10 w-10 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                                      <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-foreground">
+                                      {session.status === 'in_progress'
+                                        ? "In Progress"
+                                        : "Analyzing"}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                      {session.status === 'in_progress'
+                                        ? "Resume Session"
+                                        : "Please wait"}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Action Button */}

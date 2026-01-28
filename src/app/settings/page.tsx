@@ -370,7 +370,7 @@ export default function Settings() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border">
+                <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border mb-2">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = activeSection === tab.id;
@@ -379,9 +379,9 @@ export default function Settings() {
                                 key={tab.id}
                                 onClick={() => setActiveSection(tab.id as SettingsSection)}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative rounded-t-lg",
+                                    "flex items-center gap-2 px-4 py-3 text-sm font-bold transition-all relative rounded-t-xl min-w-fit",
                                     isActive
-                                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                                        ? "text-primary bg-primary/[0.03] dark:bg-primary/5 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
                                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                 )}
                             >
@@ -392,11 +392,13 @@ export default function Settings() {
                     })}
                 </div>
 
+
                 {/* Content Area */}
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {activeSection === "general" && (
                         <div className="space-y-6">
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <CardTitle>Profile Information</CardTitle>
                                     <CardDescription>Update your photo and personal details.</CardDescription>
@@ -483,7 +485,8 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -545,7 +548,8 @@ export default function Settings() {
                     )}
 
                     {activeSection === "notifications" && (
-                        <Card className="border-border shadow-sm">
+                        <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                             <CardHeader>
                                 <CardTitle>Notifications</CardTitle>
                                 <CardDescription>Choose what updates you want to receive.</CardDescription>
@@ -608,7 +612,8 @@ export default function Settings() {
 
                     {activeSection === "security" && (
                         <div className="space-y-6">
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <CardTitle>Password</CardTitle>
                                     <CardDescription>
@@ -684,8 +689,9 @@ export default function Settings() {
 
                     {activeSection === "billing" && (
                         <div className="space-y-6">
-                            <Card className="border-border shadow-sm overflow-hidden">
-                                <div className="bg-primary/5 p-8 border-b border-border flex items-center gap-6">
+                            <Card className="border border-border/80 dark:border-border shadow-lg dark:shadow-sm overflow-hidden bg-card/80 dark:bg-card">
+                                <div className="bg-primary/[0.05] dark:bg-primary/5 p-8 border-b border-border flex items-center gap-6">
+
                                     <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
                                         <CreditCard className="h-8 w-8 text-primary" />
                                     </div>
@@ -727,7 +733,8 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card overflow-hidden">
+
                                 <CardHeader>
                                     <CardTitle>Order History</CardTitle>
                                     <CardDescription>History of your credit purchases and top-ups.</CardDescription>
@@ -754,7 +761,7 @@ export default function Settings() {
                                                     const planName = tx.plans?.name || "Welcome Bonus";
 
                                                     return (
-                                                        <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors group">
+                                                        <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-muted/40 dark:hover:bg-muted/30 transition-colors group border-b border-border/40 last:border-0">
                                                             <div className={cn(
                                                                 "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border",
                                                                 isPurchase ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
@@ -766,7 +773,7 @@ export default function Settings() {
                                                             <div className="min-w-0 flex-1">
                                                                 <div className="flex items-center gap-2">
                                                                     <p className="text-sm font-bold text-foreground truncate">{planName}</p>
-                                                                    {isPurchase && <Badge variant="outline" className="text-[10px] h-4 px-1.5 uppercase font-black tracking-tighter">Verified</Badge>}
+                                                                    {isPurchase && <Badge variant="outline" className="text-[10px] h-4 px-1.5 uppercase font-black tracking-tighter border-emerald-500/20 text-emerald-600">Verified</Badge>}
                                                                 </div>
                                                                 <p className="text-[11px] text-muted-foreground font-medium">
                                                                     {format(new Date(tx.created_at), "MMM d, yyyy • h:mm a")}
@@ -774,13 +781,14 @@ export default function Settings() {
                                                             </div>
 
                                                             <div className="text-right">
-                                                                <p className="text-sm font-black tabular-nums text-emerald-500">
+                                                                <p className="text-sm font-black tabular-nums text-emerald-600 dark:text-emerald-500">
                                                                     +{Math.floor(tx.plan_seconds / 60)} min
                                                                 </p>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{isPurchase ? "Purchase" : "System"}</p>
                                                             </div>
                                                         </div>
                                                     );
+
                                                 })}
                                         </div>
                                     ) : (

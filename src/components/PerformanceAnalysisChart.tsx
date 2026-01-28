@@ -63,7 +63,8 @@ export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisC
     }
 
     return (
-        <Card className="border-border/40 shadow-xl shadow-primary/5 bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group flex flex-col">
+        <Card className="border border-border/80 dark:border-border/40 shadow-xl dark:shadow-primary/5 bg-card/80 dark:bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden hover:shadow-2xl transition-all duration-500 group flex flex-col">
+
             <CardHeader className="p-6 pb-4 border-b border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,13 @@ export default function InterviewReport() {
     const { generateFeedbackInBackground, isGenerating } = useFeedback();
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const [errorState, setErrorState] = useState<FeedbackError | null>(null);
 
 
@@ -301,6 +309,11 @@ export default function InterviewReport() {
         );
     }
 
+    // Check for failed feedback generation 
+    const rawFeedback = session?.feedback as Record<string, unknown> | null;
+    const isGenerationFailed = rawFeedback?.status === 'failed' ||
+        (typeof rawFeedback?.executiveSummary === 'string' && rawFeedback?.executiveSummary.includes('Feedback generation failed'));
+
     // Check for insufficient data
     if ((session.feedback as { note?: string })?.note === 'Insufficient data for report generation') {
         return (
@@ -385,6 +398,102 @@ export default function InterviewReport() {
                                                     {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'Candidate'}
                                                 </div>
                                                 <p className="text-xs text-foreground/80 font-bold leading-relaxed group-hover:text-foreground transition-colors">
+                                                    {msg.text}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // Check for literal generation failure
+    if (isGenerationFailed) {
+        return (
+            <DashboardLayout>
+                <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+                    <div className="max-w-xl w-full relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <Card className="border-none shadow-2xl bg-card backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500/50 to-orange-500/50 shadow-[0_0_15px_rgba(244,63,94,0.3)]" />
+
+                            <CardContent className="p-8 sm:p-12 text-center space-y-10">
+                                {/* Animated Warning Icon */}
+                                <div className="relative mx-auto h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-rose-500/20 rounded-3xl blur-2xl animate-pulse" />
+                                    <div className="relative h-20 w-20 rounded-3xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shadow-2xl shadow-rose-500/20">
+                                        <XCircle className="h-10 w-10 text-rose-500" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[10px] font-bold uppercase tracking-[0.2em]">
+                                        Generation Failed
+                                    </div>
+                                    <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tighter uppercase leading-none">
+                                        Feedback <span className="text-rose-500">Analysis</span> Error
+                                    </h2>
+                                    <div className="bg-rose-500/5 border border-rose-500/10 p-4 rounded-2xl text-left">
+                                        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">Technical Reason:</p>
+                                        <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                                            {typeof rawFeedback?.error === 'string' ? rawFeedback.error :
+                                                typeof rawFeedback?.executiveSummary === 'string' ? rawFeedback.executiveSummary :
+                                                    "A technical error occurred while analyzing your interview. This can happen due to AI validation rules or API timeouts."}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-4">
+                                    <Button
+                                        onClick={async () => {
+                                            if (sessionId) {
+                                                toast.info("Regenerating feedback analysis...", {
+                                                    icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+                                                });
+                                                await generateFeedbackInBackground(sessionId);
+                                                // Refresh page after a short delay
+                                                window.location.reload();
+                                            }
+                                        }}
+                                        className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
+                                    >
+                                        <RefreshCw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-transform duration-700" />
+                                        Regenerate Report
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => router.push("/dashboard")}
+                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                        Return to Dashboard
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Transcript Still Visible */}
+                        {session.transcript && Array.isArray(session.transcript) && session.transcript.length > 0 && (
+                            <div className="mt-8 space-y-4">
+                                <div className="flex items-center justify-between px-6">
+                                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Your Transcript</h3>
+                                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Available for review</span>
+                                </div>
+                                <div className="bg-card/40 backdrop-blur-xl rounded-3xl border border-border p-6 max-h-60 overflow-y-auto custom-scrollbar shadow-sm">
+                                    <div className="space-y-4">
+                                        {(session.transcript as Array<TranscriptMessage>).map((msg: TranscriptMessage, idx: number) => (
+                                            <div key={idx} className="flex gap-4 group">
+                                                <div className={`text-[9px] font-bold uppercase tracking-widest shrink-0 w-12 ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'text-primary' : 'text-muted-foreground'}`}>
+                                                    {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'You'}
+                                                </div>
+                                                <p className="text-xs text-foreground font-medium leading-relaxed">
                                                     {msg.text}
                                                 </p>
                                             </div>
@@ -764,24 +873,24 @@ export default function InterviewReport() {
     // Standardized feedback structure extraction
     // v2.0 structure: { overall: { ... }, resumptions: [ ... ] }
     // legacy structure (single resumption): { score, executiveSummary, ... }
-    let rawFeedback = session?.feedback;
+    let extractedFeedback = session?.feedback as Record<string, unknown> | null;
 
-    if (rawFeedback) {
+    if (extractedFeedback) {
         // If we have the new standardized structure, use 'overall'
-        if (rawFeedback.overall && typeof rawFeedback.overall === 'object') {
-            rawFeedback = rawFeedback.overall as Record<string, unknown>;
+        if (extractedFeedback.overall && typeof extractedFeedback.overall === 'object') {
+            extractedFeedback = extractedFeedback.overall as Record<string, unknown>;
         }
         // If we have the old nested structure for multi-resumption (backward compatibility)
-        else if (rawFeedback.resumptions && Array.isArray(rawFeedback.resumptions) && rawFeedback.resumptions.length > 0) {
-            if (!rawFeedback.overall || Object.keys(rawFeedback.overall).length === 0 || !rawFeedback.executiveSummary) {
-                rawFeedback = rawFeedback.resumptions[0];
+        else if (extractedFeedback.resumptions && Array.isArray(extractedFeedback.resumptions) && extractedFeedback.resumptions.length > 0) {
+            if (!extractedFeedback.overall || Object.keys(extractedFeedback.overall).length === 0 || !extractedFeedback.executiveSummary) {
+                extractedFeedback = extractedFeedback.resumptions[0];
             }
         }
     }
 
     // merge with potentially more up-to-date instant feedback from Zustand store
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const feedbackData = mergeFeedback(rawFeedback, instantFeedback as any);
+    const feedbackData = mergeFeedback(extractedFeedback, instantFeedback as any);
 
     // Use instant transcript if available (more up-to-date), fallback to DB transcript
     let dbTranscript = session?.transcript || [];
@@ -878,25 +987,27 @@ export default function InterviewReport() {
                                     {reportData.candidateName} <span className="text-primary">Reports</span>
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 sm:mt-3">
-                                    <div className="px-4 py-1.5 rounded-full bg-card/40 backdrop-blur-3xl border border-border shadow-2xl">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">{reportData.position}</span>
+                                    <div className="px-4 py-1.5 rounded-full bg-card/80 dark:bg-card/40 backdrop-blur-3xl border border-border shadow-md dark:shadow-2xl">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none">{reportData.position}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 border border-border">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,195,77,0.4)]" />
-                                        <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{session.interview_type.replace('_', ' ')} Session</span>
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 dark:bg-muted/50 border border-border/80 dark:border-border shadow-sm">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{session.interview_type.replace('_', ' ')} Session</span>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 lg:pb-2">
                             <Button
                                 onClick={downloadReport}
-                                className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/40 backdrop-blur-3xl border border-border hover:bg-card/60 text-foreground font-bold uppercase tracking-[0.15em] text-[10px] transition-all shadow-2xl group/btn"
+                                className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl border border-border/80 dark:border-border hover:bg-card/90 dark:hover:bg-card/60 text-foreground font-black uppercase tracking-[0.15em] text-[10px] transition-all shadow-md dark:shadow-2xl group/btn"
                             >
                                 <Download className="h-3.5 w-3.5 mr-2 group-hover:scale-110 transition-transform" />
                                 Export Insights
                             </Button>
+
                             <Button
                                 onClick={async () => {
                                     if (sessionId) {
@@ -953,14 +1064,14 @@ export default function InterviewReport() {
                 {/* Primary Intelligence Section */}
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
                     {/* Overall Score Gauge */}
-                    <Card className="xl:col-span-1 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group">
-                        <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
+                    <Card className="xl:col-span-1 border border-border/80 dark:border-white/5 shadow-lg dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group">
+                        <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] pointer-events-none" />
                         <CardContent className="p-5 sm:p-6 flex flex-col items-center justify-center h-full gap-5 sm:gap-6 text-center relative z-10">
                             <div className="relative h-28 w-28 sm:h-40 sm:w-40 group-hover:scale-105 transition-all duration-1000">
                                 <svg className="h-full w-full transform -rotate-90 filter drop-shadow-[0_0_15px_rgba(var(--primary),0.2)]" viewBox="0 0 100 100">
                                     <circle
                                         cx="50" cy="50" r="42"
-                                        className="fill-none stroke-white/5"
+                                        className="fill-none stroke-black/5 dark:stroke-white/5"
                                         strokeWidth="8"
                                     />
                                     <circle
@@ -976,11 +1087,12 @@ export default function InterviewReport() {
                                     />
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-4xl sm:text-5xl font-bold tracking-tighter tabular-nums text-foreground">{reportData.overallScore}</span>
-                                    <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground mt-2">Overall Score</span>
+                                    <span className="text-4xl sm:text-5xl font-black text-foreground tabular-nums tracking-tighter">{reportData.overallScore}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Overall Score</span>
                                 </div>
-                                <div className="absolute -inset-8 bg-primary/10 blur-[60px] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                <div className="absolute -inset-8 bg-primary/15 dark:bg-primary/10 blur-[60px] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                             </div>
+
 
                             <div className="space-y-3">
                                 <div className={cn(
@@ -995,8 +1107,9 @@ export default function InterviewReport() {
                     </Card>
 
                     {/* Executive Overview */}
-                    <Card className="xl:col-span-3 border border-white/5 shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/executive">
-                        <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+                    <Card className="xl:col-span-3 border border-border/80 dark:border-white/5 shadow-lg dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/executive">
+                        <div className="absolute top-0 right-0 h-full w-64 bg-gradient-to-l from-primary/10 dark:from-primary/5 to-transparent pointer-events-none" />
+
                         <CardContent className="p-4 sm:p-6 md:p-8 relative z-10">
                             <div className="flex flex-col h-full gap-4 sm:gap-6">
                                 <div className="flex items-center justify-between">
@@ -1004,17 +1117,19 @@ export default function InterviewReport() {
                                         <h3 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight uppercase text-foreground leading-tight">Executive Summary</h3>
                                         <p className="text-[10px] text-primary font-bold uppercase tracking-[0.4em]">Detailed Performance Assessment</p>
                                     </div>
-                                    <div className="hidden sm:flex gap-6 px-5 py-2 rounded-2xl bg-muted/30 border border-border backdrop-blur-xl">
+                                    <div className="hidden sm:flex gap-6 px-5 py-2 rounded-2xl bg-muted/60 dark:bg-muted/30 border border-border backdrop-blur-xl shadow-sm">
                                         <div className="flex flex-col items-end">
-                                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Session Date</span>
-                                            <span className="text-xs font-bold tabular-nums text-foreground/80 uppercase">{reportData.date}</span>
+                                            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Session Date</span>
+                                            <span className="text-xs font-black tabular-nums text-foreground/80 uppercase">{reportData.date}</span>
                                         </div>
                                     </div>
+
                                 </div>
 
-                                <p className="text-sm sm:text-base font-medium leading-relaxed max-w-5xl italic border-l-4 border-primary/30 pl-3 sm:pl-4 py-1.5 bg-gradient-to-r from-primary/5 to-transparent rounded-r-xl sm:rounded-r-2xl">
+                                <p className="text-sm sm:text-base font-bold leading-relaxed max-w-5xl italic border-l-4 border-primary/40 dark:border-primary/30 pl-3 sm:pl-4 py-3 bg-gradient-to-r from-primary/[0.08] dark:from-primary/5 to-transparent rounded-r-xl sm:rounded-r-2xl shadow-sm">
                                     &quot;{reportData.executiveSummary}&quot;
                                 </p>
+
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-auto pt-6 sm:pt-8 border-t border-border">
                                     {[
@@ -1024,15 +1139,16 @@ export default function InterviewReport() {
                                         { label: "Performance Tier", value: reportData.rankGrade, icon: Award, color: "text-emerald-600 dark:text-emerald-500" }
                                     ].map((m, i) => (
                                         <div key={i} className="flex items-center gap-3 group/metric">
-                                            <div className={cn("h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-muted flex items-center justify-center shadow-xl border border-border group-hover/metric:scale-110 group-hover/metric:bg-muted/80 transition-all duration-500", m.color)}>
+                                            <div className={cn("h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-muted/80 dark:bg-muted flex items-center justify-center shadow-md dark:shadow-xl border border-border/80 dark:border-border group-hover/metric:scale-110 group-hover/metric:bg-muted/90 transition-all duration-500", m.color)}>
                                                 <m.icon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{m.label}</span>
-                                                <span className="text-[10px] sm:text-xs font-bold text-foreground uppercase truncate tracking-widest mt-0.5">{m.value}</span>
+                                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em]">{m.label}</span>
+                                                <span className="text-[10px] sm:text-xs font-black text-foreground uppercase truncate tracking-widest mt-0.5">{m.value}</span>
                                             </div>
                                         </div>
                                     ))}
+
                                 </div>
                             </div>
                         </CardContent>
@@ -1041,15 +1157,16 @@ export default function InterviewReport() {
 
                 {/* Performance Analysis Tabs */}
                 <Tabs defaultValue="insights" className="w-full">
-                    <TabsList className="bg-muted/50 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl h-10 sm:h-12 md:h-14 mb-4 sm:mb-6 md:mb-8 inline-flex border border-border backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar max-w-full">
-                        <TabsTrigger value="insights" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500">Analysis</TabsTrigger>
-                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 flex items-center gap-2">
+                    <TabsList className="bg-muted/80 dark:bg-muted/50 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl h-10 sm:h-12 md:h-14 mb-4 sm:mb-6 md:mb-8 inline-flex border border-border/80 dark:border-border backdrop-blur-3xl shadow-lg dark:shadow-2xl overflow-x-auto no-scrollbar max-w-full">
+                        <TabsTrigger value="insights" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Analysis</TabsTrigger>
+                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 flex items-center gap-2 shadow-sm data-[state=active]:shadow-md">
                             <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
                             Model Answers
                         </TabsTrigger>
-                        <TabsTrigger value="skills" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500">Skills</TabsTrigger>
-                        <TabsTrigger value="transcript" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500">Transcript</TabsTrigger>
+                        <TabsTrigger value="skills" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Skills</TabsTrigger>
+                        <TabsTrigger value="transcript" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Transcript</TabsTrigger>
                     </TabsList>
+
 
                     <TabsContent value="insights" className="space-y-4 sm:space-y-6 md:space-y-8 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
                         {/* Performance Consistency Graph */}
@@ -1057,7 +1174,8 @@ export default function InterviewReport() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                             {/* Strengths Card */}
-                            <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/strengths">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/strengths">
+
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-emerald-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
                                 <CardHeader className="p-4 sm:p-6 md:p-6 pb-0">
                                     <h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight flex items-center gap-2.5 sm:gap-3 uppercase text-emerald-600 dark:text-emerald-500">
@@ -1080,7 +1198,8 @@ export default function InterviewReport() {
                             </Card>
 
                             {/* Improvements Card */}
-                            <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/improvements">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/improvements">
+
                                 <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/5 blur-[80px] rounded-full -translate-y-20 translate-x-20 pointer-events-none" />
                                 <CardHeader className="p-4 sm:p-6 md:p-6 pb-0">
                                     <h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight flex items-center gap-2.5 sm:gap-3 uppercase text-rose-600 dark:text-rose-500">
@@ -1104,7 +1223,8 @@ export default function InterviewReport() {
                         </div>
 
                         {/* Action Plan - Navigate to Roadmap */}
-                        <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group/plan">
+                        <Card className="border border-primary/30 dark:border-border shadow-lg dark:shadow-3xl bg-primary/[0.03] dark:bg-card/40 backdrop-blur-3xl rounded-3xl overflow-hidden relative group/plan">
+
                             <div className="absolute inset-0 bg-grid-foreground/[0.02] pointer-events-none" />
                             <div className="absolute top-0 right-0 h-full w-96 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
 
@@ -1112,10 +1232,11 @@ export default function InterviewReport() {
                                 <div className="flex flex-col lg:flex-row items-center gap-4 sm:gap-6">
                                     {/* Icon and Title */}
                                     <div className="flex-shrink-0">
-                                        <div className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shadow-2xl shadow-primary/10 group-hover/plan:scale-110 group-hover/plan:rotate-6 transition-all duration-700">
+                                        <div className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-2xl sm:rounded-3xl bg-primary/10 flex items-center justify-center border-2 border-primary/30 dark:border-primary/20 shadow-xl dark:shadow-2xl shadow-primary/20 group-hover/plan:scale-110 group-hover/plan:rotate-6 transition-all duration-700">
                                             <Star className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-primary" />
                                         </div>
                                     </div>
+
 
                                     {/* Content */}
                                     <div className="flex-1 space-y-3 sm:space-y-4 text-center lg:text-left">
@@ -1191,7 +1312,8 @@ export default function InterviewReport() {
                                             {/* Decorative Number */}
                                             <div className="absolute -top-6 -left-4 text-8xl font-black text-white/[0.02] pointer-events-none group-hover/elite:text-primary/[0.05] transition-colors duration-1000">0{i + 1}</div>
 
-                                            <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden transition-all duration-700 hover:border-primary/20">
+                                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-3xl overflow-hidden transition-all duration-700 hover:border-primary/40 dark:hover:border-primary/20">
+
                                                 <CardContent className="p-0">
                                                     <div className="grid grid-cols-1 xl:grid-cols-2">
                                                         {/* Actual Side */}
@@ -1200,7 +1322,8 @@ export default function InterviewReport() {
                                                                 <div className="h-7 w-7 rounded-lg bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-600 dark:text-rose-500">
                                                                     <MessageSquare className="h-3.5 w-3.5" />
                                                                 </div>
-                                                                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-rose-600/60 dark:text-rose-500/60">Your Response</span>
+                                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-600 dark:text-rose-500/60">Your Response</span>
+
                                                             </div>
 
                                                             <div className="space-y-4">
@@ -1233,13 +1356,14 @@ export default function InterviewReport() {
                                                             </div>
 
                                                             {/* Explanation Box */}
-                                                            <div className="relative z-10 flex gap-3 p-4 rounded-xl bg-muted border border-border group-hover/elite:border-primary/20 transition-all">
+                                                            <div className="relative z-10 flex gap-3 p-4 rounded-xl bg-muted/80 dark:bg-muted border border-border/80 dark:border-border group-hover/elite:border-primary/40 dark:group-hover/elite:border-primary/20 transition-all shadow-sm">
                                                                 <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                                                 <div className="space-y-1">
-                                                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary/60">Expert Analysis</p>
-                                                                    <p className="text-[11px] font-bold text-foreground/70 leading-relaxed">{item.explanation}</p>
+                                                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/80 dark:text-primary/60">Expert Analysis</p>
+                                                                    <p className="text-[11px] font-bold text-foreground/80 leading-relaxed">{item.explanation}</p>
                                                                 </div>
                                                             </div>
+
                                                         </div>
                                                     </div>
                                                 </CardContent>
@@ -1296,10 +1420,10 @@ export default function InterviewReport() {
                                     <div className="h-[240px] sm:h-[280px] w-full group-hover:scale-105 sm:group-hover:scale-110 transition-transform duration-1000">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={reportData.overallSkills}>
-                                                <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                                                <PolarGrid stroke={mounted && resolvedTheme === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.1)"} />
                                                 <PolarAngleAxis
                                                     dataKey="name"
-                                                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 900 }}
+                                                    tick={{ fill: 'currentColor', fontSize: 8, fontWeight: 900, opacity: 0.6 }}
                                                 />
                                                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                                 <Radar
@@ -1308,9 +1432,10 @@ export default function InterviewReport() {
                                                     stroke="#A855F7"
                                                     strokeWidth={2}
                                                     fill="#A855F7"
-                                                    fillOpacity={0.2}
+                                                    fillOpacity={0.3}
                                                 />
                                             </RadarChart>
+
                                         </ResponsiveContainer>
                                     </div>
                                     <div className="absolute -inset-20 bg-primary/10 blur-[100px] rounded-full pointer-events-none opacity-0 group-hover/radar:opacity-40 transition-opacity duration-1000" />
@@ -1321,7 +1446,8 @@ export default function InterviewReport() {
                             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 {reportData.overallSkills.map((skill: Skill, i: number) => (
                                     <div key={i} className="group/skill relative">
-                                        <Card className="h-full border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-primary/20 rounded-2xl transition-all duration-700 overflow-hidden">
+                                        <Card className="h-full border border-border/80 dark:border-white/5 shadow-md dark:shadow-xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl hover:bg-card dark:hover:bg-white/[0.05] hover:border-primary/40 dark:hover:border-primary/20 rounded-2xl transition-all duration-700 overflow-hidden">
+
                                             <CardContent className="p-6 space-y-6">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-1.5">
@@ -1396,7 +1522,8 @@ export default function InterviewReport() {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {reportData.technicalSkills.map((skill: Skill, i: number) => (
-                                        <Card key={i} className="border border-white/5 shadow-xl bg-card/40 backdrop-blur-3xl hover:bg-white/[0.05] hover:border-blue-500/20 rounded-2xl transition-all duration-700 overflow-hidden group/tech">
+                                        <Card key={i} className="border border-border/80 dark:border-white/5 shadow-md dark:shadow-xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl hover:bg-card dark:hover:bg-white/[0.05] hover:border-blue-500/40 dark:hover:border-blue-500/20 rounded-2xl transition-all duration-700 overflow-hidden group/tech">
+
                                             <CardContent className="p-6 space-y-6">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-1">
@@ -1458,9 +1585,10 @@ export default function InterviewReport() {
 
                         {/* Recommendation Tier */}
                         <Card className={cn(
-                            "border-2 shadow-2xl rounded-2xl overflow-hidden p-1 relative",
-                            reportData.overallScore >= 70 ? "border-emerald-500/30 bg-emerald-500/5" : "border-rose-500/30 bg-rose-500/5"
+                            "border-2 shadow-lg dark:shadow-2xl rounded-2xl overflow-hidden p-1 relative",
+                            reportData.overallScore >= 70 ? "border-emerald-500/40 dark:border-emerald-500/30 bg-emerald-500/[0.03] dark:bg-emerald-500/5" : "border-rose-500/40 dark:border-rose-500/30 bg-rose-500/[0.03] dark:bg-rose-500/5"
                         )}>
+
                             <CardContent className="p-6 sm:p-8 md:p-10 flex flex-col lg:flex-row items-center gap-6 sm:gap-10">
                                 <div className={cn(
                                     "h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-3xl flex items-center justify-center shrink-0 shadow-2xl",
@@ -1507,11 +1635,12 @@ export default function InterviewReport() {
                                 </div>
                                 <Button
                                     onClick={copyTranscriptToClipboard}
-                                    className="h-10 px-6 rounded-xl bg-muted border border-border hover:bg-muted/80 text-foreground font-bold uppercase tracking-[0.2em] text-[10px] transition-all ml-14 sm:ml-0"
+                                    className="h-10 px-6 rounded-xl bg-muted/80 dark:bg-muted border border-border/80 dark:border-border hover:bg-muted dark:hover:bg-muted/80 text-foreground font-black uppercase tracking-[0.2em] text-[10px] transition-all ml-14 sm:ml-0 shadow-sm"
                                 >
                                     <Copy className="h-3.5 w-3.5 mr-2" />
                                     Export Logs
                                 </Button>
+
                             </CardHeader>
                             <CardContent className="p-6 sm:p-8 md:p-10 space-y-8 max-h-[800px] overflow-y-auto no-scrollbar relative">
                                 <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent hidden md:block" />
@@ -1531,11 +1660,12 @@ export default function InterviewReport() {
                                                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 tabular-nums">{msg.timestamp}</span>
                                             </div>
                                             <div className={cn(
-                                                "p-4 sm:p-5 rounded-xl text-xs sm:text-sm font-bold leading-relaxed shadow-2xl relative group/msg transition-all duration-500",
+                                                "p-4 sm:p-5 rounded-xl text-xs sm:text-sm font-black leading-relaxed shadow-lg dark:shadow-2xl relative group/msg transition-all duration-500",
                                                 isAI
-                                                    ? "bg-muted/50 text-foreground rounded-tl-none border border-border hover:bg-muted/80"
-                                                    : "bg-primary text-primary-foreground rounded-tr-none shadow-primary/20 hover:scale-[1.01]"
+                                                    ? "bg-card/90 dark:bg-muted/50 text-foreground rounded-tl-none border border-border/80 dark:border-border hover:bg-card"
+                                                    : "bg-primary text-primary-foreground rounded-tr-none shadow-primary/30 dark:shadow-primary/20 hover:scale-[1.01]"
                                             )}>
+
                                                 {msg.text}
                                                 {isAI && (
                                                     <div className="absolute -left-2 -top-2 h-4 w-4 bg-primary/20 blur-md rounded-full opacity-0 group-hover/msg:opacity-100 transition-opacity" />

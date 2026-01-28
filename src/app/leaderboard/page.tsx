@@ -374,9 +374,10 @@ const Leaderboard = () => {
         </div>
 
         <Card className={cn(
-          "w-full overflow-hidden border transition-all duration-300 bg-card",
-          rank === 1 ? "border-yellow-400/50 shadow-lg shadow-yellow-500/5 ring-1 ring-yellow-500/20" : "border-border shadow-sm"
+          "w-full overflow-hidden border transition-all duration-300 bg-card/80 dark:bg-card shadow-sm dark:shadow-none",
+          rank === 1 ? "border-yellow-400/80 dark:border-yellow-400/50 shadow-lg shadow-yellow-500/10 dark:shadow-yellow-500/5 ring-1 ring-yellow-500/20" : "border-border/80 dark:border-border"
         )}>
+
           {rank === 1 && <div className="h-1 w-full bg-yellow-500" />}
 
           <CardContent className="p-6 flex flex-col items-center pt-8">
@@ -484,23 +485,24 @@ const Leaderboard = () => {
             const userScore = users.find(u => u.userId === user.id)?.bayesianScore.toFixed(0);
 
             return (
-              <Card className="flex flex-row items-center gap-6 p-4 sm:p-5 border-primary/20 bg-primary/5 shadow-sm">
+              <Card className="flex flex-row items-center gap-6 p-4 sm:p-5 border-primary/30 dark:border-primary/20 bg-primary/[0.03] dark:bg-primary/5 shadow-sm">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Rank</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Rank</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">#{userRank}</span>
+                    <span className="text-2xl font-black text-foreground">#{userRank}</span>
                     <span className="text-xs text-muted-foreground">/{users.length}</span>
                   </div>
                 </div>
                 <div className="h-8 w-px bg-border/50" />
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Score</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Score</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">{userScore}</span>
+                    <span className="text-2xl font-black text-foreground">{userScore}</span>
                     <span className="text-xs text-muted-foreground">%</span>
                   </div>
                 </div>
               </Card>
+
             );
           })()}
         </div>
@@ -540,12 +542,13 @@ const Leaderboard = () => {
             </div>
 
             {/* Filters & Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card border rounded-lg p-1.5 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card dark:bg-card/50 border border-border/80 dark:border-border rounded-xl p-1.5 mb-6 shadow-sm">
+
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search candidate..."
-                  className="pl-9 bg-transparent border-none shadow-none focus-visible:ring-0"
+                  className="pl-9 bg-muted/40 dark:bg-transparent border-none shadow-none focus-visible:ring-0 rounded-lg h-9 font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -553,7 +556,8 @@ const Leaderboard = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="h-6 w-px bg-border/60 hidden sm:block" />
                 <Select>
-                  <SelectTrigger className="w-full sm:w-[180px] border-none shadow-none bg-transparent">
+                  <SelectTrigger className="w-full sm:w-[130px] border-none shadow-none bg-muted/40 dark:bg-transparent rounded-lg h-9 font-bold text-xs">
+
                     <SelectValue placeholder="All Sectors" />
                   </SelectTrigger>
                   <SelectContent align="end">
@@ -567,18 +571,20 @@ const Leaderboard = () => {
             </div>
 
             {/* Rankings Table */}
-            <Card className="border shadow-sm overflow-hidden bg-card">
+            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm overflow-hidden bg-card dark:bg-card">
+
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="w-[80px] text-center font-bold text-xs uppercase text-muted-foreground">Rank</TableHead>
-                    <TableHead className="font-bold text-xs uppercase text-muted-foreground">Candidate</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Score</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Interviews</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Status</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-xs uppercase text-muted-foreground">Action</TableHead>
+                  <TableRow className="bg-muted/30 dark:bg-muted/40 hover:bg-muted/30 border-b border-border">
+                    <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Rank</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Candidate</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Score</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Interviews</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Status</TableHead>
+                    <TableHead className="text-right pr-6 font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Action</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {filteredUsers.map((leaderboardUser) => {
                     const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
@@ -592,10 +598,11 @@ const Leaderboard = () => {
                       <TableRow
                         key={leaderboardUser.userId}
                         className={cn(
-                          "cursor-pointer transition-colors",
-                          isCurrentUser && "bg-muted/30 hover:bg-muted/40"
+                          "cursor-pointer transition-colors border-b border-border/40 last:border-0",
+                          isCurrentUser ? "bg-primary/[0.03] dark:bg-muted/30 hover:bg-primary/5 dark:hover:bg-muted/40" : "hover:bg-muted/20"
                         )}
                       >
+
                         <TableCell className="text-center py-4">
                           <div className={cn(
                             "inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold",
@@ -670,35 +677,36 @@ const Leaderboard = () => {
 
         {/* Footer Info */}
         {!loading && users.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <Card className="p-6 border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
                   <Award className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm mb-1">Ranking System</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-bold text-sm mb-1 text-foreground">Ranking System</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">
                     Scores are calculated using a Bayesian average that balances your raw interview performance with your consistency over time (logarithmic scale).
                   </p>
                 </div>
               </div>
             </Card>
-            <Card className="p-6">
+            <Card className="p-6 border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
                   <Star className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">
-                    &quot;High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality.&quot;
+                  <h4 className="font-bold text-sm mb-1 text-foreground">Pro Tip</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed italic font-medium">
+                    &quot;High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality over raw volume.&quot;
                   </p>
                 </div>
               </div>
             </Card>
           </div>
         )}
+
 
         {/* Share Modal */}
         <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
