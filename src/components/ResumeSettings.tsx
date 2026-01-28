@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
     FileText,
-    Upload,
     Trash2,
     Loader2,
     CheckCircle2,
@@ -36,6 +35,7 @@ export function ResumeManager({ userId }: ResumeManagerProps) {
 
     useEffect(() => {
         loadResumeData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
     const loadResumeData = async () => {
@@ -43,12 +43,12 @@ export function ResumeManager({ userId }: ResumeManagerProps) {
             setLoading(true);
             const profile = await profileService.getProfile(userId);
             if (profile) {
-                // Cast to any because the types might not be updated yet
-                const data = profile as any;
+                // Cast to Record<string, unknown> for safe access to resume fields
+                const data = profile as Record<string, unknown>;
                 setResumeData({
-                    url: data.resume_url || null,
-                    updatedAt: data.resume_updated_at || null,
-                    contentPreview: data.resume_content ? data.resume_content.substring(0, 200) + "..." : null
+                    url: (data.resume_url as string) || null,
+                    updatedAt: (data.resume_updated_at as string) || null,
+                    contentPreview: data.resume_content ? (data.resume_content as string).substring(0, 200) + "..." : null
                 });
             }
         } catch (error) {
@@ -105,7 +105,7 @@ export function ResumeManager({ userId }: ResumeManagerProps) {
                 resume_url: publicUrl,
                 resume_content: extractedText,
                 resume_updated_at: new Date().toISOString()
-            } as any);
+            } as Record<string, unknown>);
 
             setResumeData({
                 url: publicUrl,
@@ -114,9 +114,9 @@ export function ResumeManager({ userId }: ResumeManagerProps) {
             });
 
             toast.success("Resume uploaded and analyzed successfully!");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Resume upload error:", error);
-            toast.error(error.message || "Failed to upload resume");
+            toast.error((error instanceof Error ? error.message : null) || "Failed to upload resume");
         } finally {
             setUploading(false);
             // Reset input
@@ -139,12 +139,13 @@ export function ResumeManager({ userId }: ResumeManagerProps) {
                 resume_url: null,
                 resume_content: null,
                 resume_updated_at: null
-            } as any);
+            } as Record<string, unknown>);
 
             setResumeData({ url: null, updatedAt: null, contentPreview: null });
             toast.success("Resume removed successfully");
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Failed to remove resume");
+            console.error("Resume deletion error:", error);
         } finally {
             setLoading(false);
         }

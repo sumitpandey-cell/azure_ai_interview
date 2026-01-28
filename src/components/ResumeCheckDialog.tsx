@@ -49,12 +49,13 @@ export function ResumeCheckDialog({
         if (isOpen) {
             checkResume();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, userId]);
 
     const checkResume = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from("profiles")
                 .select("resume_url, resume_updated_at")
                 .eq("id", userId)
@@ -102,7 +103,7 @@ export function ResumeCheckDialog({
                 resume_url: publicUrl,
                 resume_content: extractedText,
                 resume_updated_at: new Date().toISOString()
-            } as any);
+            } as Record<string, unknown>);
 
             setResumeData({
                 url: publicUrl,
@@ -110,8 +111,8 @@ export function ResumeCheckDialog({
             });
 
             toast.success("Resume uploaded! Your interview will now be personalized.");
-        } catch (error: any) {
-            toast.error("Upload failed: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Upload failed: " + (error instanceof Error ? error.message : String(error)));
         } finally {
             setUploading(false);
         }

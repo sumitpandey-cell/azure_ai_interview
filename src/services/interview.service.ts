@@ -737,13 +737,19 @@ export const interviewService = {
                 .eq('id', session.user_id)
                 .single();
 
-            const sessionData = {
+            const sessionData: {
+                id: string;
+                interview_type: string;
+                position: string;
+                config: Record<string, unknown>;
+                resumeContent: string | null;
+            } = {
                 id: sessionId,
                 interview_type: session.interview_type,
                 position: session.position,
                 config: (session.config as unknown as Record<string, unknown>) || {},
-                resumeContent: profile?.resume_content || null
-            } as any;
+                resumeContent: (profile?.resume_content as string) || null
+            };
 
             const feedback = await generateFeedback(transcripts, sessionData);
             if (onProgress) onProgress(80, "Finalizing report...");

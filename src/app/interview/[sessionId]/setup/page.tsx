@@ -145,6 +145,7 @@ export default function InterviewSetup() {
         if (user?.id) {
             checkResume();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const toggleMic = async () => {
