@@ -731,12 +731,19 @@ export const interviewService = {
             if (onProgress) onProgress(30, "Analyzing interview content...");
             const { generateFeedback } = await import('@/lib/gemini-feedback');
 
+            const { data: profile } = await client
+                .from('profiles')
+                .select('resume_content')
+                .eq('id', session.user_id)
+                .single();
+
             const sessionData = {
                 id: sessionId,
                 interview_type: session.interview_type,
                 position: session.position,
                 config: (session.config as unknown as Record<string, unknown>) || {},
-            } as unknown as Parameters<typeof generateFeedback>[1];
+                resumeContent: profile?.resume_content || null
+            } as any;
 
             const feedback = await generateFeedback(transcripts, sessionData);
             if (onProgress) onProgress(80, "Finalizing report...");

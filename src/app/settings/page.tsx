@@ -20,7 +20,8 @@ import {
     Sparkles,
     ExternalLink,
     Copy,
-    Loader2
+    Loader2,
+    FileText
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
@@ -34,6 +35,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { getPreferredLanguage, type LanguageOption } from "@/lib/language-config";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { profileService } from "@/services/profile.service";
+import { ResumeManager } from "@/components/ResumeSettings";
 
 import { useRouter } from "next/navigation";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -43,7 +45,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { ArrowUpRight, Receipt } from "lucide-react";
 import { format } from "date-fns";
 
-type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
+type SettingsSection = "general" | "resume" | "appearance" | "notifications" | "security" | "billing";
 
 type TransactionItem = Tables<"subscriptions"> & { plans?: { name: string } | null };
 
@@ -351,6 +353,7 @@ export default function Settings() {
 
     const tabs = [
         { id: "general", label: "General", icon: User, desc: "Personal info & profile" },
+        { id: "resume", label: "Resume", icon: FileText, desc: "AI Context & experience" },
         { id: "appearance", label: "Appearance", icon: Palette, desc: "Theme & customization" },
         { id: "notifications", label: "Notifications", icon: Bell, desc: "Alerts & updates" },
         { id: "security", label: "Security", icon: Shield, desc: "Password & privacy" },
@@ -526,6 +529,12 @@ export default function Settings() {
                             </Card>
 
 
+                        </div>
+                    )}
+
+                    {activeSection === "resume" && user?.id && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <ResumeManager userId={user.id} />
                         </div>
                     )}
 

@@ -54,97 +54,70 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-10 w-10 bg-muted/50 backdrop-blur-xl rounded-full border border-border/50 hover:bg-muted/80 transition-all duration-500 group">
-          <Bell className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border border-border/40 hover:bg-accent transition-colors active:scale-95 group relative">
+          <Bell className="h-4 w-4 text-foreground group-hover:scale-110 transition-transform" />
           {unreadCount > 0 && (
-            <div className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40 opacity-75"></span>
-              <Badge
-                variant="destructive"
-                className="relative h-3.5 w-3.5 flex items-center justify-center p-0 text-[8px] font-black border-2 border-background shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-              >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Badge>
-            </div>
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border-2 border-background animate-pulse" />
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 bg-card/80 backdrop-blur-3xl border-border/50 rounded-2xl p-0 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-        <div className="flex items-center justify-between p-4 bg-muted/30">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Neural Alerts</h3>
+      <DropdownMenuContent align="end" className="w-80 p-0 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-muted/30">
+          <h3 className="text-xs font-bold text-foreground">Notifications</h3>
           {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={handleMarkAllAsRead}
-              className="h-7 px-3 text-[9px] font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary rounded-lg"
+              className="text-[10px] font-bold text-primary hover:underline"
             >
-              <Check className="h-3 w-3 mr-1.5" />
-              Clear Protocol
-            </Button>
+              Mark all as read
+            </button>
           )}
         </div>
-        <DropdownMenuSeparator className="m-0 bg-white/5" />
 
-        <ScrollArea className="max-h-96">
+        <ScrollArea className="max-h-80">
           {isLoading ? (
-            <div className="p-8 text-center space-y-3">
+            <div className="p-8 text-center">
               <div className="h-4 w-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Scanning Network...</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-12 text-center space-y-3">
-              <Bell className="h-8 w-8 text-muted-foreground/20 mx-auto" />
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">No Active Signals</p>
+            <div className="p-12 text-center text-muted-foreground">
+              <p className="text-xs font-medium">No new notifications</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border/40">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 transition-all duration-300 relative group/item ${!notification.is_read ? 'bg-primary/[0.03]' : 'hover:bg-white/[0.02]'
-                    }`}
+                  className={`p-4 transition-colors relative group/item ${!notification.is_read ? 'bg-primary/5' : 'hover:bg-accent/50'}`}
                 >
-                  {!notification.is_read && (
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary shadow-[2px_0_8px_rgba(168,85,247,0.4)]" />
-                  )}
                   <div className="flex items-start gap-3">
-                    <div className="mt-1 h-7 w-7 rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center text-xs shadow-inner shrink-0 leading-none">
+                    <div className="mt-0.5 text-lg shrink-0">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className={`text-[11px] font-black uppercase tracking-tight leading-tight mb-1 ${!notification.is_read ? 'text-foreground' : 'text-muted-foreground'}`}>
-                        {notification.title}
-                      </h4>
-                      <p className="text-[10px] font-medium text-muted-foreground/80 leading-relaxed line-clamp-2">
+                      <h4 className="text-xs font-bold text-foreground mb-1 leading-tight">{notification.title}</h4>
+                      <p className="text-[11px] font-medium text-muted-foreground leading-snug line-clamp-2">
                         {notification.message}
                       </p>
-                      <div className="flex items-center gap-2 mt-2 opacity-60">
-                        <div className="h-1 w-1 rounded-full bg-white/20" />
-                        <p className="text-[9px] font-bold uppercase tracking-tighter">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
+                      <p className="text-[9px] font-medium text-muted-foreground/60 mt-2 uppercase">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </p>
                     </div>
                     <div className="flex flex-col gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                       {!notification.is_read && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 rounded-lg hover:bg-primary/20 hover:text-primary transition-all"
+                        <button
+                          className="p-1 rounded-md hover:bg-accent text-primary transition-colors"
                           onClick={() => handleMarkAsRead(notification.id)}
                         >
-                          <Check className="h-3.5 w-3.5" />
-                        </Button>
+                          <Check className="h-3 w-3" />
+                        </button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all"
+                      <button
+                        className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                         onClick={() => handleDelete(notification.id)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                 </div>

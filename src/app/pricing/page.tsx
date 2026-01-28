@@ -106,7 +106,7 @@ function PricingContent() {
     }, []);
 
     const handleSubscribe = async (plan: Plan) => {
-        if (plan.name === "Free") {
+        if (plan.name === "Free" || plan.name === "Free Trial" || plan.price === 0) {
             if (!user) {
                 window.location.href = "/auth?source=pricing";
                 return;
@@ -198,7 +198,7 @@ function PricingContent() {
                                     popular: false
                                 };
 
-                                const isFree = plan.name === "Free";
+                                const isFree = plan.name === "Free" || plan.name === "Free Trial" || plan.price === 0;
                                 const minutes = Math.floor(plan.plan_seconds / 60);
 
                                 return (
@@ -262,11 +262,10 @@ function PricingContent() {
                                                         : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:scale-[1.02]'
                                                 )}
                                                 onClick={() => handleSubscribe(plan)}
-                                                disabled={!!subscribingPlanId}
+                                                disabled={!!subscribingPlanId || isFree}
                                             >
                                                 <span className="relative z-10 flex items-center justify-center gap-2">
-                                                    {subscribingPlanId === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                                                    {isFree ? "Start Now" : `Purchase ${plan.name} Credits`}
+                                                    {isFree ? "Free Plan" : "Buy Now"} {subscribingPlanId === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
                                                 </span>
                                             </Button>
                                         </CardFooter>

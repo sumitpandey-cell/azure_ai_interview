@@ -306,4 +306,6 @@ Total: ~700ms (30% faster)
 [Mic Request (500ms) + Token Fetch (300ms)] → Connect (200ms)
 Total: ~700ms (30% faster)
 ```
+source /home/sumit/Documents/Agent/.venv/bin/activate
+uv run python src/agent.py dev
 

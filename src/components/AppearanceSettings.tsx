@@ -104,47 +104,36 @@ export function AppearanceSettings() {
                                 key={theme.id}
                                 onClick={() => handleThemeChange(theme.id)}
                                 className={cn(
-                                    "group relative flex flex-col items-start gap-2.5 sm:gap-3.5 p-3 sm:p-5 rounded-xl sm:rounded-xl border-2 transition-all duration-500 text-left",
+                                    "group relative flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 text-left",
                                     activeTheme === theme.id
-                                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10 scale-[1.02]"
-                                        : "border-border/30 bg-muted/20 hover:border-border hover:bg-muted/40 hover:-translate-y-0.5"
+                                        ? "border-primary bg-primary/5 shadow-sm"
+                                        : "border-border/40 bg-card hover:border-border hover:bg-accent/50"
                                 )}
                             >
-                                <div className="flex items-center justify-between w-full">
-                                    <div
-                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl shadow-inner flex items-center justify-center transform group-hover:rotate-6 transition-all duration-500 border-2 border-white/10"
-                                        style={{
-                                            backgroundColor: theme.color,
-                                            boxShadow: `0 8px 20px ${theme.secondary}`
-                                        }}
-                                    >
-                                        {activeTheme === theme.id ? (
-                                            <Check className="h-5 w-5 sm:h-6 sm:w-6 text-white drop-shadow-md animate-in zoom-in duration-300" />
-                                        ) : (
-                                            <div className="h-2.5 w-2.5 rounded-full bg-white/40" />
-                                        )}
-                                    </div>
-
+                                <div
+                                    className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border border-white/10 shadow-sm transition-transform group-hover:scale-105"
+                                    style={{
+                                        backgroundColor: theme.color,
+                                    }}
+                                >
                                     {activeTheme === theme.id && (
-                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
-                                            <Sparkles className="h-2.5 w-2.5" />
-                                            Active
-                                        </div>
+                                        <Check className="h-5 w-5 text-white" />
                                     )}
                                 </div>
 
-                                <div className="space-y-0.5">
-                                    <span className={cn(
-                                        "text-sm sm:text-base font-bold tracking-tight block",
-                                        activeTheme === theme.id ? "text-primary" : "text-foreground"
-                                    )}>
-                                        {theme.name}
-                                    </span>
-                                    <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold truncate text-foreground">
+                                            {theme.name}
+                                        </span>
+                                        {activeTheme === theme.id && (
+                                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] font-medium text-muted-foreground truncate">
                                         {theme.desc}
-                                    </span>
+                                    </p>
                                 </div>
-
                                 {activeTheme === theme.id && (
                                     <div className="absolute top-3 right-3 flex h-1.5 w-1.5">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -171,7 +160,7 @@ export function AppearanceSettings() {
                     </div>
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     );
 }
 

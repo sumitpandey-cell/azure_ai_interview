@@ -30,6 +30,7 @@ export interface InterviewSessionData {
             experienceLevel: string;
         };
     };
+    resumeContent?: string | null;
 }
 
 export interface FeedbackData {
@@ -247,6 +248,7 @@ export async function generateFeedback(
         `\n\nCOMPANY CONTEXT: This interview was conducted for ${config.companyName || config.companyInterviewConfig?.companyName} for the role of ${config.role || config.companyInterviewConfig?.role}. Experience level expected: ${config.experienceLevel || config.companyInterviewConfig?.experienceLevel}.` : '';
 
     const jdContext = jobDescription ? `\n\nJOB DESCRIPTION:\n${jobDescription}` : '';
+    const resumeContext = sessionData.resumeContent ? `\n\nCANDIDATE RESUME:\n${sessionData.resumeContent}` : '';
 
     // Analyze interview length before processing
     const lengthAnalysis = analyzeInterviewLength(transcript);
@@ -289,7 +291,7 @@ export async function generateFeedback(
     // difficultyContext was defined but never used
 
     const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
-${skillsContext}${companyContext}${jdContext}
+${skillsContext}${companyContext}${jdContext}${resumeContext}
 
 TRANSCRIPT:
 ${transcriptText}
@@ -381,7 +383,8 @@ OUTPUT (JSON only):
 MANDATORY FEATURE: 'comparisons'
 Identify 3-5 most impactful exchanges where the candidate's answer was weak or could be significantly improved. For EACH, provide a gold-standard 'eliteAnswer'. This is the most valued part of the report.
 
-Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.`;
+Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.
+Compare their answers against their resume claims. If they claim expertise in a skill but struggle during the interview, highlight this discrepancy.`;
 
     // Validate API key is available
     if (!API_KEY) {

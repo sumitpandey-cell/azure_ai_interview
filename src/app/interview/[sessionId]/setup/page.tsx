@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
+import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card, CardContent } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -65,6 +66,7 @@ export default function InterviewSetup() {
     const [showTimeWarning, setShowTimeWarning] = useState(false);
     const { allowed, remaining_seconds, loading: subscriptionLoading } = useSubscription();
     const { currentSession, setCurrentSession } = useInterviewStore();
+    const [hasResume, setHasResume] = useState(false);
 
     useEffect(() => {
         if (sessionId) {
@@ -130,6 +132,20 @@ export default function InterviewSetup() {
             setFetchingSession(false);
         }
     };
+
+    const checkResume = async () => {
+        if (!user?.id) return;
+        const { data: profile } = await supabase.from('profiles').select('resume_url').eq('id', user.id).single();
+        if (profile?.resume_url) {
+            setHasResume(true);
+        }
+    };
+
+    useEffect(() => {
+        if (user?.id) {
+            checkResume();
+        }
+    }, [user]);
 
     const toggleMic = async () => {
         if (!isMicOn) {
@@ -561,6 +577,17 @@ export default function InterviewSetup() {
                                                     </span>
                                                 ))}
                                             </div>
+                                        </div>
+                                    )}
+                                    {hasResume && (
+                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-emerald-500/5 border border-emerald-500/20 group/resume">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400 group-hover/resume:text-emerald-500 transition-colors uppercase tracking-widest">Resume Context</span>
+                                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                                Your professional experience from your resume will be shared with the AI for a personalized interview.
+                                            </p>
                                         </div>
                                     )}
                                 </div>

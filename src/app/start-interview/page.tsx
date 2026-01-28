@@ -29,8 +29,9 @@ import { Label } from "@/components/ui/label";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2, FileText } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
+import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
 
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -103,6 +104,8 @@ function StartInterviewContent() {
     const { setCurrentSession } = useInterviewStore();
     const [isParsing, setIsParsing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showResumeCheck, setShowResumeCheck] = useState(false);
+    const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -239,12 +242,19 @@ function StartInterviewContent() {
                 return;
             }
 
-            await executeStartInterview(values);
+            setPendingValues(values);
+            setShowResumeCheck(true);
         } catch (error) {
             console.error("Error in onSubmit:", error);
-            toast.error("Failed to start interview");
+            toast.error("Failed to process request");
             setIsLoading(false);
         }
+    };
+
+    const handleResumeContinue = async () => {
+        if (!pendingValues) return;
+        setShowResumeCheck(false);
+        await executeStartInterview(pendingValues);
     };
 
 
@@ -859,6 +869,15 @@ function StartInterviewContent() {
                     </CardContent>
                 </Card>
             </div >
+
+            {user?.id && (
+                <ResumeCheckDialog
+                    isOpen={showResumeCheck}
+                    onOpenChange={setShowResumeCheck}
+                    userId={user.id}
+                    onContinue={handleResumeContinue}
+                />
+            )}
         </DashboardLayout >
     );
 }

@@ -75,15 +75,30 @@ export async function GET(request: Request) {
         }
       );
 
-      // Fetch full session data
+      // Fetch session data
       const { data: session, error } = await supabase
         .from('interview_sessions')
         .select('*')
         .eq('id', sessionId)
         .single();
 
+
+      // Fetch resume content separately
+      let resumeContent: string | null = null;
+      if (session && !error && session.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('resume_content')
+          .eq('id', session.user_id)
+          .single();
+
+        resumeContent = profile?.resume_content || null;
+
+      }
+
       if (session && !error) {
         const config = (typeof session.config === 'object' && session.config !== null ? session.config : {}) as SessionConfig;
+
 
         if (config.selectedVoice) {
           const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
@@ -111,8 +126,11 @@ export async function GET(request: Request) {
             : (config.experienceLevel || 'Mid'),
           skills: config.skills || [],
           difficulty: config.difficulty || 'Intermediate',
-          duration: config.duration || 30
+          duration: config.duration || 30,
+          resumeContent: resumeContent
         };
+
+
 
         const companyId = config.companyInterviewConfig?.companyId || config.companyInterviewConfig?.companyTemplateId;
         if (isCompanyInterview && companyId) {
@@ -127,6 +145,8 @@ export async function GET(request: Request) {
             sessionContext.isCompanySpecific = true;
           }
         }
+      } else {
+        console.log('⚠️ [TOKEN_DEBUG] No session found or error occurred:', error);
       }
     }
 
@@ -162,18 +182,22 @@ export async function GET(request: Request) {
     }
 
     const ttl = 3600; // 1 hour token validity
+
+    const tokenMetadata = {
+      selectedVoice,
+      selectedAvatar,
+      sessionId,
+      sessionContext
+    };
+
+
     const token = new AccessToken(
       lkKey!,
       lkSecret!,
       {
         identity: candidateIdentity,
         ttl: ttl,
-        metadata: JSON.stringify({
-          selectedVoice,
-          selectedAvatar,
-          sessionId,
-          sessionContext
-        })
+        metadata: JSON.stringify(tokenMetadata)
       }
     );
 

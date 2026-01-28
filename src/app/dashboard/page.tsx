@@ -276,38 +276,38 @@ function DashboardContent() {
             <StreakIndicator streak={currentStreak} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="group flex items-center gap-2 pl-1 pr-2 py-1 bg-card/50 hover:bg-card border border-border/50 rounded-full transition-all active:scale-95">
-                  <div className="relative">
-                    <Avatar className="h-8 w-8 border-2 border-primary/20 bg-muted">
-                      {authLoading ? (
-                        <div className="h-full w-full animate-pulse bg-muted/50" />
-                      ) : (
-                        <>
-                          <AvatarImage src={getAvatarUrl(
-                            userMetadata?.avatar_url,
-                            user?.id || 'user',
-                            'avataaars',
-                            null,
-                            userMetadata?.gender
-                          )} />
-                          <AvatarFallback className="text-xs font-medium bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full" />
-                  </div>
+                <button className="flex items-center justify-center h-9 w-9 rounded-full border border-border/40 hover:bg-accent transition-colors active:scale-95 overflow-hidden">
+                  <Avatar className="h-full w-full">
+                    {authLoading ? (
+                      <Skeleton className="h-full w-full" />
+                    ) : (
+                      <>
+                        <AvatarImage src={getAvatarUrl(
+                          userMetadata?.avatar_url,
+                          user?.id || 'user',
+                          'avataaars',
+                          null,
+                          userMetadata?.gender
+                        )} />
+                        <AvatarFallback className="text-xs font-bold">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                      </>
+                    )}
+                  </Avatar>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
-                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">Account</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-border/50" />
-                <DropdownMenuItem onClick={() => router.push('/settings')} className="text-sm font-medium py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
-                  <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
-                  Settings
+              <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="px-3 py-2 mb-1 border-b border-border/40">
+                  <p className="text-sm font-bold truncate text-foreground">{userMetadata?.full_name || "User"}</p>
+                  <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>
+                </div>
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-sm font-medium py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
-                  <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                  Sign Out
+                <DropdownMenuSeparator className="my-1 border-border/40" />
+                <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -349,53 +349,44 @@ function DashboardContent() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="group flex items-center gap-3 pl-1 pr-4 py-1 hover:bg-muted/50 border border-transparent hover:border-border/40 rounded-full transition-all duration-300">
-                    <div className="relative">
-                      <Avatar className="h-9 w-9 border border-border/50 shadow-sm relative z-10 transition-transform group-hover:scale-105 bg-muted">
-                        {authLoading ? (
-                          <div className="h-full w-full animate-pulse bg-muted/50" />
-                        ) : (
-                          <>
-                            <AvatarImage src={getAvatarUrl(
-                              userMetadata?.avatar_url,
-                              user?.id || 'user',
-                              'avataaars',
-                              null,
-                              userMetadata?.gender
-                            )} />
-                            <AvatarFallback className="text-[10px] font-black text-foreground bg-primary/10">{getInitials(userMetadata?.full_name)}</AvatarFallback>
-                          </>
-                        )}
-                      </Avatar>
-                      <div className="absolute 0 bottom-0 right-0 h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full z-20" />
-                    </div>
-
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-sm font-bold text-foreground leading-none group-hover:text-primary transition-colors min-w-[60px]">
-                        {authLoading ? (
-                          <Skeleton className="h-3 w-20" />
-                        ) : (
-                          userMetadata?.full_name?.split(' ')[0] || "User"
-                        )}
+                  <button className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 hover:bg-accent border border-border/40 rounded-full transition-all duration-300 group">
+                    <Avatar className="h-8 w-8 border border-border/40 shadow-sm transition-transform group-hover:scale-105">
+                      {authLoading ? (
+                        <Skeleton className="h-full w-full" />
+                      ) : (
+                        <>
+                          <AvatarImage src={getAvatarUrl(
+                            userMetadata?.avatar_url,
+                            user?.id || 'user',
+                            'avataaars',
+                            null,
+                            userMetadata?.gender
+                          )} />
+                          <AvatarFallback className="text-xs font-bold">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                        </>
+                      )}
+                    </Avatar>
+                    <div className="flex flex-col items-start leading-none">
+                      <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                        {userMetadata?.full_name?.split(' ')[0] || "User"}
                       </span>
-                      <span className="text-[10px] font-medium text-muted-foreground/80">
-                        {authLoading ? <Skeleton className="h-2 w-12" /> : "Verified User"}
-                      </span>
+                      <span className="text-[10px] font-medium text-muted-foreground">Account</span>
                     </div>
-
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-3xl border-border/50 rounded-2xl p-2 shadow-2xl">
-                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border/50" />
-                  <DropdownMenuItem onClick={() => router.push('/settings')} className="text-sm font-medium py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 group">
-                    <Settings className="mr-3 h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
-                    Settings
+                <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                  <div className="px-3 py-2 mb-1 border-b border-border/40">
+                    <p className="text-sm font-bold truncate text-foreground">{userMetadata?.full_name || "User"}</p>
+                    <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuItem onClick={() => router.push('/settings')} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="text-sm font-medium py-3 rounded-xl focus:bg-destructive/10 focus:text-destructive cursor-pointer group">
-                    <LogOut className="mr-3 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                    Sign Out
+                  <DropdownMenuSeparator className="my-1 border-border/40" />
+                  <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive text-destructive">
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

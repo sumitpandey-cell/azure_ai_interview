@@ -365,6 +365,9 @@ export type Database = {
           is_active: boolean
           deactivated_at: string | null
           deactivation_reason: string | null
+          resume_url: string | null
+          resume_content: string | null
+          resume_updated_at: string | null
         }
         Insert: {
           id: string
@@ -378,6 +381,9 @@ export type Database = {
           is_public?: boolean
           profile_slug?: string | null
           balance_seconds?: number
+          resume_url?: string | null
+          resume_content?: string | null
+          resume_updated_at?: string | null
         }
         Update: {
           id?: string
@@ -391,6 +397,9 @@ export type Database = {
           is_public?: boolean
           profile_slug?: string | null
           balance_seconds?: number
+          resume_url?: string | null
+          resume_content?: string | null
+          resume_updated_at?: string | null
         }
         Relationships: []
       }

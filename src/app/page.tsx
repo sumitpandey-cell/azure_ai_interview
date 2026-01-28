@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TransitionButton } from "@/components/TransitionButton";
 import { PublicHeader } from "@/components/PublicHeader";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -46,12 +48,21 @@ const SectionWrapper = ({ children, className, id }: { children: React.ReactNode
 
 export default function Landing() {
   const [mounted, setMounted] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (mounted && !loading && user) {
+      router.push("/dashboard");
+    }
+  }, [mounted, loading, user, router]);
 
-  if (!mounted) {
+
+  if (!mounted || loading || user) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
         {/* Simple loader or just the background to prevent flash */}
