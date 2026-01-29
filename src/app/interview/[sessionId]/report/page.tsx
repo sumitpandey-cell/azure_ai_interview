@@ -8,7 +8,7 @@ import { formatDuration } from "@/lib/format-duration";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Briefcase, Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, Code, RefreshCw, AlertTriangle, Target, Shield, Award, Activity, Sparkles, Star, Timer, Calendar, XCircle, Download, CheckCircle2 } from "lucide-react";
+import { Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, Code, RefreshCw, AlertTriangle, Target, Shield, Award, Activity, Sparkles, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, PolarRadiusAxis } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -320,23 +320,23 @@ export default function InterviewReport() {
             <DashboardLayout>
                 <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
                     {/* Background Glow */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
 
                     <div className="max-w-xl w-full relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                        <Card className="border-none shadow-2xl bg-[#13151b]/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500/50 to-orange-500/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]" />
+                        <Card className="border-none shadow-2xl bg-card/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500/50 to-orange-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
 
                             <CardContent className="p-8 sm:p-12 text-center space-y-10">
                                 {/* Animated Warning Icon */}
                                 <div className="relative mx-auto h-24 w-24 flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-amber-500/20 rounded-3xl blur-2xl animate-pulse" />
-                                    <div className="relative h-20 w-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-2xl shadow-amber-500/20">
+                                    <div className="absolute inset-0 bg-amber-500/10 rounded-3xl blur-2xl animate-pulse" />
+                                    <div className="relative h-20 w-20 rounded-3xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-center shadow-2xl shadow-amber-500/10">
                                         <AlertTriangle className="h-10 w-10 text-amber-500" />
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-500 text-[10px] font-bold uppercase tracking-[0.2em]">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-[0.2em]">
                                         Session Terminated
                                     </div>
                                     <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tighter uppercase leading-none">
@@ -353,7 +353,7 @@ export default function InterviewReport() {
                                         { label: "Minimum Duration", val: `${Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60)} Minutes`, active: (session.duration_seconds || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS },
                                         { label: "Conversation Depth", val: `${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} Responses`, active: ((session.transcript as Array<{ speaker: string }>)?.filter(m => !['ai', 'agent'].includes(m.speaker?.toLowerCase())).length || 0) >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS }
                                     ].map((req, i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border transition-all hover:bg-muted/50">
+                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50 transition-all hover:bg-muted/50">
                                             <div className="flex flex-col gap-0.5">
                                                 <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest">{req.label}</span>
                                                 <span className={`text-xs font-bold ${req.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>{req.val}</span>
@@ -366,7 +366,7 @@ export default function InterviewReport() {
                                 <div className="flex flex-col gap-4">
                                     <Button
                                         onClick={() => router.push("/start-interview")}
-                                        className="w-full h-16 bg-white text-black hover:bg-slate-200 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
+                                        className="w-full h-16 bg-primary text-primary-foreground hover:opacity-90 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
                                     >
                                         <Bot className="mr-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
                                         Start New Interview
@@ -374,7 +374,7 @@ export default function InterviewReport() {
                                     <Button
                                         variant="ghost"
                                         onClick={() => router.push("/dashboard")}
-                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors"
+                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-all"
                                     >
                                         <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                                         Return to Dashboard
@@ -390,12 +390,12 @@ export default function InterviewReport() {
                                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Session Transcript</h3>
                                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{session.transcript.length} Messages Exchanged</span>
                                 </div>
-                                <div className="bg-muted/40 backdrop-blur-xl rounded-3xl border border-border p-6 max-h-60 overflow-y-auto custom-scrollbar">
+                                <div className="bg-card/40 backdrop-blur-xl rounded-3xl border border-border p-6 max-h-60 overflow-y-auto custom-scrollbar shadow-sm">
                                     <div className="space-y-4">
                                         {(session.transcript as Array<TranscriptMessage>).map((msg: TranscriptMessage, idx: number) => (
                                             <div key={idx} className="flex gap-4 group">
                                                 <div className={`text-[9px] font-bold uppercase tracking-widest shrink-0 w-12 ${['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'text-primary' : 'text-muted-foreground'}`}>
-                                                    {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'Candidate'}
+                                                    {['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase()) ? 'AI' : 'You'}
                                                 </div>
                                                 <p className="text-xs text-foreground/80 font-bold leading-relaxed group-hover:text-foreground transition-colors">
                                                     {msg.text}
@@ -518,40 +518,36 @@ export default function InterviewReport() {
     if (isInProgress) {
         return (
             <DashboardLayout>
-                <div className="space-y-6 overflow-x-hidden max-w-full">
-                    {/* Header Section */}
-                    <Card className="border-none shadow-sm bg-card">
-                        <CardContent className="p-4 md:p-6 flex flex-col gap-4">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
-                                <div className="flex items-center gap-4 min-w-0 flex-1">
-                                    <div className="min-w-0 flex-1">
-                                        <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{userMetadata?.full_name || "Candidate"}</h1>
-                                        <p className="text-muted-foreground text-base md:text-lg truncate">{session.position}</p>
+                <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-yellow-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+                    <div className="max-w-xl w-full relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <Card className="border-none shadow-2xl bg-card/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500/50 to-amber-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]" />
+
+                            <CardContent className="p-8 sm:p-12 text-center space-y-10">
+                                {/* Animated Clock Icon */}
+                                <div className="relative mx-auto h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-yellow-500/10 rounded-3xl blur-2xl animate-pulse" />
+                                    <div className="relative h-20 w-20 rounded-3xl bg-yellow-500/5 border border-yellow-500/20 flex items-center justify-center shadow-2xl shadow-yellow-500/10">
+                                        <Clock className="h-10 w-10 text-yellow-500" />
                                     </div>
                                 </div>
 
-                                {/* Status badge */}
-                                <div className="flex-shrink-0">
-                                    <div className="text-sm px-3 py-1 rounded-full bg-yellow-50 text-yellow-800 font-medium whitespace-nowrap">In Progress</div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Interview Incomplete Message */}
-                    <Card className="border-yellow-200 bg-yellow-50">
-                        <CardContent className="p-8 text-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="h-16 w-16 rounded-full bg-yellow-100 flex items-center justify-center">
-                                    <Clock className="h-8 w-8 text-yellow-600" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold text-foreground mb-2">Interview In Progress</h2>
-                                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                        This interview hasn&apos;t been completed yet. Continue your interview to receive detailed feedback and analysis.
+                                <div className="space-y-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+                                        Session In Progress
+                                    </div>
+                                    <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tighter uppercase leading-none">
+                                        Interview <span className="text-yellow-500">Incomplete</span>
+                                    </h2>
+                                    <p className="text-muted-foreground font-bold text-sm tracking-wide leading-relaxed max-w-sm mx-auto uppercase opacity-80">
+                                        You haven&apos;t finished this interview yet. Complete it to unlock your detailed performance report and AI feedback.
                                     </p>
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-3">
+
+                                <div className="flex flex-col gap-4">
                                     <Button
                                         onClick={() => {
                                             if (sessionId) {
@@ -559,58 +555,35 @@ export default function InterviewReport() {
                                                 router.push(`/interview/${sessionId}/${stage}`);
                                             }
                                         }}
-                                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                                        className="w-full h-16 bg-primary text-primary-foreground hover:opacity-90 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
                                     >
-                                        <Play className="mr-2 h-4 w-4" />
+                                        <Play className="mr-2 h-4 w-4 fill-current group-hover:scale-110 transition-transform" />
                                         Continue Interview
                                     </Button>
                                     <Button
-                                        variant="outline"
-                                        onClick={() => router.push('/dashboard')}
+                                        variant="ghost"
+                                        onClick={() => router.push("/dashboard")}
+                                        className="group h-12 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-all"
                                     >
-                                        Back to Dashboard
+                                        <ArrowRight className="mr-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                        Return to Dashboard
                                     </Button>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
 
-                    {/* Interview Details */}
-                    <Card className="border-none shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-lg font-bold text-foreground">Interview Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between text-sm gap-2">
-                                <div className="flex items-center gap-2 text-muted-foreground flex-shrink-0">
-                                    <User className="h-4 w-4" />
-                                    Candidate:
-                                </div>
-                                <span className="font-medium text-foreground truncate">{userMetadata?.full_name || "Candidate"}</span>
+                        {/* Session Progress Info */}
+                        <div className="mt-8 grid grid-cols-2 gap-4">
+                            <div className="bg-card/40 backdrop-blur-xl rounded-2xl border border-border/50 p-4 shadow-sm flex flex-col gap-1">
+                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Position</span>
+                                <span className="text-xs font-bold text-foreground truncate">{session.position}</span>
                             </div>
-                            <div className="flex items-center justify-between text-sm gap-2">
-                                <div className="flex items-center gap-2 text-muted-foreground flex-shrink-0">
-                                    <Calendar className="h-4 w-4" />
-                                    Started:
-                                </div>
-                                <span className="font-medium text-foreground text-right break-words">{new Date(session.created_at).toLocaleString()}</span>
+                            <div className="bg-card/40 backdrop-blur-xl rounded-2xl border border-border/50 p-4 shadow-sm flex flex-col gap-1">
+                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Type</span>
+                                <span className="text-xs font-bold text-foreground capitalize truncate">{session.interview_type.replace('_', ' ')}</span>
                             </div>
-                            <div className="flex items-center justify-between text-sm gap-2">
-                                <div className="flex items-center gap-2 text-muted-foreground flex-shrink-0">
-                                    <Briefcase className="h-4 w-4" />
-                                    Position:
-                                </div>
-                                <span className="font-medium text-foreground truncate">{session.position}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm gap-2">
-                                <div className="flex items-center gap-2 text-muted-foreground flex-shrink-0">
-                                    <Bot className="h-4 w-4" />
-                                    Type:
-                                </div>
-                                <span className="font-medium text-foreground capitalize">{session.interview_type.replace('_', ' ')}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             </DashboardLayout>
         );
@@ -1187,7 +1160,7 @@ export default function InterviewReport() {
                                 </CardHeader>
                                 <CardContent className="p-4 sm:p-5 md:p-6 space-y-2.5 sm:space-y-3">
                                     {reportData.strengths.map((item: string, i: number) => (
-                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/5 group-hover/strengths:bg-emerald-500/[0.05] group-hover/strengths:border-emerald-500/20 transition-all duration-700">
+                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-muted/40 dark:bg-white/[0.03] border border-border dark:border-white/5 group-hover/strengths:bg-emerald-500/[0.05] group-hover/strengths:border-emerald-500/20 transition-all duration-700">
                                             <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
                                                 <CheckCircle2 className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-emerald-500" />
                                             </div>
@@ -1211,7 +1184,7 @@ export default function InterviewReport() {
                                 </CardHeader>
                                 <CardContent className="p-4 sm:p-5 md:p-6 space-y-2.5 sm:space-y-3">
                                     {reportData.improvements.map((item: string, i: number) => (
-                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-white/[0.03] border border-white/5 group-hover/improvements:bg-rose-500/[0.05] group-hover/improvements:border-rose-500/20 transition-all duration-700">
+                                        <div key={i} className="flex gap-2.5 sm:gap-3 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-muted/40 dark:bg-white/[0.03] border border-border dark:border-white/5 group-hover/improvements:bg-rose-500/[0.05] group-hover/improvements:border-rose-500/20 transition-all duration-700">
                                             <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
                                                 <XCircle className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-rose-500" />
                                             </div>
@@ -1327,7 +1300,7 @@ export default function InterviewReport() {
                                                             </div>
 
                                                             <div className="space-y-4">
-                                                                <div className="p-4 rounded-xl bg-white/[0.02] border border-border italic text-xs font-medium text-muted-foreground">
+                                                                <div className="p-4 rounded-xl bg-muted/50 dark:bg-white/[0.02] border border-border italic text-xs font-medium text-muted-foreground">
                                                                     Q: {item.question}
                                                                 </div>
                                                                 <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed italic">
@@ -1458,7 +1431,7 @@ export default function InterviewReport() {
                                                 </div>
 
                                                 <div className="space-y-3">
-                                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                                    <div className="h-2 w-full bg-muted dark:bg-white/5 rounded-full overflow-hidden border border-border dark:border-white/5">
                                                         <div
                                                             className="h-full bg-primary transition-all duration-1500 ease-out shadow-[0_0_20px_rgba(168,85,247,0.6)]"
                                                             style={{ width: `${skill.score}%` }}
@@ -1492,7 +1465,7 @@ export default function InterviewReport() {
                                                             </DialogDescription>
                                                         </DialogHeader>
                                                         <div className="mt-6 space-y-4">
-                                                            <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5">
+                                                            <div className="p-6 rounded-2xl bg-muted/30 dark:bg-white/[0.03] border border-border dark:border-white/5">
                                                                 <p className="text-sm font-medium text-foreground/90 leading-relaxed whitespace-pre-wrap">
                                                                     {skill.feedback}
                                                                 </p>
@@ -1534,7 +1507,7 @@ export default function InterviewReport() {
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                                    <div className="h-1.5 w-full bg-muted dark:bg-white/5 rounded-full overflow-hidden border border-border dark:border-white/5">
                                                         <div
                                                             className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-1500 ease-out shadow-[0_0_15px_rgba(59,130,246,0.6)]"
                                                             style={{ width: `${skill.score}%` }}
@@ -1568,7 +1541,7 @@ export default function InterviewReport() {
                                                             </DialogDescription>
                                                         </DialogHeader>
                                                         <div className="mt-6 space-y-4">
-                                                            <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5">
+                                                            <div className="p-6 rounded-2xl bg-muted/30 dark:bg-white/[0.03] border border-border dark:border-white/5">
                                                                 <p className="text-sm font-medium text-foreground/90 leading-relaxed whitespace-pre-wrap">
                                                                     {skill.feedback}
                                                                 </p>
@@ -1643,7 +1616,7 @@ export default function InterviewReport() {
 
                             </CardHeader>
                             <CardContent className="p-6 sm:p-8 md:p-10 space-y-8 max-h-[800px] overflow-y-auto no-scrollbar relative">
-                                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent hidden md:block" />
+                                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent hidden md:block" />
                                 {reportData.transcript.map((msg: TranscriptMessage, i: number) => {
                                     const isAI = ['ai', 'agent', 'model'].includes((msg.speaker || msg.sender || '').toLowerCase());
                                     return (

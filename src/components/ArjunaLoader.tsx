@@ -1,4 +1,5 @@
 import React from 'react';
+import "@/styles/arjuna-animations.css";
 
 /**
  * BowLoader Component
@@ -37,7 +38,7 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                         <stop offset="100%" stopColor="#C084FC" /> {/* Purple-400 */}
                     </linearGradient>
                     <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="currentColor" className="text-foreground" />
+                        <stop offset="0%" stopColor="currentColor" />
                         <stop offset="100%" stopColor="#E0E7FF" />
                     </linearGradient>
                 </defs>
@@ -47,13 +48,13 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                     <>
                         <circle
                             cx="50" cy="50" r="45"
-                            stroke="url(#arjunaGradient)" strokeWidth="0.5" fill="none" opacity="0.2"
+                            stroke="url(#arjunaGradient)" strokeWidth="0.5" fill="none" opacity="0.3"
                             strokeDasharray="4 4"
                             className="origin-center animate-[spin_10s_linear_infinite]"
                         />
                         <circle
                             cx="50" cy="50" r="35"
-                            stroke="currentColor" strokeWidth="0.2" fill="none" opacity="0.1"
+                            stroke="currentColor" strokeWidth="0.2" fill="none" opacity="0.2"
                             className="origin-center animate-[spin_10s_linear_infinite_reverse] text-foreground"
                         />
                     </>
@@ -76,7 +77,7 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                     stroke="currentColor"
                     strokeWidth="1.5"
                     style={{ animation: 'arjuna-pullString 2s ease-in-out infinite' }}
-                    className="opacity-60 text-foreground"
+                    className="opacity-70 text-foreground"
                     d="M40,10 L40,90"
                 />
 
@@ -87,6 +88,7 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                         stroke="url(#arrowGradient)"
                         strokeWidth={strokeWidths[size]}
                         strokeLinecap="round"
+                        className="text-foreground"
                     />
                     <path
                         d="M55,42 L65,50 L55,58"
@@ -94,6 +96,7 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                         stroke="url(#arrowGradient)"
                         strokeWidth={strokeWidths[size]}
                         strokeLinecap="round" strokeLinejoin="round"
+                        className="text-foreground"
                     />
                     <path
                         d="M15,50 L10,45 M15,50 L10,55"
@@ -101,6 +104,7 @@ export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
                         stroke="url(#arrowGradient)"
                         strokeWidth={strokeWidths[size] - 1}
                         strokeLinecap="round"
+                        className="text-foreground"
                     />
                 </g>
             </svg>
@@ -123,12 +127,12 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
 }) => {
     if (variant === 'fullscreen') {
         return (
-            <div className="fixed inset-0 bg-background text-foreground font-sans z-50 flex items-center justify-center overflow-hidden">
+            <div className="fixed inset-0 bg-background text-foreground font-sans z-[9999] flex items-center justify-center overflow-hidden">
                 {/* Background Ambience */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 dark:bg-primary/10 rounded-full blur-[120px] animate-arjuna-blob"></div>
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/10 dark:bg-accent/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:2s]"></div>
-                    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-primary/5 dark:bg-primary/5 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:4s]"></div>
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 dark:bg-primary/10 rounded-full blur-[120px] animate-arjuna-blob"></div>
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/20 dark:bg-accent/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:2s]"></div>
+                    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-primary/15 dark:bg-primary/5 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:4s]"></div>
                 </div>
 
                 {/* Subtle Grid Pattern */}
@@ -137,13 +141,13 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
                         backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
                         backgroundSize: '40px 40px'
                     }}
-                    className="absolute inset-0 opacity-10 dark:opacity-10 text-foreground/5"
+                    className="absolute inset-0 opacity-20 dark:opacity-10 text-foreground/10 dark:text-foreground/5"
                 ></div>
 
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="relative">
                         {/* Energy Ripple Effect behind loader */}
-                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
+                        <div className="absolute inset-0 bg-primary/30 dark:bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
                         <BowLoader size="large" />
                     </div>
 
@@ -152,12 +156,12 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
                                 ARJUNA
                             </span>
-                            <span className="text-foreground/60 dark:text-foreground/20 ml-2 font-black">AI</span>
+                            <span className="text-foreground/60 dark:text-foreground/20 ml-2 font-black transition-colors duration-500">AI</span>
                         </h1>
 
                         <div className="flex flex-col items-center space-y-3">
                             <div className="h-[3px] w-36 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60"></div>
-                            <p className="text-foreground dark:text-primary/70 text-xs md:text-sm font-black tracking-[0.5em] uppercase animate-pulse">
+                            <p className="text-foreground dark:text-primary/70 text-xs md:text-sm font-black tracking-[0.5em] uppercase animate-pulse transition-colors duration-500">
                                 {message}
                             </p>
                         </div>
@@ -169,10 +173,10 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
 
     if (variant === 'card') {
         return (
-            <div className="bg-black/20 rounded-2xl p-10 flex flex-col items-center justify-center border border-white/5 shadow-inner relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <div className="bg-muted/40 dark:bg-black/20 rounded-2xl p-10 flex flex-col items-center justify-center border border-border dark:border-white/5 shadow-inner relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                 <BowLoader size="medium" />
-                <span className="mt-6 text-xs font-medium text-violet-300/80 animate-pulse tracking-wide">
+                <span className="mt-6 text-xs font-bold text-foreground/70 dark:text-violet-300/80 animate-pulse tracking-wide uppercase">
                     {message}
                 </span>
             </div>
@@ -183,7 +187,7 @@ export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
     return (
         <div className="flex items-center gap-3">
             <BowLoader size="small" />
-            <span className="text-sm text-slate-300 animate-pulse">{message}</span>
+            <span className="text-sm font-bold text-muted-foreground animate-pulse">{message}</span>
         </div>
     );
 };

@@ -243,7 +243,7 @@ function ResetPasswordContent() {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-flex items-center text-lg font-medium tracking-tight mb-6 hover:opacity-80 transition-opacity">
-                            <Image src="/arjuna-icon.png" alt="Arjuna AI Logo" width={36} height={36} className="mr-3 h-9 w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
+                            <Image src="/arjuna_logo.png" alt="Arjuna AI Logo" width={36} height={36} className="mr-3 h-9 w-9 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
                             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">Arjuna AI</span>
                         </Link>
                         <h2 className="text-2xl font-bold text-white mb-2">Set New Password</h2>

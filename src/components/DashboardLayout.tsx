@@ -133,7 +133,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
-          transition-all duration-300 ease-in-out
+          transition-all duration-300 ease-in-out relative
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
@@ -146,15 +146,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
             <div className="flex items-center gap-4 group cursor-default">
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-all duration-700 animate-pulse"></div>
-                <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-2xl">
-                  <Image
-                    src="/favicon.ico"
-                    alt="Arjuna AI"
-                    width={48}
-                    height={48}
-                    className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
+                <Image
+                  src="/arjuna_logo.png"
+                  alt="Arjuna AI"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-foreground tracking-tight leading-tight">
@@ -166,15 +164,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           ) : (
             <div className="relative flex-shrink-0 group">
               <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
-              <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <Image
-                  src="/favicon.ico"
-                  alt="Arjuna AI"
-                  width={48}
-                  height={48}
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <Image
+                src="/arjuna_logo.png"
+                alt="Arjuna AI"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
+              />
+
             </div>
           )}
 
@@ -185,19 +182,19 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           >
             <X className="h-5 w-5" />
           </button>
-
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`hidden lg:flex items-center justify-center h-10 w-10 border border-sidebar-border/50 hover:bg-sidebar-accent hover:border-sidebar-border rounded-xl text-muted-foreground hover:text-foreground transition-all duration-300 ${sidebarCollapsed ? "" : "ml-auto"}`}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
         </div>
+
+        {/* Collapse Toggle - Now on the border */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden lg:flex z-100 absolute top-5 -right-3 z-50 items-center justify-center h-6 w-6 bg-sidebar border border-sidebar-border rounded-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent shadow-md transition-all duration-300"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+        </button>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-3 py-6 overflow-y-auto scrollbar-hide">
@@ -397,7 +394,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">
+      <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-6 relative z-10 w-full">
           <div

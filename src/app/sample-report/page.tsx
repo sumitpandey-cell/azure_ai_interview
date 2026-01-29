@@ -58,7 +58,7 @@ export default function SampleReport() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
-                        <Image src="/arjuna-icon.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8" />
+                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8" />
                         <span className="font-bold text-xl bg-gradient-to-r from-white to-indigo-300 bg-clip-text text-transparent">Arjuna AI</span>
                     </Link>
                     <div className="flex items-center gap-4">
@@ -248,7 +248,7 @@ export default function SampleReport() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                         <div className="md:col-span-2">
                             <Link href="/" className="flex items-center gap-2 text-xl font-bold mb-6">
-                                <Image src="/arjuna-icon.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8 object-contain" />
+                                <Image src="/arjuna_logo.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8 object-contain" />
                                 <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">Arjuna AI</span>
                             </Link>
                             <p className="text-slate-400 max-w-xs mb-6">

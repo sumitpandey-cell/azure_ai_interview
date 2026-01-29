@@ -11,6 +11,10 @@ const PUBLIC_ROUTES = [
     '/contact',
     '/pricing',
     '/site.webmanifest',
+    '/manifest.webmanifest',
+    '/manifest.json',
+    '/sw.js',
+    '/workbox-',
     '/p',
     '/faq',
     '/terms',
@@ -148,6 +152,6 @@ export const config = {
          * - public folder
          * - api routes (handled separately)
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|manifest\\.json|site\\.webmanifest|sw\\.js|workbox-.*\\.js|apple-touch-icon.*\\.png|robots\\.txt|sitemap.*\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 };

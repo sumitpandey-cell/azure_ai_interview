@@ -158,11 +158,11 @@ export function CircularBlobVisualizer({
             let glowOpacity = isDark ? 0.15 : 0.25;
 
             if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
-                primaryColor = { r: 251, g: 191, b: 36 }; // Amber (Local)
+                primaryColor = { r: 245, g: 158, b: 11 }; // Amber-500 (Local)
             } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
                 // Adaptive Idle Color
-                primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 };
-                glowOpacity = isDark ? 0.08 : 0.12;
+                primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 }; // Darker slate for light mode idle
+                glowOpacity = isDark ? 0.08 : 0.2; // Increased glow for light mode
             }
 
             // Background Ambient Glow
@@ -210,19 +210,20 @@ export function CircularBlobVisualizer({
             // Render Particles
             projectedParticles.forEach(p => {
                 const depthFactor = (p.z + 1.5) / 2.5;
-                const opacity = isDark ? depthFactor : depthFactor * 0.8 + 0.2; // Higher base opacity in light mode
+                // Much higher opacity in light mode for contrast against white/light backgrounds
+                const opacity = isDark ? depthFactor : Math.min(depthFactor * 1.2 + 0.3, 1.0);
 
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 
                 if (AGENT_ACTIVE) {
-                    ctx.fillStyle = isDark ? `rgba(192, 132, 252, ${opacity})` : `rgba(147, 51, 234, ${opacity})`;
+                    ctx.fillStyle = isDark ? `rgba(192, 132, 252, ${opacity})` : `rgba(126, 34, 206, ${opacity})`; // Deep Purple-700 for light mode
                 } else if (LOCAL_ACTIVE) {
-                    ctx.fillStyle = isDark ? `rgba(252, 211, 77, ${opacity})` : `rgba(217, 119, 6, ${opacity})`;
+                    ctx.fillStyle = isDark ? `rgba(252, 211, 77, ${opacity})` : `rgba(217, 119, 6, ${opacity})`; // Amber-600 for light mode
                 } else {
-                    // Idle state particles
-                    const idleColor = isDark ? '148, 163, 184' : '51, 65, 85';
-                    ctx.fillStyle = `rgba(${idleColor}, ${opacity * (isDark ? 0.5 : 0.7)})`;
+                    // Idle state particles - Very dark for light mode visibility
+                    const idleColor = isDark ? '148, 163, 184' : '30, 41, 59'; // Slate-800 for light mode
+                    ctx.fillStyle = `rgba(${idleColor}, ${opacity})`;
                 }
 
                 ctx.fill();

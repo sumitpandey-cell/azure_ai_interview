@@ -402,7 +402,7 @@ export default function InterviewSetup() {
                 <div className="flex items-center gap-4">
                     <div className="relative group cursor-pointer" onClick={() => router.push('/dashboard')}>
                         <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full group-hover:bg-primary/40 transition-all"></div>
-                        <Image src="/favicon.ico" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
                     </div>
                     <div className="flex flex-col">
                         <span className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-none">

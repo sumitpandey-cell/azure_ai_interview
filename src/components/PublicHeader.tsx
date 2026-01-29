@@ -61,7 +61,7 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
                     <div className="relative">
                         <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
                         <Image
-                            src="/arjuna-icon.png"
+                            src="/arjuna_logo.png"
                             alt="Arjuna AI"
                             width={36}
                             height={36}

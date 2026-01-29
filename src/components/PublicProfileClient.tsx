@@ -169,7 +169,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 <Link href="/" className="flex items-center gap-3 group">
                     <div className="relative">
                         <div className="absolute inset-0 bg-indigo-500 rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <Image src="/favicon.ico" alt="Arjuna AI" width={40} height={40} className="relative h-10 w-10 object-contain" />
+                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-10 w-10 object-contain" />
                     </div>
                     <div>
                         <div className="text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
@@ -471,7 +471,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 {/* Platform Footer */}
                 <footer className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
                     <div className="flex items-center gap-4">
-                        <Image src="/favicon.ico" alt="" width={24} height={24} className="h-6 w-6" />
+                        <Image src="/arjuna_logo.png" alt="" width={24} height={24} className="h-6 w-6" />
                         <div className="text-[10px] font-black uppercase tracking-[0.2em]">
                             © {new Date().getFullYear()} ARJUNA AI PLATFORM • THE FUTURE OF TECH HIRING
                         </div>

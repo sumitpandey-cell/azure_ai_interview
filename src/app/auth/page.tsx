@@ -234,7 +234,7 @@ function AuthContent() {
                 {/* Header Logo */}
                 <Link href="/" className="relative z-20 flex items-center text-lg font-medium tracking-tight mb-6 sm:mb-8 lg:mb-12 hover:opacity-80 transition-opacity">
                     <Image
-                        src="/arjuna-icon.png"
+                        src="/arjuna_logo.png"
                         alt="Arjuna AI Logo"
                         width={36}
                         height={36}

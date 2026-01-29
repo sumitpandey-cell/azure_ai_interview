@@ -72,9 +72,23 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://arjuna.ai",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Arjuna AI",
+  },
+  icons: {
+    icon: "/arjuna_logo.png",
+    apple: "/arjuna_logo.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#020617",
 };
 
 import { GlobalBackground } from "@/components/GlobalBackground";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function RootLayout({
   children,
@@ -118,6 +132,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <GlobalBackground />
+          <InstallPrompt />
           {children}
         </Providers>
       </body>
