@@ -134,7 +134,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
         className={`
           fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
           transition-[width,transform] duration-300 ease-in-out
-          w-64
+          w-64 will-change-[width,transform]
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         ${sidebarCollapsed ? "lg:w-20" : ""}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
@@ -398,7 +398,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
         {/* Page Content */}
-        <main className="flex-1 px-0 py-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
+        <main className="flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
           <div
             key={pathname}
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"

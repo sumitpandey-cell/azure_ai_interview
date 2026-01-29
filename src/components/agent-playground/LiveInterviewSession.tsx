@@ -252,12 +252,13 @@ export function LiveInterviewSession({
                     <AnimatePresence>
                         {(showDetails || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
                             <motion.aside
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
+                                initial={{ y: -50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -50, opacity: 0 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
                                 className={cn(
-                                    "z-40 lg:z-10 lg:flex-[2] lg:min-w-[300px] bg-background/95 dark:bg-card/20 lg:bg-card dark:lg:bg-card/20 backdrop-blur-xl border-b lg:border border-border dark:border-white/5 lg:rounded-[24px] flex flex-col p-3 lg:p-4 shadow-2xl overflow-hidden",
-                                    "absolute top-0 left-0 right-0 lg:relative lg:flex lg:h-full"
+                                    "z-40 lg:z-10 lg:flex-[2] lg:min-w-[300px] bg-background/98 dark:bg-card/40 lg:bg-card dark:lg:bg-card/20 backdrop-blur-md lg:backdrop-blur-xl border-b lg:border border-border dark:border-white/5 lg:rounded-[24px] flex flex-col p-3 lg:p-4 shadow-2xl overflow-hidden",
+                                    "absolute top-0 left-0 right-0 lg:relative lg:flex lg:h-full lg:transform-none"
                                 )}
                             >
                                 <div className="space-y-6">
@@ -336,7 +337,7 @@ export function LiveInterviewSession({
                                     {/* Mobile Close Button */}
                                     <button
                                         onClick={() => setShowDetails(false)}
-                                        className="lg:hidden w-full py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors"
+                                        className="lg:hidden w-full py-3 rounded-xl bg-muted dark:bg-white/5 border border-border dark:border-white/10 text-xs font-bold uppercase tracking-widest text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white transition-colors"
                                     >
                                         Close Details
                                     </button>
@@ -401,7 +402,7 @@ export function LiveInterviewSession({
                                                 agentTrackRef={agentAudioTrack}
                                                 localTrack={localMicTrack}
                                                 size={typeof window !== 'undefined' ? (window.innerWidth < 1024 ? 240 : 380) : 380}
-                                                className="transition-transform duration-500"
+                                                className="transition-transform duration-500 will-change-transform"
                                             />
                                         </div>
                                     )}
@@ -485,10 +486,10 @@ export function LiveInterviewSession({
                         : "bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 sm:w-auto px-4"
                 )}>
                     <motion.div
-                        layout
+                        layout={typeof window !== 'undefined' && window.innerWidth >= 768}
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className="bg-card dark:bg-card/40 backdrop-blur-3xl border border-border dark:border-white/10 rounded-[40px] p-1.5 lg:px-4 lg:py-2 flex items-center shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-border/50 dark:ring-white/5 overflow-hidden"
+                        className="bg-card dark:bg-card/40 backdrop-blur-3xl border border-border dark:border-white/10 rounded-[40px] p-1.5 lg:px-4 lg:py-2 flex items-center shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-border/50 dark:ring-white/5 overflow-hidden will-change-transform"
                     >
                         {/* Collapse/Expand Toggle */}
                         <button
@@ -596,18 +597,18 @@ export function LiveInterviewSession({
             </div>
 
             <AlertDialog open={isEndCallDialogOpen} onOpenChange={setIsEndCallDialogOpen}>
-                <AlertDialogContent className="rounded-[24px] p-6 lg:p-8 border-white/10 shadow-3xl bg-card/90 backdrop-blur-2xl max-w-sm mx-auto">
+                <AlertDialogContent className="rounded-[24px] p-6 lg:p-8 border border-border dark:border-white/10 shadow-3xl bg-card/95 dark:bg-card/90 backdrop-blur-2xl max-w-sm mx-auto">
                     <AlertDialogHeader className="space-y-4">
                         <div className="h-14 w-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
                             <AlertTriangle className="h-7 w-7 text-red-500" />
                         </div>
-                        <AlertDialogTitle className="text-xl lg:text-2xl font-bold text-white text-center">End Session?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm font-medium text-white/60 text-center leading-relaxed">
+                        <AlertDialogTitle className="text-xl lg:text-2xl font-bold text-foreground text-center">End Session?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground text-center leading-relaxed">
                             Are you sure you want to end this interview session? Your progress will be saved.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
-                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-semibold text-xs border-white/10 text-white hover:bg-white/5 transition-all">
+                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-semibold text-xs border border-border dark:border-white/10 text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all outline-none">
                             Continue
                         </AlertDialogCancel>
                         <AlertDialogAction

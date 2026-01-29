@@ -14,8 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } }
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } }
 };
 
 const staggerContainer = {
@@ -201,17 +201,17 @@ export default function Landing() {
             {/* Dashboard Mockup */}
             <motion.div
               variants={scaleIn}
-              className="relative mx-auto max-w-5xl"
+              className="relative mx-auto max-w-5xl will-change-transform"
             >
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-50 blur-3xl"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-30 blur-3xl pointer-events-none"
                 style={{
                   background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)"
                 }}
               ></div>
 
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-1000"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
 
               <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
                 {/* Mac Window Header */}
@@ -238,6 +238,7 @@ export default function Landing() {
                     width={1920}
                     height={1080}
                     className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500"
+                    priority
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
                 </div>

@@ -205,7 +205,7 @@ function PricingContent() {
                                     <Card
                                         key={plan.id}
                                         className={cn(
-                                            "flex flex-col relative transition-all duration-500 overflow-hidden border-2 bg-white/[0.02] backdrop-blur-xl group hover:-translate-y-2",
+                                            "flex flex-col relative transition-all duration-300 overflow-hidden border-2 bg-white/[0.02] backdrop-blur-lg group hover:-translate-y-1 will-change-transform",
                                             details.popular
                                                 ? 'border-indigo-500 shadow-[0_0_40px_rgba(99,102,241,0.15)] lg:scale-105 z-10'
                                                 : 'border-white/5 hover:border-indigo-500/30'

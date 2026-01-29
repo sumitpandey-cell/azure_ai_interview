@@ -338,9 +338,12 @@ export default function InterviewSetup() {
         setIsLoading(true);
 
         try {
-            // Pre-complete the session as it starts to prevent "Interrupted" status if closed later
+            // THE PRE-COMPLETE STRATEGY
+            // Mark session as completed immediately to prevent "stuck" sessions
             if (sessionId && typeof sessionId === 'string') {
                 const currentConfig = (session?.config as Record<string, unknown>) || {};
+
+                // 1. Mark as completed with a placeholder feedback
                 await interviewService.completeSession(sessionId, {
                     durationSeconds: 0,
                     feedback: {
@@ -349,7 +352,7 @@ export default function InterviewSetup() {
                     }
                 });
 
-                // Still update the config to set currentStage and selected options
+                // 2. Update config: set stage to 'live' and save selected options
                 await interviewService.updateSession(sessionId, {
                     config: {
                         ...currentConfig,

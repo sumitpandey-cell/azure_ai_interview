@@ -99,7 +99,6 @@ export async function GET(request: Request) {
       if (session && !error) {
         const config = (typeof session.config === 'object' && session.config !== null ? session.config : {}) as SessionConfig;
 
-
         if (config.selectedVoice) {
           const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
           if (supportedVoices.includes(config.selectedVoice)) {

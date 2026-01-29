@@ -172,16 +172,17 @@ export default function LiveInterview() {
                 // 2. Fetch Session
                 const fetchedSession = await interviewService.getSessionById(currentSessionId);
                 if (!fetchedSession) {
-                    toast.warning("Session not found, creating temporary.");
-                } else if (fetchedSession.status === "completed" && fetchedSession.score !== null) {
-                    toast.warning("This session has already been scored and finalized.");
+                    toast.warning("Session not found.");
                     router.replace("/dashboard");
                     return;
                 }
 
+                // Note: The Token API handles re-entry protection via the 'allowEntry' flag.
+                // If a user refreshes or re-enters a completed session, the Token API will return 403.
+
                 setCurrentSessionId(currentSessionId);
 
-                // 3. Fetch Token (or use cached)
+                // 3. Fetch Token (Strictly from SessionStorage)
                 let url = "";
                 let authToken = "";
 
@@ -192,7 +193,6 @@ export default function LiveInterview() {
                         const nowSeconds = Math.floor(Date.now() / 1000);
 
                         // Validate token: must not be expired and must have at least 2 minutes buffer
-                        // Fallback to age check if expiresAt is missing (legacy support)
                         const isValid = expiresAt
                             ? (expiresAt > nowSeconds + 120)
                             : (Date.now() - timestamp < 5 * 60 * 1000);
@@ -200,20 +200,27 @@ export default function LiveInterview() {
                         if (isValid) {
                             url = cachedUrl;
                             authToken = cachedToken;
+
+                            // BURN the cached token immediately after pulling it
+                            // This ensures that if the user hits REFRESH, the token is gone
+                            // and they won't be able to reconnect.
+                            sessionStorage.removeItem('livekit_prefetched_token');
+                        } else {
+                            // If token expired, clear it
                             sessionStorage.removeItem('livekit_prefetched_token');
                         }
-                    } catch {
+                    } catch (e) {
+                        console.error("Error parsing cached token:", e);
                         sessionStorage.removeItem('livekit_prefetched_token');
                     }
                 }
 
+                // If no token was found in sessionStorage, it means the user refreshed 
+                // or tried to enter the live room directly without setup.
                 if (!authToken) {
-                    const tokenUrl = `/api/livekit_token?sessionId=${currentSessionId}`;
-                    const resp = await fetch(tokenUrl);
-                    if (!resp.ok) throw new Error("Failed to fetch token");
-                    const data = await resp.json();
-                    url = data.url;
-                    authToken = data.token;
+                    toast.error("Session terminated. Re-entry is not allowed.");
+                    router.replace("/dashboard");
+                    return;
                 }
 
 
