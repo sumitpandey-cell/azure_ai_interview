@@ -133,9 +133,10 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
-          transition-all duration-300 ease-in-out relative
+          transition-[width,transform] duration-300 ease-in-out
+          w-64
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
+        ${sidebarCollapsed ? "lg:w-20" : ""}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
         flex flex-col flex-shrink-0
       `}
@@ -145,7 +146,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           {!sidebarCollapsed ? (
             <div className="flex items-center gap-4 group cursor-default">
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-all duration-700 animate-pulse"></div>
+                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-colors duration-700 group-hover:animate-pulse"></div>
                 <Image
                   src="/arjuna_logo.png"
                   alt="Arjuna AI"
@@ -396,7 +397,8 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-6 relative z-10 w-full">
+        {/* Page Content */}
+        <main className="flex-1 px-0 py-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
           <div
             key={pathname}
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"

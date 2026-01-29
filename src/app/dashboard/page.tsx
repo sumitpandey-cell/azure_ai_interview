@@ -321,15 +321,15 @@ function DashboardContent() {
                 <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm" />
                 <span className="text-xs font-medium text-muted-foreground">System Active</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight flex items-center gap-2">
-                Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},
-                <span className="text-primary min-w-[100px]">
-                  {authLoading ? (
-                    <Skeleton className="h-8 w-32 bg-muted/50" />
-                  ) : (
-                    userMetadata?.full_name?.split(' ')[0] || "User"
-                  )}
-                </span>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},{' '}
+                {authLoading ? (
+                  <Skeleton className="inline-block h-8 w-32 bg-muted/50 align-middle" />
+                ) : (
+                  <span className="text-primary">
+                    {userMetadata?.full_name?.split(' ')[0] || "User"}
+                  </span>
+                )}
               </h1>
               <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary" />
@@ -462,21 +462,19 @@ function DashboardContent() {
                 <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                   <Target className="h-20 w-20 text-primary fill-primary/20" />
                 </div>
-                <div className="flex items-start justify-between w-full relative z-10 h-full">
-                  <div className="flex flex-col justify-between h-full w-full">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Average Score</span>
-                    <div className="flex items-end justify-between w-full">
-                      <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter">
-                        {loading ? <Skeleton className="h-8 w-16 bg-muted/50 rounded-lg" /> : `${stats?.averageScore || 0}%`}
-                      </span>
-                      <div className="h-6 w-10 mb-1 opacity-80">
-                        <MiniBarChart
-                          data={scoreHistory}
-                          height={24}
-                          barWidth={3}
-                          color="hsl(var(--primary))"
-                        />
-                      </div>
+                <div className="flex flex-col justify-between h-full relative z-10">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Average Score</span>
+                  <div className="flex items-end justify-between gap-2">
+                    <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter flex-shrink-0">
+                      {loading ? <Skeleton className="h-8 w-16 bg-muted/50 rounded-lg" /> : `${stats?.averageScore || 0}%`}
+                    </span>
+                    <div className="h-6 w-10 mb-1 opacity-80 flex-shrink-0">
+                      <MiniBarChart
+                        data={scoreHistory}
+                        height={24}
+                        barWidth={3}
+                        color="hsl(var(--primary))"
+                      />
                     </div>
                   </div>
                 </div>
