@@ -56,7 +56,7 @@ const ReferralModal: React.FC<ReferralModalProps> = ({
             // Efficiently fetch the local image from the public folder
             // No external storage (Supabase) needed for static assets like this.
             // This is the fastest and most cost-effective way.
-            const response = await fetch('/dashboard-preview.png');
+            const response = await fetch('/social-share.png');
             const blob = await response.blob();
             const file = new File([blob], 'arjuna-ai.png', { type: 'image/png' });
 
@@ -98,7 +98,7 @@ const ReferralModal: React.FC<ReferralModalProps> = ({
         setSharing('native');
         if (navigator.share) {
             try {
-                const response = await fetch('/dashboard-preview.png');
+                const response = await fetch('/social-share.png');
                 const blob = await response.blob();
                 const file = new File([blob], 'arjuna-ai.png', { type: 'image/png' });
 
