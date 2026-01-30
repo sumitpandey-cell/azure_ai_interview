@@ -1,193 +1,81 @@
 import React from 'react';
-import "@/styles/arjuna-animations.css";
+import { PremiumLogoLoader } from './PremiumLogoLoader';
+import { cn } from '@/lib/utils';
 
 /**
- * BowLoader Component
- * Reusable SVG loader with animated bow and arrow
+ * BowLoader Component - Legacy wrapper, now uses PremiumLogoLoader for consistency
  */
 interface BowLoaderProps {
     size?: 'tiny' | 'small' | 'medium' | 'large';
+    className?: string;
 }
 
-export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium' }) => {
-    const dimensions = {
-        tiny: 'w-5 h-5',
-        small: 'w-16 h-16',
-        medium: 'w-24 h-24',
-        large: 'w-40 h-40',
+export const BowLoader: React.FC<BowLoaderProps> = ({ size = 'medium', className }) => {
+    const sizeMap = {
+        tiny: 20,
+        small: 60,
+        medium: 100,
+        large: 180,
     };
 
-    const strokeWidths = {
-        tiny: 4,
-        small: 2.5,
-        medium: 2,
-        large: 1.5,
+    const logoSizeMap = {
+        tiny: 10,
+        small: 25,
+        medium: 40,
+        large: 70,
     };
 
     return (
-        <div className={`relative flex items-center justify-center ${dimensions[size]}`}>
-            <svg
-                viewBox="0 0 100 100"
-                className="w-full h-full overflow-visible"
-                style={{ filter: 'drop-shadow(0 0 15px rgba(139, 92, 246, 0.4))' }}
-            >
-                <defs>
-                    <linearGradient id="arjunaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#60A5FA" /> {/* Blue-400 */}
-                        <stop offset="50%" stopColor="#818CF8" /> {/* Indigo-400 */}
-                        <stop offset="100%" stopColor="#C084FC" /> {/* Purple-400 */}
-                    </linearGradient>
-                    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="currentColor" />
-                        <stop offset="100%" stopColor="#E0E7FF" />
-                    </linearGradient>
-                </defs>
-
-                {/* Decorative Ring (Tech Feel) */}
-                {size !== 'tiny' && (
-                    <>
-                        <circle
-                            cx="50" cy="50" r="45"
-                            stroke="url(#arjunaGradient)" strokeWidth="0.5" fill="none" opacity="0.3"
-                            strokeDasharray="4 4"
-                            className="origin-center animate-[spin_10s_linear_infinite]"
-                        />
-                        <circle
-                            cx="50" cy="50" r="35"
-                            stroke="currentColor" strokeWidth="0.2" fill="none" opacity="0.2"
-                            className="origin-center animate-[spin_10s_linear_infinite_reverse] text-foreground"
-                        />
-                    </>
-                )}
-
-                {/* The Bow */}
-                <path
-                    className="origin-center"
-                    fill="none"
-                    stroke="url(#arjunaGradient)"
-                    strokeWidth={strokeWidths[size] + 4}
-                    strokeLinecap="round"
-                    style={{ animation: 'arjuna-drawBow 2s ease-in-out infinite' }}
-                    d="M40,10 Q60,50 40,90"
-                />
-
-                {/* The String */}
-                <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    style={{ animation: 'arjuna-pullString 2s ease-in-out infinite' }}
-                    className="opacity-70 text-foreground"
-                    d="M40,10 L40,90"
-                />
-
-                {/* The Arrow */}
-                <g style={{ animation: 'arjuna-arrowFly 2s ease-in-out infinite' }}>
-                    <line
-                        x1="15" y1="50" x2="65" y2="50"
-                        stroke="url(#arrowGradient)"
-                        strokeWidth={strokeWidths[size]}
-                        strokeLinecap="round"
-                        className="text-foreground"
-                    />
-                    <path
-                        d="M55,42 L65,50 L55,58"
-                        fill="none"
-                        stroke="url(#arrowGradient)"
-                        strokeWidth={strokeWidths[size]}
-                        strokeLinecap="round" strokeLinejoin="round"
-                        className="text-foreground"
-                    />
-                    <path
-                        d="M15,50 L10,45 M15,50 L10,55"
-                        fill="none"
-                        stroke="url(#arrowGradient)"
-                        strokeWidth={strokeWidths[size] - 1}
-                        strokeLinecap="round"
-                        className="text-foreground"
-                    />
-                </g>
-            </svg>
-        </div>
+        <PremiumLogoLoader
+            size={sizeMap[size]}
+            logoSize={logoSizeMap[size]}
+            text=""
+            className={cn("min-h-0 py-4", className)}
+        />
     );
 };
 
 /**
  * ArjunaLoader Component
- * Full-screen loading experience for Arjuna AI platform
+ * Centralized loading component powered by PremiumLogoLoader
  */
 interface ArjunaLoaderProps {
     variant?: 'fullscreen' | 'inline' | 'card';
     message?: string;
+    className?: string;
 }
 
 export const ArjunaLoader: React.FC<ArjunaLoaderProps> = ({
     variant = 'fullscreen',
-    message = 'Calibrating Neural Matrix'
+    message = 'Calibrating Neural Matrix',
+    className
 }) => {
     if (variant === 'fullscreen') {
         return (
-            <div className="fixed inset-0 bg-background text-foreground font-sans z-[9999] flex items-center justify-center overflow-hidden">
+            <div className={cn("fixed inset-0 bg-background text-foreground z-[9999] flex items-center justify-center overflow-hidden", className)}>
                 {/* Background Ambience */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 dark:bg-primary/10 rounded-full blur-[120px] animate-arjuna-blob"></div>
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/20 dark:bg-accent/10 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:2s]"></div>
-                    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-primary/15 dark:bg-primary/5 rounded-full blur-[120px] animate-arjuna-blob [animation-delay:4s]"></div>
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 dark:bg-primary/10 rounded-full blur-[120px] animate-blob"></div>
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-accent/20 dark:bg-accent/10 rounded-full blur-[120px] animate-blob [animation-delay:2s]"></div>
                 </div>
 
-                {/* Subtle Grid Pattern */}
-                <div
-                    style={{
-                        backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-                        backgroundSize: '40px 40px'
-                    }}
-                    className="absolute inset-0 opacity-20 dark:opacity-10 text-foreground/10 dark:text-foreground/5"
-                ></div>
-
-                <div className="relative z-10 flex flex-col items-center">
-                    <div className="relative">
-                        {/* Energy Ripple Effect behind loader */}
-                        <div className="absolute inset-0 bg-primary/30 dark:bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
-                        <BowLoader size="large" />
-                    </div>
-
-                    <div className="mt-10 flex flex-col items-center text-center space-y-4">
-                        <h1 className="text-5xl md:text-6xl font-black tracking-tighter">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
-                                ARJUNA
-                            </span>
-                            <span className="text-foreground/60 dark:text-foreground/20 ml-2 font-black transition-colors duration-500">AI</span>
-                        </h1>
-
-                        <div className="flex flex-col items-center space-y-3">
-                            <div className="h-[3px] w-36 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60"></div>
-                            <p className="text-foreground dark:text-primary/70 text-xs md:text-sm font-black tracking-[0.5em] uppercase animate-pulse transition-colors duration-500">
-                                {message}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <PremiumLogoLoader text={message} />
             </div>
         );
     }
 
     if (variant === 'card') {
         return (
-            <div className="bg-muted/40 dark:bg-black/20 rounded-2xl p-10 flex flex-col items-center justify-center border border-border dark:border-white/5 shadow-inner relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                <BowLoader size="medium" />
-                <span className="mt-6 text-xs font-bold text-foreground/70 dark:text-violet-300/80 animate-pulse tracking-wide uppercase">
-                    {message}
-                </span>
+            <div className={cn("bg-card/50 backdrop-blur-sm rounded-2xl p-10 flex flex-col items-center justify-center border border-border/50 shadow-inner relative overflow-hidden", className)}>
+                <PremiumLogoLoader size={120} logoSize={50} text={message} className="min-h-0" />
             </div>
         );
     }
 
     // inline variant
     return (
-        <div className="flex items-center gap-3">
-            <BowLoader size="small" />
-            <span className="text-sm font-bold text-muted-foreground animate-pulse">{message}</span>
+        <div className={cn("flex items-center gap-3", className)}>
+            <PremiumLogoLoader size={60} logoSize={25} text={message} className="min-h-0 flex-row gap-4 py-2" />
         </div>
     );
 };

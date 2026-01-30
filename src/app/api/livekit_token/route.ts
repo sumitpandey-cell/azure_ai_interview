@@ -40,6 +40,7 @@ export async function GET(request: Request) {
       companyName?: string;
       role?: string;
       experienceLevel?: string;
+      useResume?: boolean;
       company?: { name: string };
       companyInterviewConfig?: {
         companyName: string;
@@ -83,9 +84,12 @@ export async function GET(request: Request) {
         .single();
 
 
-      // Fetch resume content separately
+      // Fetch resume content separately if enabled
       let resumeContent: string | null = null;
-      if (session && !error && session.user_id) {
+      const config = (session && !error && typeof session.config === 'object' && session.config !== null ? session.config : {}) as SessionConfig;
+      const useResume = config.useResume !== false; // Default to true if not specified
+
+      if (session && !error && session.user_id && useResume) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('resume_content')
@@ -93,12 +97,9 @@ export async function GET(request: Request) {
           .single();
 
         resumeContent = profile?.resume_content || null;
-
       }
 
       if (session && !error) {
-        const config = (typeof session.config === 'object' && session.config !== null ? session.config : {}) as SessionConfig;
-
         if (config.selectedVoice) {
           const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
           if (supportedVoices.includes(config.selectedVoice)) {
@@ -126,7 +127,8 @@ export async function GET(request: Request) {
           skills: config.skills || [],
           difficulty: config.difficulty || 'Intermediate',
           duration: config.duration || 30,
-          resumeContent: resumeContent
+          resumeContent: resumeContent,
+          useResume: useResume
         };
 
 

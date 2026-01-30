@@ -31,7 +31,7 @@ import { Template } from "@/services/template.service";
 import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
 import { InProgressSessionModal } from "@/components/InProgressSessionModal";
 import * as LucideIcons from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getCompanyLogo } from "@/lib/utils";
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -177,7 +177,7 @@ export default function Templates() {
     }
   };
 
-  const executeStartGeneralInterview = async (template: Template) => {
+  const executeStartGeneralInterview = async (template: Template, useResume: boolean) => {
     try {
       setLoadingTemplate(template.id);
       // Create a new interview session using optimized method
@@ -188,6 +188,7 @@ export default function Templates() {
         config: {
           skills: template.skills,
           difficulty: template.difficulty,
+          useResume,
           currentStage: 'setup'
         }
       });
@@ -259,7 +260,7 @@ export default function Templates() {
     }
   };
 
-  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string) => {
+  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string, useResume: boolean) => {
     try {
       const templateKey = `${company.id}-${role}`;
       setLoadingTemplate(templateKey);
@@ -276,6 +277,7 @@ export default function Templates() {
             role: role,
             experienceLevel: 'Mid'
           },
+          useResume,
           currentStage: 'setup'
         }
       });
@@ -295,12 +297,12 @@ export default function Templates() {
     }
   };
 
-  const handleResumeContinue = async () => {
+  const handleResumeContinue = async (useResume: boolean) => {
     setShowResumeCheck(false);
     if (pendingGeneralTemplate) {
-      await executeStartGeneralInterview(pendingGeneralTemplate);
+      await executeStartGeneralInterview(pendingGeneralTemplate, useResume);
     } else if (pendingCompanyRole) {
-      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role);
+      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role, useResume);
     }
   };
 
@@ -556,9 +558,9 @@ export default function Templates() {
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
                       <div className="h-20 w-20 rounded-lg border border-border bg-muted/30 p-2 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
 
-                        {selectedCompany.logo_url ? (
+                        {getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url) ? (
                           <Image
-                            src={selectedCompany.logo_url}
+                            src={getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url)}
                             alt={`${selectedCompany.name} logo`}
                             fill
                             unoptimized
@@ -570,7 +572,7 @@ export default function Templates() {
                             }}
                           />
                         ) : null}
-                        <Briefcase className={`h-8 w-8 text-muted-foreground ${selectedCompany.logo_url ? 'hidden' : ''}`} />
+                        <Briefcase className={`h-8 w-8 text-muted-foreground ${getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url) ? 'hidden' : ''}`} />
                       </div>
 
 

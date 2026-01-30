@@ -49,6 +49,7 @@ import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
 import { formatDurationShort } from "@/lib/format-duration";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 // Type for user metadata
 interface UserMetadata {
@@ -96,6 +97,8 @@ function DashboardContent() {
     status: PaymentStatus;
     details?: string;
   }>({ isOpen: false, status: "success" });
+
+  const [navigatingSessionId, setNavigatingSessionId] = useState<string | null>(null);
 
   // Helper to check if a session is currently generating feedback
   const isSessionGenerating = (sessionId: string) => {
@@ -598,6 +601,7 @@ function DashboardContent() {
                     <div
                       key={session.id}
                       onClick={() => {
+                        setNavigatingSessionId(session.id);
                         if (session.status === 'completed') {
                           if (isTooShort) {
                             toast.info("Interview was too brief", {
@@ -655,8 +659,16 @@ function DashboardContent() {
                           <div>
                             {/* Status / Score Indicator */}
                             <div>
-                              {/* Show "too short" or "failed" message if applicable, even if score is 0 */}
-                              {(isTooShort || isFailed) ? (
+                              {/* Show loading/analyzing state first if generating feedback */}
+                              {isGeneratingFeedback ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-foreground">Analyzing</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground">Please wait</span>
+                                  </div>
+                                </div>
+                              ) : (isTooShort || isFailed) ? (
                                 <div className="flex items-center gap-2">
                                   <div className={cn(
                                     "h-10 w-10 rounded-2xl flex items-center justify-center border",
@@ -726,9 +738,12 @@ function DashboardContent() {
                               ? "bg-muted text-muted-foreground border-border opacity-50"
                               : score !== null
                                 ? "bg-foreground text-background border-foreground shadow-lg group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground"
-                                : "bg-muted text-muted-foreground border-border"
+                                : "bg-muted text-muted-foreground border-border",
+                            navigatingSessionId === session.id && "bg-primary border-primary"
                           )}>
-                            {session.status === 'in_progress' ? (
+                            {navigatingSessionId === session.id ? (
+                              <div className="h-4 w-4 rounded-full border-2 border-background/30 border-t-background animate-spin" />
+                            ) : session.status === 'in_progress' ? (
                               <Clock className="h-4 w-4" />
                             ) : (
                               <ArrowRight className="h-4 w-4 -rotate-45 group-hover:rotate-0 transition-transform" />
@@ -773,10 +788,7 @@ export default function Dashboard() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="relative">
-          <div className="h-16 w-16 border-4 border-primary/20 rounded-full animate-ping absolute" />
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent relative z-10" />
-        </div>
+        <PremiumLogoLoader text="Loading Dashboard" />
       </div>
     }>
       <DashboardContent />

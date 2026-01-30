@@ -276,14 +276,14 @@ function StartInterviewContent() {
     };
 
 
-    const handleResumeContinue = async () => {
+    const handleResumeContinue = async (useResume: boolean) => {
         if (!pendingValues) return;
         setShowResumeCheck(false);
-        await executeStartInterview(pendingValues);
+        await executeStartInterview(pendingValues, useResume);
     };
 
 
-    const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
+    const executeStartInterview = async (values: z.infer<typeof formSchema>, useResume: boolean) => {
         try {
             // Continue with creating new session
             const config: Record<string, unknown> = {
@@ -312,6 +312,7 @@ function StartInterviewContent() {
                 jobDescription: values.jobDescription,
                 config: {
                     ...config,
+                    useResume,
                     currentStage: 'setup' // Initialize with setup stage
                 }
             });

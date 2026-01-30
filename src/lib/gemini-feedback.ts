@@ -52,13 +52,6 @@ export interface FeedbackData {
         feedback: string;
     }[];
     actionPlan: string[];
-    // What you said vs. What you should have said
-    comparisons?: {
-        question: string;
-        actualAnswer: string;
-        eliteAnswer: string;
-        explanation: string;
-    }[];
     // Deprecated: kept for backward compatibility
     skills?: {
         name: string;
@@ -366,14 +359,6 @@ CRITICAL: You MUST include ALL fields below. Missing any field will cause system
   "executiveSummary": "2-3 sentences with specific examples and scores justification. REQUIRED.",
   "strengths": ["REQUIRED: At least 2 specific examples from transcript", "Another strength with evidence"],
   "improvements": ["REQUIRED: At least 2 specific gaps with examples", "Another improvement area"],
-  "comparisons": [
-    {
-      "question": "Interviewer's prompt",
-      "actualAnswer": "Candidate's exact response",
-      "eliteAnswer": "A high-quality, professional, and deep technical answer they SHOULD have given",
-      "explanation": "Why this elite answer is superior"
-    }
-  ],
   "overallSkills": [
     {"name": "Technical Knowledge", "score": 0-100, "feedback": "Evidence-based, match score"},
     {"name": "Communication", "score": 0-100, "feedback": "Evidence-based"},
@@ -389,7 +374,6 @@ MANDATORY REQUIREMENTS:
 2. 'improvements' array: MUST have at least 2 items, each with specific examples
 3. 'actionPlan' array: MUST have at least 2 actionable steps
 4. 'overallSkills' array: MUST have exactly 4 skills as shown above
-5. 'comparisons' array: Include 3-5 most impactful exchanges where the candidate's answer was weak
 
 CRITICAL: Return ONLY valid JSON. Do not wrap in markdown code blocks. Do not add any text before or after the JSON.
 
@@ -474,14 +458,6 @@ Compare their answers against their resume claims. If they claim expertise in a 
             actionPlan: (Array.isArray(parsedFeedback.actionPlan) && (parsedFeedback.actionPlan as unknown[]).filter((s: unknown) => typeof s === 'string' && (s as string).length >= 5).length > 0)
                 ? (parsedFeedback.actionPlan as string[]).filter((s: string) => s.length >= 5)
                 : ['Continue practicing mock interviews to build confidence'],
-            comparisons: Array.isArray(parsedFeedback.comparisons)
-                ? (parsedFeedback.comparisons as Record<string, unknown>[]).map((c: Record<string, unknown>) => ({
-                    question: typeof c.question === 'string' ? c.question : 'Question analysis unavailable',
-                    actualAnswer: typeof c.actualAnswer === 'string' ? c.actualAnswer : 'Response analysis unavailable',
-                    eliteAnswer: typeof c.eliteAnswer === 'string' ? c.eliteAnswer : 'Suggested improvement unavailable',
-                    explanation: typeof c.explanation === 'string' ? c.explanation : 'Context unavailable'
-                }))
-                : [],
             // Backward compatibility
             skills: parsedFeedback.skills || (Array.isArray(parsedFeedback.overallSkills) ? parsedFeedback.overallSkills : null)
         };

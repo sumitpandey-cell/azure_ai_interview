@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useInterviewStore } from "@/stores/interviewStore";
 import { LiveInterviewSession } from "@/components/agent-playground/LiveInterviewSession";
 import { Button } from "@/components/ui/button";
-import { ArjunaLoader } from '@/components/ArjunaLoader';
+import { PremiumLogoLoader } from '@/components/PremiumLogoLoader';
 import { useSubscriptionTimer } from "@/hooks/use-subscription-timer"
 import { useFeedback } from "@/context/FeedbackContext";
 import type { InterviewSession } from "@/services/interview.service";
@@ -346,7 +346,11 @@ export default function LiveInterview() {
     }
 
     if (isRedirecting) {
-        return <ArjunaLoader variant="fullscreen" message="Saving results and returning to dashboard..." />;
+        return (
+            <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+                <PremiumLogoLoader text="Saving results and returning to dashboard..." />
+            </div>
+        );
     }
 
     // Get initial mic and camera states from URL params
@@ -408,7 +412,9 @@ export default function LiveInterview() {
             data-lk-theme="default"
         >
             {isSessionLoading ? (
-                <ArjunaLoader variant="fullscreen" message="Connecting to Interview..." />
+                <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+                    <PremiumLogoLoader text="Connecting to Interview..." />
+                </div>
             ) : (
                 <>
                     <LiveInterviewSession

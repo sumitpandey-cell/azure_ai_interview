@@ -14,7 +14,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { downloadHTMLReport } from "@/lib/report-download";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -94,7 +93,8 @@ export default function InterviewReport() {
     const [loading, setLoading] = useState(true);
     const { feedback: instantFeedback, transcript: instantTranscript, clearFeedback } = useInterviewStore();
     const { fetchSessionDetail, deleteInterviewSession } = useOptimizedQueries();
-    const { generateFeedbackInBackground, isGenerating } = useFeedback();
+    const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
+    const isSessionGenerating = isGenerating && generatingSessionId === sessionId;
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
     const { resolvedTheme } = useTheme();
@@ -241,6 +241,23 @@ export default function InterviewReport() {
                     <Button onClick={() => router.push("/dashboard")} className="mt-4">
                         Back to Dashboard
                     </Button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // Show skeleton while generating feedback (non-blocking)
+    // We prioritize this over any existing (potentially failed or thin) reports
+    if ((isFeedbackGenerating || isSessionGenerating) && !feedbackTimeout && !errorState) {
+        return (
+            <DashboardLayout>
+                <ReportPageSkeleton />
+                {/* Subtle notification that analysis is in progress */}
+                <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg animate-pulse z-50">
+                    <div className="flex items-center gap-2">
+                        <Bot className="h-4 w-4" />
+                        <span className="text-sm font-medium">Analyzing interview...</span>
+                    </div>
                 </div>
             </DashboardLayout>
         );
@@ -465,7 +482,22 @@ export default function InterviewReport() {
                                         className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
                                     >
                                         <RefreshCw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-transform duration-700" />
-                                        Regenerate Report
+                                        Regenerate Report<Button
+                                            onClick={async () => {
+                                                if (sessionId) {
+                                                    toast.info("Regenerating feedback analysis...", {
+                                                        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
+                                                    });
+                                                    await generateFeedbackInBackground(sessionId);
+                                                    // Refresh page after a short delay
+                                                    window.location.reload();
+                                                }
+                                            }}
+                                            className="w-full h-16 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group"
+                                        >
+                                            <RefreshCw className="mr-2 h-4 w-4 group-hover:rotate-180 transition-transform duration-700" />
+                                            Regenerate Report
+                                        </Button>
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -589,21 +621,6 @@ export default function InterviewReport() {
         );
     }
 
-    // Show skeleton while generating feedback (non-blocking)
-    if (isFeedbackGenerating && !feedbackTimeout && !errorState) {
-        return (
-            <DashboardLayout>
-                <ReportPageSkeleton />
-                {/* Subtle notification that analysis is in progress */}
-                <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg animate-pulse z-50">
-                    <div className="flex items-center gap-2">
-                        <Bot className="h-4 w-4" />
-                        <span className="text-sm font-medium">Analyzing interview...</span>
-                    </div>
-                </div>
-            </DashboardLayout>
-        );
-    }
 
     // Error state handling - show contextual error UI
     if (errorState) {
@@ -833,7 +850,6 @@ export default function InterviewReport() {
             return {
                 ...dbFeedback,
                 ...instant,
-                comparisons: (Array.isArray(instant.comparisons) && instant.comparisons.length > 0) ? instant.comparisons : dbFeedback.comparisons,
                 // ensure generatedAt is set to the latest
                 generatedAt: instant.generatedAt || dbFeedback.generatedAt,
             };
@@ -945,7 +961,6 @@ export default function InterviewReport() {
             : [
                 { id: 1, speaker: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
             ],
-        comparisons: (Array.isArray(feedbackData.comparisons) ? feedbackData.comparisons : null) || [],
     };
 
     return (
@@ -953,7 +968,7 @@ export default function InterviewReport() {
             <div className="space-y-6 sm:space-y-8 pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 pt-10 sm:pt-0 overflow-x-hidden max-w-full">
                 {/* Header Section */}
                 <div className="relative mb-2">
-                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 relative z-10">
+                    <div className="flex flex-col sm:flex-row lg:items-end justify-between gap-4 sm:gap-6 relative z-10">
                         <div className="space-y-2 sm:space-y-3">
                             <div className="space-y-2">
                                 <h1 className="text-xl sm:text-2xl md:text-2xl font-bold tracking-tight text-foreground leading-[1.1]">
@@ -977,28 +992,8 @@ export default function InterviewReport() {
                                 onClick={downloadReport}
                                 className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl border border-border/80 dark:border-border hover:bg-card/90 dark:hover:bg-card/60 text-foreground font-black uppercase tracking-[0.15em] text-[10px] transition-all shadow-md dark:shadow-2xl group/btn"
                             >
-                                <Download className="h-3.5 w-3.5 mr-2 group-hover:scale-110 transition-transform" />
-                                Export Insights
-                            </Button>
-
-                            <Button
-                                onClick={async () => {
-                                    if (sessionId) {
-                                        toast.info("Regenerating feedback analysis... please wait.", {
-                                            icon: <RefreshCw className="h-4 w-4 animate-spin" />,
-                                        });
-                                        // Clear instant feedback to force fresh DB read
-                                        clearFeedback();
-                                        await generateFeedbackInBackground(sessionId);
-                                        // Force fetch fresh session from DB bypassing the cache
-                                        await fetchSession(true);
-                                    }
-                                }}
-                                disabled={isGenerating}
-                                className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-[0.15em] text-[10px] transition-all shadow-xl shadow-primary/20 group/btn disabled:opacity-50"
-                            >
-                                <RefreshCw className={cn("h-3.5 w-3.5 mr-2 transition-transform duration-700", isGenerating ? "animate-spin" : "group-hover:rotate-180")} />
-                                {isGenerating ? 'Regenerating...' : 'Regenerate'}
+                                <Download className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+                                <span className="hidden lg:inline">Export Insights</span>
                             </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -1074,7 +1069,6 @@ export default function InterviewReport() {
                                 )}>
                                     {reportData.overallScore >= 70 ? 'Strong Match' : 'Improvement Recommended'}
                                 </div>
-                                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mt-2 leading-none">Assessment: <span className="text-foreground">{reportData.overallScore >= 70 ? 'Verified' : 'Needs Optimization'}</span></p>
                             </div>
                         </CardContent>
                     </Card>
@@ -1132,10 +1126,6 @@ export default function InterviewReport() {
                 <Tabs defaultValue="insights" className="w-full">
                     <TabsList className="bg-muted/80 dark:bg-muted/50 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl h-10 sm:h-12 md:h-14 mb-4 sm:mb-6 md:mb-8 inline-flex border border-border/80 dark:border-border backdrop-blur-3xl shadow-lg dark:shadow-2xl overflow-x-auto no-scrollbar max-w-full">
                         <TabsTrigger value="insights" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Analysis</TabsTrigger>
-                        <TabsTrigger value="elite" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 flex items-center gap-2 shadow-sm data-[state=active]:shadow-md">
-                            <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
-                            Model Answers
-                        </TabsTrigger>
                         <TabsTrigger value="skills" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Skills</TabsTrigger>
                         <TabsTrigger value="transcript" className="rounded-xl sm:rounded-2xl px-4 sm:px-8 md:px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all duration-500 shadow-sm data-[state=active]:shadow-md">Transcript</TabsTrigger>
                     </TabsList>
@@ -1260,125 +1250,6 @@ export default function InterviewReport() {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="elite" className="space-y-10 outline-none animate-in fade-in slide-in-from-top-4 duration-700">
-                        <div className="flex flex-col gap-8">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase text-foreground flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                            <Sparkles className="h-5 w-5 text-primary" />
-                                        </div>
-                                        Model Responses
-                                    </h3>
-                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.4em] ml-1">Candidate Responses vs. Expert recommendations</p>
-                                </div>
-                                <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10">
-                                    <Bot className="h-4 w-4 text-primary" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary/80">Expert AI Analysis</span>
-                                </div>
-                            </div>
-
-                            {reportData.comparisons && (reportData.comparisons as Array<Record<string, string>>).length > 0 ? (
-                                <div className="grid grid-cols-1 gap-12">
-                                    {(reportData.comparisons as Array<Record<string, string>>).map((item: Record<string, string>, i: number) => (
-                                        <div key={i} className="group/elite relative">
-                                            {/* Decorative Number */}
-                                            <div className="absolute -top-6 -left-4 text-8xl font-black text-white/[0.02] pointer-events-none group-hover/elite:text-primary/[0.05] transition-colors duration-1000">0{i + 1}</div>
-
-                                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-3xl overflow-hidden transition-all duration-700 hover:border-primary/40 dark:hover:border-primary/20">
-
-                                                <CardContent className="p-0">
-                                                    <div className="grid grid-cols-1 xl:grid-cols-2">
-                                                        {/* Actual Side */}
-                                                        <div className="p-6 sm:p-8 border-b xl:border-b-0 xl:border-r border-border space-y-4">
-                                                            <div className="flex items-center gap-2.5">
-                                                                <div className="h-7 w-7 rounded-lg bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-600 dark:text-rose-500">
-                                                                    <MessageSquare className="h-3.5 w-3.5" />
-                                                                </div>
-                                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-600 dark:text-rose-500/60">Your Response</span>
-
-                                                            </div>
-
-                                                            <div className="space-y-4">
-                                                                <div className="p-4 rounded-xl bg-muted/50 dark:bg-white/[0.02] border border-border italic text-xs font-medium text-muted-foreground">
-                                                                    Q: {item.question}
-                                                                </div>
-                                                                <p className="text-xs sm:text-sm font-bold text-foreground/80 leading-relaxed italic">
-                                                                    &quot;{item.actualAnswer}&quot;
-                                                                </p>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Elite Side */}
-                                                        <div className="p-6 sm:p-8 space-y-4 bg-primary/[0.02] relative group-hover/elite:bg-primary/[0.04] transition-colors duration-700">
-                                                            <div className="absolute inset-0 bg-grid-primary/[0.02] pointer-events-none" />
-                                                            <div className="relative z-10 flex items-center justify-between">
-                                                                <div className="flex items-center gap-2.5">
-                                                                    <div className="h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/40 text-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]">
-                                                                        <Target className="h-3.5 w-3.5" />
-                                                                    </div>
-                                                                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Model Answer</span>
-                                                                </div>
-                                                                <Badge className="bg-primary hover:bg-primary text-primary-foreground font-bold text-[9px] tracking-widest uppercase px-3 py-1">Best Practice</Badge>
-                                                            </div>
-
-                                                            <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
-                                                                <p className="text-xs sm:text-sm font-bold leading-relaxed">
-                                                                    {item.eliteAnswer}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Explanation Box */}
-                                                            <div className="relative z-10 flex gap-3 p-4 rounded-xl bg-muted/80 dark:bg-muted border border-border/80 dark:border-border group-hover/elite:border-primary/40 dark:group-hover/elite:border-primary/20 transition-all shadow-sm">
-                                                                <Bot className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/80 dark:text-primary/60">Expert Analysis</p>
-                                                                    <p className="text-[11px] font-bold text-foreground/80 leading-relaxed">{item.explanation}</p>
-                                                                </div>
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl p-12 text-center">
-                                    <div className="flex flex-col items-center gap-6">
-                                        <div className="h-20 w-20 rounded-3xl bg-white/5 flex items-center justify-center border border-border">
-                                            <AlertTriangle className="h-10 w-10 text-muted-foreground/40" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h4 className="text-xl font-bold text-foreground uppercase tracking-tight">No Comparatives Available</h4>
-                                            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                                                This interview may not have had enough technical depth or exchanges to generate detailed competitive comparisons.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            onClick={async () => {
-                                                if (sessionId) {
-                                                    toast.info("Recalibrating comparisons... please wait.", {
-                                                        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
-                                                    });
-                                                    // Clear instant feedback to force fresh DB read
-                                                    clearFeedback();
-                                                    await generateFeedbackInBackground(sessionId);
-                                                    // Force fetch fresh session from DB
-                                                    await fetchSession(true);
-                                                }
-                                            }}
-                                            variant="outline"
-                                            className="h-12 px-8 rounded-xl font-bold uppercase tracking-widest text-[10px] border-border hover:bg-muted"
-                                        >
-                                            Try Regenerating Analysis
-                                        </Button>
-                                    </div>
-                                </Card>
-                            )}
-                        </div>
-                    </TabsContent>
 
                     <TabsContent value="skills" className="space-y-10 outline-none animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

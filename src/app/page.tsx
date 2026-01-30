@@ -12,6 +12,7 @@ import { TransitionButton } from "@/components/TransitionButton";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 15 },
@@ -65,6 +66,7 @@ export default function Landing() {
   if (!mounted || loading || user) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <PremiumLogoLoader text="Initializing Arjuna AI..." />
         {/* Simple loader or just the background to prevent flash */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
@@ -73,6 +75,7 @@ export default function Landing() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">

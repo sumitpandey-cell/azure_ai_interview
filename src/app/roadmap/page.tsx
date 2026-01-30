@@ -11,6 +11,7 @@ import { RoadmapPhases } from '@/components/roadmap/RoadmapPhases';
 import { RoadmapSkeleton } from '@/components/roadmap/RoadmapSkeleton';
 import { PaymentPendingModal } from '@/components/roadmap/PaymentPendingModal';
 import { RoadmapWizard } from '@/components/roadmap/RoadmapWizard';
+import { PremiumLogoLoader } from '@/components/PremiumLogoLoader';
 
 interface Goal {
     id: string;
@@ -322,23 +323,7 @@ export default function RoadmapPage() {
                         </div>
                     ) : (roadmap?.roadmap_data?.status === 'generating' || generating) && !showWizard ? (
                         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto animate-in fade-in duration-700">
-                            <div className="h-24 w-24 rounded-3xl bg-primary/10 dark:bg-primary/5 flex items-center justify-center mb-8 animate-bounce border border-primary/20 shadow-xl shadow-primary/5">
-                                <Sparkles className="w-12 h-12 text-primary" />
-                            </div>
-
-                            <h2 className="text-2xl font-bold tracking-tight mb-4 text-foreground">Building Your Professional Blueprint</h2>
-                            <p className="text-muted-foreground text-base mb-12">
-                                We&apos;re cross-referencing industry standards with your target profile to build an optimal learning path.
-                            </p>
-                            <div className="w-full max-w-sm space-y-4">
-                                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                    <div className="h-full bg-primary animate-progress-indeterminate rounded-full" />
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
-                                    <span>Analyzing Role</span>
-                                    <span>Generating Modules</span>
-                                </div>
-                            </div>
+                            <PremiumLogoLoader text="Building Your Professional Blueprint" />
                         </div>
                     ) : (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

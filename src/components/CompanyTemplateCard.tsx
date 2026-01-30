@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { CompanyTemplate } from "@/types/company-types";
 import { Building2, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getCompanyLogo } from "@/lib/utils";
 import Image from "next/image";
 
 interface CompanyTemplateCardProps {
@@ -30,9 +30,9 @@ export function CompanyTemplateCard({ template, onSelect, isLoading }: CompanyTe
                     <div className="flex gap-4">
                         <div className="relative h-14 w-14 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-inner font-bold">
 
-                            {template.logo_url ? (
+                            {getCompanyLogo(template.slug, template.logo_url) ? (
                                 <Image
-                                    src={template.logo_url}
+                                    src={getCompanyLogo(template.slug, template.logo_url)}
                                     alt={`${template.name} logo`}
                                     fill
                                     unoptimized
@@ -46,7 +46,7 @@ export function CompanyTemplateCard({ template, onSelect, isLoading }: CompanyTe
                                     }}
                                 />
                             ) : null}
-                            <Building2 className={`h-6 w-6 text-muted-foreground ${template.logo_url ? 'hidden' : ''}`} />
+                            <Building2 className={`h-6 w-6 text-muted-foreground ${getCompanyLogo(template.slug, template.logo_url) ? 'hidden' : ''}`} />
                             <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-primary text-primary-foreground rounded-full flex items-center justify-center ring-2 ring-card">
                                 <CheckCircle2 className="h-2.5 w-2.5" />
                             </div>

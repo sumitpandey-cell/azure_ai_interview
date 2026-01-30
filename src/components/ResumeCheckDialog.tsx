@@ -32,7 +32,7 @@ interface ResumeCheckDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     userId: string;
-    onContinue: () => void;
+    onContinue: (useResume: boolean) => void;
 }
 
 export function ResumeCheckDialog({
@@ -117,7 +117,7 @@ export function ResumeCheckDialog({
                 content: extractedText
             });
 
-            toast.success("Resume uploaded! Your interview will now be personalized.");
+            toast.success("Resume uploaded! You can now choose to use it for your interview.");
         } catch (error: unknown) {
             toast.error("Upload failed: " + (error instanceof Error ? error.message : String(error)));
         } finally {
@@ -145,8 +145,8 @@ export function ResumeCheckDialog({
                         </div>
                         <DialogDescription className="text-sm font-medium text-muted-foreground leading-relaxed">
                             {resumeData.url
-                                ? "Your resume is active. The AI will personalize your interview based on your professional background."
-                                : "To provide a high-quality, personalized interview experience, we require a resume to generate relevant questions."}
+                                ? "Your resume is active. Choose whether to personalize your interview based on your professional background."
+                                : "To provide a high-quality, personalized interview experience, we recommend a resume to generate relevant questions."}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -174,22 +174,10 @@ export function ResumeCheckDialog({
                                 </div>
                             </div>
 
-                            {resumeData.content && (
-                                <div className="p-4 rounded-xl bg-muted/30 border border-border/40 max-h-[120px] overflow-y-auto custom-scrollbar">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <Sparkles className="h-3 w-3" />
-                                        Context Preview
-                                    </p>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-4">
-                                        {resumeData.content}
-                                    </p>
-                                </div>
-                            )}
-
                             <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-3">
                                 <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                 <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-                                    The AI will simulate a real interviewer by focusing on the specific skills and achievements mentioned in your resume.
+                                    Starting with your resume allows the AI to simulate a real interviewer focusing on your specific skills and achievements.
                                 </p>
                             </div>
                         </div>
@@ -220,7 +208,7 @@ export function ResumeCheckDialog({
                             </div>
 
                             <div className="text-center">
-                                <p className="text-xs text-muted-foreground mb-4">Or manage your documents in your settings</p>
+                                <p className="text-xs text-muted-foreground mb-4">You can also manage your documents in settings</p>
                                 <Button
                                     variant="outline"
                                     onClick={() => router.push('/settings')}
@@ -234,25 +222,41 @@ export function ResumeCheckDialog({
                     )}
 
                     <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-2">
-                        <Button
-                            onClick={resumeData.url ? onContinue : () => onOpenChange(false)}
-                            disabled={uploading || loading}
-                            className={cn(
-                                "flex-1 h-12 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 group",
-                                resumeData.url
-                                    ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
-                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            )}
-                        >
-                            {resumeData.url ? (
-                                <>
-                                    Start Personalized Session
+                        {resumeData.url ? (
+                            <>
+                                <Button
+                                    onClick={() => onContinue(false)}
+                                    variant="outline"
+                                    className="flex-1 h-12 rounded-xl font-bold text-xs uppercase tracking-widest"
+                                >
+                                    Start Without Resume
+                                </Button>
+                                <Button
+                                    onClick={() => onContinue(true)}
+                                    disabled={uploading || loading}
+                                    className="flex-1 h-12 rounded-xl font-bold text-xs uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 group"
+                                >
+                                    Start With Resume
                                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </>
-                            ) : (
-                                "Close & Upload First"
-                            )}
-                        </Button>
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    onClick={() => onContinue(false)}
+                                    variant="ghost"
+                                    className="flex-1 h-12 rounded-xl font-bold text-xs uppercase tracking-widest text-muted-foreground"
+                                >
+                                    Skip For Now
+                                </Button>
+                                <Button
+                                    disabled={true}
+                                    className="flex-1 h-12 rounded-xl font-bold text-xs uppercase tracking-widest bg-muted text-muted-foreground"
+                                >
+                                    Upload First
+                                </Button>
+                            </>
+                        )}
                     </DialogFooter>
                 </div>
             </DialogContent>

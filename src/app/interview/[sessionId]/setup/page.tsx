@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { AvatarSelection } from "@/components/AvatarSelection";
 import { getDefaultAvatar, getAvatarById, type InterviewerAvatar } from "@/config/interviewer-avatars";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 import {
     AlertDialog,
@@ -38,6 +39,7 @@ interface SessionConfig {
         role: string;
         experienceLevel: string;
     };
+    useResume?: boolean;
 }
 
 interface SessionData {
@@ -393,7 +395,7 @@ export default function InterviewSetup() {
     if (fetchingSession) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <PremiumLogoLoader text="Preparing Your Session" />
             </div>
         );
     }
@@ -592,7 +594,7 @@ export default function InterviewSetup() {
                                             </div>
                                         </div>
                                     )}
-                                    {hasResume && (
+                                    {hasResume && session.config?.useResume !== false && (
                                         <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-emerald-500/5 border border-emerald-500/20 group/resume">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400 group-hover/resume:text-emerald-500 transition-colors uppercase tracking-widest">Resume Context</span>

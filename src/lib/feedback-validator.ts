@@ -32,12 +32,6 @@ export const FeedbackSchema = z.object({
     actionPlan: z.array(z.string().min(5))  // Reduced from 10
         .min(1, "At least one action item required")
         .max(10, "Too many action items"),
-    comparisons: z.array(z.object({
-        question: z.string().default("Question analysis unavailable"),
-        actualAnswer: z.string().default("Response analysis unavailable"),
-        eliteAnswer: z.string().default("Suggested improvement unavailable"),
-        explanation: z.string().default("Context unavailable")
-    })).optional().default([]),
     // Deprecated: kept for backward compatibility
     skills: z.array(SkillSchema).optional()
 });

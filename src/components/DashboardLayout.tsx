@@ -25,6 +25,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useFeedback } from "@/context/FeedbackContext";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -88,10 +89,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   if (authLoading || (!user && pathname !== '/')) {
     return (
       <div className="flex h-screen items-center justify-center bg-sidebar">
-        <div className="relative">
-          <div className="h-16 w-16 border-4 border-primary/20 rounded-full animate-ping absolute" />
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent relative z-10" />
-        </div>
+        <PremiumLogoLoader text="Authenticating" />
       </div>
     );
   }
