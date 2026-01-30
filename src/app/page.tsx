@@ -87,6 +87,7 @@ export default function Landing() {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "name": "Arjuna AI",
+            "alternateName": ["ArjunaAI", "AI Interviewer", "Arjuna Interview Coach"],
             "operatingSystem": "Web",
             "applicationCategory": "EducationalApplication",
             "offers": {
@@ -94,7 +95,7 @@ export default function Landing() {
               "price": "0",
               "priceCurrency": "USD"
             },
-            "description": "Arjuna AI is an AI-powered interview coaching platform that helps candidates practice real-time interviews with instant scoring and personalized feedback.",
+            "description": "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills.",
             "aggregateRating": {
               "@type": "AggregateRating",
               "ratingValue": "4.9",
@@ -228,7 +229,7 @@ export default function Landing() {
                     <div className="h-6 w-64 bg-white/5 rounded-md flex items-center justify-center border border-white/5">
                       <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
                         <div className="w-2 h-2 rounded-full bg-blue-500/50"></div>
-                        arjuna-interview.ai
+                        arjunaai.in
                       </div>
                     </div>
                   </div>
@@ -861,7 +862,7 @@ export default function Landing() {
                 {/* Logo Area */}
                 <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 relative shadow-lg shadow-orange-500/20">
                   <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <svg viewBox="0 0 24 24" fill="white" className="w-8 h-8 relative z-10"><path d="M13.6 15.6c-.9.5-2.5.9-4.1.4-1.9-.6-3.1-2.6-2.8-4.6.2-1.3 1-2.4 2.2-2.9 1.6-.6 3.4-.1 4.5 1.1.2.2.2.6 0 .8-.2.2-.5.2-.7 0-.9-1-2.3-1.4-3.6-.9-1 .4-1.6 1.3-1.8 2.4-.2 1.6.8 3.2 2.4 3.7 1.3.4 2.6.1 3.4-.4.2-.1.5-.1.7.1.1.3.1.6-.2.7zm5.5-5.4h-1.6v4.6c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1v-4.6h-1.6v4.7c0 1.4 1.1 2.6 2.5 2.6s2.6-1.1 2.6-2.6v-4.7z" /></svg>
+                  <Image src="/amazon-icon.png" alt="Amazon" width={64} height={64} />
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-300 transition-colors">Amazon</h3>

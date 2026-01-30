@@ -8,21 +8,27 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL("https://arjuna.ai"),
   title: {
-    default: "Arjuna AI | Ace Any Interview with AI-Powered Practice",
+    default: "Arjuna AI | The World's Best AI Interviewer & Coach",
     template: "%s | Arjuna AI"
   },
-  description: "Arjuna AI is the world's most advanced AI interview coach. Practice real-time interviews, get instant behavioral scoring, and master your technical skills with personalized feedback built to train you like a real hiring manager.",
+  description: "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills to ace your dream job.",
   keywords: [
+    "AI Interviewer",
+    "Arjuna AI",
+    "AI Mock Interview",
     "AI Interview Coach",
     "Practice Interviews",
     "Job Interview Preparation",
-    "AI Scoring",
-    "Mock Interview",
+    "Coding Interview Prep",
+    "System Design Interview Prep",
     "Behavioral Interview Practice",
-    "Technical Interview Prep",
-    "Arjuna AI",
+    "Mock Interview",
+    "Tech Interview Coach",
     "Career Growth",
-    "Hiring Manager Simulation"
+    "Hiring Manager Simulation",
+    "Interview Copilot",
+    "Google Interview Prep",
+    "Amazon Interview Prep"
   ],
   authors: [{ name: "Arjuna AI Team", url: "https://arjuna.ai" }],
   creator: "Arjuna AI",
@@ -39,10 +45,10 @@ export const metadata: Metadata = {
     siteName: "Arjuna AI",
     images: [
       {
-        url: "/dashboard-preview.png",
+        url: "/social-share.png",
         width: 1200,
         height: 630,
-        alt: "Arjuna AI Dashboard Preview",
+        alt: "Arjuna AI - Ace Your Interview",
       },
     ],
     locale: "en_US",
@@ -52,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Arjuna AI | Your Personal AI Interview Coach",
     description: "Stop guessing and start improving. Get real-time AI feedback on your interviews today.",
-    images: ["/dashboard-preview.png"],
+    images: ["/social-share.png"],
     creator: "@ArjunaAI",
   },
   robots: {

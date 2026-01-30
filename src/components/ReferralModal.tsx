@@ -138,7 +138,7 @@ const ReferralModal: React.FC<ReferralModalProps> = ({
                 <div className="relative h-48 w-full overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent z-10" />
                     <Image
-                        src="/dashboard-preview.png"
+                        src="/social-share.png"
                         alt="Referral"
                         fill
                         className="object-cover opacity-60"
