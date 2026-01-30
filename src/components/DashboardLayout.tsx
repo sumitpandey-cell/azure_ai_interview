@@ -26,6 +26,7 @@ import { useAnalytics } from "@/hooks/use-analytics";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useFeedback } from "@/context/FeedbackContext";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import ReferralModal from "@/components/ReferralModal";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -37,6 +38,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const {
     remaining_seconds,
     plan_seconds,
@@ -380,12 +382,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-2xl border-b border-border/50 shadow-lg">
         <div className="h-full px-4 flex items-center justify-between">
           {/* Hamburger Menu */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="h-10 w-10 flex items-center justify-center bg-card/50 border border-border/50 rounded-xl shadow-sm group active:scale-90 transition-all duration-300"
-          >
-            <Menu className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="h-10 w-10 flex items-center justify-center bg-card/50 border border-border/50 rounded-xl shadow-sm group active:scale-90 transition-all duration-300"
+            >
+              <Menu className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
+            </button>
+          </div>
 
           {/* Header Controls from Page */}
           {headerControls}
@@ -394,7 +398,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
-        {/* Page Content */}
         {/* Page Content */}
         <main className="flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
           <div
@@ -405,6 +408,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           </div>
         </main >
       </div >
+
+      <ReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+        userId={user?.id}
+        userName={user?.user_metadata?.full_name}
+      />
     </div >
   );
 }
