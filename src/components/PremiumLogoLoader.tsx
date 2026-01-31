@@ -56,7 +56,7 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                     className="absolute"
                     style={{ width: size, height: size }}
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 >
                     <svg
                         viewBox="0 0 100 100"
@@ -74,43 +74,15 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                         />
 
                         {/* Main Progress Indicator */}
-                        <motion.circle
+                        <circle
                             cx="50"
                             cy="50"
                             r="48"
                             stroke="currentColor"
                             strokeWidth="2.5"
-                            strokeDasharray="40 100"
+                            strokeDasharray="60 100"
                             strokeLinecap="round"
-                            className="text-primary"
-                            animate={{
-                                strokeDashoffset: [0, -250],
-                            }}
-                            transition={{
-                                duration: 2.5,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                            }}
-                        />
-
-                        {/* Secondary Accent Indicator */}
-                        <motion.circle
-                            cx="50"
-                            cy="50"
-                            r="48"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeDasharray="10 150"
-                            strokeLinecap="round"
-                            className="text-accent opacity-60"
-                            animate={{
-                                strokeDashoffset: [0, 250],
-                            }}
-                            transition={{
-                                duration: 3.5,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                            }}
+                            className="text-primary opacity-80"
                         />
                     </svg>
                 </motion.div>
@@ -120,25 +92,21 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                     className="absolute rounded-full bg-primary/10 dark:bg-primary/5"
                     style={{ width: logoSize + 20, height: logoSize + 20 }}
                     animate={{
-                        scale: [1, 1.25, 1],
-                        opacity: [0.3, 0.1, 0.3]
+                        opacity: [0.15, 0.05, 0.15]
                     }}
                     transition={{
-                        duration: 3,
+                        duration: 5,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: "linear"
                     }}
                 />
 
                 {/* Logo Container */}
-                <motion.div
-                    className="relative z-10 p-5 rounded-[2rem] bg-background/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center justify-center"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
+                <div
+                    className="relative z-10 p-5 rounded-[2rem] bg-background/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center justify-center text-primary"
                 >
                     {/* Subtle Inner Glow */}
-                    <div className="absolute inset-0 rounded-[2rem] bg-primary/5 dark:bg-primary/10 animate-pulse" />
+                    <div className="absolute inset-0 rounded-[2rem] bg-current opacity-[0.03]" />
 
                     <div className="relative flex items-center justify-center" style={{ width: logoSize, height: logoSize }}>
                         <Image
@@ -146,49 +114,12 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                             alt="Arjuna AI Logo"
                             width={logoSize}
                             height={logoSize}
-                            className="object-contain drop-shadow-md"
+                            className="object-contain drop-shadow-sm"
                             priority
                         />
                     </div>
-
-                    {/* Shine Sweep Effect */}
-                    <motion.div
-                        className="absolute inset-0 overflow-hidden rounded-[2rem] pointer-events-none"
-                    >
-                        <motion.div
-                            className="absolute inset-[-100%] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent skew-x-12"
-                            animate={{ x: ["-100%", "100%"] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
-                        />
-                    </motion.div>
-                </motion.div>
-
-                {/* Floating Particles/Dots for added magic */}
-                <div className="absolute inset-0 pointer-events-none">
-                    {[...Array(3)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute w-1 h-1 rounded-full bg-primary/40"
-                            initial={{
-                                x: size / 2,
-                                y: size / 2,
-                                opacity: 0
-                            }}
-                            animate={{
-                                x: [size / 2, Math.cos((i * 120) * (Math.PI / 180)) * (size / 1.8) + size / 2],
-                                y: [size / 2, Math.sin((i * 120) * (Math.PI / 180)) * (size / 1.8) + size / 2],
-                                opacity: [0, 0.8, 0],
-                                scale: [0.5, 1.5, 0.5]
-                            }}
-                            transition={{
-                                duration: 2.5,
-                                repeat: Infinity,
-                                delay: i * 0.8,
-                                ease: "easeOut"
-                            }}
-                        />
-                    ))}
                 </div>
+
             </div>
 
             {/* Loading Information */}
@@ -209,20 +140,19 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                     </div>
 
                     {/* Animated Progress Dots */}
-                    <div className="flex gap-2 p-1 px-3 rounded-full bg-muted/50 dark:bg-muted/10 border border-border/50">
+                    <div className="flex gap-2">
                         {[0, 1, 2].map((i) => (
                             <motion.div
                                 key={i}
-                                className="w-2 h-2 rounded-full bg-primary"
+                                className="w-1.5 h-1.5 rounded-full bg-primary"
                                 animate={{
-                                    scale: [1, 1.5, 1],
-                                    opacity: [0.3, 1, 0.3],
-                                    backgroundColor: i === 1 ? ["#A855F7", "#FBBF24", "#A855F7"] : undefined
+                                    opacity: [0.2, 1, 0.2],
                                 }}
                                 transition={{
-                                    duration: 1.2,
+                                    duration: 1.5,
                                     repeat: Infinity,
                                     delay: i * 0.2,
+                                    ease: "linear"
                                 }}
                             />
                         ))}

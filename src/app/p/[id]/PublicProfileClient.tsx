@@ -143,12 +143,12 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-[1400px] space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
-                        <Skeleton className="lg:col-span-6 h-[800px] bg-slate-900 rounded-2xl" />
-                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
+                        <Skeleton className="lg:col-span-3 h-[800px] rounded-2xl" />
+                        <Skeleton className="lg:col-span-6 h-[800px] rounded-2xl" />
+                        <Skeleton className="lg:col-span-3 h-[800px] rounded-2xl" />
                     </div>
                 </div>
             </div>
@@ -157,17 +157,17 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-slate-900/50 p-12 rounded-2xl border border-white/5 backdrop-blur-2xl max-w-lg"
+                    className="bg-card p-12 rounded-2xl border shadow-xl backdrop-blur-2xl max-w-lg"
                 >
-                    <Lock className="h-20 w-20 text-slate-500 mx-auto mb-6 opacity-20" />
-                    <h1 className="text-3xl font-bold text-white mb-3">Profile Protected</h1>
-                    <p className="text-slate-400 mb-8">This interview profile is either private or does not exist on our platform.</p>
+                    <Lock className="h-20 w-20 text-muted-foreground mx-auto mb-6 opacity-20" />
+                    <h1 className="text-3xl font-bold text-foreground mb-3">Profile Protected</h1>
+                    <p className="text-muted-foreground mb-8">This interview profile is either private or does not exist on our platform.</p>
                     <Link href="/">
-                        <Button className="bg-indigo-600 hover:bg-indigo-500 px-8 h-12 rounded-xl font-bold">
+                        <Button className="bg-primary hover:bg-primary/90 px-8 h-12 rounded-xl font-bold text-primary-foreground">
                             Go Home
                         </Button>
                     </Link>
@@ -177,29 +177,28 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
     }
 
     return (
-        <div className="min-h-screen bg-background text-white selection:bg-primary/30 p-3 sm:p-6 lg:p-8 overflow-x-hidden">
-            {/* Platform Branding Header */}
+        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 p-3 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden">
             <div className="max-w-[1400px] mx-auto mb-6 sm:mb-8 flex items-center justify-between gap-3">
                 <Link href="/" className="flex items-center gap-3 group">
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain dark:invert-0 light:invert-[0.1]" />
                     </div>
                     <div>
-                        <div className="text-lg sm:text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
-                        <div className="text-[9px] sm:text-[10px] font-bold text-primary/70 tracking-[0.2em] uppercase">The Global Interview Standard</div>
+                        <div className="text-lg sm:text-xl font-black tracking-tighter text-foreground">ARJUNA AI</div>
+                        <div className="text-[9px] sm:text-[10px] font-bold text-primary tracking-[0.2em] uppercase">The Global Interview Standard</div>
                     </div>
                 </Link>
 
                 <div className="hidden sm:block">
-                    <p className="text-sm font-medium text-slate-500">
-                        Elevate your career with <span className="text-white font-bold">verified AI credentials.</span>
+                    <p className="text-sm font-bold text-muted-foreground tracking-tight">
+                        Standardize your talent with <span className="text-foreground font-black uppercase tracking-[0.05em]">verified AI credentials.</span>
                     </p>
                 </div>
 
                 <Link href="/auth">
-                    <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 rounded-xl h-9 sm:h-10 px-3 sm:px-4 font-bold text-[10px] sm:text-xs gap-2">
-                        Get Your Profile <ArrowRight className="h-3 w-3" />
+                    <Button variant="outline" className="border-border bg-card hover:bg-muted rounded-xl h-9 sm:h-10 px-3 sm:px-4 font-black text-[10px] sm:text-xs gap-2 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">
+                        Claim My Rank <ArrowRight className="h-3 w-3" />
                     </Button>
                 </Link>
             </div>
@@ -211,107 +210,106 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
             </div>
 
             <main className="relative z-10 max-w-[1400px] mx-auto">
-                {/* 3-Column Grid with Alignment */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
+                {/* Responsive Grid System */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
 
-                    {/* LEFT COLUMN */}
-                    <div className="lg:col-span-3 flex flex-col gap-4 sm:gap-6">
+                    {/* LEFT COLUMN - Profile Summary */}
+                    <div className="md:col-span-2 lg:col-span-3">
                         {/* Profile Info Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-                            <Card className="h-full bg-card border border-white/5 rounded-2xl sm:rounded-2xl overflow-hidden p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl relative">
-                                <div className="absolute top-6 right-6">
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Public</span>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                            <Card className="h-full bg-card border border-border rounded-2xl overflow-hidden p-5 sm:p-6 md:p-8 flex flex-col items-center text-center shadow-xl relative">
+                                <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Network Active</span>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 relative mb-8 group">
-                                    <div className="absolute -inset-4 bg-gradient-to-r from-primary to-primary rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity" />
-                                    <Avatar className="h-28 w-28 sm:h-36 sm:w-36 border-2 border-primary/20 p-2 bg-card">
+                                <div className="mt-4 sm:mt-6 relative mb-6 sm:mb-8 group">
+                                    <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/20 rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity" />
+                                    <Avatar className="h-24 w-24 sm:h-32 md:h-36 sm:w-32 md:w-36 border-2 border-primary/20 p-1.5 sm:p-2 bg-background">
                                         <AvatarImage
                                             src={getAvatarUrl(profile.avatar_url, profile.id, 'avataaars', null, 'male')}
                                             className="rounded-full"
                                         />
-                                        <AvatarFallback className="text-3xl sm:text-4xl bg-slate-900 text-primary font-black">
+                                        <AvatarFallback className="text-2xl sm:text-3xl md:text-4xl bg-muted text-primary font-black">
                                             {getInitials(profile.full_name) || "U"}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="absolute bottom-2 right-2 bg-primary p-2 rounded-2xl border-4 border-card shadow-xl">
-                                        <Check className="h-5 w-5 text-black stroke-[4px]" />
+                                    <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-primary p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-card shadow-xl">
+                                        <Check className="h-3 w-3 sm:h-5 sm:w-5 text-primary-foreground stroke-[3px] sm:stroke-[4px]" />
                                     </div>
                                 </div>
 
-                                <h2 className="text-3xl sm:text-4xl font-black mb-3 sm:mb-4 uppercase tracking-tighter leading-none">{profile.full_name}</h2>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 sm:mb-4 uppercase tracking-tighter leading-none text-foreground break-words w-full px-2">{profile.full_name}</h2>
 
-                                <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl mb-6">
-                                    <Award className="h-4 w-4 text-primary" />
-                                    <span className="text-xs font-black text-primary uppercase tracking-[0.1em]">Verified Elite</span>
+                                <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl mb-5 sm:mb-6">
+                                    <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
+                                    <span className="text-[10px] sm:text-xs font-black text-primary uppercase tracking-[0.1em]">Verified Elite</span>
                                 </div>
 
-                                <p className="text-sm text-slate-500 mb-8 max-w-[200px]">
-                                    Professional tech performance verified by the Arjuna AI Engine.
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 max-w-[200px] leading-relaxed">
+                                    Strategic technical performance and engineering readiness verified by the Arjuna AI Intelligence Engine.
                                 </p>
 
-                                <div className="mt-auto w-full pt-8 border-t border-white/5">
-                                    <div className="flex items-center justify-center gap-2 text-primary">
-                                        <Globe className="h-4 w-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">arjuna.ai/p/{profile.profile_slug || profile.id.slice(0, 8)}</span>
+                                <div className="mt-auto w-full pt-6 sm:pt-8 border-t border-border">
+                                    <div className="flex items-center justify-center gap-2 text-primary overflow-hidden">
+                                        <Globe className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] truncate">arjunaai.in/p/{profile.profile_slug || profile.id.slice(0, 8)}</span>
                                     </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-
-                        {/* Candidate Overview Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
-                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">Candidate Overview</h3>
-                                <div className="space-y-6 sm:space-y-8">
-                                    <OverviewItem
-                                        icon={<Trophy className="text-yellow-500" />}
-                                        value={rank ? `#${rank}` : "Unranked"}
-                                        label="WORLD RANK"
-                                    />
-                                    <OverviewItem
-                                        icon={<Target className="text-primary" />}
-                                        value={stats?.averageScore ? `${stats.averageScore}%` : "N/A"}
-                                        label="PRECISION"
-                                    />
-                                    <OverviewItem
-                                        icon={<Clock className="text-blue-400" />}
-                                        value={stats?.completedCount || 0}
-                                        label="INTERVIEWS"
-                                    />
                                 </div>
                             </Card>
                         </motion.div>
                     </div>
 
-                    {/* MIDDLE COLUMN */}
-                    <div className="lg:col-span-6 flex flex-col gap-4 sm:gap-6">
+                    {/* MIDDLE COLUMN - Main Content */}
+                    <div className="md:col-span-2 lg:col-span-6 flex flex-col gap-4 sm:gap-6">
+                        {/* Candidate Overview Card (Top Dashboard) */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4">
+                                    <OverviewItem
+                                        icon={<Trophy className="text-amber-500 h-5 w-5 sm:h-6 sm:w-6" />}
+                                        value={rank ? `#${rank}` : "Unranked"}
+                                        label="Global Rank"
+                                    />
+                                    <OverviewItem
+                                        icon={<Target className="text-primary h-5 w-5 sm:h-6 sm:w-6" />}
+                                        value={stats?.averageScore ? `${stats.averageScore}%` : "N/A"}
+                                        label="Technical Precision"
+                                    />
+                                    <OverviewItem
+                                        icon={<Clock className="text-sky-500 h-5 w-5 sm:h-6 sm:w-6" />}
+                                        value={stats?.completedCount || 0}
+                                        label="Verified Sessions"
+                                    />
+                                </div>
+                            </Card>
+                        </motion.div>
+
                         {/* Interview Performance History Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl min-h-[500px] flex flex-col">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-4">
-                                        <StatsCircle icon={<TrendingUp className="h-5 w-5" />} />
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex-1">
+                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 shadow-xl min-h-[450px] sm:min-h-[500px] flex flex-col h-full">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-2">
+                                    <div className="flex items-center gap-3 sm:gap-4">
+                                        <StatsCircle icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />} />
                                         <div>
-                                            <h3 className="text-xl sm:text-2xl font-black tracking-tight">Interview Performance</h3>
-                                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-1">Live AI Verification Ledger</p>
+                                            <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight text-foreground">Global Performance</h3>
+                                            <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5 sm:mt-1">Real-time Intelligence Verification</p>
                                         </div>
                                     </div>
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="bg-white/5 border-white/10 rounded-xl sm:rounded-2xl h-10 sm:h-11 px-4 sm:px-6 gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest hover:bg-white/10">
-                                                {performanceView} <ChevronDown className="h-4 w-4 text-slate-500" />
+                                            <Button variant="outline" className="w-full sm:w-auto bg-muted border-border rounded-xl h-9 sm:h-11 px-4 sm:px-6 gap-2 text-[9px] sm:text-xs font-black uppercase tracking-widest hover:bg-muted/80">
+                                                {performanceView} <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="bg-[#0c1221] border-white/10 rounded-xl min-w-[140px] p-2">
-                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={() => setPerformanceView('Recent')}>
+                                        <DropdownMenuContent className="bg-card border-border rounded-xl min-w-[140px] p-2" align="end">
+                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-muted cursor-pointer" onClick={() => setPerformanceView('Recent')}>
                                                 Show Recent
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={() => setPerformanceView('Top')}>
+                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-muted cursor-pointer" onClick={() => setPerformanceView('Top')}>
                                                 Show Top Scores
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -319,48 +317,51 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                 </div>
 
                                 {/* Chart Section */}
-                                <div className="flex-1 w-full mt-6 sm:mt-8 md:mt-10 relative">
+                                <div className="flex-1 w-full mt-4 sm:mt-8 relative">
                                     {chartData.length > 0 ? (
-                                        <div className="h-64 w-full">
+                                        <div className="h-48 sm:h-64 w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                                     <defs>
                                                         <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="rgb(168, 85, 247)" stopOpacity={0.8} />
-                                                            <stop offset="95%" stopColor="rgb(168, 85, 247)" stopOpacity={0.1} />
+                                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
                                                         </linearGradient>
                                                     </defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.1)" vertical={false} />
                                                     <XAxis
                                                         dataKey="time"
-                                                        stroke="rgba(148, 163, 184, 0.5)"
-                                                        tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 11, fontWeight: 700 }}
-                                                        tickLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                                                        stroke="hsl(var(--muted-foreground) / 0.5)"
+                                                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 700 }}
+                                                        tickLine={false}
+                                                        axisLine={false}
+                                                        dy={10}
                                                     />
                                                     <YAxis
-                                                        stroke="rgba(148, 163, 184, 0.5)"
-                                                        tick={{ fill: 'rgba(148, 163, 184, 0.7)', fontSize: 11, fontWeight: 700 }}
-                                                        tickLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                                                        stroke="hsl(var(--muted-foreground) / 0.5)"
+                                                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 700 }}
+                                                        tickLine={false}
+                                                        axisLine={false}
                                                         domain={[0, 100]}
-                                                        ticks={[0, 25, 50, 75, 100]}
+                                                        ticks={[0, 50, 100]}
                                                     />
                                                     <Tooltip
                                                         contentStyle={{
-                                                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                                                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                                                            backgroundColor: 'hsl(var(--card))',
+                                                            border: '1px solid hsl(var(--border))',
                                                             borderRadius: '12px',
                                                             padding: '8px 12px',
-                                                            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                                            boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
                                                         }}
-                                                        labelStyle={{ color: 'rgba(168, 85, 247, 1)', fontWeight: 900, fontSize: 11, textTransform: 'uppercase' }}
-                                                        itemStyle={{ color: 'white', fontWeight: 700, fontSize: 12 }}
+                                                        labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}
+                                                        itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 700, fontSize: 11 }}
                                                         formatter={(value: number) => [`${value}%`, 'Score']}
                                                     />
                                                     <Area
                                                         type="monotone"
                                                         dataKey="score"
-                                                        stroke="rgb(168, 85, 247)"
-                                                        strokeWidth={3}
+                                                        stroke="hsl(var(--primary))"
+                                                        strokeWidth={2}
                                                         fill="url(#colorScore)"
                                                         animationDuration={1500}
                                                         animationEasing="ease-out"
@@ -369,18 +370,18 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                             </ResponsiveContainer>
                                         </div>
                                     ) : (
-                                        <div className="h-64 w-full flex items-center justify-center">
-                                            <div className="text-center">
-                                                <TrendingUp className="h-12 w-12 text-slate-700 mx-auto mb-4 opacity-20" />
-                                                <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">No interview data yet</p>
-                                                <p className="text-xs text-slate-600 mt-2">Complete interviews to see performance trends</p>
+                                        <div className="h-48 sm:h-64 w-full flex items-center justify-center">
+                                            <div className="text-center px-4">
+                                                <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
+                                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">No interview data yet</p>
+                                                <p className="text-[10px] text-muted-foreground opacity-60 mt-2">Complete interviews to see performance trends</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Session Ledger Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-8 sm:mt-10 md:mt-12 pb-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-10 pb-2">
                                     {sortedInterviews.length > 0 ? (
                                         <AnimatePresence mode="popLayout">
                                             {sortedInterviews.slice(0, 3).map((session, i) => (
@@ -391,61 +392,80 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                                     animate={{ opacity: 1, scale: 1 }}
                                                     exit={{ opacity: 0, scale: 0.9 }}
                                                     transition={{ delay: i * 0.1 }}
-                                                    className="bg-white/5 border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-5 hover:border-primary/30 transition-all group cursor-default"
+                                                    className="bg-muted/30 border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm"
                                                 >
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="text-xs font-black text-white group-hover:text-primary transition-colors truncate flex-1 uppercase">{session.position}</div>
-                                                        <div className="text-sm font-black text-primary ml-2">{session.score || 0}%</div>
+                                                    <div className="flex items-center justify-between mb-3 text-foreground">
+                                                        <div className="text-[10px] sm:text-xs font-black group-hover:text-primary transition-colors truncate flex-1 uppercase">{session.position}</div>
+                                                        <div className="text-xs sm:text-sm font-black text-primary ml-2">{session.score || 0}%</div>
                                                     </div>
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <Badge variant="outline" className="text-[9px] font-bold border-white/10 bg-white/5 text-slate-400">
-                                                            {session.interview_type || 'Technical'}
+                                                        <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold border-border bg-card text-muted-foreground px-1.5 py-0">
+                                                            {session.interview_type || 'Tech'}
                                                         </Badge>
                                                         {session.difficulty && (
-                                                            <Badge variant="outline" className="text-[9px] font-bold border-primary/20 bg-primary/5 text-primary">
+                                                            <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold border-primary/20 bg-primary/5 text-primary px-1.5 py-0">
                                                                 {session.difficulty}
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] text-slate-500 mb-4 font-bold uppercase tracking-wider">
+                                                    <div className="text-[9px] text-muted-foreground mb-4 font-bold uppercase tracking-wider">
                                                         {new Date(session.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </div>
-                                                    <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                                                        <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
-                                                            <Check className="h-3 w-3 text-emerald-500 stroke-[3px]" />
-                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Verified</span>
+                                                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                                                        <div className="flex items-center gap-1 grayscale group-hover:grayscale-0 transition-all">
+                                                            <Check className="h-2.5 w-2.5 text-emerald-500 stroke-[3px]" />
+                                                            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Verified</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {(session.score || 0) >= 80 && <Flame className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />}
-                                                            {(session.score || 0) >= 70 && <TrendingUp className="h-3.5 w-3.5 text-primary" />}
+                                                        <div className="flex items-center gap-1.5">
+                                                            {(session.score || 0) >= 80 && <Flame className="h-3 w-3 text-orange-500 fill-orange-500/20" />}
+                                                            {(session.score || 0) >= 70 && <TrendingUp className="h-3 w-3 text-primary" />}
                                                         </div>
                                                     </div>
                                                 </motion.div>
                                             ))}
                                         </AnimatePresence>
                                     ) : (
-                                        <div className="col-span-full text-center py-12">
-                                            <History className="h-12 w-12 text-slate-700 mx-auto mb-4 opacity-20" />
-                                            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">No completed interviews</p>
-                                            <p className="text-xs text-slate-600 mt-2">Interview history will appear here</p>
+                                        <div className="col-span-full text-center py-8 sm:py-12">
+                                            <History className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
+                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">No completed interviews</p>
                                         </div>
                                     )}
                                 </div>
                             </Card>
                         </motion.div>
+                    </div>
 
-                        {/* Skills & Expertise Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl">
-                                <div className="flex items-center justify-between mb-8">
+                    {/* RIGHT COLUMN - Stats & Actions */}
+                    <div className="md:col-span-2 lg:col-span-3 flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6">
+                        {/* System Credentials Card */}
+                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl">
+                                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 sm:mb-8">Credentials</h3>
+                                <div className="space-y-4 sm:space-y-6">
+                                    <CredentialItem icon={<History className="text-primary h-3.5 w-3.5" />} label="Analysis Engine" value="v3.1 Elite" />
+                                    <CredentialItem icon={<ShieldCheck className="text-primary h-3.5 w-3.5" />} label="Trust Validation" value="Verified" />
+                                    <CredentialItem icon={<Trophy className="text-primary h-3.5 w-3.5" />} label="Global Tier" value="Elite Pro" />
+                                    <CredentialItem
+                                        icon={<Calendar className="text-primary h-3.5 w-3.5" />}
+                                        label="Network Entry"
+                                        value={`${new Date(profile.created_at).toLocaleString('en-US', { month: 'short' })} '${new Date(profile.created_at).getFullYear().toString().slice(-2)}`}
+                                    />
+                                </div>
+                            </Card>
+                        </motion.div>
+
+                        {/* Expertise Matrix Card */}
+                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex-1">
+                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl h-full">
+                                <div className="flex items-center justify-between mb-6 sm:mb-8">
                                     <div>
-                                        <h3 className="text-lg sm:text-xl font-black tracking-tight">Skills & Expertise</h3>
-                                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Weighted assessment matrix</p>
+                                        <h3 className="text-lg sm:text-xl font-black tracking-tight text-foreground">Expertise Matrix</h3>
+                                        <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Weighted Assessment</p>
                                     </div>
-                                    <Sparkles className="h-6 w-6 text-primary opacity-20" />
+                                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary opacity-20" strokeWidth={2.5} />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 sm:gap-x-12 md:gap-x-16 gap-y-6 sm:gap-y-8 md:gap-y-10">
+                                <div className="grid grid-cols-1 gap-y-6 sm:gap-y-8">
                                     {skills.length > 0 ? (
                                         skills.map((skill) => (
                                             <SkillProgress
@@ -456,10 +476,8 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                             />
                                         ))
                                     ) : (
-                                        <div className="col-span-full text-center py-8">
-                                            <Sparkles className="h-10 w-10 text-slate-700 mx-auto mb-3 opacity-20" />
-                                            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">No skill data available</p>
-                                            <p className="text-xs text-slate-600 mt-2">Skills will be assessed through interviews</p>
+                                        <div className="col-span-full text-center py-6">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">No skill data verified</p>
                                         </div>
                                     )}
                                 </div>
@@ -467,99 +485,21 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                         </motion.div>
                     </div>
 
-                    {/* RIGHT COLUMN */}
-                    <div className="lg:col-span-3 flex flex-col gap-4 sm:gap-6">
-                        {/* System Credentials Card */}
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
-                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">System Credentials</h3>
-                                <div className="space-y-6">
-                                    <CredentialItem icon={<History className="text-primary" />} label="Engine" value="ArjunaAI v3.1" />
-                                    <CredentialItem icon={<ShieldCheck className="text-primary" />} label="Proof" value="Crypto-Secure" />
-                                    <CredentialItem icon={<Trophy className="text-primary" />} label="Tier" value="Professional" />
-                                    <CredentialItem icon={<Calendar className="text-primary" />} label="Joined" value={new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} />
-                                </div>
-                            </Card>
-                        </motion.div>
-
-                        {/* Claim My Profile Card - Fixed Streak */}
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-primary/10 border border-white/10 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
-                                <div className="absolute top-[-20%] right-[-20%] w-48 h-48 bg-primary/20 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-700" />
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xl sm:text-2xl font-black tracking-tight">Claim Profile</h3>
-                                        <Diamond className="h-7 w-7 text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.8)] animate-pulse" />
-                                    </div>
-                                    <p className="text-[10px] text-primary/50 uppercase tracking-[0.2em] mb-8 font-black">Digital verification asset</p>
-
-                                    <div className="w-full h-2 bg-white/5 rounded-full mb-4 overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${Math.min((profile.streak_count || 0) * 10, 100)}%` }}
-                                            transition={{ duration: 1.5, ease: "easeOut" }}
-                                            className="h-full bg-gradient-to-r from-primary to-primary rounded-full shadow-[0_0_15px_rgba(168,85,247,0.6)]"
-                                        />
-                                    </div>
-                                    <div className="text-[11px] font-black uppercase tracking-[0.1em] text-white/80">
-                                        {profile.streak_count || 0} DAY{profile.streak_count !== 1 ? 'S' : ''} PERSISTENCE
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-
-                        {/* Profile Actions Card */}
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                            <Card className="bg-card border border-white/5 rounded-2xl sm:rounded-2xl p-6 sm:p-8 shadow-2xl">
-                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-6 text-center">Profile Actions</h3>
-                                <div className="flex flex-col gap-3">
-                                    <Button className="w-full bg-[#1e293b] hover:bg-[#334155] border-white/5 rounded-2xl h-12 text-xs font-black uppercase tracking-widest gap-2 transition-all active:scale-95">
-                                        <Share2 className="h-4 w-4" /> Share Credentials
-                                    </Button>
-                                    <Link href="/auth" className="w-full">
-                                        <Button className="w-full bg-[#1e1b4b] hover:bg-[#312e81] border border-[#312e81] text-primary rounded-2xl h-12 text-xs font-black uppercase tracking-widest transition-all active:scale-95">
-                                            Manage Profile
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </Card>
-                        </motion.div>
-
-                        {/* Final Platforms CTA */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex-1 min-h-[220px]">
-                            <Card className="h-full bg-card border border-primary/20 rounded-2xl sm:rounded-2xl p-6 sm:p-8 md:p-10 shadow-2xl text-center flex flex-col items-center justify-center relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <h3 className="text-base sm:text-lg font-black leading-[1.3] mb-6 sm:mb-8 relative z-10 px-2">
-                                    Ready to build your <br /> <span className="text-primary">verified track record?</span>
-                                </h3>
-                                <Link href="/auth" className="w-full relative z-10">
-                                    <Button className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/90 rounded-[1.2rem] h-14 font-black text-sm uppercase tracking-widest shadow-[0_10px_30px_-10px_rgba(168,85,247,0.5)] transition-all active:scale-95 group/btn">
-                                        Start Interview
-                                        <Sparkles className="ml-2 h-4 w-4 group-hover/btn:rotate-12 transition-transform" />
-                                    </Button>
-                                </Link>
-                                <p className="text-[10px] font-bold text-slate-500 mt-6 uppercase tracking-widest leading-relaxed">
-                                    Join 10,000+ elite engineers <br /> on the Arjuna platform.
-                                </p>
-                            </Card>
-                        </motion.div>
-                    </div>
-
                 </div>
 
                 {/* Platform Footer */}
-                <footer className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-                    <div className="flex items-center gap-4">
-                        <Image src="/arjuna_logo.png" alt="" width={24} height={24} className="h-6 w-6" />
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em]">
-                            © {new Date().getFullYear()} ARJUNA AI PLATFORM • THE FUTURE OF TECH HIRING
+                <footer className="mt-12 sm:mt-24 pt-8 sm:pt-10 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700 pb-10">
+                    <div className="flex items-center gap-3">
+                        <Image src="/arjuna_logo.png" alt="" width={20} height={20} className="h-5 w-5 sm:h-6 sm:w-6" />
+                        <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-center sm:text-left">
+                            © {new Date().getFullYear()} ARJUNA AI • THE FUTURE OF HIRING
                         </div>
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-8">
-                        <FooterLink label="Trust Center" />
-                        <FooterLink label="Verification API" />
-                        <FooterLink label="About Engine" />
-                        <FooterLink label="Career Roadmap" />
+                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+                        <FooterLink label="Trust" />
+                        <FooterLink label="Verification" />
+                        <FooterLink label="Engine" />
+                        <FooterLink label="Roadmap" />
                     </div>
                 </footer>
             </main>
@@ -577,13 +517,13 @@ function StatsCircle({ icon }: { icon: React.ReactNode }) {
 
 function OverviewItem({ icon, value, label }: { icon: React.ReactNode, value: string | number, label: string }) {
     return (
-        <div className="flex items-center gap-5 group">
-            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-xl group-hover:bg-white/10 transition-colors border border-transparent group-hover:border-white/5 shadow-inner">
+        <div className="flex sm:flex-col lg:flex-row items-center sm:text-center lg:text-left gap-4 lg:gap-5 group">
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center text-lg sm:text-xl group-hover:bg-muted/80 transition-colors border border-transparent group-hover:border-border shadow-inner shrink-0">
                 {icon}
             </div>
-            <div>
-                <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">{value}</div>
-                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</div>
+            <div className="min-w-0 flex-1">
+                <div className="text-xl sm:text-2xl font-black text-foreground truncate">{value}</div>
+                <div className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none sm:mt-1">{label}</div>
             </div>
         </div>
     )
@@ -591,17 +531,17 @@ function OverviewItem({ icon, value, label }: { icon: React.ReactNode, value: st
 
 function SkillProgress({ label, value, count }: { label: string, value: number, count?: number }) {
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-end">
-                <div className="text-xs font-black text-white uppercase tracking-wider">{label}</div>
-                <div className="flex items-center gap-2">
-                    <div className="text-[10px] font-black text-primary">{value}% Accuracy</div>
+        <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-end gap-2">
+                <div className="text-[10px] sm:text-xs font-black text-foreground uppercase tracking-wider truncate">{label}</div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="text-[9px] sm:text-[10px] font-black text-primary">{value}%</div>
                     {count && count > 1 && (
-                        <div className="text-[9px] font-bold text-slate-500">({count} tests)</div>
+                        <div className="hidden sm:block text-[8px] font-bold text-muted-foreground">({count})</div>
                     )}
                 </div>
             </div>
-            <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${value}%` }}
@@ -617,10 +557,10 @@ function CredentialItem({ icon, label, value }: { icon: React.ReactNode, label: 
     return (
         <div className="flex items-center justify-between group">
             <div className="flex items-center gap-3">
-                <div className="opacity-50 group-hover:opacity-100 transition-opacity">{icon}</div>
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+                <div className="opacity-60 group-hover:opacity-100 transition-opacity translate-y-[-1px]">{icon}</div>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{label}</span>
             </div>
-            <span className="text-xs font-black text-slate-300 group-hover:text-white transition-colors uppercase tracking-tight">{value}</span>
+            <span className="text-xs font-black text-foreground/80 group-hover:text-primary transition-colors uppercase tracking-tight">{value}</span>
         </div>
     )
 }
