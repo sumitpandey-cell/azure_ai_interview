@@ -50,7 +50,7 @@ export function generateReportHTML(reportData: ReportData): string {
             background-color: ${bgDark};
             color: #ffffff;
             line-height: 1.5;
-            padding: 40px 20px;
+            padding: 20px;
             background-image: 
                 radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
                 radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.05) 0%, transparent 50%);
@@ -59,6 +59,7 @@ export function generateReportHTML(reportData: ReportData): string {
         .container {
             max-width: 1000px;
             margin: 0 auto;
+            width: 100%;
         }
 
         /* Tactical Header */
@@ -84,11 +85,12 @@ export function generateReportHTML(reportData: ReportData): string {
         }
 
         .title-section h1 {
-            font-size: 42px;
+            font-size: clamp(28px, 5vw, 42px);
             font-weight: 900;
             letter-spacing: -0.02em;
-            line-height: 1;
+            line-height: 1.1;
             margin-bottom: 8px;
+            word-wrap: break-word;
         }
 
         .title-section h1 span {
@@ -99,6 +101,7 @@ export function generateReportHTML(reportData: ReportData): string {
         .subtitle {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
             gap: 12px;
             margin-top: 12px;
         }
@@ -285,6 +288,7 @@ export function generateReportHTML(reportData: ReportData): string {
             align-items: center;
             justify-content: center;
             font-size: 14px;
+            flex-shrink: 0;
         }
 
         .meta-content {
@@ -473,6 +477,7 @@ export function generateReportHTML(reportData: ReportData): string {
             font-size: 13px;
             font-weight: 600;
             line-height: 1.5;
+            word-wrap: break-word;
         }
 
         .ai .bubble {
@@ -499,12 +504,56 @@ export function generateReportHTML(reportData: ReportData): string {
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.1em;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .arjuna-logo-small {
             font-size: 14px;
             font-weight: 900;
             color: #ffffff;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .intelligence-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-card {
+                padding: 24px;
+            }
+
+            .metadata-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .detail-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .competencies-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 20px;
+            }
+            
+            .summary-text {
+                font-size: 14px;
+                padding-left: 16px;
+            }
+            
+            .report-id-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
         }
 
         @media print {

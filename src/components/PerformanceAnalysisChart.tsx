@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, Area, ComposedChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { TrendingUp } from "lucide-react";
@@ -15,7 +16,7 @@ interface PerformanceAnalysisChartProps {
     loading?: boolean;
 }
 
-export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisChartProps) {
+export const PerformanceAnalysisChart = React.memo(function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisChartProps) {
     const hasData = data.some(d => d.interviewCount > 0);
 
     const themeKey = useThemeKey();
@@ -24,12 +25,14 @@ export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisC
         return (
             <Card className="border-border/40 shadow-sm bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden flex flex-col">
                 <CardHeader className="p-6 pb-2">
-                    <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <TrendingUp className="h-5 w-5 text-primary" />
-                        </div>
-                        Performance Analytics
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-primary" />
+                            </div>
+                            Performance Analytics
+                        </CardTitle>
+                    </div>
                     <CardDescription>Track your interview mastery over time.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center p-6 min-h-[200px]">
@@ -161,4 +164,4 @@ export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisC
             </CardContent>
         </Card>
     );
-}
+});

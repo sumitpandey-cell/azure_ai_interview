@@ -34,6 +34,9 @@ export function TranscriptTracker({
         participant: localParticipant,
     });
 
+    // Keep track of when we last updated an interim transcript to throttle UI refreshes
+    const lastInterimUpdateRef = useRef<Record<string, number>>({});
+
     // Helper to process and save
     const processSegment = useCallback((s: TranscriptionSegment, participant: Participant | undefined) => {
         if (!participant) return;
@@ -41,27 +44,34 @@ export function TranscriptTracker({
         const isSelf = participant instanceof LocalParticipant;
         const name = isSelf ? "You" : "Agent";
 
-        // Update UI Context (Always update context to show live transcription)
-        addOrUpdateTranscript(s.id, {
-            name,
-            message: s.final ? s.text : `${s.text} ...`,
-            isSelf,
-            timestamp: s.firstReceivedTime || Date.now(),
-        });
+        const now = Date.now();
+        const lastUpdate = lastInterimUpdateRef.current[s.id] || 0;
+
+        // Throttling: Update UI Context if it's final OR if enough time has passed for interim
+        if (s.final || (now - lastUpdate > 150)) {
+            addOrUpdateTranscript(s.id, {
+                name,
+                message: s.final ? s.text : `${s.text} ...`,
+                isSelf,
+                timestamp: s.firstReceivedTime || now,
+            });
+            lastInterimUpdateRef.current[s.id] = now;
+        }
 
         // Save to DB (only final and new, and not if ending)
         if (s.final && !processedSegments.current.has(s.id) && !isEnding) {
             processedSegments.current.add(s.id);
 
-            // Log debug
-
             // Fire and forget save
             interviewService.addTranscriptEntry(sessionId, userId, {
                 role: isSelf ? 'user' : 'assistant',
-                speaker: isSelf ? 'user' : 'ai', // Keep speaker for legacy if needed
+                speaker: isSelf ? 'user' : 'ai',
                 text: s.text,
-                timestamp: s.firstReceivedTime || Date.now(),
+                timestamp: s.firstReceivedTime || now,
             }).catch(err => console.error("Failed to save transcript:", err));
+
+            // Cleanup throttle ref for this ID since it's final
+            delete lastInterimUpdateRef.current[s.id];
         }
     }, [addOrUpdateTranscript, isEnding, sessionId, userId]);
 

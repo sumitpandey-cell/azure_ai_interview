@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-gray-900 flex items-center justify-center text-gray-400">Loading Editor...</div>
+});
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {

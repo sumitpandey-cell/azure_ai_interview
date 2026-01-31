@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Activity, Zap, CalendarDays } from "lucide-react";
@@ -15,7 +16,7 @@ interface WeeklyActivityChartProps {
     loading?: boolean;
 }
 
-export function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActivityChartProps) {
+export const WeeklyActivityChart = React.memo(function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActivityChartProps) {
     const themeKey = useThemeKey();
     const hasActivity = data.some(d => d.count > 0);
 
@@ -137,4 +138,4 @@ export function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActi
             </CardContent>
         </Card>
     );
-}
+});

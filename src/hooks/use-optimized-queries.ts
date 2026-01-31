@@ -154,101 +154,80 @@ export function useOptimizedQueries() {
     }
   }, [sessionDetails, isSessionDetailCacheValid, setSessionDetail]);
 
-  // Optimized leaderboard fetch
-  const fetchLeaderboard = useCallback(async (forceRefresh = false) => {
-    // Return cached leaderboard if valid and not forcing refresh
-    if (!forceRefresh && isLeaderboardCacheValid() && leaderboard.length > 0) {
-      return leaderboard;
+  // Optimized leaderboard fetch with pagination support
+  const fetchLeaderboard = useCallback(async (limit = 100, page = 0, forceRefresh = false) => {
+    const offset = page * limit;
+
+    // Return cached leaderboard if valid and not forcing refresh (only for first page)
+    if (!forceRefresh && page === 0 && isLeaderboardCacheValid() && leaderboard.length > 0) {
+      // For cached data, we might not have the totalUsers stored in cache yet, 
+      // but we know it's at least the length of the cached list.
+      // In a real app, you might want to cache the total count too.
+      return { users: leaderboard, totalUsers: leaderboard.length };
     }
 
     try {
-      // 1. Fetch all completed interview sessions
-      const { data: sessions, error: sessionsError } = await supabase
-        .from("interview_sessions")
-        .select("user_id, score")
-        .eq("status", "completed");
-
-      if (sessionsError) throw sessionsError;
-
-      // 2. Aggregate scores by user
-      const userStats: Record<string, { totalScore: number; scoreCount: number; totalCount: number }> = {};
-
-      sessions?.forEach((session) => {
-        if (!userStats[session.user_id]) {
-          userStats[session.user_id] = { totalScore: 0, scoreCount: 0, totalCount: 0 };
-        }
-        userStats[session.user_id].totalCount += 1;
-        if (session.score !== null) {
-          userStats[session.user_id].totalScore += session.score;
-          userStats[session.user_id].scoreCount += 1;
-        }
+      // 1. Fetch paginated data using RPC
+      const { data, error } = await (supabase as unknown as { rpc: (fn: string, args: unknown) => Promise<{ data: unknown; error: unknown }> }).rpc('get_leaderboard_paginated', {
+        p_limit: limit,
+        p_offset: offset
       });
 
-      // 3. Calculate Weighted Score (rewards both performance and experience)
-      const rankedUsers = Object.entries(userStats).map(([userId, stats]) => {
-        const avgScore = stats.scoreCount > 0 ? stats.totalScore / stats.scoreCount : 0;
-        // Total completed sessions contribute to rank visibility
-        const experienceMultiplier = 1 + (Math.log10(stats.totalCount) / 10);
-        const weightedScore = avgScore * experienceMultiplier;
-
-        return {
-          userId,
-          interviewCount: stats.totalCount,
-          averageScore: avgScore,
-          bayesianScore: weightedScore,
-        };
-      });
-
-      // 4. Sort by Bayesian Score
-      const sortedUsers = rankedUsers.sort((a, b) => b.bayesianScore - a.bayesianScore);
-
-      // 5. Fetch profiles for all ranked users
-      if (sortedUsers.length > 0) {
-        const userIds = sortedUsers.map((u) => u.userId);
-
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
-
-        if (profilesError) throw profilesError;
-
-        // Get current user's OAuth picture if they're in the leaderboard
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        const currentUserOAuthPicture = currentUser?.user_metadata?.picture || currentUser?.user_metadata?.avatar_url;
-        const currentUserGender = currentUser?.user_metadata?.gender;
-
-        // Merge profile data
-        const finalLeaderboard = sortedUsers.map((user) => {
-          const profile = profiles?.find((p) => p.id === user.userId);
-          const oauthPicture = user.userId === currentUser?.id ? currentUserOAuthPicture : null;
-          const gender = user.userId === currentUser?.id ? currentUserGender : undefined;
-
-          return {
-            ...user,
-            fullName: profile?.full_name || "Anonymous",
-            avatarUrl: profile?.avatar_url ?? null,
-            oauthPicture: oauthPicture,
-            gender: gender,
-          };
-        });
-
-        setLeaderboard(finalLeaderboard);
-        return finalLeaderboard;
-      } else {
-        setLeaderboard([]);
-        return [];
+      if (error) {
+        console.error("RPC Error in fetchLeaderboard:", error);
+        throw error;
       }
+
+      if (!data) {
+        console.warn("fetchLeaderboard: No data returned from RPC");
+        return { users: [], totalUsers: 0 };
+      }
+
+      // 2. Fetch current user context for picture/gender
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUser = userData?.user;
+      const currentUserOAuthPicture = currentUser?.user_metadata?.picture || currentUser?.user_metadata?.avatar_url;
+      const currentUserGender = currentUser?.user_metadata?.gender;
+
+      interface LeaderboardData {
+        user_id: string;
+        full_name: string;
+        avatar_url: string;
+        interview_count: number;
+        average_score: number;
+        bayesian_score: number;
+        total_users: number;
+      }
+
+      const results = data as unknown as LeaderboardData[];
+      const totalUsers = results.length > 0 ? Number(results[0].total_users) : 0;
+
+      // 3. Format data to match LeaderboardUser interface
+      const formattedData = results.map((item) => ({
+        userId: item.user_id,
+        fullName: item.full_name || "Anonymous",
+        avatarUrl: item.avatar_url,
+        interviewCount: Number(item.interview_count || 0),
+        averageScore: Number(item.average_score || 0),
+        bayesianScore: Number(item.bayesian_score || 0),
+        oauthPicture: item.user_id === currentUser?.id ? currentUserOAuthPicture : null,
+        gender: item.user_id === currentUser?.id ? currentUserGender : undefined,
+      }));
+
+      if (page === 0 && formattedData.length > 0) {
+        setLeaderboard(formattedData);
+      }
+
+      return { users: formattedData, totalUsers };
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       console.error("Error in fetchLeaderboard:", error);
-      // Handle RLS or permission errors silently for a better user experience
       const isRlsError = error?.code === '42501' || error?.message?.includes('row-level security');
       if (!isRlsError) {
         toast.error("Failed to load leaderboard data");
       }
-      setLeaderboard([]);
-      return [];
+      if (page === 0) setLeaderboard([]);
+      return { users: [], totalUsers: 0 };
     }
   }, [leaderboard, isLeaderboardCacheValid, setLeaderboard]);
 

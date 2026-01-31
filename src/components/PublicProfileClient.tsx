@@ -19,10 +19,12 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer
-} from "recharts"
+import dynamic from "next/dynamic";
+
+const PublicPerformanceChart = dynamic(() => import("@/components/PublicPerformanceChart").then(mod => mod.PublicPerformanceChart), {
+    loading: () => <div className="h-full w-full animate-pulse bg-white/5 rounded-2xl" />,
+    ssr: false
+});
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -295,41 +297,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                 {/* Chart Section */}
                                 <div className="flex-1 h-64 w-full mt-10 relative group">
                                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none" />
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={chartData}>
-                                            <defs>
-                                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
-                                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                            <XAxis
-                                                dataKey="time"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
-                                                dy={15}
-                                            />
-                                            <YAxis hide domain={[0, 105]} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: '#0c1221', border: '1px solid #ffffff10', borderRadius: '16px', padding: '12px' }}
-                                                itemStyle={{ color: '#fff', fontWeight: 800 }}
-                                                cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="score"
-                                                stroke="#6366f1"
-                                                strokeWidth={4}
-                                                fillOpacity={1}
-                                                fill="url(#chartGradient)"
-                                                dot={{ fill: '#6366f1', strokeWidth: 3, r: 5, stroke: '#0c1221' }}
-                                                activeDot={{ r: 8, stroke: '#fff', strokeWidth: 3, fill: '#6366f1' }}
-                                                animationDuration={1500}
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <PublicPerformanceChart data={chartData} />
                                 </div>
 
                                 {/* Session Ledger Grid */}

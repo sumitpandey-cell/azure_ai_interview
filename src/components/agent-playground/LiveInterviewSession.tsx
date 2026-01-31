@@ -21,7 +21,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, memo } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
 import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
 import { CircularBlobVisualizer } from "./ui/CircularBlobVisualizer";
@@ -57,6 +57,42 @@ interface LiveInterviewSessionProps {
     onHintsUpdate?: (count: number) => void;
     isEnding?: boolean;
 }
+
+interface VideoViewfinderProps {
+    videoRef: React.RefObject<HTMLVideoElement>;
+    isEnabled: boolean;
+}
+
+const VideoViewfinder = memo(({ videoRef, isEnabled }: VideoViewfinderProps) => (
+    <div className="relative aspect-video bg-black rounded-2xl overflow-hidden border border-border dark:border-white/10 ring-1 ring-border/20 dark:ring-white/5 group/viewfinder">
+        <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className={cn("w-full h-full object-cover transition-opacity duration-700", isEnabled ? "opacity-100" : "opacity-0")}
+        />
+        {/* Tech Scanline Effect */}
+        <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-primary/20 animate-scanline pointer-events-none" />
+
+        {!isEnabled && (
+            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm">
+                <User className="h-10 w-10 text-white/5 shadow-2xl" />
+            </div>
+        )}
+
+        {/* Rec Indicator */}
+        {isEnabled && (
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/40 backdrop-blur-md border border-white/5">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[8px] font-black text-white/90 uppercase tracking-tighter">Live Feed</span>
+            </div>
+        )}
+    </div>
+));
+
+VideoViewfinder.displayName = "VideoViewfinder";
 
 export function LiveInterviewSession({
     sessionId,
@@ -207,14 +243,20 @@ export function LiveInterviewSession({
             .map(pub => pub.track)
             .find(track => track?.source === Track.Source.Camera);
 
+        const desktopEl = desktopVideoRef.current;
+        const mobileEl = mobileVideoRef.current;
+
         if (videoTrack) {
-            if (desktopVideoRef.current) {
-                videoTrack.attach(desktopVideoRef.current);
-            }
-            if (mobileVideoRef.current) {
-                videoTrack.attach(mobileVideoRef.current);
-            }
+            if (desktopEl) videoTrack.attach(desktopEl);
+            if (mobileEl) videoTrack.attach(mobileEl);
         }
+
+        return () => {
+            if (videoTrack) {
+                if (desktopEl) videoTrack.detach(desktopEl);
+                if (mobileEl) videoTrack.detach(mobileEl);
+            }
+        };
     }, [localParticipant, isCameraEnabled, localParticipant.videoTrackPublications]);
 
     const { microphoneTrack } = useLocalParticipant();
@@ -241,8 +283,17 @@ export function LiveInterviewSession({
 
                 {/* Background Ambient Glows */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary/10 dark:bg-primary/5 rounded-full blur-[100px]" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-accent/10 dark:bg-accent/5 rounded-full blur-[100px]" />
+                    <div className={cn(
+                        "absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full transition-all duration-1000 blur-[120px]",
+                        isAISpeaking ? "bg-primary/20 scale-125 opacity-100" : "bg-primary/5 scale-100 opacity-50"
+                    )} />
+                    <div className={cn(
+                        "absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full transition-all duration-1000 blur-[120px]",
+                        isAISpeaking ? "bg-accent/20 scale-125 opacity-100" : "bg-accent/5 scale-100 opacity-50"
+                    )} />
+
+                    {/* Animated Grid overlay */}
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
                 </div>
 
                 <main className="flex-1 relative flex flex-col lg:flex-row gap-0 lg:gap-4 overflow-hidden z-10 p-2 lg:p-4">
@@ -300,20 +351,7 @@ export function LiveInterviewSession({
                                     <Video className="h-3 w-3 text-primary" />
                                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">Viewfinder</span>
                                 </div>
-                                <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-border dark:border-white/10 ring-1 ring-border/20 dark:ring-white/5">
-                                    <video
-                                        ref={desktopVideoRef}
-                                        autoPlay
-                                        muted
-                                        playsInline
-                                        className={cn("w-full h-full object-cover transition-opacity duration-500", isCameraEnabled ? "opacity-100" : "opacity-0")}
-                                    />
-                                    {!isCameraEnabled && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <User className="h-8 w-8 text-white/10" />
-                                        </div>
-                                    )}
-                                </div>
+                                <VideoViewfinder videoRef={desktopVideoRef} isEnabled={isMicrophoneEnabled && (isCameraEnabled ?? false)} />
                             </div>
 
                             <div className="pt-4 border-t border-white/5">
@@ -322,9 +360,9 @@ export function LiveInterviewSession({
                                     <span className="text-[9px] text-primary font-mono lowercase">stable</span>
                                 </div>
                                 <div className="h-1 bg-muted border border-border dark:bg-white/5 dark:border-none rounded-full overflow-hidden flex gap-0.5">
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                    {useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                                         <div key={i} className={cn("h-full flex-1 rounded-sm", i <= 6 ? 'bg-primary/80 shadow-[0_0_8px_rgba(168_85,247,0.4)]' : 'bg-white/10')} />
-                                    ))}
+                                    )), [])}
                                 </div>
                             </div>
 
@@ -354,31 +392,43 @@ export function LiveInterviewSession({
                                 </button>
 
                                 <div className={cn(
-                                    "px-4 py-2 rounded-full border flex items-center gap-2 transition-all backdrop-blur-md",
-                                    isCriticalTime ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-muted dark:bg-white/5 border-border dark:border-white/10 text-foreground dark:text-white"
+                                    "px-4 py-2 rounded-full border flex items-center gap-3 transition-all backdrop-blur-md shadow-lg",
+                                    isCriticalTime
+                                        ? "bg-destructive/20 border-destructive/40 text-destructive animate-pulse"
+                                        : "bg-white/80 dark:bg-zinc-900/40 border-border/50 dark:border-white/5 text-foreground dark:text-white"
                                 )}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full", isCriticalTime ? "bg-destructive animate-pulse" : "bg-primary shadow-[0_0_8px_rgba(168_85,247,0.5)]")} />
-                                    <span className="text-xs font-mono font-bold tracking-tight">{formatTime()}</span>
+                                    <div className={cn("w-2 h-2 rounded-full", isCriticalTime ? "bg-destructive shadow-[0_0_12px_rgba(239,68,68,0.8)]" : "bg-primary shadow-[0_0_12px_rgba(168_85,247,0.8)]")} />
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black font-mono leading-none">{formatTime()}</span>
+                                        <span className="text-[6px] uppercase tracking-widest opacity-50 font-bold">Time Stream</span>
+                                    </div>
                                 </div>
 
-                                <div className="hidden sm:flex items-center gap-2 bg-card dark:bg-white/5 px-3 py-2 rounded-full border border-border dark:border-white/5 backdrop-blur-md shadow-sm">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${roomState === ConnectionState.Connected ? "bg-primary shadow-[0_0_8px_rgba(168_85,247,0.5)]" : "bg-destructive animate-pulse"}`} />
-                                    <span className="text-[10px] uppercase font-bold tracking-tight text-foreground/70 dark:text-white/70">
-                                        {roomState === ConnectionState.Connected ? "Link Stable" : "Wait"}
-                                    </span>
+                                <div className="hidden sm:flex items-center gap-3 bg-white/80 dark:bg-zinc-900/40 px-4 py-2 rounded-full border border-border/50 dark:border-white/5 backdrop-blur-md shadow-lg text-foreground dark:text-white">
+                                    <div className={`w-2 h-2 rounded-full ${roomState === ConnectionState.Connected ? "bg-primary shadow-[0_0_12px_rgba(168_85,247,0.8)]" : "bg-destructive animate-pulse"}`} />
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] uppercase font-black leading-none tracking-tight">
+                                            {roomState === ConnectionState.Connected ? (isAISpeaking ? "Agent Speaking" : "AI Listening") : "Connecting"}
+                                        </span>
+                                        <span className="text-[6px] uppercase tracking-widest opacity-50 font-bold">Neural Link</span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Label floating desktop */}
-                            <div className="absolute top-8 left-8 hidden lg:flex items-center gap-2 opacity-40">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">Neural Interface v2</span>
+                            <div className="absolute top-8 left-8 hidden lg:flex flex-col gap-1 opacity-60">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1 h-3 bg-primary rounded-full" />
+                                    <span className="text-[10px] font-black text-foreground dark:text-white uppercase tracking-[0.4em]">Arjuna Nexus v4.0</span>
+                                </div>
+                                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-[0.2em] ml-3">Secure Session Instance</span>
                             </div>
 
                             {/* Center AI Visualization */}
                             <div className="relative flex items-center justify-center w-full h-[60%] lg:h-full">
                                 <div className={cn(
                                     "absolute w-[70vw] h-[70vw] lg:w-[400px] lg:h-[400px] rounded-full blur-[100px] transition-all duration-1000",
-                                    isAISpeaking ? 'bg-primary/15 scale-110' : 'bg-white/5 scale-100'
+                                    isAISpeaking ? 'bg-primary/15 scale-110' : 'bg-primary/5 dark:bg-white/5 scale-100'
                                 )} />
 
                                 <div className="relative z-10 w-[240px] h-[240px] lg:w-[380px] lg:h-[380px] flex items-center justify-center">
@@ -408,11 +458,8 @@ export function LiveInterviewSession({
                                 </div>
                             </div>
 
-                            {/* Floating Mobile Video (PiP) */}
                             <div className="lg:hidden absolute bottom-4 right-4 z-40 transform transition-all duration-300">
-                                <div
-                                    className="w-28 h-40 bg-black rounded-2xl overflow-hidden border border-white/20 shadow-2xl ring-1 ring-black/50"
-                                >
+                                <div className="w-28 h-40 bg-card dark:bg-black rounded-2xl overflow-hidden border border-border/50 dark:border-white/20 shadow-2xl ring-1 ring-black/5 dark:ring-black/50">
                                     <video
                                         ref={mobileVideoRef}
                                         autoPlay
@@ -421,11 +468,11 @@ export function LiveInterviewSession({
                                         className={cn("w-full h-full object-cover", isCameraEnabled ? "opacity-100" : "opacity-0")}
                                     />
                                     {!isCameraEnabled && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/5">
-                                            <User className="h-6 w-6 text-white/20" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-muted/50 dark:bg-white/5">
+                                            <User className="h-6 w-6 text-muted-foreground dark:text-white/20" />
                                         </div>
                                     )}
-                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-md text-[8px] font-bold text-white uppercase tracking-tighter">You</div>
+                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-white/60 dark:bg-black/40 backdrop-blur-md text-[8px] font-bold text-foreground dark:text-white uppercase tracking-tighter">You</div>
                                 </div>
                             </div>
 
@@ -466,21 +513,21 @@ export function LiveInterviewSession({
 
                 {/* --- FLOATING CONTROLS --- */}
                 <div className={cn(
-                    "fixed z-[100] transition-all duration-500 ease-in-out will-change-transform",
+                    "fixed z-[100] transition-all duration-700 cubic-bezier(0.19, 1, 0.22, 1) will-change-transform",
                     isControlsCollapsed
-                        ? "bottom-4 left-4 translate-x-0"
-                        : "bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2"
+                        ? "bottom-8 left-8 translate-x-0"
+                        : "bottom-8 lg:bottom-10 left-1/2 -translate-x-1/2"
                 )}>
                     <div
-                        className="bg-card dark:bg-card/40 backdrop-blur-3xl border border-border dark:border-white/10 rounded-[40px] p-1.5 lg:px-4 lg:py-2 flex items-center shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-border/50 dark:ring-white/5 overflow-hidden transition-all duration-300"
+                        className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-3xl border border-border/20 dark:border-white/5 rounded-[32px] p-2 flex items-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/5 overflow-hidden transition-all duration-500"
                     >
                         {/* Collapse/Expand Toggle */}
                         <button
                             onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
-                            className="w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center bg-muted dark:bg-white/5 border border-border dark:border-white/10 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shrink-0 z-20"
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center bg-muted/80 dark:bg-zinc-800/80 border border-border/20 dark:border-white/5 text-muted-foreground dark:text-white/50 hover:text-primary hover:bg-primary/10 transition-all shrink-0 z-20 group"
                             title={isControlsCollapsed ? "Expand Controls" : "Collapse Controls"}
                         >
-                            {isControlsCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                            {isControlsCollapsed ? <ChevronRight className="h-5 w-5 animate-pulse" /> : <ChevronLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" />}
                         </button>
 
                         <div
@@ -493,34 +540,38 @@ export function LiveInterviewSession({
                             <button
                                 onClick={toggleMute}
                                 className={cn(
-                                    "flex flex-col items-center gap-1 group transition-all outline-none shrink-0",
-                                    !isMicrophoneEnabled ? "text-destructive" : "text-muted-foreground dark:text-white/60 hover:text-primary"
+                                    "flex flex-col items-center gap-1.5 group transition-all outline-none shrink-0",
+                                    !isMicrophoneEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
                                 )}
                             >
                                 <div className={cn(
-                                    "w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border transition-all",
-                                    !isMicrophoneEnabled ? "bg-destructive/10 border-destructive/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-muted dark:bg-white/5 border-border dark:border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 hover:shadow-md"
+                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300",
+                                    !isMicrophoneEnabled
+                                        ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
+                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
                                 )}>
-                                    {!isMicrophoneEnabled ? <MessageSquare className="h-4 w-4 rotate-180" /> : <MessageSquare className="h-4 w-4" />}
+                                    {!isMicrophoneEnabled ? <MessageSquare className="h-5 w-5 rotate-180" /> : <MessageSquare className="h-5 w-5" />}
                                 </div>
-                                <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em]">{!isMicrophoneEnabled ? 'Unmute' : 'Mute'}</span>
+                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">{!isMicrophoneEnabled ? 'Unmute' : 'Mute'}</span>
                             </button>
 
                             {/* Camera Toggle */}
                             <button
                                 onClick={toggleCamera}
                                 className={cn(
-                                    "flex flex-col items-center gap-1 group transition-all outline-none shrink-0",
-                                    !isCameraEnabled ? "text-destructive" : "text-muted-foreground dark:text-white/60 hover:text-primary"
+                                    "flex flex-col items-center gap-1.5 group transition-all outline-none shrink-0",
+                                    !isCameraEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
                                 )}
                             >
                                 <div className={cn(
-                                    "w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border transition-all",
-                                    !isCameraEnabled ? "bg-destructive/10 border-destructive/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-muted dark:bg-white/5 border-border dark:border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 hover:shadow-md"
+                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300",
+                                    !isCameraEnabled
+                                        ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
+                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
                                 )}>
-                                    {isCameraEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                                    {isCameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                                 </div>
-                                <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em]">{isCameraEnabled ? 'Video' : 'No Video'}</span>
+                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">{isCameraEnabled ? 'Video' : 'No Video'}</span>
                             </button>
 
                             {/* Hint Button */}
@@ -528,18 +579,20 @@ export function LiveInterviewSession({
                                 onClick={requestHint}
                                 disabled={isHintLoading || hintCooldown}
                                 className={cn(
-                                    "flex flex-col items-center gap-1 transition-all outline-none group shrink-0",
-                                    hintCooldown ? "opacity-40 cursor-not-allowed" : "text-amber-500 hover:text-amber-400"
+                                    "flex flex-col items-center gap-1.5 transition-all outline-none group shrink-0",
+                                    hintCooldown ? "opacity-30 cursor-not-allowed" : "text-amber-500 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
                                 )}
                             >
                                 <div className={cn(
-                                    "w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border transition-all shadow-lg",
-                                    isHintLoading ? "bg-amber-500/20 animate-pulse border-amber-500/40" : "bg-amber-500/5 border-amber-500/20 group-hover:bg-amber-500 group-hover:text-black group-hover:border-amber-500"
+                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-lg",
+                                    isHintLoading
+                                        ? "bg-amber-500/20 animate-pulse border-amber-500/40"
+                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/40"
                                 )}>
-                                    <Zap className={cn("h-4 w-4", isHintLoading && "animate-bounce")} />
+                                    <Zap className={cn("h-5 w-5", isHintLoading && "animate-bounce")} />
                                 </div>
-                                <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em]">
-                                    {hintCooldown ? `${cooldownSeconds}s` : 'Hint'}
+                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">
+                                    {hintCooldown ? `${cooldownSeconds}s` : 'Insight'}
                                 </span>
                             </button>
 
@@ -553,22 +606,23 @@ export function LiveInterviewSession({
                             >
                                 <div className={cn(
                                     "w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border transition-all",
-                                    showTranscript ? "bg-primary/20 border-primary/40 shadow-[0_0_15px_rgba(168_85,247,0.3)]" : "bg-muted dark:bg-white/5 border-border dark:border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 hover:shadow-md"
+                                    showTranscript
+                                        ? "bg-primary/20 border-primary/40 shadow-[0_0_15px_rgba(168_85,247,0.3)]"
+                                        : "bg-white/50 dark:bg-white/5 border-border dark:border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 hover:shadow-md"
                                 )}>
                                     <MessageSquare className="h-4 w-4" />
                                 </div>
                                 <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em]">Chat</span>
                             </button>
 
-                            {/* End Call Button */}
                             <button
                                 onClick={handleEndCall}
-                                className="flex flex-col items-center gap-1 transition-all text-red-500 hover:text-red-400 group outline-none shrink-0"
+                                className="flex flex-col items-center gap-1.5 transition-all text-red-500 hover:text-red-400 group outline-none shrink-0"
                             >
-                                <div className="w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border border-red-500/20 bg-red-500/10 group-hover:bg-red-500 group-hover:text-white transition-all shadow-lg shadow-red-500/10 group-hover:shadow-red-500/30">
-                                    <PhoneOff className="h-4 w-4" />
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center border border-red-500/30 bg-red-500/10 group-hover:bg-red-500 group-hover:text-white transition-all duration-300 shadow-lg shadow-red-500/10 group-hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                                    <PhoneOff className="h-5 w-5" />
                                 </div>
-                                <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em] text-red-500/80">Leave</span>
+                                <span className="text-[8px] uppercase font-black tracking-[0.2em] text-red-500">Leave</span>
                             </button>
                         </div>
                     </div>

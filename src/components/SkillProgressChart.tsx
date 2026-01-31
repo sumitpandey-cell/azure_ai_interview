@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Target, Code, BrainCircuit } from "lucide-react";
@@ -15,7 +16,7 @@ interface SkillProgressChartProps {
     loading?: boolean;
 }
 
-export function SkillProgressChart({ data, loading }: SkillProgressChartProps) {
+export const SkillProgressChart = React.memo(function SkillProgressChart({ data, loading }: SkillProgressChartProps) {
     const themeKey = useThemeKey();
     // Transform data for radar chart
     const chartData = data.slice(0, 6).map(skill => ({
@@ -128,4 +129,4 @@ export function SkillProgressChart({ data, loading }: SkillProgressChartProps) {
             </CardContent>
         </Card>
     );
-}
+});

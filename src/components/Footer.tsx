@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Twitter, Github, Linkedin, Instagram, ArrowRight } from "lucide-react";
+import { Twitter, Github, Linkedin, Instagram } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -54,24 +53,6 @@ export function Footer() {
                             <Link href="/about" className="text-slate-400 hover:text-white transition-colors w-fit">About</Link>
                             <Link href="/blog" className="text-slate-400 hover:text-white transition-colors w-fit">Blog</Link>
                             <Link href="/contact" className="text-slate-400 hover:text-white transition-colors w-fit">Contact</Link>
-                        </div>
-
-                        {/* Newsletter Widget within the grid */}
-                        <div className="col-span-2 md:col-span-1">
-                            <h4 className="text-white font-semibold mb-4">Stay in the loop</h4>
-                            <div className="flex flex-col gap-3">
-                                <input
-                                    type="email"
-                                    placeholder="email@example.com"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all placeholder:text-slate-600"
-                                />
-                                <Button className="w-full bg-white text-black hover:bg-slate-200 rounded-xl font-medium transition-transform hover:scale-[1.02]">
-                                    Subscribe <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                                <p className="text-xs text-slate-600 mt-2">
-                                    Unsubscribe at any time.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>

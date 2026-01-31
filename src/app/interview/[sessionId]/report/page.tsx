@@ -7,8 +7,13 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, RefreshCw, Target, Shield, Award, Activity, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
+
+const ReportRadarChart = dynamic(() => import("@/components/ReportRadarChart").then(mod => mod.ReportRadarChart), {
+    loading: () => <div className="h-[300px] w-full animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useThemeKey } from "@/hooks/use-theme-key";
@@ -469,7 +474,7 @@ export default function InterviewReport() {
                 }
 
                 return (
-                    <div className="space-y-6 sm:space-y-8 pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 pt-10 sm:pt-0 overflow-x-hidden max-w-full">
+                    <div className="w-full relative">
                         <div className="relative mb-2">
                             <div className="flex flex-col sm:flex-row lg:items-end justify-between gap-4 sm:gap-6 relative z-10">
                                 <div className="space-y-2 sm:space-y-3">
@@ -638,13 +643,7 @@ export default function InterviewReport() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <Card className="lg:col-span-1 border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl p-6">
                                         <h3 className="text-xl font-bold uppercase mb-6">Skill Map</h3>
-                                        <ResponsiveContainer width="100%" height={300} key={themeKey}>
-                                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={reportData.overallSkills}>
-                                                <PolarGrid stroke="hsl(var(--border))" opacity={0.5} />
-                                                <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fontWeight: 700, fill: 'hsl(var(--muted-foreground))' }} />
-                                                <Radar name="Score" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                                            </RadarChart>
-                                        </ResponsiveContainer>
+                                        <ReportRadarChart data={reportData.overallSkills} themeKey={themeKey} />
                                     </Card>
                                     <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         {reportData.overallSkills.map((skill, i) => (
@@ -661,6 +660,49 @@ export default function InterviewReport() {
                                         ))}
                                     </div>
                                 </div>
+
+                                {reportData.technicalSkills && reportData.technicalSkills.length > 0 && (
+                                    <div className="space-y-6">
+                                        <h3 className="text-xl font-bold uppercase flex items-center gap-2">
+                                            <Target className="h-5 w-5 text-primary" />
+                                            Technical Competencies
+                                        </h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {reportData.technicalSkills.map((skill, i) => (
+                                                <Card key={i} className="border border-border/50 bg-card/50 p-6 rounded-2xl hover:bg-card/70 transition-colors">
+                                                    <div className="flex flex-col gap-4">
+                                                        <div className="flex justify-between items-start">
+                                                            <span className="font-bold uppercase text-xs tracking-wide text-foreground/90">{skill.name}</span>
+                                                            <div className={cn(
+                                                                "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border",
+                                                                skill.score >= 70 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                                                                    skill.score >= 40 ? "bg-primary/10 border-primary/20 text-primary" :
+                                                                        "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                                                            )}>
+                                                                {skill.score}%
+                                                            </div>
+                                                        </div>
+                                                        <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                className={cn("h-full transition-all duration-1000 ease-out",
+                                                                    skill.score >= 70 ? "bg-emerald-500" :
+                                                                        skill.score >= 40 ? "bg-primary" :
+                                                                            "bg-rose-500"
+                                                                )}
+                                                                style={{ width: `${skill.score}%` }}
+                                                            />
+                                                        </div>
+                                                        {skill.feedback && (
+                                                            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
+                                                                {skill.feedback}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </TabsContent>
 
                             <TabsContent value="transcript" className="animate-in fade-in">

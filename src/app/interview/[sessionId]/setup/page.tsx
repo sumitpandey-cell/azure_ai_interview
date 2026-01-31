@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/use-subscription";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { AvatarSelection } from "@/components/AvatarSelection";
 import { getDefaultAvatar, getAvatarById, type InterviewerAvatar } from "@/config/interviewer-avatars";
@@ -417,11 +417,15 @@ export default function InterviewSetup() {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-12 items-start justify-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <main className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 lg:py-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start justify-center animate-in fade-in slide-in-from-bottom-8 duration-1000 z-10 relative">
+
+                {/* Background Ambient Glow */}
+                <div className="absolute top-0 left-1/4 w-1/2 h-1/2 bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10" />
+                <div className="absolute bottom-0 right-1/4 w-1/3 h-1/3 bg-accent/20 blur-[100px] rounded-full pointer-events-none -z-10" />
 
                 {/* Left Column: Video Preview */}
-                <div className="lg:col-span-8 flex flex-col gap-4 sm:gap-8">
-                    <div className="relative aspect-video bg-black rounded-2xl sm:rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.1)] border border-white/10 group">
+                <div className="lg:col-span-8 flex flex-col gap-6">
+                    <div className="relative aspect-video bg-black/40 rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group ring-1 ring-white/5">
                         {/* Video Element */}
                         <video
                             ref={videoRef}
@@ -432,27 +436,27 @@ export default function InterviewSetup() {
                         />
 
                         {/* Scanline Effect */}
-                        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] opacity-20"></div>
+                        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_2px,3px_100%] opacity-20"></div>
 
                         {/* Top Info Strip */}
-                        <div className="absolute top-3 sm:top-6 left-3 sm:left-6 right-3 sm:right-6 flex items-center justify-between z-10">
-                            <div className="bg-black/40 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-white/10 flex items-center gap-2 sm:gap-3">
+                        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                            <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 flex items-center gap-2">
                                 <span className="relative flex h-2 w-2">
                                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isCameraOn ? 'bg-emerald-400' : 'bg-rose-400'} opacity-75`}></span>
                                     <span className={`relative inline-flex rounded-full h-2 w-2 ${isCameraOn ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
                                 </span>
-                                <span className="text-[10px] sm:text-xs font-bold text-white/90">
-                                    {isCameraOn ? "Camera Active" : "Camera Off"}
+                                <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider">
+                                    {isCameraOn ? "Live Feed" : "Camera Off"}
                                 </span>
                             </div>
 
-                            <div className="bg-primary/20 backdrop-blur-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-primary/30 flex items-center gap-1.5 sm:gap-2">
+                            <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
                                 <Sparkles className="h-3 w-3 text-primary" />
-                                <span className="text-[10px] sm:text-xs font-bold text-primary">
+                                <span className="text-[10px] font-bold text-white/90">
                                     {authLoading ? (
-                                        <Skeleton className="h-2 w-12 inline-block ml-1 align-middle bg-primary/20" />
+                                        <Skeleton className="h-2 w-12 inline-block bg-white/20" />
                                     ) : (
-                                        user?.user_metadata?.full_name?.split(' ')[0] || "User"
+                                        user?.user_metadata?.full_name?.split(' ')[0] || "Candidate"
                                     )}
                                 </span>
                             </div>
@@ -460,197 +464,152 @@ export default function InterviewSetup() {
 
                         {/* Placeholder for Video Stream */}
                         {!isCameraOn && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/10 backdrop-blur-sm overflow-hidden pb-12">
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
-                                <div className="relative mb-8">
-                                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
-                                    <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-32 md:w-32 rounded-2xl sm:rounded-2xl bg-card border border-white/10 flex items-center justify-center relative shadow-2xl">
-                                        <VideoOff className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-muted-foreground/40" />
-                                    </div>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 backdrop-blur-sm overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+                                <div className="h-24 w-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-2xl relative">
+                                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-50"></div>
+                                    <VideoOff className="h-10 w-10 text-white/40" />
                                 </div>
-                                <h3 className="text-base sm:text-lg font-bold text-foreground/80">Camera Disabled</h3>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-2">{cameraError || "Enable camera to continue"}</p>
+                                <h3 className="text-lg font-bold text-white tracking-tight">Camera is Off</h3>
+                                <p className="text-sm text-white/40 font-medium mt-1">{cameraError || "Enable your camera to start the feed"}</p>
                             </div>
                         )}
 
-                        {/* Bottom Action Controls */}
-                        <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 flex justify-center gap-4 sm:gap-8 z-10 transition-transform duration-500 translate-y-2 group-hover:translate-y-0">
+                        {/* Floating Control Bar */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
                             <button
                                 onClick={toggleMic}
-                                className={`group h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-2xl border ${isMicOn
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.3)] animate-pulse'
+                                className={`h-14 w-14 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-xl border-2 shadow-lg ${isMicOn
+                                    ? 'bg-white/10 border-white/10 text-white hover:bg-white/20 hover:scale-110'
+                                    : 'bg-rose-500 border-rose-600 text-white hover:bg-rose-600 hover:scale-110 shadow-rose-500/20'
                                     }`}
-                                title={isMicOn ? "Mute Audio" : "Unmute Audio"}
+                                title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
                             >
-                                {isMicOn ? <Mic className="h-5 w-5 sm:h-6 sm:w-6" /> : <MicOff className="h-5 w-5 sm:h-6 sm:w-6" />}
-                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] sm:text-xs font-medium">{isMicOn ? "Microphone On" : "Enable Microphone"}</div>
+                                {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                             </button>
 
                             <button
                                 onClick={toggleCamera}
-                                className={`group h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-2xl border ${isCameraOn
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.3)] animate-pulse'
+                                className={`h-14 w-14 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-xl border-2 shadow-lg ${isCameraOn
+                                    ? 'bg-white/10 border-white/10 text-white hover:bg-white/20 hover:scale-110'
+                                    : 'bg-rose-500 border-rose-600 text-white hover:bg-rose-600 hover:scale-110 shadow-rose-500/20'
                                     }`}
-                                title={isCameraOn ? "Cut Vision" : "Launch Vision"}
+                                title={isCameraOn ? "Turn Off Camera" : "Turn On Camera"}
                             >
-                                {isCameraOn ? <Video className="h-5 w-5 sm:h-6 sm:w-6" /> : <VideoOff className="h-5 w-5 sm:h-6 sm:w-6" />}
-                                <div className="absolute -bottom-12 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] sm:text-xs font-medium">{isCameraOn ? "Camera On" : "Enable Camera"}</div>
+                                {isCameraOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-border/40 space-y-3 sm:space-y-4">
-                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-primary" />
-                                System Status
-                            </h3>
-                            <div className="space-y-3">
-                                {[
-                                    { label: "Environment Check", desc: "Minimal background noise" },
-                                    { label: "Secure Connection", desc: "End-to-end encryption active" }
-                                ].map((step, i) => (
-                                    <div key={i} className="flex flex-col gap-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-semibold text-muted-foreground">{step.label}</span>
-                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground/60 font-medium">{step.desc}</p>
-                                    </div>
-                                ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-card/40 backdrop-blur-md p-5 rounded-2xl border border-border/50 flex flex-col justify-center gap-1 hover:bg-card/60 transition-colors">
+                            <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Status</span>
                             </div>
+                            <div className="text-sm font-semibold text-foreground">All Systems Operational</div>
+                            <div className="text-[10px] text-muted-foreground">Encryption & Connection Verified</div>
                         </div>
 
-                        <div className="bg-card/30 backdrop-blur-xl p-4 sm:p-6 rounded-2xl sm:rounded-2xl border border-border/40 space-y-3 sm:space-y-4">
-                            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        <div className="bg-card/40 backdrop-blur-md p-5 rounded-2xl border border-border/50 flex flex-col justify-center gap-1 hover:bg-card/60 transition-colors">
+                            <div className="flex items-center gap-2 mb-2">
                                 <Sparkles className="h-4 w-4 text-primary" />
-                                Interview Tips
-                            </h3>
-                            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-                                Speak clearly and maintain eye contact with the camera for the best interview experience.
-                            </p>
+                                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pro Tip</span>
+                            </div>
+                            <div className="text-sm font-semibold text-foreground">Speak Naturally</div>
+                            <div className="text-[10px] text-muted-foreground">Treat the AI just like a human interviewer.</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Column: Controls & AvatarSelection */}
-                <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+                <div className="lg:col-span-4 flex flex-col gap-5 w-full">
                     {session && (
-                        <Card className="rounded-2xl sm:rounded-2xl border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-accent/50"></div>
-                            <CardContent className="p-4 sm:p-8 space-y-6 sm:space-y-8">
-                                <div className="space-y-1">
-                                    <span className="text-xs font-semibold text-primary">Interview Details</span>
-                                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Session Configuration</h3>
+                        <Card className="rounded-[1.5rem] border border-white/10 bg-card/60 backdrop-blur-xl shadow-xl overflow-hidden">
+                            <div className="p-5 space-y-5">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-foreground">Session Brief</h3>
+                                        <p className="text-xs text-muted-foreground font-medium">Configuration Overview</p>
+                                    </div>
+                                    <div className="px-2 py-1 rounded bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-wider">
+                                        {session.status === 'completed' ? 'Completed' : 'Ready'}
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    {[
-                                        { label: "Modality", val: session.interview_type },
-                                        { label: "Target Position", val: session.position }
-                                    ].map((row, i) => (
-                                        <div key={i} className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40 group/row hover:bg-white/[0.05] transition-all">
-                                            <span className="text-[10px] font-semibold text-muted-foreground group-hover/row:text-primary transition-colors">{row.label}</span>
-                                            <span className="text-xs sm:text-sm font-medium text-foreground transition-all">{row.val}</span>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 bg-muted/30 rounded-xl border border-white/5 space-y-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Type</span>
+                                        <div className="text-xs font-bold truncate">{session.interview_type}</div>
+                                    </div>
+                                    <div className="p-3 bg-muted/30 rounded-xl border border-white/5 space-y-1">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Role</span>
+                                        <div className="text-xs font-bold truncate">{session.position}</div>
+                                    </div>
+                                    <div className="col-span-2 p-3 bg-muted/30 rounded-xl border border-white/5 space-y-2">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Focus Skills</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {session.config?.skills && session.config.skills.length > 0 ? (
+                                                session.config.skills.slice(0, 3).map((s, i) => (
+                                                    <span key={i} className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] font-medium text-foreground">{s}</span>
+                                                ))
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground">General Evaluation</span>
+                                            )}
+                                            {session.config?.skills && session.config.skills.length > 3 && (
+                                                <span className="px-1.5 py-0.5 rounded-md text-[10px] text-muted-foreground">+{session.config.skills.length - 3} more</span>
+                                            )}
                                         </div>
-                                    ))}
-
-                                    {session.config?.difficulty && (
-                                        <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40">
-                                            <span className="text-[10px] font-semibold text-muted-foreground">Difficulty Level</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className={`h-1.5 w-1.5 rounded-full ${session.config.difficulty === 'Beginner' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
-                                                    session.config.difficulty === 'Intermediate' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
-                                                        'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
-                                                    }`}></div>
-                                                <span className="text-xs sm:text-sm font-semibold text-foreground">{session.config.difficulty}</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {session.config?.skills && session.config.skills.length > 0 && (
-                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-border/40">
-                                            <span className="text-[10px] font-semibold text-muted-foreground">Skills to Assess</span>
-                                            <div className="flex flex-wrap gap-2">
-                                                {session.config.skills.map((skill, idx) => (
-                                                    <span key={idx} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[10px] font-semibold">
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                    </div>
                                     {hasResume && session.config?.useResume !== false && (
-                                        <div className="flex flex-col gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-emerald-500/5 border border-emerald-500/20 group/resume">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400 group-hover/resume:text-emerald-500 transition-colors uppercase tracking-widest">Resume Context</span>
-                                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                            </div>
-                                            <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                                Your professional experience from your resume will be shared with the AI for a personalized interview.
-                                            </p>
+                                        <div className="col-span-2 flex items-center gap-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                            <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">Resume Context Active</span>
                                         </div>
                                     )}
                                 </div>
-                            </CardContent>
+                            </div>
                         </Card>
                     )}
 
                     {/* Integrated Avatar Selection */}
-                    <Card className="rounded-2xl sm:rounded-2xl border border-white/5 bg-card/40 backdrop-blur-2xl overflow-hidden p-4 sm:p-6 relative">
+                    <div className="relative">
                         <AvatarSelection
                             selectedAvatar={selectedAvatar}
                             onSelect={setSelectedAvatar}
                             variant="compact"
                             disabled={isLoading}
                         />
-                    </Card>
+                    </div>
 
-                    <div className="space-y-6 pt-4">
-                        <div className="flex flex-col gap-6 text-center">
-                            <div className="space-y-2">
-                                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Ready to Start?</h2>
-                                <p className="text-xs text-muted-foreground font-medium">Your AI interviewer is ready to begin</p>
-                            </div>
-
-                            <Button
-                                size="lg"
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 sm:h-14 text-sm sm:text-base font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden"
-                                onClick={handleStart}
-                                disabled={isLoading || subscriptionLoading || !allowed}
-                            >
-                                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                {isLoading ? (
-                                    <div className="flex items-center gap-3">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                                        <span>Starting Interview...</span>
-                                    </div>
-                                ) : !allowed ? (
-                                    "Limit Reached"
-                                ) : (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="p-1 bg-white/10 rounded-lg group-hover:scale-110 transition-transform">
-                                            <Zap className="h-4 w-4 fill-white" />
-                                        </div>
-                                        <span>Start Interview</span>
-                                    </div>
-                                )}
-                            </Button>
-
-                            {!isMicOn ? (
-                                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-rose-500/10 border border-rose-500/20">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></div>
-                                    <p className="text-[10px] text-rose-500 font-semibold">Microphone Required</p>
+                    <div className="mt-2">
+                        <Button
+                            size="lg"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 text-sm font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden"
+                            onClick={handleStart}
+                            disabled={isLoading || subscriptionLoading || !allowed}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:animate-shimmer" />
+                            {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                                    <span>Initiating Sequence...</span>
                                 </div>
-                            ) : !isCameraOn && (
-                                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-blue-500/10 border border-blue-500/20">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                    <p className="text-[10px] text-blue-500 font-semibold">Camera Optional (Recommended)</p>
+                            ) : !allowed ? (
+                                "Limit Reached"
+                            ) : (
+                                <div className="flex items-center justify-center gap-2">
+                                    <Zap className="h-4 w-4 fill-white animate-pulse" />
+                                    <span>Start Session Now</span>
                                 </div>
                             )}
-                        </div>
+                        </Button>
+
+                        {!isMicOn && (
+                            <p className="text-center text-[10px] text-rose-500 font-bold mt-3 animate-pulse">
+                                * Microphone access required to proceed
+                            </p>
+                        )}
                     </div>
                 </div>
             </main>

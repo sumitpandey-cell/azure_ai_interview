@@ -1,10 +1,10 @@
-import { ChatMessageType, ChatTile } from "../chat/ChatTile";
+import { ChatTile } from "../chat/ChatTile";
 import {
     TrackReferenceOrPlaceholder,
     useChat,
     useLocalParticipant,
 } from "@livekit/components-react";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
 
 export function TranscriptionTile({
@@ -18,13 +18,12 @@ export function TranscriptionTile({
     // This component only displays the transcripts from context + chat messages
 
     const { transcripts } = useTranscriptContext();
-    const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const { chatMessages, send: sendChat } = useChat();
     const { localParticipant } = useLocalParticipant();
 
 
-    // Derive messages from transcripts and chat messages
-    useEffect(() => {
+    // Derive messages from transcripts and chat messages using useMemo
+    const messages = useMemo(() => {
         const allMessages = Array.from(transcripts.values());
         for (const msg of chatMessages) {
             const isAgent = agentAudioTrack
@@ -49,8 +48,7 @@ export function TranscriptionTile({
                 isSelf: isSelf,
             });
         }
-        allMessages.sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(allMessages);
+        return allMessages.sort((a, b) => a.timestamp - b.timestamp);
     }, [
         transcripts,
         chatMessages,

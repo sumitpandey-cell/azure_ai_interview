@@ -1,140 +1,103 @@
-import { Card, CardContent } from "@/components/ui/card";
 
 export function ReportsPageSkeleton() {
     return (
-        <div className="space-y-6 pb-8 animate-in fade-in duration-500">
+        <div className="max-w-[1600px] mx-auto sm:pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden pb-12 sm:pt-0">
             {/* Header Section Skeleton */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex-1 space-y-3">
-                    <div className="h-8 w-64 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                    <div className="h-4 w-96 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                </div>
+            <div className="space-y-2 mb-8">
+                <div className="h-8 w-64 bg-muted/50 rounded-lg shimmer" />
+                <div className="h-4 w-96 bg-muted/50 rounded-lg shimmer" />
             </div>
 
             {/* Statistics Section Skeleton */}
-            <div className="bg-card rounded-2xl px-8 py-5 shadow-sm border border-border">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="h-6 w-32 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                    <div className="h-10 w-[280px] bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-6 md:flex md:divide-x md:divide-border md:gap-0">
+            <div className="flex flex-col xl:flex-row items-stretch gap-4 mb-10">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 flex-1">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex flex-col md:px-8 first:pl-0 last:pr-0">
-                            <div className="h-4 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded mb-2 shimmer" />
-                            <div className="h-10 w-16 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
+                        <div key={i} className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden h-20 sm:h-24 flex flex-col justify-between">
+                            <div className="h-4 w-24 bg-muted/50 rounded shimmer mb-2" />
+                            <div className="h-8 w-16 bg-muted/50 rounded-lg shimmer" />
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Charts Section Skeleton */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Trend Analysis Skeleton */}
-                <Card className="col-span-1 lg:col-span-2 border-none shadow-sm bg-card">
-                    <CardContent className="p-6">
-                        <div className="mb-6 space-y-2">
-                            <div className="h-6 w-40 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                            <div className="h-4 w-56 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                        </div>
-                        <div className="h-[300px] w-full bg-gradient-to-r from-muted via-muted/50 to-muted rounded-xl shimmer" />
-                    </CardContent>
-                </Card>
-
-                {/* Performance by Type Skeleton */}
-                <Card className="col-span-1 border-none shadow-sm bg-card">
-                    <CardContent className="p-6">
-                        <div className="mb-6 space-y-2">
-                            <div className="h-6 w-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                            <div className="h-4 w-52 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer" />
-                        </div>
-                        <div className="h-[300px] w-full bg-gradient-to-r from-muted via-muted/50 to-muted rounded-xl shimmer" />
-                    </CardContent>
-                </Card>
-            </div>
+            {/* Charts Section Removed to match page logic (only shows if loading/empty logic differs, but page only has stats + list) */}
 
             {/* Filters and Table Section Skeleton */}
-            <Card className="border-none shadow-lg bg-card/50 backdrop-blur-sm">
-                {/* Filters Skeleton */}
-                <CardContent className="p-3 sm:p-4">
-                    <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center">
-                        <div className="h-5 w-16 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
+            <div className="space-y-6">
+                {/* Filter Toolbar Skeleton */}
+                <div className="bg-card dark:bg-card/50 p-4 rounded-2xl border border-border/80 dark:border-border/40 shadow-sm">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        {/* Search Input */}
+                        <div className="relative w-full sm:flex-1 sm:max-w-xs">
+                            <div className="h-11 bg-muted/40 rounded-xl shimmer w-full" />
+                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 flex-1 w-full">
-                            {[1, 2, 3, 4].map((i) => (
-                                <div
-                                    key={i}
-                                    className="h-10 w-full lg:w-40 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg shimmer"
-                                />
-                            ))}
+                        {/* Filter Dropdowns */}
+                        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+                            <div className="col-span-1">
+                                <div className="h-11 w-full sm:w-[140px] bg-muted/40 rounded-xl shimmer" />
+                            </div>
+                            <div className="col-span-1">
+                                <div className="h-11 w-full sm:w-[140px] bg-muted/40 rounded-xl shimmer" />
+                            </div>
+                            <div className="col-span-2 sm:col-span-1">
+                                <div className="h-11 w-full sm:w-[140px] bg-muted/40 rounded-xl shimmer" />
+                            </div>
                         </div>
                     </div>
-                </CardContent>
+                </div>
 
-                {/* Separator */}
-                <div className="border-t border-border" />
+                {/* Structured Table List Skeleton */}
+                <div className="bg-card dark:bg-card/50 rounded-2xl border border-border/80 dark:border-border/60 shadow-md sm:shadow-sm overflow-x-auto no-scrollbar">
+                    <div className="min-w-[850px]">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border bg-muted/30 dark:bg-muted/10">
+                            <div className="col-span-4 h-4 w-32 bg-muted/50 rounded shimmer" />
+                            <div className="col-span-2 h-4 w-20 bg-muted/50 rounded shimmer mx-auto" />
+                            <div className="col-span-2 h-4 w-20 bg-muted/50 rounded shimmer mx-auto" />
+                            <div className="col-span-2 h-4 w-20 bg-muted/50 rounded shimmer mx-auto" />
+                            <div className="col-span-2 h-4 w-24 bg-muted/50 rounded shimmer ml-auto" />
+                        </div>
 
-                {/* Table Skeleton */}
-                <div className="bg-card rounded-3xl p-4 sm:p-6 shadow-sm border border-border">
-                    <div className="h-6 w-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-lg mb-6 shimmer" />
-
-                    <div className="overflow-x-auto">
-                        <div className="w-full min-w-[1000px] space-y-4">
-                            {/* Table Header */}
-                            <div className="flex gap-4 pb-4 border-b border-border">
-                                {['Role', 'Date', 'Type', 'Duration', 'Status', 'Score', 'Feedback', 'Action'].map((header, i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-4 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer ${i === 0 ? 'w-32' : i === 7 ? 'w-24 ml-auto' : 'w-20'
-                                            }`}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Table Rows */}
+                        {/* Table Rows */}
+                        <div className="divide-y divide-border/40">
                             {[1, 2, 3, 4, 5].map((row) => (
-                                <div key={row} className="flex gap-4 py-4 items-center border-b border-border last:border-0">
-                                    {/* Role with Avatar */}
-                                    <div className="flex items-center gap-3 w-32">
-                                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-muted via-muted/50 to-muted shimmer" />
-                                        <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-                                    </div>
-
-                                    {/* Date */}
-                                    <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-
-                                    {/* Type */}
-                                    <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-
-                                    {/* Duration */}
-                                    <div className="h-4 w-20 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-
-                                    {/* Status Badge */}
-                                    <div className="h-6 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer" />
-
-                                    {/* Score */}
-                                    <div className="h-6 w-12 bg-gradient-to-r from-muted via-muted/50 to-muted rounded shimmer" />
-
-                                    {/* Feedback Stars */}
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex gap-1">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                <div
-                                                    key={star}
-                                                    className="h-4 w-4 rounded-full bg-gradient-to-r from-muted via-muted/50 to-muted shimmer"
-                                                />
-                                            ))}
+                                <div key={row} className="grid grid-cols-12 gap-4 px-6 py-5 items-center">
+                                    {/* Role & Protocol */}
+                                    <div className="col-span-4 flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-lg bg-muted/50 shimmer shrink-0" />
+                                        <div className="space-y-1.5 flex-1 max-w-[200px]">
+                                            <div className="h-4 w-3/4 bg-muted/50 rounded shimmer" />
+                                            <div className="h-3 w-1/2 bg-muted/50 rounded shimmer" />
                                         </div>
                                     </div>
 
-                                    {/* Action Button */}
-                                    <div className="h-8 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-full shimmer ml-auto" />
+                                    {/* Date */}
+                                    <div className="col-span-2 flex justify-center">
+                                        <div className="h-4 w-24 bg-muted/50 rounded shimmer" />
+                                    </div>
+
+                                    {/* Duration */}
+                                    <div className="col-span-2 flex justify-center">
+                                        <div className="h-4 w-16 bg-muted/50 rounded shimmer" />
+                                    </div>
+
+                                    {/* Status */}
+                                    <div className="col-span-2 flex justify-center">
+                                        <div className="h-6 w-24 bg-muted/50 rounded-full shimmer" />
+                                    </div>
+
+                                    {/* Performance */}
+                                    <div className="col-span-2 flex items-center justify-end gap-3">
+                                        <div className="h-4 w-8 bg-muted/50 rounded shimmer" />
+                                        <div className="h-1.5 w-16 rounded-full bg-muted/50 shimmer" />
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 }

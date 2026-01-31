@@ -1,6 +1,5 @@
-import confetti from 'canvas-confetti';
-
-export const triggerConfetti = () => {
+export const triggerConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -31,7 +30,8 @@ export const triggerConfetti = () => {
     }, 250);
 };
 
-export const triggerSuccessConfetti = () => {
+export const triggerSuccessConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     confetti({
         particleCount: 150,
         spread: 70,
@@ -39,3 +39,4 @@ export const triggerSuccessConfetti = () => {
         colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
     });
 };
+

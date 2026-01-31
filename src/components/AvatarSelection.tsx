@@ -11,7 +11,7 @@ interface AvatarSelectionProps {
     disabled?: boolean;
 }
 
-export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default', disabled = false }: AvatarSelectionProps) {
+export const AvatarSelection = React.memo(function AvatarSelection({ selectedAvatar, onSelect, variant = 'default', disabled = false }: AvatarSelectionProps) {
     const getAvatarIcon = (avatar: InterviewerAvatar) => {
         switch (avatar.id) {
             case 'kirti': return Heart;
@@ -42,16 +42,16 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default',
 
     if (variant === 'compact') {
         return (
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between px-2">
-                    <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60">Interviewer Persona</span>
-                    <span className="text-[10px] font-bold text-primary flex items-center gap-1">
-                        <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Select Persona</span>
+                    <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         AI Verified
                     </span>
                 </div>
 
-                <div className="flex items-center gap-3 p-2 bg-card/30 backdrop-blur-xl border border-border rounded-2xl">
+                <div className="flex items-center justify-between gap-2 p-1.5 bg-black/20 backdrop-blur-xl border border-white/5 rounded-2xl relative">
                     {INTERVIEWER_AVATARS.map((avatar) => {
                         const isSelected = selectedAvatar.id === avatar.id;
                         return (
@@ -59,36 +59,35 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default',
                                 key={avatar.id}
                                 onClick={() => !disabled && onSelect(avatar)}
                                 disabled={disabled}
-                                className={`relative h-12 w-12 rounded-xl flex items-center justify-center text-2xl transition-all duration-300 group ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:scale-110 active:scale-95'} ${isSelected
-                                    ? `bg-gradient-to-br ${avatar.color} ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/20`
-                                    : 'bg-muted/50 grayscale hover:grayscale-0'
+                                className={`relative h-14 w-14 rounded-xl flex items-center justify-center text-3xl transition-all duration-500 group ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:scale-105'} ${isSelected
+                                    ? `bg-gradient-to-br ${avatar.color} ring-1 ring-white/50 shadow-[0_0_20px_rgba(255,255,255,0.15)] z-10 scale-105`
+                                    : 'bg-white/5 grayscale opacity-60 hover:opacity-100 hover:grayscale-0'
                                     }`}
                             >
-                                {avatar.avatar}
-                                {isSelected && (
-                                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border border-background flex items-center justify-center">
-                                        <div className="h-1 w-1 bg-white rounded-full" />
-                                    </div>
-                                )}
+                                <span className="transform transition-transform duration-300 group-hover:scale-110">{avatar.avatar}</span>
 
-                                {/* Tooltip-style name on hover */}
-                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-popover text-[8px] font-black uppercase rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-border">
-                                    {avatar.name}
-                                </div>
+                                {isSelected && (
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                                )}
                             </button>
                         );
                     })}
                 </div>
 
                 {/* Selection Details */}
-                <div className="px-2 flex items-center justify-between">
-                    <div>
-                        <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{selectedAvatar.name}</p>
-                        <p className="text-[9px] text-muted-foreground font-medium line-clamp-1">{selectedAvatar.description}</p>
+                <div className="bg-white/5 border border-white/5 rounded-xl p-3 flex items-center justify-between backdrop-blur-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-primary bg-primary/10 border border-primary/20`}>
+                            {React.createElement(getAvatarIcon(selectedAvatar), { size: 14 })}
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-foreground tracking-tight">{selectedAvatar.name}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium">{selectedAvatar.description}</p>
+                        </div>
                     </div>
                     <div className="text-right">
-                        <span className="text-[9px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full">
-                            {getVoiceDescription(selectedAvatar.voice)}
+                        <span className="text-[9px] font-bold text-foreground/80 uppercase bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                            {getVoiceDescription(selectedAvatar.voice)} Voice
                         </span>
                     </div>
                 </div>
@@ -240,4 +239,4 @@ export function AvatarSelection({ selectedAvatar, onSelect, variant = 'default',
             </div>
         </div>
     );
-}
+});

@@ -293,7 +293,7 @@ export default function Reports() {
             {/* Filter Toolbar */}
             <div className="bg-card dark:bg-card/50 p-4 rounded-2xl border border-border/80 dark:border-border/40 shadow-sm">
 
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 {/* Search Input */}
                 <div className="relative w-full sm:flex-1 sm:max-w-xs">
                   <Input
@@ -303,62 +303,66 @@ export default function Reports() {
                     className="pl-10 h-11 bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 focus:bg-muted/50 dark:focus:bg-muted/30 transition-colors rounded-xl font-medium text-sm"
                   />
                   <MessageSquare className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-
                 </div>
 
                 {/* Filter Dropdowns */}
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
-                      <SelectValue placeholder="Status: All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Status: All</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+                  <div className="col-span-1">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                        <SelectValue placeholder="Status: All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Status: All</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
+                  <div className="col-span-1">
+                    <Select value={positionFilter} onValueChange={setPositionFilter}>
+                      <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                        <SelectValue placeholder="Role: All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Role: All</SelectItem>
+                        {uniquePositions.map(p => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  <Select value={positionFilter} onValueChange={setPositionFilter}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
-                      <SelectValue placeholder="Role: All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Role: All</SelectItem>
-                      {uniquePositions.map(p => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
-                      <SelectValue placeholder="Newest First" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date-desc">Newest First</SelectItem>
-                      <SelectItem value="date-asc">Oldest First</SelectItem>
-                      <SelectItem value="score-desc">Highest Score</SelectItem>
-                    </SelectContent>
-                  </Select>
-
+                  <div className={cn("col-span-1", !(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && "col-span-2 sm:col-span-1")}>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                        <SelectValue placeholder="Newest First" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date-desc">Newest First</SelectItem>
+                        <SelectItem value="date-asc">Oldest First</SelectItem>
+                        <SelectItem value="score-desc">Highest Score</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setStatusFilter('all');
-                        setPositionFilter('all');
-                        setSearchQuery('');
-                        setSortBy('date-desc');
-                      }}
-                      className="h-11 w-11 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="col-span-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setStatusFilter('all');
+                          setPositionFilter('all');
+                          setSearchQuery('');
+                          setSortBy('date-desc');
+                        }}
+                        className="h-11 w-full sm:w-11 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl border border-transparent hover:border-rose-500/20 bg-muted/40 sm:bg-transparent"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

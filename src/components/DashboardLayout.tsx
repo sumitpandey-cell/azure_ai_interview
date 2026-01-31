@@ -401,7 +401,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
         {/* Page Content */}
         <main className="flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
           <div
-            key={pathname}
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
           >
             {children}

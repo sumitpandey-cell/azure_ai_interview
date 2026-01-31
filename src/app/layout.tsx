@@ -109,7 +109,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme') || 'light';
+                  const theme = localStorage.getItem('theme') || 'dark';
                   const colorTheme = localStorage.getItem('color-theme');
                   const root = document.documentElement;
                   

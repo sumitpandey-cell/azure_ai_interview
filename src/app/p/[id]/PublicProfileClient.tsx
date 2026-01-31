@@ -1,30 +1,32 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useMemo } from "react"
-import Image from "next/image"
+import React, { useEffect, useState, useMemo, ReactNode } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 import { profileService } from "@/services/profile.service"
 import { interviewService } from "@/services/interview.service"
 import { leaderboardService } from "@/services/leaderboard.service"
 import { analyticsService } from "@/services/analytics.service"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { getAvatarUrl, getInitials } from "@/lib/avatar-utils"
 import {
     Check, Trophy, Target, ArrowRight, ShieldCheck,
     Globe, Sparkles, TrendingUp, Award,
     Flame, History, ChevronDown, Calendar,
-    Lock,
-    Clock
+    Lock, Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer
-} from "recharts"
+import { motion, AnimatePresence } from "framer-motion"
+import dynamic from "next/dynamic";
+
+const ProfilePerformanceChart = dynamic(() => import("@/components/ProfilePerformanceChart"), {
+    ssr: false,
+    loading: () => <div className="h-48 sm:h-64 w-full bg-muted/20 animate-pulse rounded-2xl" />
+});
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,13 +34,70 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// Memoized Sub-components for better performance
+const StatsCircle = React.memo(({ icon }: { icon: ReactNode }) => (
+    <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+        {icon}
+    </div>
+));
+StatsCircle.displayName = "StatsCircle";
+
+const OverviewItem = React.memo(({ icon, value, label }: { icon: ReactNode, value: string | number, label: string }) => (
+    <div className="flex items-center gap-5 group">
+        <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center text-xl group-hover:bg-white/10 transition-colors border border-transparent group-hover:border-white/5 shadow-inner shrink-0">
+            {icon}
+        </div>
+        <div className="min-w-0">
+            <div className="text-2xl font-black text-white truncate leading-none mb-1">{value}</div>
+            <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest truncate">{label}</div>
+        </div>
+    </div>
+));
+OverviewItem.displayName = "OverviewItem";
+
+const SkillProgress = React.memo(({ label, value, count }: { label: string, value: number, count?: number }) => (
+    <div className="space-y-4">
+        <div className="flex justify-between items-end gap-2">
+            <div className="text-xs font-black text-white uppercase tracking-wider truncate">{label}</div>
+            <div className="text-[10px] font-black text-primary shrink-0">{value}% {count && count > 1 && <span className="text-slate-500 ml-1">({count})</span>}</div>
+        </div>
+        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${value}%` }}
+                transition={{ duration: 1.2, delay: 0.2, ease: "circOut" }}
+                className="h-full bg-primary shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)]"
+            />
+        </div>
+    </div>
+));
+SkillProgress.displayName = "SkillProgress";
+
+const CredentialItem = React.memo(({ icon, label, value }: { icon: ReactNode, label: string, value: string }) => (
+    <div className="flex items-center justify-between group gap-4">
+        <div className="flex items-center gap-3 shrink-0">
+            <div className="opacity-50 group-hover:opacity-100 transition-opacity">{icon}</div>
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+        </div>
+        <span className="text-xs font-black text-slate-300 group-hover:text-white transition-colors uppercase tracking-tight truncate">{value}</span>
+    </div>
+));
+CredentialItem.displayName = "CredentialItem";
+
+const FooterLink = React.memo(({ label }: { label: string }) => (
+    <Link href="/" className="text-[10px] font-black text-slate-500 hover:text-white transition-colors uppercase tracking-[0.2em]">
+        {label}
+    </Link>
+));
+FooterLink.displayName = "FooterLink";
+
 interface SkillData {
     name: string;
     averageScore: number;
     count: number;
 }
 
-interface ProfileData {
+interface Profile {
     id: string;
     full_name: string;
     avatar_url?: string;
@@ -47,7 +106,12 @@ interface ProfileData {
     streak_count?: number;
 }
 
-interface InterviewSession {
+interface Stats {
+    averageScore?: number;
+    completedCount?: number;
+}
+
+interface Interview {
     id: string;
     position: string;
     score: number | null;
@@ -56,26 +120,25 @@ interface InterviewSession {
     difficulty?: string;
 }
 
-interface ProfileStats {
-    averageScore?: number;
-    completedCount?: number;
-}
-
 interface PublicProfileClientProps {
-    initialProfile: ProfileData | null;
+    initialProfile: Profile | null;
 }
 
 export default function PublicProfileClient({ initialProfile }: PublicProfileClientProps) {
     const { id } = useParams()
     const [loading, setLoading] = useState(!initialProfile)
-    const [profile, setProfile] = useState<ProfileData | null>(initialProfile)
-    const [stats, setStats] = useState<ProfileStats | null>(null)
-    const [recentInterviews, setRecentInterviews] = useState<InterviewSession[]>([])
+    const [profile, setProfile] = useState<Profile | null>(initialProfile)
+    const [stats, setStats] = useState<Stats | null>(null)
+    const [recentInterviews, setRecentInterviews] = useState<Interview[]>([])
     const [rank, setRank] = useState<number | null>(null)
     const [skills, setSkills] = useState<SkillData[]>([])
     const [performanceView, setPerformanceView] = useState<'Recent' | 'Top'>('Recent')
 
+    const handleSetRecent = React.useCallback(() => setPerformanceView('Recent'), [])
+    const handleSetTop = React.useCallback(() => setPerformanceView('Top'), [])
+
     useEffect(() => {
+        let isMounted = true;
         const fetchData = async () => {
             if (!id) return
 
@@ -83,10 +146,11 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                 if (!profile) {
                     setLoading(true)
                     const profileData = await profileService.getPublicProfile(id as string)
-                    setProfile(profileData as ProfileData)
-
-                    if (profileData) {
-                        fetchExtraData(profileData.id)
+                    if (isMounted) {
+                        setProfile(profileData as Profile)
+                        if (profileData) {
+                            fetchExtraData(profileData.id)
+                        }
                     }
                 } else {
                     fetchExtraData(profile.id)
@@ -94,25 +158,32 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
             } catch (error) {
                 console.error("Error loading public profile:", error)
             } finally {
-                setLoading(false)
+                if (isMounted) setLoading(false)
             }
         }
 
         const fetchExtraData = async (userId: string) => {
-            const [statsData, interviews, userRank, skillsData] = await Promise.all([
-                interviewService.getPublicSessionStats(userId),
-                interviewService.getPublicRecentInterviews(userId, 10),
-                leaderboardService.getUserRank(userId),
-                analyticsService.getSkillProgress(userId)
-            ])
+            try {
+                const [statsData, interviews, userRank, skillsData] = await Promise.all([
+                    interviewService.getPublicSessionStats(userId),
+                    interviewService.getPublicRecentInterviews(userId, 10),
+                    leaderboardService.getUserRank(userId),
+                    analyticsService.getSkillProgress(userId)
+                ])
 
-            setStats(statsData)
-            setRecentInterviews(interviews as InterviewSession[])
-            setRank(userRank)
-            setSkills(skillsData.slice(0, 4)) // Top 4 skills
+                if (isMounted) {
+                    setStats(statsData)
+                    setRecentInterviews(interviews as Interview[])
+                    setRank(userRank)
+                    setSkills(skillsData.slice(0, 4))
+                }
+            } catch (err) {
+                console.error("Error fetching extra public data:", err)
+            }
         }
 
         fetchData()
+        return () => { isMounted = false; }
     }, [id, profile])
 
     const sortedInterviews = useMemo(() => {
@@ -127,27 +198,23 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
         if (!recentInterviews.length) {
             return []
         }
-
-        // Get interviews with valid completed_at dates, sorted by date
-        const validInterviews = [...recentInterviews]
-            .filter(session => session.completed_at && session.score !== null && session.score !== undefined)
+        return [...recentInterviews]
+            .filter(s => s.completed_at && s.score !== null)
             .sort((a, b) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime())
             .map(session => ({
                 time: new Date(session.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-                score: session.score
+                score: Number(session.score)
             }))
-
-        return validInterviews
     }, [recentInterviews])
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+            <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-[1400px] space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <Skeleton className="lg:col-span-3 h-[800px] rounded-2xl" />
-                        <Skeleton className="lg:col-span-6 h-[800px] rounded-2xl" />
-                        <Skeleton className="lg:col-span-3 h-[800px] rounded-2xl" />
+                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
+                        <Skeleton className="lg:col-span-6 h-[800px] bg-slate-900 rounded-2xl" />
+                        <Skeleton className="lg:col-span-3 h-[800px] bg-slate-900 rounded-2xl" />
                     </div>
                 </div>
             </div>
@@ -156,409 +223,282 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-                <div
-                    className="bg-card p-12 rounded-2xl border shadow-xl backdrop-blur-2xl max-w-lg opacity-0 animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards"
+            <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6 text-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-slate-900/50 p-12 rounded-2xl border border-white/5 backdrop-blur-2xl max-w-lg"
                 >
-                    <Lock className="h-20 w-20 text-muted-foreground mx-auto mb-6 opacity-20" />
-                    <h1 className="text-3xl font-bold text-foreground mb-3">Profile Protected</h1>
-                    <p className="text-muted-foreground mb-8">This interview profile is either private or does not exist on our platform.</p>
+                    <Lock className="h-20 w-20 text-slate-500 mx-auto mb-6 opacity-20" />
+                    <h1 className="text-3xl font-bold text-white mb-3">Profile Protected</h1>
+                    <p className="text-slate-400 mb-8">This interview profile is either private or does not exist on our platform.</p>
                     <Link href="/">
-                        <Button className="bg-primary hover:bg-primary/90 px-8 h-12 rounded-xl font-bold text-primary-foreground">
+                        <Button className="bg-primary hover:bg-primary/90 px-8 h-12 rounded-xl font-bold">
                             Go Home
                         </Button>
                     </Link>
-                </div>
+                </motion.div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 p-3 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden">
-            <div className="max-w-[1400px] mx-auto mb-6 sm:mb-8 flex items-center justify-between gap-3">
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-8 w-8 sm:h-10 sm:w-10 object-contain dark:invert-0 light:invert-[0.1]" />
-                    </div>
-                    <div>
-                        <div className="text-lg sm:text-xl font-black tracking-tighter text-foreground">ARJUNA AI</div>
-                        <div className="text-[9px] sm:text-[10px] font-bold text-primary tracking-[0.2em] uppercase">The Global Interview Standard</div>
-                    </div>
-                </Link>
+        <div className="dark">
+            <div className="min-h-screen bg-[#050814] text-white selection:bg-primary/30 p-4 sm:p-8 lg:p-12 overflow-x-hidden">
+                {/* Branding Header */}
+                <div className="max-w-[1400px] mx-auto mb-10 flex items-center justify-between gap-4">
+                    <Link href="/" className="flex items-center gap-3 group shrink-0">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary rounded-lg blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+                            <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="relative h-10 w-10 object-contain dark:invert-0 light:invert" />
+                        </div>
+                        <div>
+                            <div className="text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
+                            <div className="text-[10px] font-bold text-primary/70 tracking-[0.2em] uppercase">The Global Interview Standard</div>
+                        </div>
+                    </Link>
 
-                <div className="hidden sm:block">
-                    <p className="text-sm font-bold text-muted-foreground tracking-tight">
-                        Standardize your talent with <span className="text-foreground font-black uppercase tracking-[0.05em]">verified AI credentials.</span>
-                    </p>
+                    <div className="hidden lg:block">
+                        <p className="text-sm font-medium text-slate-500">
+                            Elevate your career with <span className="text-white font-bold uppercase tracking-tight">verified AI credentials.</span>
+                        </p>
+                    </div>
+
+                    <Link href="/auth">
+                        <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 rounded-xl h-10 font-bold text-xs gap-2 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">
+                            Claim My Rank <ArrowRight className="h-3 w-3" />
+                        </Button>
+                    </Link>
                 </div>
 
-                <Link href="/auth">
-                    <Button variant="outline" className="border-border bg-card hover:bg-muted rounded-xl h-9 sm:h-10 px-3 sm:px-4 font-black text-[10px] sm:text-xs gap-2 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">
-                        Claim My Rank <ArrowRight className="h-3 w-3" />
-                    </Button>
-                </Link>
-            </div>
+                {/* Background Texture */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[150px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/3 rounded-full blur-[150px]" />
+                </div>
 
-            {/* Background Texture */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[150px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/3 rounded-full blur-[150px]" />
-            </div>
+                <main className="relative z-10 max-w-[1400px] mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-stretch">
 
-            <main className="relative z-10 max-w-[1400px] mx-auto">
-                {/* Responsive Grid System */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
-
-                    {/* LEFT COLUMN - Profile Summary */}
-                    <div className="md:col-span-2 lg:col-span-3">
-                        {/* Profile Info Card */}
-                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 fill-mode-forwards">
-                            <Card className="h-full bg-card border border-border rounded-2xl overflow-hidden p-5 sm:p-6 md:p-8 flex flex-col items-center text-center shadow-xl relative">
-                                <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Network Active</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 sm:mt-6 relative mb-6 sm:mb-8 group">
-                                    <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/20 rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity" />
-                                    <Avatar className="h-24 w-24 sm:h-32 md:h-36 sm:w-32 md:w-36 border-2 border-primary/20 p-1.5 sm:p-2 bg-background">
-                                        <AvatarImage
-                                            src={getAvatarUrl(profile.avatar_url, profile.id, 'avataaars', null, 'male')}
-                                            className="rounded-full"
-                                        />
-                                        <AvatarFallback className="text-2xl sm:text-3xl md:text-4xl bg-muted text-primary font-black">
-                                            {getInitials(profile.full_name) || "U"}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-primary p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-card shadow-xl">
-                                        <Check className="h-3 w-3 sm:h-5 sm:w-5 text-primary-foreground stroke-[3px] sm:stroke-[4px]" />
-                                    </div>
-                                </div>
-
-                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 sm:mb-4 uppercase tracking-tighter leading-none text-foreground break-words w-full px-2">{profile.full_name}</h2>
-
-                                <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl mb-5 sm:mb-6">
-                                    <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                    <span className="text-[10px] sm:text-xs font-black text-primary uppercase tracking-[0.1em]">Verified Elite</span>
-                                </div>
-
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 max-w-[200px] leading-relaxed">
-                                    Strategic technical performance and engineering readiness verified by the Arjuna AI Intelligence Engine.
-                                </p>
-
-                                <div className="mt-auto w-full pt-6 sm:pt-8 border-t border-border">
-                                    <div className="flex items-center justify-center gap-2 text-primary overflow-hidden">
-                                        <Globe className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] truncate">arjunaai.in/p/{profile.profile_slug || profile.id.slice(0, 8)}</span>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    </div>
-
-                    {/* MIDDLE COLUMN - Main Content */}
-                    <div className="md:col-span-2 lg:col-span-6 flex flex-col gap-4 sm:gap-6">
-                        {/* Candidate Overview Card (Top Dashboard) */}
-                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 delay-100 fill-mode-forwards">
-                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl">
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4">
-                                    <OverviewItem
-                                        icon={<Trophy className="text-amber-500 h-5 w-5 sm:h-6 sm:w-6" />}
-                                        value={rank ? `#${rank}` : "Unranked"}
-                                        label="Global Rank"
-                                    />
-                                    <OverviewItem
-                                        icon={<Target className="text-primary h-5 w-5 sm:h-6 sm:w-6" />}
-                                        value={stats?.averageScore ? `${stats.averageScore}%` : "N/A"}
-                                        label="Technical Precision"
-                                    />
-                                    <OverviewItem
-                                        icon={<Clock className="text-sky-500 h-5 w-5 sm:h-6 sm:w-6" />}
-                                        value={stats?.completedCount || 0}
-                                        label="Verified Sessions"
-                                    />
-                                </div>
-                            </Card>
-                        </div>
-
-                        {/* Interview Performance History Card */}
-                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 delay-200 fill-mode-forwards flex-1">
-                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 shadow-xl min-h-[450px] sm:min-h-[500px] flex flex-col h-full">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-2">
-                                    <div className="flex items-center gap-3 sm:gap-4">
-                                        <StatsCircle icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />} />
-                                        <div>
-                                            <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight text-foreground">Global Performance</h3>
-                                            <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5 sm:mt-1">Real-time Intelligence Verification</p>
+                        {/* LEFT COLUMN */}
+                        <div className="lg:col-span-3 flex flex-col gap-6">
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
+                                <Card className="h-full bg-[#0c1221] border border-white/5 rounded-2xl overflow-hidden p-8 flex flex-col items-center text-center shadow-2xl relative">
+                                    <div className="absolute top-6 right-6">
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active</span>
                                         </div>
                                     </div>
 
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="w-full sm:w-auto bg-muted border-border rounded-xl h-9 sm:h-11 px-4 sm:px-6 gap-2 text-[9px] sm:text-xs font-black uppercase tracking-widest hover:bg-muted/80">
-                                                {performanceView} <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="bg-card border-border rounded-xl min-w-[140px] p-2" align="end">
-                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-muted cursor-pointer" onClick={() => setPerformanceView('Recent')}>
-                                                Show Recent
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-muted cursor-pointer" onClick={() => setPerformanceView('Top')}>
-                                                Show Top Scores
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-
-                                {/* Chart Section */}
-                                <div className="flex-1 w-full mt-4 sm:mt-8 relative">
-                                    {chartData.length > 0 ? (
-                                        <div className="h-48 sm:h-64 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                                    <defs>
-                                                        <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.1)" vertical={false} />
-                                                    <XAxis
-                                                        dataKey="time"
-                                                        stroke="hsl(var(--muted-foreground) / 0.5)"
-                                                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 700 }}
-                                                        tickLine={false}
-                                                        axisLine={false}
-                                                        dy={10}
-                                                    />
-                                                    <YAxis
-                                                        stroke="hsl(var(--muted-foreground) / 0.5)"
-                                                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9, fontWeight: 700 }}
-                                                        tickLine={false}
-                                                        axisLine={false}
-                                                        domain={[0, 100]}
-                                                        ticks={[0, 50, 100]}
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{
-                                                            backgroundColor: 'hsl(var(--card))',
-                                                            border: '1px solid hsl(var(--border))',
-                                                            borderRadius: '12px',
-                                                            padding: '8px 12px',
-                                                            boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-                                                        }}
-                                                        labelStyle={{ color: 'hsl(var(--primary))', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}
-                                                        itemStyle={{ color: 'hsl(var(--foreground))', fontWeight: 700, fontSize: 11 }}
-                                                        formatter={(value: number) => [`${value}%`, 'Score']}
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="score"
-                                                        stroke="hsl(var(--primary))"
-                                                        strokeWidth={2}
-                                                        fill="url(#colorScore)"
-                                                        animationDuration={1500}
-                                                        animationEasing="ease-out"
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
+                                    <div className="mt-6 relative mb-8 group">
+                                        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/20 rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity" />
+                                        <Avatar className="h-36 w-36 border-2 border-primary/20 p-2 bg-[#0c1221]">
+                                            <AvatarImage
+                                                src={getAvatarUrl(profile.avatar_url, profile.id, 'avataaars', null, 'male')}
+                                                className="rounded-full"
+                                            />
+                                            <AvatarFallback className="text-4xl bg-slate-900 text-primary font-black">
+                                                {getInitials(profile.full_name) || "U"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="absolute bottom-2 right-2 bg-primary p-2 rounded-2xl border-4 border-[#0c1221] shadow-xl">
+                                            <Check className="h-5 w-5 text-primary-foreground stroke-[4px]" />
                                         </div>
-                                    ) : (
-                                        <div className="h-48 sm:h-64 w-full flex items-center justify-center">
-                                            <div className="text-center px-4">
-                                                <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
-                                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">No interview data yet</p>
-                                                <p className="text-[10px] text-muted-foreground opacity-60 mt-2">Complete interviews to see performance trends</p>
+                                    </div>
+
+                                    <h2 className="text-4xl font-black mb-4 uppercase tracking-tighter leading-none text-white break-words w-full px-2">{profile.full_name}</h2>
+
+                                    <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl mb-6">
+                                        <Award className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-black text-primary uppercase tracking-[0.1em]">Verified Elite</span>
+                                    </div>
+
+                                    <p className="text-sm text-slate-500 mb-8 max-w-[200px] leading-relaxed">
+                                        Professional tech performance verified by the Arjuna AI Engine.
+                                    </p>
+
+                                    <div className="mt-auto w-full pt-8 border-t border-white/5">
+                                        <div className="flex items-center justify-center gap-2 text-primary">
+                                            <Globe className="h-4 w-4 shrink-0" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate">arjunaai.in/p/{profile.profile_slug || profile.id.slice(0, 8)}</span>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
+                                    <div className="grid grid-cols-1 gap-8">
+                                        <OverviewItem icon={<Trophy className="text-amber-500 h-6 w-6" />} value={rank ? `#${rank}` : "---"} label="World Rank" />
+                                        <OverviewItem icon={<Target className="text-primary h-6 w-6" />} value={stats?.averageScore ? `${stats.averageScore}%` : "---"} label="Precision" />
+                                        <OverviewItem icon={<Clock className="text-sky-500 h-6 w-6" />} value={stats?.completedCount || 0} label="Verified Sessions" />
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        </div>
+
+                        {/* MIDDLE COLUMN */}
+                        <div className="lg:col-span-6 flex flex-col gap-6">
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-6 sm:p-10 shadow-2xl min-h-[500px] flex flex-col h-full">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
+                                        <div className="flex items-center gap-4">
+                                            <StatsCircle icon={<TrendingUp className="h-5 w-5" />} />
+                                            <div>
+                                                <h3 className="text-2xl font-black tracking-tight text-white">Global Performance</h3>
+                                                <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-1">Live Intelligence Verification</p>
                                             </div>
                                         </div>
-                                    )}
-                                </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-10 pb-2">
-                                    {sortedInterviews.length > 0 ? (
-                                        <>
-                                            {sortedInterviews.slice(0, 3).map((session, i) => (
-                                                <div
-                                                    key={session.position + session.completed_at || i}
-                                                    className="bg-muted/30 border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm opacity-0 animate-in fade-in zoom-in-95 fill-mode-forwards"
-                                                    style={{ animationDelay: `${i * 100}ms` }}
-                                                >
-                                                    <div className="flex items-center justify-between mb-3 text-foreground">
-                                                        <div className="text-[10px] sm:text-xs font-black group-hover:text-primary transition-colors truncate flex-1 uppercase">{session.position}</div>
-                                                        <div className="text-xs sm:text-sm font-black text-primary ml-2">{session.score || 0}%</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold border-border bg-card text-muted-foreground px-1.5 py-0">
-                                                            {session.interview_type || 'Tech'}
-                                                        </Badge>
-                                                        {session.difficulty && (
-                                                            <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold border-primary/20 bg-primary/5 text-primary px-1.5 py-0">
-                                                                {session.difficulty}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-[9px] text-muted-foreground mb-4 font-bold uppercase tracking-wider">
-                                                        {new Date(session.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </div>
-                                                    <div className="flex items-center justify-between pt-3 border-t border-border">
-                                                        <div className="flex items-center gap-1 grayscale group-hover:grayscale-0 transition-all">
-                                                            <Check className="h-2.5 w-2.5 text-emerald-500 stroke-[3px]" />
-                                                            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Verified</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            {(session.score || 0) >= 80 && <Flame className="h-3 w-3 text-orange-500 fill-orange-500/20" />}
-                                                            {(session.score || 0) >= 70 && <TrendingUp className="h-3 w-3 text-primary" />}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </>
-                                    ) : (
-                                        <div className="col-span-full text-center py-8 sm:py-12">
-                                            <History className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">No completed interviews</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </Card>
-                        </div>
-                    </div>
-
-                    {/* RIGHT COLUMN - Stats & Actions */}
-                    <div className="md:col-span-2 lg:col-span-3 flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6">
-                        {/* System Credentials Card */}
-                        <div className="opacity-0 animate-in fade-in slide-in-from-right-5 duration-500 fill-mode-forwards">
-                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl">
-                                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 sm:mb-8">Credentials</h3>
-                                <div className="space-y-4 sm:space-y-6">
-                                    <CredentialItem icon={<History className="text-primary h-3.5 w-3.5" />} label="Analysis Engine" value="v3.1 Elite" />
-                                    <CredentialItem icon={<ShieldCheck className="text-primary h-3.5 w-3.5" />} label="Trust Validation" value="Verified" />
-                                    <CredentialItem icon={<Trophy className="text-primary h-3.5 w-3.5" />} label="Global Tier" value="Elite Pro" />
-                                    <CredentialItem
-                                        icon={<Calendar className="text-primary h-3.5 w-3.5" />}
-                                        label="Network Entry"
-                                        value={`${new Date(profile.created_at).toLocaleString('en-US', { month: 'short' })} '${new Date(profile.created_at).getFullYear().toString().slice(-2)}`}
-                                    />
-                                </div>
-                            </Card>
-                        </div>
-
-                        {/* Expertise Matrix Card */}
-                        <div className="opacity-0 animate-in fade-in slide-in-from-right-5 duration-500 delay-100 fill-mode-forwards flex-1">
-                            <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl h-full">
-                                <div className="flex items-center justify-between mb-6 sm:mb-8">
-                                    <div>
-                                        <h3 className="text-lg sm:text-xl font-black tracking-tight text-foreground">Expertise Matrix</h3>
-                                        <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Weighted Assessment</p>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" className="w-full sm:w-auto bg-white/5 border-white/10 rounded-2xl h-11 px-6 gap-2 text-xs font-black uppercase tracking-widest hover:bg-white/10">
+                                                    {performanceView} <ChevronDown className="h-4 w-4 text-slate-500" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent className="bg-[#0c1221] border-white/10 rounded-xl min-w-[140px] p-2" align="end">
+                                                <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetRecent}>
+                                                    Show Recent
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetTop}>
+                                                    Show Top Scores
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
-                                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary opacity-20" strokeWidth={2.5} />
-                                </div>
 
-                                <div className="grid grid-cols-1 gap-y-6 sm:gap-y-8">
-                                    {skills.length > 0 ? (
-                                        skills.map((skill) => (
-                                            <SkillProgress
-                                                key={skill.name}
-                                                label={skill.name}
-                                                value={skill.averageScore}
-                                                count={skill.count}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full text-center py-6">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">No skill data verified</p>
+                                    <div className="flex-1 w-full mt-10 relative">
+                                        <ProfilePerformanceChart data={chartData} />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 pb-2">
+                                        <AnimatePresence mode="popLayout">
+                                            {sortedInterviews.length > 0 ? (
+                                                sortedInterviews.slice(0, 3).map((session, i) => (
+                                                    <motion.div
+                                                        key={session.id || i}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: i * 0.1 }}
+                                                        className="bg-white/5 border border-white/5 rounded-3xl p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm"
+                                                    >
+                                                        <div className="flex items-center justify-between mb-3 text-white">
+                                                            <div className="text-xs font-black group-hover:text-primary transition-colors truncate w-28 uppercase">{session.position}</div>
+                                                            <div className="text-sm font-black text-primary">{session.score || 0}%</div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <Badge variant="outline" className="text-[9px] font-bold border-white/10 bg-white/5 text-slate-400">
+                                                                {session.interview_type || 'Tech'}
+                                                            </Badge>
+                                                            {session.difficulty && (
+                                                                <Badge variant="outline" className="text-[9px] font-bold border-primary/20 bg-primary/5 text-primary">
+                                                                    {session.difficulty}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-500 mb-4 font-bold uppercase tracking-wider">
+                                                            {new Date(session.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </div>
+                                                        <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                                                            <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
+                                                                <Check className="h-3 w-3 text-emerald-500 stroke-[3px]" />
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Verified</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Flame className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />
+                                                                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-full text-center py-12">
+                                                    <History className="h-10 w-10 text-slate-500 mx-auto mb-4 opacity-20" />
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">No completed interviews</p>
+                                                </div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </Card>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-10 shadow-2xl flex-1">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div>
+                                            <h3 className="text-xl font-black tracking-tight text-white">Expertise Matrix</h3>
+                                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Weighted assessment matrix</p>
                                         </div>
-                                    )}
-                                </div>
-                            </Card>
+                                        <Sparkles className="h-6 w-6 text-primary opacity-20" />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
+                                        {skills.length > 0 ? (
+                                            skills.map(skill => (
+                                                <SkillProgress key={skill.name} label={skill.name} value={skill.averageScore} count={skill.count} />
+                                            ))
+                                        ) : (
+                                            <div className="col-span-full py-4 text-center">
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No verified expertise found</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Card>
+                            </motion.div>
                         </div>
-                    </div>
 
-                </div>
+                        {/* RIGHT COLUMN */}
+                        <div className="lg:col-span-3 flex flex-col gap-6">
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
+                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">System Credentials</h3>
+                                    <div className="space-y-6">
+                                        <CredentialItem icon={<History className="text-primary h-4 w-4" />} label="Engine" value="v3.1 Elite" />
+                                        <CredentialItem icon={<ShieldCheck className="text-primary h-4 w-4" />} label="Proof" value="Verified" />
+                                        <CredentialItem icon={<Trophy className="text-primary h-4 w-4" />} label="Global Tier" value="Professional" />
+                                        <CredentialItem icon={<Calendar className="text-primary h-4 w-4" />} label="Joined" value={new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} />
+                                    </div>
+                                </Card>
+                            </motion.div>
 
-                {/* Platform Footer */}
-                <footer className="mt-12 sm:mt-24 pt-8 sm:pt-10 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700 pb-10">
-                    <div className="flex items-center gap-3">
-                        <Image src="/arjuna_logo.png" alt="" width={20} height={20} className="h-5 w-5 sm:h-6 sm:w-6" />
-                        <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-center sm:text-left">
-                            © {new Date().getFullYear()} ARJUNA AI • THE FUTURE OF HIRING
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex-1">
+                                <Card className="h-full bg-gradient-to-br from-primary/10 via-blue-600/5 to-purple-500/10 border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500 text-center flex flex-col items-center justify-center">
+                                    <Sparkles className="h-10 w-10 text-primary mb-6 animate-pulse" />
+                                    <h3 className="text-xl font-black leading-[1.3] mb-8 text-white">
+                                        Ready to build your <br /> <span className="text-primary">verified track record?</span>
+                                    </h3>
+                                    <Link href="/auth" className="w-full">
+                                        <Button className="w-full bg-primary hover:bg-primary/90 rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95">
+                                            Start Interview
+                                        </Button>
+                                    </Link>
+                                    <p className="text-[10px] font-bold text-slate-500 mt-6 uppercase tracking-widest leading-relaxed">
+                                        Join 10,000+ elite engineers on the Arjuna engine.
+                                    </p>
+                                </Card>
+                            </motion.div>
                         </div>
+
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-                        <FooterLink label="Trust" />
-                        <FooterLink label="Verification" />
-                        <FooterLink label="Engine" />
-                        <FooterLink label="Roadmap" />
-                    </div>
-                </footer>
-            </main>
-        </div>
-    )
-}
 
-function StatsCircle({ icon }: { icon: React.ReactNode }) {
-    return (
-        <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            {icon}
-        </div>
-    )
-}
-
-function OverviewItem({ icon, value, label }: { icon: React.ReactNode, value: string | number, label: string }) {
-    return (
-        <div className="flex sm:flex-col lg:flex-row items-center sm:text-center lg:text-left gap-4 lg:gap-5 group">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center text-lg sm:text-xl group-hover:bg-muted/80 transition-colors border border-transparent group-hover:border-border shadow-inner shrink-0">
-                {icon}
-            </div>
-            <div className="min-w-0 flex-1">
-                <div className="text-xl sm:text-2xl font-black text-foreground truncate">{value}</div>
-                <div className="text-[8px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none sm:mt-1">{label}</div>
+                    <footer className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700 pb-12">
+                        <div className="flex items-center gap-4">
+                            <Image src="/arjuna_logo.png" alt="" width={24} height={24} className="h-6 w-6 dark:invert-0 light:invert" />
+                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                                © {new Date().getFullYear()} ARJUNA AI PLATFORM
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-8">
+                            <FooterLink label="Trust Center" />
+                            <FooterLink label="Verification API" />
+                            <FooterLink label="About Engine" />
+                        </div>
+                    </footer>
+                </main>
             </div>
         </div>
     )
 }
 
-function SkillProgress({ label, value, count }: { label: string, value: number, count?: number }) {
-    return (
-        <div className="space-y-3 sm:space-y-4">
-            <div className="flex justify-between items-end gap-2">
-                <div className="text-[10px] sm:text-xs font-black text-foreground uppercase tracking-wider truncate">{label}</div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="text-[9px] sm:text-[10px] font-black text-primary">{value}%</div>
-                    {count && count > 1 && (
-                        <div className="hidden sm:block text-[8px] font-bold text-muted-foreground">({count})</div>
-                    )}
-                </div>
-            </div>
-            <div className="w-full h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                    className="h-full bg-gradient-to-r from-primary to-primary shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out fill-mode-forwards"
-                    style={{ width: `${value}%` }}
-                />
-            </div>
-        </div>
-    )
-}
-
-function CredentialItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
-    return (
-        <div className="flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-                <div className="opacity-60 group-hover:opacity-100 transition-opacity translate-y-[-1px]">{icon}</div>
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{label}</span>
-            </div>
-            <span className="text-xs font-black text-foreground/80 group-hover:text-primary transition-colors uppercase tracking-tight">{value}</span>
-        </div>
-    )
-}
-
-function FooterLink({ label }: { label: string }) {
-    return (
-        <Link href="/" className="text-[10px] font-black text-slate-500 hover:text-white transition-colors uppercase tracking-[0.2em]">
-            {label}
-        </Link>
-    )
-}
