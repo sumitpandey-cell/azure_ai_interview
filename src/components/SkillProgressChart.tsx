@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Target, Code, BrainCircuit } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useThemeKey } from "@/hooks/use-theme-key";
 
 interface SkillProgressChartProps {
     data: Array<{
@@ -15,6 +16,7 @@ interface SkillProgressChartProps {
 }
 
 export function SkillProgressChart({ data, loading }: SkillProgressChartProps) {
+    const themeKey = useThemeKey();
     // Transform data for radar chart
     const chartData = data.slice(0, 6).map(skill => ({
         skill: skill.name,
@@ -79,7 +81,7 @@ export function SkillProgressChart({ data, loading }: SkillProgressChartProps) {
             </CardHeader>
             <CardContent className="p-0 flex-1">
                 <div className="h-full w-full flex items-center justify-center p-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" key={themeKey}>
                         <RadarChart cx="50%" cy="50%" outerRadius="60%" data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <defs>
                                 <radialGradient id="radarFill" cx="0.5" cy="0.5" r="0.5">

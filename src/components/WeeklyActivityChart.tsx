@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Activity, Zap, CalendarDays } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useThemeKey } from "@/hooks/use-theme-key";
 
 interface WeeklyActivityChartProps {
     data: Array<{
@@ -15,6 +16,7 @@ interface WeeklyActivityChartProps {
 }
 
 export function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActivityChartProps) {
+    const themeKey = useThemeKey();
     const hasActivity = data.some(d => d.count > 0);
 
     if (loading || !hasActivity) {
@@ -84,7 +86,7 @@ export function WeeklyActivityChart({ data, currentStreak, loading }: WeeklyActi
             </CardHeader>
             <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                 <div className="flex-1 w-full p-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" key={themeKey}>
                         <AreaChart data={data} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">

@@ -39,9 +39,20 @@ export function ThemeToggle() {
     }
 
     const handleThemeChange = (newTheme: Theme) => {
-        setTheme(newTheme)
-        localStorage.setItem("theme", newTheme)
-        applyTheme(newTheme)
+        // Fallback for browsers that don't support startViewTransition
+        if (!('startViewTransition' in document)) {
+            setTheme(newTheme)
+            localStorage.setItem("theme", newTheme)
+            applyTheme(newTheme)
+            return
+        }
+
+        // Extremely fast cross-fade for a smooth feel
+        (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+            setTheme(newTheme)
+            localStorage.setItem("theme", newTheme)
+            applyTheme(newTheme)
+        })
     }
 
     return (

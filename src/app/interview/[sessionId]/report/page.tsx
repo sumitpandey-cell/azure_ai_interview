@@ -1,17 +1,17 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useTheme } from "next-themes";
 import { useRouter, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format-duration";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, RefreshCw, Target, Shield, Award, Activity, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
+import { useThemeKey } from "@/hooks/use-theme-key";
 import { downloadHTMLReport } from "@/lib/report-download";
 import { toast } from "sonner";
 import {
@@ -42,12 +42,6 @@ interface InterviewSession {
     config?: Record<string, unknown>;
     feedback: Record<string, unknown>;
     transcript: Array<TranscriptMessage>;
-}
-
-interface Skill {
-    name: string;
-    score: number;
-    feedback: string;
 }
 
 interface TranscriptMessage {
@@ -88,7 +82,7 @@ export default function InterviewReport() {
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [errorState, setErrorState] = useState<FeedbackError | null>(null);
-    const [hasForceRefreshed, setHasForceRefreshed] = useState(false);
+    const themeKey = useThemeKey();
 
     useEffect(() => {
         setMounted(true);
@@ -116,27 +110,14 @@ export default function InterviewReport() {
     }, [sessionId, fetchSessionDetail, router]);
 
     useEffect(() => {
-        if (sessionId) {
-            // Check if current session data is the 'abandoned' placeholder
-            const feedback = session?.feedback as Record<string, unknown> | undefined;
-            const isAbandoned = feedback?.status === 'abandoned';
-
-            if (isAbandoned && !hasForceRefreshed) {
-                // If it's the placeholder, force refresh once to get real data
-                console.log("Stale/placeholder session detected, forcing refresh...");
-                setHasForceRefreshed(true);
-                fetchSession(true);
-            } else if (!session) {
-                // Initial load
-                fetchSession(false);
-            }
+        if (sessionId && !session) {
+            // Initial load only if session is not already present
+            fetchSession(false);
         }
-    }, [sessionId, fetchSession, session, hasForceRefreshed]);
+    }, [sessionId, fetchSession, session]);
 
-    const feedback = session?.feedback as Record<string, unknown> | undefined;
-    const feedbackStatus = feedback?.status;
     const isFeedbackGenerating = session?.status === 'completed' &&
-        (!session?.feedback || feedbackStatus === 'abandoned') &&
+        !session?.feedback &&
         (!instantFeedback || !instantFeedback.skills || instantFeedback.skills.length === 0);
 
     useEffect(() => {
@@ -206,7 +187,6 @@ export default function InterviewReport() {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const feedbackData = mergeFeedback(extractedFeedback, (instantFeedback as unknown) as Record<string, unknown>);
 
     let dbTranscript = session?.transcript || [];
@@ -658,11 +638,11 @@ export default function InterviewReport() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <Card className="lg:col-span-1 border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl p-6">
                                         <h3 className="text-xl font-bold uppercase mb-6">Skill Map</h3>
-                                        <ResponsiveContainer width="100%" height={300}>
+                                        <ResponsiveContainer width="100%" height={300} key={themeKey}>
                                             <RadarChart cx="50%" cy="50%" outerRadius="70%" data={reportData.overallSkills}>
-                                                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                                <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fontWeight: 700 }} />
-                                                <Radar name="Score" dataKey="score" stroke="#A855F7" fill="#A855F7" fillOpacity={0.3} />
+                                                <PolarGrid stroke="hsl(var(--border))" opacity={0.5} />
+                                                <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fontWeight: 700, fill: 'hsl(var(--muted-foreground))' }} />
+                                                <Radar name="Score" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
                                             </RadarChart>
                                         </ResponsiveContainer>
                                     </Card>

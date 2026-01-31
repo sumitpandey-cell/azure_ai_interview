@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Bar, Area, ComposedChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useThemeKey } from "@/hooks/use-theme-key";
 
 interface PerformanceAnalysisChartProps {
     data: Array<{
@@ -16,6 +17,8 @@ interface PerformanceAnalysisChartProps {
 
 export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisChartProps) {
     const hasData = data.some(d => d.interviewCount > 0);
+
+    const themeKey = useThemeKey();
 
     if (loading || !hasData) {
         return (
@@ -80,7 +83,7 @@ export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisC
 
             <CardContent className="p-0 flex-1 flex flex-col">
                 <div className="flex-1 w-full p-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" key={themeKey}>
                         <ComposedChart data={data} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
