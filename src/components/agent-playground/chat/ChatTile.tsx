@@ -10,8 +10,6 @@ export type ChatMessageType = {
     message: string;
     isSelf: boolean;
     timestamp: number;
-    sentiment?: string;
-    confidence?: number;
 };
 
 type ChatTileProps = {
@@ -50,8 +48,6 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
                                 message={message.message}
                                 isSelf={message.isSelf}
                                 accentColor={accentColor}
-                                sentiment={message.sentiment}
-                                confidence={message.confidence}
                             />
                         );
                     })}

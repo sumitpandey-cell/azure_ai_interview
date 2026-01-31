@@ -18,9 +18,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
 
     return {
-        title: `${profile.full_name} - AI Interview Profile | Arjuna AI`,
-        description: `Check out ${profile.full_name}'s interview achievements and global rank on Arjuna AI, the world's most advanced AI interviewer.`,
-        keywords: ['AI Interview', 'Technical Interview', 'Interview Profile', 'Arjuna AI', profile.full_name],
+        title: `${profile.full_name || 'Candidate'} - AI Interview Profile | Arjuna AI`,
+        description: `Check out ${profile.full_name || 'Candidate'}'s interview achievements and global rank on Arjuna AI, the world's most advanced AI interviewer.`,
+        keywords: ['AI Interview', 'Technical Interview', 'Interview Profile', 'Arjuna AI', profile.full_name || 'Candidate'],
         authors: [{ name: 'Arjuna AI' }],
         viewport: {
             width: 'device-width',
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
             userScalable: true,
         },
         openGraph: {
-            title: `${profile.full_name} - Professional Interview Profile`,
+            title: `${profile.full_name || 'Candidate'} - Professional Interview Profile`,
             description: `View rank, scores, and technical skills verified by Arjuna AI.`,
             images: [profile.avatar_url || '/favicon.ico'],
             type: 'profile',
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         },
         twitter: {
             card: 'summary_large_image',
-            title: `${profile.full_name} - AI Interview Profile`,
+            title: `${profile.full_name || 'Candidate'} - AI Interview Profile`,
             description: `Professional interview achievements verified by Arjuna AI`,
             images: [profile.avatar_url || '/favicon.ico'],
         },
@@ -64,5 +64,13 @@ export default async function PublicProfile({ params }: { params: Promise<{ id: 
     // and to handle the "not found" state gracefully before hydration
     const initialProfile = await profileService.getPublicProfile(resolvedParams.id);
 
-    return <PublicProfileClient initialProfile={initialProfile} />;
+    // Ensure types match component props (convert nulls to undefined/default)
+    const safeProfile = initialProfile ? {
+        ...initialProfile,
+        full_name: initialProfile.full_name || 'Candidate',
+        avatar_url: initialProfile.avatar_url || undefined,
+        profile_slug: initialProfile.profile_slug || undefined
+    } : null;
+
+    return <PublicProfileClient initialProfile={safeProfile} />;
 }

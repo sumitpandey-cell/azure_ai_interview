@@ -3,15 +3,8 @@ import {
     TrackReferenceOrPlaceholder,
     useChat,
     useLocalParticipant,
-    useTrackTranscription,
 } from "@livekit/components-react";
-import {
-    LocalParticipant,
-    Participant,
-    Track,
-    TranscriptionSegment,
-} from "livekit-client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
 
 export function TranscriptionTile({
@@ -62,7 +55,7 @@ export function TranscriptionTile({
         transcripts,
         chatMessages,
         localParticipant.identity,
-        agentAudioTrack?.participant?.identity,
+        agentAudioTrack,
     ]);
 
 
@@ -71,16 +64,3 @@ export function TranscriptionTile({
     );
 }
 
-function segmentToChatMessage(
-    s: TranscriptionSegment,
-    existingMessage: ChatMessageType | undefined,
-    participant: Participant,
-): ChatMessageType {
-    const msg: ChatMessageType = {
-        message: s.final ? s.text : `${s.text} ...`,
-        name: participant instanceof LocalParticipant ? "You" : "Agent",
-        isSelf: participant instanceof LocalParticipant,
-        timestamp: existingMessage?.timestamp ?? Date.now(),
-    };
-    return msg;
-}

@@ -25,7 +25,6 @@ export function LowTimeWarningBanner({
 
     const isBlocked = remainingMinutes < 2;
     const isCritical = remainingMinutes <= 2 && remainingMinutes >= 2; // Keep for safety, but isBlocked will take precedence
-    const isWarning = remainingMinutes <= 5 && remainingMinutes > 2;
 
     const getBannerStyles = () => {
         if (isBlocked) return 'bg-red-500/20 border-red-500 dark:bg-red-950/40 dark:border-red-400';

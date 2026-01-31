@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,20 +15,17 @@ import {
     User,
     Bell,
     Shield,
-    Trash2,
-    Upload,
     CreditCard,
     Palette,
-    Settings as SettingsIcon,
-    ChevronRight,
     Sparkles,
-    Lock,
-    Mail,
-    Globe,
     ExternalLink,
-    Copy
+    Copy,
+    Loader2,
+    FileText
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AppearanceSettings } from "@/components/AppearanceSettings";
+import { DeactivateAccountModal } from "@/components/DeactivateAccountModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import imageCompression from 'browser-image-compression';
@@ -37,16 +35,26 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { getPreferredLanguage, type LanguageOption } from "@/lib/language-config";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { profileService } from "@/services/profile.service";
-import { interviewService } from "@/services/interview.service";
-import { useRouter } from "next/navigation";
+import { ResumeManager } from "@/components/ResumeSettings";
 
-type SettingsSection = "general" | "appearance" | "notifications" | "security" | "billing";
+import { useRouter } from "next/navigation";
+import { useSubscription } from "@/hooks/use-subscription";
+
+import { subscriptionService } from "@/services/subscription.service";
+import { Tables } from "@/integrations/supabase/types";
+import { ArrowUpRight, Receipt } from "lucide-react";
+import { format } from "date-fns";
+
+type SettingsSection = "general" | "resume" | "appearance" | "notifications" | "security" | "billing";
+
+type TransactionItem = Tables<"subscriptions"> & { plans?: { name: string } | null };
 
 export default function Settings() {
     const { user } = useAuth();
     const { fetchProfile } = useOptimizedQueries();
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<SettingsSection>("general");
+    const { remaining_seconds, plan_name, loading: subscriptionLoading } = useSubscription();
 
     // Profile settings
     const [fullName, setFullName] = useState(user?.user_metadata?.full_name || "");
@@ -71,8 +79,14 @@ export default function Settings() {
     // Privacy settings
     const [isPublic, setIsPublic] = useState(false);
 
-    // AI Lab features
-    const [sentimentEnabled, setSentimentEnabled] = useState(user?.user_metadata?.sentiment_analysis_enabled || false);
+    // Billing settings
+    const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
+
+    // Deactivation modal
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+
+
 
     const router = useRouter();
 
@@ -89,15 +103,32 @@ export default function Settings() {
                 if (profile) setIsPublic(profile.is_public);
             });
 
-            setSentimentEnabled(user.user_metadata?.sentiment_analysis_enabled || false);
+
 
             // Set notification states
             setEmailNotifications(user.user_metadata?.email_notifications ?? true);
             setInterviewReminders(user.user_metadata?.interview_reminders ?? true);
             setWeeklyReports(user.user_metadata?.weekly_reports ?? true);
             setMarketingEmails(user.user_metadata?.marketing_emails ?? false);
+
+            // Fetch transactions if on billing section
+            if (activeSection === "billing") {
+                const fetchTransactions = async () => {
+                    if (!user?.id) return;
+                    try {
+                        setTransactionsLoading(true);
+                        const data = await subscriptionService.getTransactions(user.id);
+                        setTransactions(data);
+                    } catch (error) {
+                        console.error("Error fetching transactions:", error);
+                    } finally {
+                        setTransactionsLoading(false);
+                    }
+                };
+                fetchTransactions();
+            }
         }
-    }, [user]);
+    }, [user, activeSection]);
 
     const handleLanguageChange = (language: LanguageOption) => {
         setSelectedLanguage(language);
@@ -148,9 +179,10 @@ export default function Settings() {
             setAvatarUrl(publicUrl);
             await fetchProfile(true); // Refresh cache
             toast.success("Profile picture updated successfully!");
-        } catch (error: any) {
-            console.error("Error updating profile picture:", error);
-            toast.error(error.message || "Failed to update profile picture");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating profile picture:", err);
+            toast.error(err.message || "Failed to update profile picture");
         } finally {
             setLoading(false);
         }
@@ -183,9 +215,10 @@ export default function Settings() {
 
             await fetchProfile(true); // Refresh cache
             toast.success("Profile updated successfully!");
-        } catch (error: any) {
-            console.error("Error updating profile:", error);
-            toast.error(error.message || "Failed to update profile");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating profile:", err);
+            toast.error(err.message || "Failed to update profile");
         } finally {
             setLoading(false);
         }
@@ -203,33 +236,16 @@ export default function Settings() {
             } else {
                 throw new Error("Failed to update visibility");
             }
-        } catch (error: any) {
-            console.error("Error toggling privacy:", error);
-            toast.error(error.message || "Failed to update privacy settings");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error toggling privacy:", err);
+            toast.error(err.message || "Failed to update privacy settings");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleToggleSentiment = async (checked: boolean) => {
-        if (!user?.id) return;
 
-        try {
-            setLoading(true);
-            const { error } = await supabase.auth.updateUser({
-                data: { sentiment_analysis_enabled: checked }
-            });
-
-            if (error) throw error;
-            setSentimentEnabled(checked);
-            toast.success(`Confidence Analysis ${checked ? 'Enabled' : 'Disabled'}`);
-        } catch (error: any) {
-            console.error("Error toggling sentiment:", error);
-            toast.error(error.message || "Failed to update AI settings");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleUpdatePassword = async () => {
         // Check if user signed up with OAuth (no password set)
@@ -269,38 +285,44 @@ export default function Settings() {
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (error: any) {
-            console.error("Error updating password:", error);
-            toast.error(error.message || "Failed to update password");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error updating password:", err);
+            toast.error(err.message || "Failed to update password");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeactivateAccount = async (reason?: string) => {
         if (!user?.id) return;
-
-        const confirmed = window.confirm(
-            "Are you sure you want to delete your account? This action cannot be undone."
-        );
-
-        if (!confirmed) return;
 
         try {
             setLoading(true);
 
-            // Get all user sessions
-            const sessions = await interviewService.getUserSessions(user.id);
+            const response = await fetch("/api/account/deactivate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ reason }),
+            });
 
-            // Delete all sessions using service
-            for (const session of sessions) {
-                await interviewService.deleteSession(session.id);
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                toast.success("Account deactivated", {
+                    description: "You can reactivate anytime by logging back in."
+                });
+                // User will be signed out by the API
+                router.push("/");
+            } else {
+                toast.error(data.error || "Failed to deactivate account");
             }
-
-            toast.info("Please contact support to complete account deletion.");
-        } catch (error: any) {
-            console.error("Error deleting account:", error);
-            toast.error(error.message || "Failed to delete account");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error deactivating account:", err);
+            toast.error(err.message || "Failed to deactivate account");
         } finally {
             setLoading(false);
         }
@@ -320,9 +342,10 @@ export default function Settings() {
 
             if (error) throw error;
             toast.success("Notification preferences saved!");
-        } catch (error: any) {
-            console.error("Error saving notifications:", error);
-            toast.error(error.message || "Failed to save notification preferences");
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Error saving notifications:", err);
+            toast.error(err.message || "Failed to save notification preferences");
         } finally {
             setLoading(false);
         }
@@ -330,6 +353,7 @@ export default function Settings() {
 
     const tabs = [
         { id: "general", label: "General", icon: User, desc: "Personal info & profile" },
+        { id: "resume", label: "Resume", icon: FileText, desc: "AI Context & experience" },
         { id: "appearance", label: "Appearance", icon: Palette, desc: "Theme & customization" },
         { id: "notifications", label: "Notifications", icon: Bell, desc: "Alerts & updates" },
         { id: "security", label: "Security", icon: Shield, desc: "Password & privacy" },
@@ -338,7 +362,7 @@ export default function Settings() {
 
     return (
         <DashboardLayout>
-            <div className="w-full space-y-8 pb-12 mx-auto pt-10 sm:pt-0">
+            <div className="w-full space-y-8 pb-12 mx-auto sm:pt-0">
                 {/* Header */}
                 <div className="flex flex-col gap-2">
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
@@ -346,7 +370,7 @@ export default function Settings() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border">
+                <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border mb-2">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = activeSection === tab.id;
@@ -355,9 +379,9 @@ export default function Settings() {
                                 key={tab.id}
                                 onClick={() => setActiveSection(tab.id as SettingsSection)}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all relative rounded-t-lg",
+                                    "flex items-center gap-2 px-4 py-3 text-sm font-bold transition-all relative rounded-t-xl min-w-fit",
                                     isActive
-                                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                                        ? "text-primary bg-primary/[0.03] dark:bg-primary/5 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary"
                                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                 )}
                             >
@@ -368,11 +392,13 @@ export default function Settings() {
                     })}
                 </div>
 
+
                 {/* Content Area */}
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {activeSection === "general" && (
                         <div className="space-y-6">
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <CardTitle>Profile Information</CardTitle>
                                     <CardDescription>Update your photo and personal details.</CardDescription>
@@ -459,7 +485,8 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -504,21 +531,13 @@ export default function Settings() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border shadow-sm">
-                                <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <CardTitle>AI Analysis Features</CardTitle>
-                                            <CardDescription>Enable experimental features like sentiment analysis.</CardDescription>
-                                        </div>
-                                        <Switch
-                                            checked={sentimentEnabled}
-                                            onCheckedChange={handleToggleSentiment}
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                </CardHeader>
-                            </Card>
+
+                        </div>
+                    )}
+
+                    {activeSection === "resume" && user?.id && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <ResumeManager userId={user.id} />
                         </div>
                     )}
 
@@ -529,7 +548,8 @@ export default function Settings() {
                     )}
 
                     {activeSection === "notifications" && (
-                        <Card className="border-border shadow-sm">
+                        <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                             <CardHeader>
                                 <CardTitle>Notifications</CardTitle>
                                 <CardDescription>Choose what updates you want to receive.</CardDescription>
@@ -592,7 +612,8 @@ export default function Settings() {
 
                     {activeSection === "security" && (
                         <div className="space-y-6">
-                            <Card className="border-border shadow-sm">
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card">
+
                                 <CardHeader>
                                     <CardTitle>Password</CardTitle>
                                     <CardDescription>
@@ -641,40 +662,147 @@ export default function Settings() {
 
                             <Card className="border-red-200 dark:border-red-900/50 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle className="text-destructive">Delete Account</CardTitle>
+                                    <CardTitle className="text-destructive">Deactivate Account</CardTitle>
                                     <CardDescription>
-                                        Permanently remove your account and all associated data. This action cannot be undone.
+                                        Temporarily deactivate your account. You can reactivate it anytime by logging back in. All your data will be preserved.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <Button
                                         variant="destructive"
-                                        onClick={handleDeleteAccount}
+                                        onClick={() => setShowDeactivateModal(true)}
+                                        disabled={loading}
                                     >
-                                        Delete My Account
+                                        Deactivate My Account
                                     </Button>
                                 </CardContent>
                             </Card>
+
+                            {/* Deactivate Account Modal */}
+                            <DeactivateAccountModal
+                                isOpen={showDeactivateModal}
+                                onClose={() => setShowDeactivateModal(false)}
+                                onConfirm={handleDeactivateAccount}
+                            />
                         </div>
                     )}
 
                     {activeSection === "billing" && (
-                        <Card className="border-border shadow-sm">
-                            <div className="p-12 flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                                    <CreditCard className="h-8 w-8 text-muted-foreground" />
+                        <div className="space-y-6">
+                            <Card className="border border-border/80 dark:border-border shadow-lg dark:shadow-sm overflow-hidden bg-card/80 dark:bg-card">
+                                <div className="bg-primary/[0.05] dark:bg-primary/5 p-8 border-b border-border flex items-center gap-6">
+
+                                    <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                                        <CreditCard className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl font-bold text-foreground">Current Balance</h3>
+                                        <p className="text-sm text-muted-foreground">Permanent credits that never expire.</p>
+                                    </div>
+                                    <div className="ml-auto text-right">
+                                        <div className="text-3xl font-black text-primary tabular-nums">
+                                            {subscriptionLoading ? <Loader2 className="h-8 w-8 animate-spin inline" /> : `${Math.floor(remaining_seconds / 60)} min`}
+                                        </div>
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-1">Available Time</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-lg font-semibold">Free Plan</h3>
-                                    <p className="text-muted-foreground max-w-sm mx-auto">
-                                        You are currently on the free plan. Upgrade to access premium features and unlimited interviews.
-                                    </p>
-                                </div>
-                                <Button className="mt-4" onClick={() => router.push('/pricing')}>
-                                    View Plans
-                                </Button>
-                            </div>
-                        </Card>
+                                <CardContent className="p-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Active Plan</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg font-bold text-foreground">{plan_name || "Free"}</span>
+                                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">Active</Badge>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Pricing Type</Label>
+                                                <div className="text-foreground font-medium">Pay-as-you-go Credits</div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4 pt-2">
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                Out of credits? Top up your balance anytime. Your purchased minutes are permanent and won&apos;t expire at the end of the month.
+                                            </p>
+                                            <Button className="w-full sm:w-auto" onClick={() => router.push('/pricing')}>
+                                                Top Up Balance
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm bg-card/80 dark:bg-card overflow-hidden">
+
+                                <CardHeader>
+                                    <CardTitle>Order History</CardTitle>
+                                    <CardDescription>History of your credit purchases and top-ups.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {transactionsLoading ? (
+                                        <div className="p-8 space-y-4">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="flex items-center gap-4">
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                    <div className="space-y-2 flex-1">
+                                                        <Skeleton className="h-4 w-1/4" />
+                                                        <Skeleton className="h-3 w-1/2" />
+                                                    </div>
+                                                    <Skeleton className="h-4 w-16" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : transactions.length > 0 ? (
+                                        <div className="divide-y divide-border">
+                                            {transactions
+                                                .map((tx) => {
+                                                    const isPurchase = !!tx.plan_id;
+                                                    const planName = tx.plans?.name || "Welcome Bonus";
+
+                                                    return (
+                                                        <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-muted/40 dark:hover:bg-muted/30 transition-colors group border-b border-border/40 last:border-0">
+                                                            <div className={cn(
+                                                                "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border",
+                                                                isPurchase ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                                                                    "bg-indigo-500/10 border-indigo-500/20 text-indigo-500"
+                                                            )}>
+                                                                {isPurchase ? <ArrowUpRight className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+                                                            </div>
+
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm font-bold text-foreground truncate">{planName}</p>
+                                                                    {isPurchase && <Badge variant="outline" className="text-[10px] h-4 px-1.5 uppercase font-black tracking-tighter border-emerald-500/20 text-emerald-600">Verified</Badge>}
+                                                                </div>
+                                                                <p className="text-[11px] text-muted-foreground font-medium">
+                                                                    {format(new Date(tx.created_at), "MMM d, yyyy • h:mm a")}
+                                                                </p>
+                                                            </div>
+
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-black tabular-nums text-emerald-600 dark:text-emerald-500">
+                                                                    +{Math.floor(tx.plan_seconds / 60)} min
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{isPurchase ? "Purchase" : "System"}</p>
+                                                            </div>
+                                                        </div>
+                                                    );
+
+                                                })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                                            <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                                                <Receipt className="h-8 w-8 opacity-20" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-foreground mb-1">No transactions yet</h3>
+                                            <p className="text-sm max-w-[250px]">Your credit top-ups and usage will appear here.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     )}
                 </div>
             </div>

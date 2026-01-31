@@ -20,7 +20,7 @@ export const subscriptionService = {
             const { data, error } = await supabase
                 .from("plans")
                 .select("*")
-                .order("price_monthly", { ascending: true });
+                .order("price", { ascending: true });
 
             if (error) throw error;
             return data || [];
@@ -33,13 +33,14 @@ export const subscriptionService = {
     /**
      * Get user's current subscription
      */
-    async getSubscription(userId: string): Promise<Subscription | null> {
+    async getSubscription(userId: string, client = supabase): Promise<Subscription | null> {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("subscriptions")
                 .select("*")
                 .eq("user_id", userId)
-                .eq("status", "active")
+                .order("created_at", { ascending: false })
+                .limit(1)
                 .single();
 
             if (error) {
@@ -59,10 +60,11 @@ export const subscriptionService = {
     /**
      * Create a new subscription for user
      */
-    async createSubscription(userId: string, planId: string): Promise<Subscription | null> {
+    async createSubscription(userId: string, planId: string, client = supabase): Promise<Subscription | null> {
         try {
-            // Get plan details
-            const { data: plan, error: planError } = await supabase
+
+            // 1. Get plan details (just to get the seconds for the insert)
+            const { data: plan, error: planError } = await client
                 .from("plans")
                 .select("*")
                 .eq("id", planId)
@@ -70,91 +72,84 @@ export const subscriptionService = {
 
             if (planError) throw planError;
 
-            // Create subscription
-            const subscriptionData: SubscriptionInsert = {
-                user_id: userId,
-                plan_id: planId,
-                status: "active",
-                monthly_seconds: plan.monthly_seconds,
-                seconds_used: 0,
-                current_period_start: new Date().toISOString(),
-                current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-            };
-
-            const { data, error } = await supabase
+            // 2. Simply insert into subscriptions table
+            // THE DATABASE TRIGGER WILL AUTOMATICALLY ADD THE CREDITS!
+            const { data, error } = await client
                 .from("subscriptions")
-                .insert(subscriptionData)
+                .insert({
+                    user_id: userId,
+                    plan_id: planId,
+                    plan_seconds: plan.plan_seconds,
+                })
                 .select()
                 .single();
 
-            if (error) throw error;
-            console.log("✓ Subscription created:", data.id);
+            if (error) {
+                console.error("❌ Error inserting into subscriptions table:", error);
+                throw error;
+            }
+
             return data;
         } catch (error) {
-            console.error("Error creating subscription:", error);
+            console.error("❌ Critical error in createSubscription:", error);
             return null;
         }
     },
 
     /**
      * Track usage for a user
-     * Updates the seconds_used in the database using an atomic RPC call
+     * Updates the current_period_used in the database using an atomic RPC call
      */
-    async trackUsage(userId: string, seconds: number): Promise<boolean> {
+    /**
+     * Track usage for a user
+     * Updates the balance_seconds in profiles and records a transaction
+     */
+    async trackUsage(userId: string, seconds: number, client = supabase): Promise<boolean> {
         try {
-            console.log(`📊 trackUsage called: userId=${userId}, seconds=${seconds}`);
 
             if (seconds <= 0) return true;
 
-            // Use the atomic RPC function to increment usage
-            // This is safer as it prevents race conditions and handles both subscription and daily_usage
-            const { error } = await (supabase as any).rpc('increment_usage', {
+            // Use the update_user_credits RPC from migration 0008
+            // Cast to bypass typed RPC checks for dynamically added functions while avoiding 'any'
+            const { error } = await (client as unknown as {
+                rpc: (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>
+            }).rpc('update_user_credits', {
                 user_uuid: userId,
-                seconds_to_add: Math.round(seconds)
+                seconds_to_add: -Math.round(seconds), // Use negative for usage
+                transaction_type: 'usage',
+                transaction_description: `Interview session usage: ${Math.round(seconds)} seconds`
             });
 
             if (error) {
-                console.error("❌ Error incrementing usage via RPC:", error);
+                console.error("❌ Error updating credits via RPC:", error);
 
                 // Fallback: Try manual update if RPC fails
-                // 1. Update subscriptions table
-                const { data: subscriptions } = await supabase
-                    .from("subscriptions")
-                    .select("id, seconds_used")
-                    .eq("user_id", userId)
-                    .eq("status", "active")
-                    .limit(1);
+                const { data: profile } = await client
+                    .from("profiles")
+                    .select("balance_seconds")
+                    .eq("id", userId)
+                    .single();
 
-                if (subscriptions && subscriptions.length > 0) {
-                    const sub = subscriptions[0];
-                    const newSecondsUsed = (sub.seconds_used || 0) + seconds;
-                    const { error: updateError } = await supabase
-                        .from("subscriptions")
+                if (profile) {
+                    const newBalance = (profile.balance_seconds || 0) - seconds;
+                    const { error: updateError } = await client
+                        .from("profiles")
                         .update({
-                            seconds_used: Math.round(newSecondsUsed),
+                            balance_seconds: Math.max(0, Math.round(newBalance)),
                             updated_at: new Date().toISOString()
                         })
-                        .eq("id", sub.id);
+                        .eq("id", userId);
 
                     if (updateError) {
-                        console.error("❌ Fallback subscription update failed:", updateError);
+                        console.error("❌ Fallback profile update failed:", updateError);
                     } else {
-                        console.log("✅ Fallback subscription update successful");
-                        // Trigger refresh even on fallback success
-                        if (typeof window !== 'undefined') {
-                            window.dispatchEvent(new CustomEvent('subscription-updated'));
-                        }
                     }
-                } else {
-                    console.warn("⚠️ No active subscription found for fallback tracking");
                 }
-
                 return !error;
             }
 
-            console.log(`✅ Usage tracked successfully via RPC for user ${userId}: +${seconds} seconds`);
 
-            // Trigger global refresh for hooks (like the one in DashboardLayout)
+            // Trigger global refresh for hooks
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('subscription-updated'));
             }
@@ -176,23 +171,28 @@ export const subscriptionService = {
         percentageUsed: number;
     }> {
         try {
-            const subscription = await this.getSubscription(userId);
+            // Fetch balance directly from profile
+            const { data: profile, error } = await supabase
+                .from("profiles")
+                .select("balance_seconds")
+                .eq("id", userId)
+                .single();
 
-            if (!subscription) {
-                console.info('ℹ️ No active subscription found for user, using default limits');
-                // Return default free tier limits if no subscription exists
+            if (error || !profile) {
                 return {
                     hasLimit: false,
-                    remainingSeconds: 6000, // 100 minutes
+                    remainingSeconds: 6000, // 100 minutes default
                     remainingMinutes: 100,
                     percentageUsed: 0,
                 };
             }
 
-            const remainingSeconds = subscription.monthly_seconds - subscription.seconds_used;
-            const percentageUsed = Math.round((subscription.seconds_used / subscription.monthly_seconds) * 100);
+            const remainingSeconds = profile.balance_seconds;
+            // For percentage, we'll calculate based on the current subscription plan's last purchase
+            const subscription = await this.getSubscription(userId);
+            const totalAllowance = subscription?.plan_seconds || 6000;
+            const percentageUsed = Math.min(100, Math.max(0, Math.round(((totalAllowance - remainingSeconds) / totalAllowance) * 100)));
 
-            console.log(`📊 Subscription usage: ${subscription.seconds_used}/${subscription.monthly_seconds} seconds (${remainingSeconds} remaining)`);
 
             return {
                 hasLimit: remainingSeconds <= 0,
@@ -202,7 +202,6 @@ export const subscriptionService = {
             };
         } catch (error) {
             console.error("Error checking usage limit:", error);
-            // On error, allow free tier access
             return {
                 hasLimit: false,
                 remainingSeconds: 6000,
@@ -228,67 +227,22 @@ export const subscriptionService = {
         return remainingSeconds < 300 && remainingSeconds > 0;
     },
 
-    
     /**
-     * Update subscription plan
+     * Get purchase history for a user
      */
-    async updateSubscriptionPlan(userId: string, newPlanId: string): Promise<Subscription | null> {
+    async getTransactions(userId: string): Promise<Subscription[]> {
         try {
-            const subscription = await this.getSubscription(userId);
-            if (!subscription) return null;
-
-            // Get new plan details
-            const { data: plan, error: planError } = await supabase
-                .from("plans")
-                .select("*")
-                .eq("id", newPlanId)
-                .single();
-
-            if (planError) throw planError;
-
-            // Update subscription
             const { data, error } = await supabase
                 .from("subscriptions")
-                .update({
-                    plan_id: newPlanId,
-                    monthly_seconds: plan.monthly_seconds,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("id", subscription.id)
-                .select()
-                .single();
+                .select("*, plans(name)")
+                .eq("user_id", userId)
+                .order("created_at", { ascending: false });
 
             if (error) throw error;
-            console.log("✓ Subscription plan updated");
-            return data;
+            return data || [];
         } catch (error) {
-            console.error("Error updating subscription plan:", error);
-            return null;
-        }
-    },
-
-    /**
-     * Cancel subscription
-     */
-    async cancelSubscription(userId: string): Promise<boolean> {
-        try {
-            const subscription = await this.getSubscription(userId);
-            if (!subscription) return false;
-
-            const { error } = await supabase
-                .from("subscriptions")
-                .update({
-                    status: "cancelled",
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("id", subscription.id);
-
-            if (error) throw error;
-            console.log("✓ Subscription cancelled");
-            return true;
-        } catch (error) {
-            console.error("Error cancelling subscription:", error);
-            return false;
+            console.error("Error fetching purchase history:", error);
+            return [];
         }
     },
 };

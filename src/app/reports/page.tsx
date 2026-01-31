@@ -4,22 +4,16 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Download, MessageSquare, ExternalLink, Calendar, Clock, TrendingUp, Filter, SortAsc, SortDesc, Play, BarChart3, CheckCircle2, Target, Timer, Bell, Settings as SettingsIcon, LogOut, ArrowRight, Sparkles, Star, ThumbsUp, ThumbsDown, MoreHorizontal, Trash2, Briefcase, RefreshCw, LineChart as LineChartIcon, ChevronDown, ChevronUp } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2, AlertTriangle, XCircle } from "lucide-react";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
+import { type Json } from "@/integrations/supabase/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ReportsPageSkeleton } from "@/components/ReportsPageSkeleton";
-import { interviewService } from "@/services/interview.service";
-import { formatDuration, formatDurationShort } from "@/lib/format-duration";
-import { useAnalytics } from "@/hooks/use-analytics";
-import { useFeedback } from "@/context/FeedbackContext";
+import { formatDurationShort } from "@/lib/format-duration";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,11 +39,12 @@ interface InterviewSession {
   created_at: string;
   completed_at: string | null;
   duration_seconds: number | null;
-  config?: any; // JSONB field for storing interview configuration
+  config?: Json; // JSONB field for storing interview configuration
+  feedback?: Json;
 }
 
 export default function Reports() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { sessions: cachedSessions, profile: cachedProfile, fetchSessions, fetchProfile, isCached } = useOptimizedQueries();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
@@ -57,19 +52,12 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-
-  // Get analytics data from cache
-  const { skillProgress, performanceData, streakData } = useAnalytics(user?.id);
-  const currentStreak = streakData?.currentStreak || 0;
-  const { generateFeedbackInBackground } = useFeedback();
 
   // Filtering and sorting state
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date-desc');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isFixingStuckSessions, setIsFixingStuckSessions] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -84,19 +72,15 @@ export default function Reports() {
         // Use cached sessions if available, otherwise fetch
         let sessionsData = cachedSessions;
         if (!isCached.sessions || cachedSessions.length === 0) {
-          console.log('🔄 Fetching sessions data...');
           sessionsData = await fetchSessions();
         } else {
-          console.log('📦 Using cached sessions data');
         }
 
         // Use cached profile if available, otherwise fetch
         let profileData = cachedProfile;
         if (!isCached.profile || !cachedProfile) {
-          console.log('🔄 Fetching profile data...');
           profileData = await fetchProfile();
         } else {
-          console.log('📦 Using cached profile data');
         }
 
         setSessions(sessionsData);
@@ -154,59 +138,6 @@ export default function Reports() {
     }
   };
 
-  const handleDeleteInterview = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteId(sessionId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  // Fix stuck sessions function
-  const handleFixStuckSessions = async () => {
-    if (!user?.id) return;
-
-    if (!confirm('This will complete all stuck sessions and generate missing feedback. Continue?')) {
-      return;
-    }
-
-    setIsFixingStuckSessions(true);
-
-    try {
-      const response = await fetch('/api/fix-stuck-sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.id }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const toast = await import('sonner');
-
-        if (result.fixed > 0) {
-          toast.toast.success(`Fixed ${result.fixed} stuck sessions`);
-          // Reload sessions to reflect changes
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        } else {
-          toast.toast.info('No stuck sessions found');
-        }
-
-        if (result.errors.length > 0) {
-          console.error('Errors fixing sessions:', result.errors);
-        }
-      } else {
-        throw new Error('Failed to fix stuck sessions');
-      }
-    } catch (error) {
-      console.error('Error fixing stuck sessions:', error);
-      const toast = await import('sonner');
-      toast.toast.error('Failed to fix stuck sessions');
-    } finally {
-      setIsFixingStuckSessions(false);
-    }
-  };
 
 
   // Filtered and sorted sessions - optimized to reduce re-calculations
@@ -270,65 +201,7 @@ export default function Reports() {
     return positions.sort();
   }, [sessions]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
-  const getScoreColor = (score: number | null) => {
-    if (!score) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
-    if (score >= 80) return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-    return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-  };
-
-  const getStatusBadge = (status: string, score: number | null) => {
-    switch (status) {
-      case 'completed':
-        return score !== null ? (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Completed
-          </Badge>
-        ) : (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Report Pending
-          </Badge>
-        );
-      case 'in_progress':
-        return (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            In Progress
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="secondary" className="font-normal px-3 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            {status}
-          </Badge>
-        );
-    }
-  };
-
-  // Helper to render stars based on score
-  const renderStars = (score: number | null) => {
-    if (score === null) return <span className="text-muted-foreground">-</span>;
-    const stars = Math.round(score / 20); // 0-5 stars
-    return (
-      <div className="flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${i < stars ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-          />
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -357,79 +230,47 @@ export default function Reports() {
     ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
     : 0;
 
-  const filteredCompletedSessions = filteredAndSortedSessions.filter(s => s.status === 'completed' && s.score !== null);
-  const filteredAverageScore = filteredCompletedSessions.length > 0
-    ? Math.round(filteredCompletedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / filteredCompletedSessions.length)
-    : 0;
+
 
   return (
     <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-10 pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden pb-12 pt-10 sm:pt-0">
+      <div className="max-w-[1600px] mx-auto sm:pb-12 sm:pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 overflow-x-hidden pb-12 sm:pt-0">
         {/* Header Section */}
-        {/* Header Section */}
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div className="space-y-1.5">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Performance Reports
-            </h1>
-            <p className="text-muted-foreground text-base max-w-2xl">
-              Detailed analysis of your interview sessions and performance metrics.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {sessions.some(s => s.status === 'in_progress') && (
-              <Button
-                onClick={handleFixStuckSessions}
-                disabled={isFixingStuckSessions}
-                variant="outline"
-                size="sm"
-                className="h-10 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
-              >
-                {isFixingStuckSessions ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
-                Sync Sessions
-              </Button>
-            )}
-            <Button asChild className="h-10 px-6 rounded-full font-semibold shadow-md shadow-primary/20 hover:shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/start-interview" className="flex items-center gap-2">
-                <Play className="h-4 w-4 fill-current" />
-                New Session
-              </Link>
-            </Button>
-          </div>
+        <div className="space-y-2 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Performance Reports
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
+            Detailed analysis of your interview sessions and performance metrics.
+          </p>
         </div>
 
-        {/* Statistics Overview */}
-        {completedSessions.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            {[
-              { label: "Total Sessions", value: sessions.length, icon: FileText, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/10" },
-              { label: "Completed", value: completedSessions.length, unit: "", icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/10" },
-              { label: "Average Score", value: averageScore, unit: "%", icon: Target, color: "text-primary", bg: "bg-primary/5" },
-              { label: "Practice Time", value: formatDurationShort(sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0)), icon: Clock, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-900/10" }
-            ].map((stat, i) => (
-              <div key={i} className="group flex items-start justify-between p-6 rounded-2xl bg-card border border-border/60 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="space-y-4">
-                  <div className={`h-12 w-12 rounded-xl ${stat.bg} flex items-center justify-center transition-transform group-hover:scale-110 duration-500`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+        {/* Action Buttons & Statistics Overview */}
+        <div className="flex flex-col xl:flex-row items-stretch gap-4 mb-10">
+
+          {completedSessions.length > 0 && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 flex-1">
+              {[
+                { label: "Total Sessions", value: sessions.length, unit: "", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10" },
+                { label: "Completed", value: completedSessions.length, unit: "", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                { label: "Average Score", value: averageScore, unit: "%", icon: Target, color: "text-primary", bg: "bg-primary/10" },
+                { label: "Practice Time", value: formatDurationShort(sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0)), icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" }
+              ].map((stat, i) => (
+                <div key={i} className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
+                  <div className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 opacity-[0.08] group-hover:opacity-15 transition-opacity pointer-events-none">
+                    <stat.icon className={cn("h-16 w-16 sm:h-20 sm:w-20", stat.color)} />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</span>
-                      {stat.unit && <span className="text-sm font-medium text-muted-foreground">{stat.unit}</span>}
-                    </div>
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10 truncate">{stat.label}</span>
+                  <div className="flex items-baseline gap-0.5 relative z-10">
+                    <span className="text-xl sm:text-2xl font-black text-foreground tabular-nums tracking-tighter">{stat.value}</span>
+                    {stat.unit && <span className="text-[10px] sm:text-xs font-bold text-muted-foreground/60">{stat.unit}</span>}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Reports List Section */}
         {sessions.length === 0 ? (
@@ -439,7 +280,7 @@ export default function Reports() {
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">No Reports Found</h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-              You haven't completed any interviews yet. Start a new session to begin tracking your performance.
+              You haven&apos;t completed any interviews yet. Start a new session to begin tracking your performance.
             </p>
             <Button asChild variant="outline" className="h-11 px-8 rounded-full border-primary/20 hover:bg-primary/5 text-primary">
               <Link href="/start-interview">Start Your First Interview</Link>
@@ -448,179 +289,235 @@ export default function Reports() {
         ) : (
           <div className="space-y-6">
             {/* Filter Toolbar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card p-2 rounded-2xl border border-border/40 shadow-sm">
-              <div className="relative w-full md:w-96">
-                <Input
-                  placeholder="Search role, company..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-11 bg-transparent border-transparent hover:bg-muted/30 focus:bg-muted/30 transition-colors rounded-xl font-medium"
-                />
-                <MessageSquare className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              </div>
+            <div className="bg-card dark:bg-card/50 p-4 rounded-2xl border border-border/80 dark:border-border/40 shadow-sm">
 
-              <div className="flex gap-2 w-full md:w-auto overflow-x-auto p-1">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-10 w-[110px] bg-muted/30 border-transparent hover:bg-muted/50 rounded-lg font-medium text-xs">
-                    <span className="truncate">{statusFilter === 'all' ? 'Status' : statusFilter === 'completed' ? 'Done' : 'Active'}</span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Status: All</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                {/* Search Input */}
+                <div className="relative w-full sm:flex-1 sm:max-w-xs">
+                  <Input
+                    placeholder="Search role, company..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-11 bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 focus:bg-muted/50 dark:focus:bg-muted/30 transition-colors rounded-xl font-medium text-sm"
+                  />
+                  <MessageSquare className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
 
-                <Select value={positionFilter} onValueChange={setPositionFilter}>
-                  <SelectTrigger className="h-10 w-[130px] bg-muted/30 border-transparent hover:bg-muted/50 rounded-lg font-medium text-xs">
-                    <span className="truncate">{positionFilter === 'all' ? 'Role' : positionFilter}</span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Role: All</SelectItem>
-                    {uniquePositions.map(p => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
 
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-10 w-[130px] bg-muted/30 border-transparent hover:bg-muted/50 rounded-lg font-medium text-xs">
-                    <span className="truncate">
-                      {sortBy === 'date-desc' ? 'Newest' : sortBy === 'score-desc' ? 'Best Score' : 'Sort'}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date-desc">Newest First</SelectItem>
-                    <SelectItem value="date-asc">Oldest First</SelectItem>
-                    <SelectItem value="score-desc">Highest Score</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Filter Dropdowns */}
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                      <SelectValue placeholder="Status: All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Status: All</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
-                  <Button variant="ghost" size="icon" onClick={() => {
-                    setStatusFilter('all');
-                    setPositionFilter('all');
-                    setSearchQuery('');
-                    setSortBy('date-desc');
-                  }} className="h-10 w-10 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+
+                  <Select value={positionFilter} onValueChange={setPositionFilter}>
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                      <SelectValue placeholder="Role: All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Role: All</SelectItem>
+                      {uniquePositions.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="h-11 w-full sm:w-[140px] bg-muted/40 dark:bg-muted/20 border-border shadow-sm hover:bg-muted/50 dark:hover:bg-muted/30 rounded-xl font-medium text-sm">
+                      <SelectValue placeholder="Newest First" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date-desc">Newest First</SelectItem>
+                      <SelectItem value="date-asc">Oldest First</SelectItem>
+                      <SelectItem value="score-desc">Highest Score</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+
+                  {(statusFilter !== 'all' || positionFilter !== 'all' || searchQuery || sortBy !== 'date-desc') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setPositionFilter('all');
+                        setSearchQuery('');
+                        setSortBy('date-desc');
+                      }}
+                      className="h-11 w-11 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Structured Table List */}
-            <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
-              {/* Table Header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 border-b border-border/40 bg-muted/10 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <div className="col-span-4">Role & Protocol</div>
-                <div className="col-span-2">Date</div>
-                <div className="col-span-2">Duration</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2 text-right">Performance</div>
-              </div>
+            <div className="bg-card dark:bg-card/50 rounded-2xl border border-border/80 dark:border-border/60 shadow-md sm:shadow-sm overflow-x-auto no-scrollbar">
 
-              {/* Table Body */}
-              <div className="divide-y divide-border/40">
-                {filteredAndSortedSessions.length === 0 ? (
-                  <div className="text-center py-16 text-muted-foreground">
-                    No sessions match your filters.
-                  </div>
-                ) : filteredAndSortedSessions.map((session, i) => (
-                  <div
-                    key={session.id}
-                    onClick={() => {
-                      if (session.status === 'completed' && session.score !== null) {
-                        router.push(`/interview/${session.id}/report`);
-                      } else {
-                        router.push(`/interview/${session.id}/live`);
-                      }
-                    }}
-                    className="group grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-muted/20 active:bg-muted/30 transition-colors cursor-pointer"
-                  >
-                    {/* Role & Protocol */}
-                    <div className="col-span-1 md:col-span-4 flex items-center gap-4">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${session.score && session.score >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+              <div className="min-w-[850px]">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border bg-muted/30 dark:bg-muted/10 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <div className="col-span-4">Role & Protocol</div>
+                  <div className="col-span-2 text-center">Date</div>
+                  <div className="col-span-2 text-center">Duration</div>
+                  <div className="col-span-2 text-center">Status</div>
+                  <div className="col-span-2 text-right px-4">Performance</div>
+                </div>
+
+
+                {/* Table Body */}
+                <div className="divide-y divide-border/40">
+                  {filteredAndSortedSessions.length === 0 ? (
+                    <div className="text-center py-16 text-muted-foreground">
+                      No sessions match your filters.
+                    </div>
+                  ) : filteredAndSortedSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      onClick={() => {
+                        if (session.status === 'completed') {
+                          router.push(`/interview/${session.id}/report`);
+                        } else {
+                          const toast = import('sonner').then(m => m.toast);
+                          toast.then(t => t.info("This session was not completed and is no longer accessible."));
+                        }
+                      }}
+                      className="group grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-muted/30 dark:hover:bg-muted/20 active:bg-muted/40 transition-colors cursor-pointer border-b border-border/40 last:border-0"
+                    >
+
+                      {/* Role & Protocol */}
+                      <div className="col-span-4 flex items-center gap-4">
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${session.score && session.score >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                           session.score && session.score >= 60 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                             'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                        }`}>
-                        {session.position.substring(0, 1)}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-semibold text-foreground text-sm truncate">
-                          {session.position}
-                        </h4>
-                        <p className="text-xs text-muted-foreground mt-0.5 capitalize truncate">
-                          {session.interview_type.replace('_', ' ')} Protocol
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <div className="col-span-1 md:col-span-2 flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </div>
-
-                    {/* Duration */}
-                    <div className="col-span-1 md:col-span-2 flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                      <Clock className="h-3.5 w-3.5" />
-                      {formatDurationShort(session.duration_seconds || 0)}
-                    </div>
-
-                    {/* Status */}
-                    <div className="col-span-1 md:col-span-2">
-                      {session.status === 'completed' ? (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Completed
+                          }`}>
+                          {session.position.substring(0, 1)}
                         </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold border border-blue-500/20 animate-pulse">
-                          <Play className="h-3 w-3" />
-                          In Progress
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-foreground text-sm truncate">
+                            {session.position}
+                          </h4>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 capitalize truncate font-medium">
+                            {session.interview_type.replace('_', ' ')} Protocol
+                          </p>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Performance */}
-                    <div className="col-span-1 md:col-span-2 flex items-center md:justify-end gap-3">
-                      {session.score !== null ? (
-                        <div className="flex items-center gap-3">
-                          <span className={`text-sm font-bold ${session.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                      {/* Date */}
+                      <div className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+
+                      {/* Duration */}
+                      <div className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        {formatDurationShort(session.duration_seconds || 0)}
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-2">
+                        {session.status === 'completed' && session.score !== null ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Completed
+                          </div>
+                        ) : session.status === 'completed' && session.score === null ? (
+                          (() => {
+                            const feedback = session.feedback as Record<string, unknown> | null;
+                            const isGenerationFailed = feedback?.status === 'failed' ||
+                              (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'));
+                            const isInsufficientData = feedback?.note === 'Insufficient data for report generation';
+
+                            if (isInsufficientData) {
+                              return (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Requirements Not Met
+                                </div>
+                              );
+                            }
+
+                            if (isGenerationFailed) {
+                              return (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold border border-rose-500/20">
+                                  <XCircle className="h-3 w-3" />
+                                  Generation Failed
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                                <Clock className="h-3 w-3" />
+                                Report Pending
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold border border-border">
+                            <Clock className="h-3 w-3" />
+                            In Progress
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Performance */}
+                      <div className="col-span-2 flex items-center justify-end gap-3">
+                        {session.score !== null ? (
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black shrink-0 ${session.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
                               session.score >= 60 ? 'text-amber-600 dark:text-amber-400' :
                                 'text-red-600 dark:text-red-400'
-                            }`}>
-                            {session.score}%
-                          </span>
-                          <div className={`h-1.5 w-16 rounded-full bg-muted overflow-hidden`}>
-                            <div
-                              className={`h-full rounded-full ${session.score >= 80 ? 'bg-emerald-500' :
+                              }`}>
+                              {session.score}%
+                            </span>
+                            <div className={`h-1.5 w-16 rounded-full bg-muted overflow-hidden`}>
+                              <div
+                                className={`h-full rounded-full ${session.score >= 80 ? 'bg-emerald-500' :
                                   session.score >= 60 ? 'bg-amber-500' :
                                     'bg-red-500'
-                                }`}
-                              style={{ width: `${session.score}%` }}
-                            />
+                                  }`}
+                                style={{ width: `${session.score}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs font-medium text-muted-foreground">Pending</span>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
+                        ) : (
+                          <span className="text-[10px] font-bold text-muted-foreground/60">
+                            {(() => {
+                              const feedback = session.feedback as Record<string, unknown> | null;
+                              if (feedback?.note === 'Insufficient data for report generation') return "Insufficient Data";
+                              if (feedback?.status === 'failed' || (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'))) return "Generation Error";
+                              return "Report Pending";
+                            })()}
+                          </span>
+                        )}
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors ml-1" />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-
-            {/* Pagination or Footer Info could go here */}
-            <div className="flex justify-center text-xs text-muted-foreground font-medium pt-4">
-              Showing {filteredAndSortedSessions.length} records
             </div>
           </div>
         )}
+
+
+        {/* Pagination or Footer Info could go here */}
+        <div className="flex justify-center text-xs text-muted-foreground font-medium pt-4">
+          Showing {filteredAndSortedSessions.length} records
+        </div>
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

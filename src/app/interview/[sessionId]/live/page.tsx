@@ -10,11 +10,12 @@ import { toast } from "sonner";
 import { useInterviewStore } from "@/stores/interviewStore";
 import { LiveInterviewSession } from "@/components/agent-playground/LiveInterviewSession";
 import { Button } from "@/components/ui/button";
-import { ArjunaLoader } from '@/components/ArjunaLoader';
+import { PremiumLogoLoader } from '@/components/PremiumLogoLoader';
 import { useSubscriptionTimer } from "@/hooks/use-subscription-timer"
 import { useFeedback } from "@/context/FeedbackContext";
 import type { InterviewSession } from "@/services/interview.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
+import { TranscriptEntry } from "@/contexts/TranscriptContext";
 
 export default function LiveInterview() {
     const { sessionId } = useParams();
@@ -29,9 +30,10 @@ export default function LiveInterview() {
     const [shouldConnect, setShouldConnect] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isTimerActive, setIsTimerActive] = useState(false);
-    const [sessionStartTime] = useState(Date.now());
+    const lastSyncTimeRef = useRef(Date.now());
     const [session, setSession] = useState<InterviewSession | null>(null);
     const [hintsUsed, setHintsUsed] = useState(0);
+    const isSyncingRef = useRef(false);
 
     const { setCurrentSessionId } = useInterviewStore();
     const currentSessionId = sessionId as string;
@@ -45,25 +47,103 @@ export default function LiveInterview() {
     // Track if session is being ended to prevent duplicate redirects
     const isEndingSession = useRef(false);
 
-    // Track current segment timing locally (don't create resumption on connect)
-    const sessionSegmentStart = useRef<Date | null>(null);
-    const sessionStartTranscriptIndex = useRef<number>(0);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [isDisconnected, setIsDisconnected] = useState(false);
     const [reconnectCountdown, setReconnectCountdown] = useState(60);
     const countdownInterval = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttempts = useRef(0);
 
-    // Will be assigned after being defined
-    let handleEndSession: (hintsUsed?: number) => void;
+    // Shared sync function to avoid duplication
+    const syncDuration = useCallback(async (reason: string) => {
+        if (isEndingSession.current || isSyncingRef.current) return;
+
+        isSyncingRef.current = true;
+        try {
+            const now = Date.now();
+            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+
+            if (deltaSeconds >= 1) {
+                lastSyncTimeRef.current = now;
+                await interviewService.updateSession(currentSessionId, {
+                    durationSeconds: deltaSeconds
+                });
+            }
+        } catch (err) {
+            console.error(`❌ Failed to sync duration (${reason}):`, err);
+        } finally {
+            isSyncingRef.current = false;
+        }
+    }, [currentSessionId]);
+
+    // Handle Session End
+    const { generateFeedbackInBackground } = useFeedback();
+
+    const handleEndSession = useCallback(async (hintsToUse: number = 0, skipRedirect: boolean = false) => {
+        if (!currentSessionId) {
+            console.warn("⚠️ [handleEndSession] No sessionId provided, ignoring end call.");
+            return;
+        }
+        if (isEndingSession.current) return;
+        isEndingSession.current = true;
+        if (!skipRedirect) setIsRedirecting(true);
+
+        try {
+            // Calculate final segment duration
+            const now = Date.now();
+            const deltaSeconds = Math.max(1, Math.round((now - lastSyncTimeRef.current) / 1000));
+
+            // Fetch current session for total duration threshold check
+            const session = await interviewService.getSessionById(currentSessionId);
+            const totalDuration = (session?.duration_seconds || 0) + deltaSeconds;
+
+            // Track user turns for quality check
+            const userTurns = await interviewService.getUserTurnCount(currentSessionId);
+            const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
+                userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
+
+            if (metThreshold) {
+                const completedSession = await interviewService.completeSession(currentSessionId, {
+                    totalHintsUsed: hintsToUse,
+                    durationSeconds: deltaSeconds
+                });
+
+                if (completedSession) {
+                    generateFeedbackInBackground(currentSessionId);
+                    toast.success("Interview complete. Generating report...");
+                } else {
+                    console.error("❌ Failed to complete session - Feedback cannot be generated.");
+                    toast.error("Failed to save results. You can try manually from your dashboard.");
+                }
+            } else {
+                await interviewService.completeSession(currentSessionId, {
+                    durationSeconds: deltaSeconds,
+                    feedback: {
+                        note: "Insufficient data for report generation",
+                        reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
+                    }
+                });
+                toast.warning("Session too short for a full report.");
+            }
+
+            if (!skipRedirect) router.replace(`/dashboard`);
+        } catch (err) {
+            console.error("Error ending session:", err);
+            if (!skipRedirect) router.replace(`/dashboard`);
+        }
+    }, [currentSessionId, router, generateFeedbackInBackground]);
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
         userId: user?.id,
-        onTimeExpired: () => handleEndSession?.(hintsUsed),
+        onTimeExpired: () => handleEndSession(hintsUsed),
         warnAt: [5, 2, 1],
         isActive: isTimerActive,
     });
+
+    const hintsUsedRef = useRef(hintsUsed);
+    useEffect(() => {
+        hintsUsedRef.current = hintsUsed;
+    }, [hintsUsed]);
 
     // Load Session & Token
     useEffect(() => {
@@ -92,14 +172,17 @@ export default function LiveInterview() {
                 // 2. Fetch Session
                 const fetchedSession = await interviewService.getSessionById(currentSessionId);
                 if (!fetchedSession) {
-                    toast.warning("Session not found, creating temporary.");
-                } else if (fetchedSession.status === "completed") {
-                    toast.warning("Session already completed.");
+                    toast.warning("Session not found.");
+                    router.replace("/dashboard");
+                    return;
                 }
+
+                // Note: The Token API handles re-entry protection via the 'allowEntry' flag.
+                // If a user refreshes or re-enters a completed session, the Token API will return 403.
 
                 setCurrentSessionId(currentSessionId);
 
-                // 3. Fetch Token (or use cached)
+                // 3. Fetch Token (Strictly from SessionStorage)
                 let url = "";
                 let authToken = "";
 
@@ -110,7 +193,6 @@ export default function LiveInterview() {
                         const nowSeconds = Math.floor(Date.now() / 1000);
 
                         // Validate token: must not be expired and must have at least 2 minutes buffer
-                        // Fallback to age check if expiresAt is missing (legacy support)
                         const isValid = expiresAt
                             ? (expiresAt > nowSeconds + 120)
                             : (Date.now() - timestamp < 5 * 60 * 1000);
@@ -118,24 +200,27 @@ export default function LiveInterview() {
                         if (isValid) {
                             url = cachedUrl;
                             authToken = cachedToken;
+
+                            // BURN the cached token immediately after pulling it
+                            // This ensures that if the user hits REFRESH, the token is gone
+                            // and they won't be able to reconnect.
                             sessionStorage.removeItem('livekit_prefetched_token');
-                            console.log("📦 Using valid prefetched token.");
                         } else {
-                            console.log("⚠️ Prefetched token expired or near expiration, fetching fresh.");
+                            // If token expired, clear it
                             sessionStorage.removeItem('livekit_prefetched_token');
                         }
                     } catch (e) {
+                        console.error("Error parsing cached token:", e);
                         sessionStorage.removeItem('livekit_prefetched_token');
                     }
                 }
 
+                // If no token was found in sessionStorage, it means the user refreshed 
+                // or tried to enter the live room directly without setup.
                 if (!authToken) {
-                    const tokenUrl = `/api/livekit_token?sessionId=${currentSessionId}`;
-                    const resp = await fetch(tokenUrl);
-                    if (!resp.ok) throw new Error("Failed to fetch token");
-                    const data = await resp.json();
-                    url = data.url;
-                    authToken = data.token;
+                    toast.error("Session terminated. Re-entry is not allowed.");
+                    router.replace("/dashboard");
+                    return;
                 }
 
 
@@ -159,7 +244,6 @@ export default function LiveInterview() {
     }, [authLoading, user, currentSessionId, router, setCurrentSessionId]);
 
     const handleReconnect = useCallback(async () => {
-        console.log("🔄 Attempting manual reconnection...");
         reconnectAttempts.current += 1;
         setIsDisconnected(false);
         setShouldConnect(false);
@@ -175,184 +259,82 @@ export default function LiveInterview() {
         }, 300);
     }, []);
 
-    // Provide a stable reference for the setter to prevent effect flickering
-    const setRemainingSeconds = subscriptionTimer.setRemainingSeconds;
 
-    // Unified function to save the current segment duration and resumptions
-    // This is called by onDisconnected, handleEndSession, or unmount cleanup
-    const saveCurrentSegment = useCallback(async (tag: string) => {
-        if (!sessionSegmentStart.current) {
-            console.log(`ℹ️ [${tag}] No active segment to save.`);
-            return 0;
-        }
 
-        // Capture values and clear ref synchronously to prevent double-tracking
-        const startTime = sessionSegmentStart.current;
-        const startIdx = sessionStartTranscriptIndex.current;
-        sessionSegmentStart.current = null; // Mark as processed IMMEDIATELY
 
-        const endTime = new Date();
-        const durationSeconds = Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
 
-        console.log(`🚀 [${tag}] Saving segment via API: ${durationSeconds} seconds`);
-
-        const data = {
-            sessionId: currentSessionId,
-            durationSeconds,
-            startTranscriptIndex: startIdx,
-            resumedAt: startTime.toISOString(),
-            endedAt: endTime.toISOString()
-        };
-
-        try {
-            // Use keepalive: true for cleanup/disconnected tags to ensure it finishes even if tab closes
-            const useKeepAlive = tag === 'cleanup' || tag === 'onDisconnected';
-
-            const response = await fetch('/api/interview/cleanup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-                keepalive: useKeepAlive
-            });
-
-            if (!response.ok) {
-                throw new Error(`API failed with status ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (result.alreadyProcessed) {
-                console.log(`✅ [${tag}] Segment was already processed (Idempotency skip).`);
-                return 0; // Or return the actual duration if available
-            }
-
-            if (!result.success) {
-                console.error(`❌ [${tag}] Error saving segment via API: ${result.error}`);
-                if (result.remainingSeconds !== undefined) {
-                    setRemainingSeconds(result.remainingSeconds);
-                }
-                return durationSeconds; // Still return duration for local tracking if needed
-            }
-
-            console.log(`✅ [${tag}] Segment saved successfully via API. Actual duration: ${result.actualDuration}s. Remaining: ${result.remainingSeconds}s.`);
-            if (result.remainingSeconds !== undefined) {
-                setRemainingSeconds(result.remainingSeconds);
-            }
-            return result.actualDuration;
-        } catch (err) {
-            console.error(`❌ [${tag}] Error saving segment via API:`, err);
-            return durationSeconds;
-        }
-    }, [currentSessionId, setRemainingSeconds]);
-
-    // Handle browser navigation (back button, close tab, etc.)
+    // Periodic usage and duration sync
     useEffect(() => {
-        const handleBeforeUnload = () => {
-            if (sessionSegmentStart.current && !isEndingSession.current) {
-                // We use a simplified non-async version here because beforeunload doesn't wait
-                const startTime = sessionSegmentStart.current;
-                const endTime = new Date();
-                const durationSeconds = Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
+        if (!isTimerActive || isEndingSession.current) return;
 
-                const data = {
-                    sessionId: currentSessionId,
-                    durationSeconds,
-                    startTranscriptIndex: sessionStartTranscriptIndex.current,
-                    resumedAt: startTime.toISOString(),
-                    endedAt: endTime.toISOString()
-                };
+        const syncInterval = setInterval(async () => {
+            if (isEndingSession.current) return;
 
-                // CRITICAL: keepalive: true ensures the request is sent even if the page is destroyed
-                fetch('/api/interview/cleanup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                    keepalive: true
-                }).catch(err => console.error('Fire-and-forget cleanup failed:', err));
+            const now = Date.now();
+            const deltaSeconds = Math.round((now - lastSyncTimeRef.current) / 1000);
+
+            // Sync every 30 seconds
+            if (deltaSeconds >= 30) {
+                await syncDuration("Periodic sync");
             }
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
+        }, 10000); // Check every 10s
 
         return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            // ONLY track here if it hasn't been tracked already by EndSession or Disconnect
-            if (sessionSegmentStart.current && !isEndingSession.current) {
-                console.log("🔌 Component unmounting, triggered auto-save");
-                saveCurrentSegment("cleanup");
+            clearInterval(syncInterval);
+        };
+    }, [isTimerActive, currentSessionId, syncDuration]);
+
+    // Handle mobile browser backgrounding (iOS Safari/Chrome)
+    // Force sync when tab visibility changes to prevent inaccurate duration tracking
+    useEffect(() => {
+        if (!isTimerActive || isEndingSession.current) return;
+
+        const handleVisibilityChange = async () => {
+            if (document.hidden) {
+                // Tab is being hidden/backgrounded - sync immediately
+                await syncDuration("Tab backgrounded");
+            } else {
+                // Tab is being shown/foregrounded - update last sync time
+                lastSyncTimeRef.current = Date.now();
             }
         };
-    }, [saveCurrentSegment, currentSessionId]);
 
-    // Handle Session End
-    const { generateFeedbackInBackground } = useFeedback();
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Handle Session End
-    handleEndSession = useCallback(async (hintsUsed: number = 0) => {
-        // Prevent duplicate calls
-        if (isEndingSession.current) return;
-        isEndingSession.current = true;
-        setIsRedirecting(true); // Show loader immediately
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [isTimerActive, syncDuration]);
 
-        try {
-            console.log("🚀 Ending session intentionally:", currentSessionId);
 
-            // Step 1: Save the final segment
-            const lastSegmentDuration = await saveCurrentSegment("handleEndSession");
-            console.log(`⏱️ Final segment duration: ${lastSegmentDuration}s`);
 
-            // Step 2: Get the updated total duration
-            let totalDuration = 0;
-            const session = await interviewService.getSessionById(currentSessionId);
-            if (session) {
-                totalDuration = session.duration_seconds || 0;
-                console.log(`⏱️ Total session duration from DB: ${totalDuration}s`);
+    // Handle Window Close/Navigation Cleanup
+    useEffect(() => {
+        const onBeforeUnload = () => {
+            if (!isEndingSession.current && isTimerActive) {
+                // Best effort for tab close - standard fetch might not finish
+                // but we can try to trigger the end session logic
+                handleEndSession(hintsUsedRef.current, true);
             }
+        };
 
-            // Check thresholds from config
-            const userTurns = await interviewService.getUserTurnCount(currentSessionId);
-            const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
-                userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
+        window.addEventListener("beforeunload", onBeforeUnload);
 
-            if (metThreshold) {
-                // Complete the session normally
-                await interviewService.completeSession(currentSessionId, {
-                    totalHintsUsed: hintsUsed
-                });
-                console.log(`✅ Session completed with threshold met, hints used: ${hintsUsed}`);
-
-                // Trigger BACKGROUND feedback generation
-                generateFeedbackInBackground(currentSessionId);
-                toast.success("Interview ending. Generating your report...");
-            } else {
-                // Complete but mark as insufficient
-                await interviewService.completeSession(currentSessionId, {
-                    feedback: {
-                        note: "Insufficient data for report generation",
-                        reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
-                    }
-                });
-                console.log("⚠️ Session completed but threshold NOT met");
-                const minMins = Math.ceil(INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS / 60);
-                toast.warning(`Session too short for report generation (Min ${minMins} mins & ${INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS} responses required).`);
+        return () => {
+            window.removeEventListener("beforeunload", onBeforeUnload);
+            // This captures SPA navigation (like back button)
+            if (!isEndingSession.current && isTimerActive) {
+                handleEndSession(hintsUsedRef.current, true);
             }
-
-            // Redirect immediately
-            router.replace(`/dashboard`);
-
-        } catch (err) {
-            console.error("Error ending session:", err);
-            // Force redirect to dashboard anyway
-            router.replace(`/dashboard`);
-        }
-    }, [currentSessionId, router, generateFeedbackInBackground, saveCurrentSegment]);
+        };
+    }, [isTimerActive, handleEndSession]);
 
 
     // Error State
     if (error) {
         return (
-            <div className="flex-1 flex items-center justify-center min-h-screen bg-black text-white">
-                <div className="p-4 bg-red-900/20 rounded border border-red-500/50">
+            <div className="flex-1 flex items-center justify-center min-h-screen bg-background text-foreground">
+                <div className="p-4 bg-destructive/10 rounded border border-destructive/50">
                     <h2 className="text-xl font-bold mb-2">Error</h2>
                     <p>{error}</p>
                     <Button onClick={() => router.replace('/dashboard')} className="mt-4" variant="destructive">
@@ -364,7 +346,11 @@ export default function LiveInterview() {
     }
 
     if (isRedirecting) {
-        return <ArjunaLoader variant="fullscreen" message="Saving results and returning to dashboard..." />;
+        return (
+            <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+                <PremiumLogoLoader text="Saving results and returning to dashboard..." />
+            </div>
+        );
     }
 
     // Get initial mic and camera states from URL params
@@ -385,7 +371,7 @@ export default function LiveInterview() {
                     autoGainControl: true,
                 },
             }}
-            className="h-screen w-screen bg-black"
+            className="h-screen w-screen bg-background"
             onError={(err) => {
                 console.error("LiveKit Error:", err);
                 toast.error(`Connection error: ${err.message}`);
@@ -404,78 +390,43 @@ export default function LiveInterview() {
 
                 // Room connected successfully
                 setIsSessionLoading(false);
-                console.log(`✅ Room connected. Waiting for agent ready...`);
             }}
-            onDisconnected={async () => {
-                console.log("🔌 Room disconnected");
+            onDisconnected={() => {
+                if (isEndingSession.current) return;
 
-                // If we're intentionally ending (user clicked end button), do nothing here
-                if (isEndingSession.current) {
-                    return;
-                }
-
-                // Unexpected disconnection - save resumption record
-                try {
-                    if (sessionSegmentStart.current) {
-                        await saveCurrentSegment("onDisconnected");
-                    }
-                } catch (error) {
-                    console.error("Error saving resumption on disconnect:", error);
-                }
-
-                // Start reconnection window instead of redirecting
                 setIsDisconnected(true);
                 setReconnectCountdown(60);
-
                 if (countdownInterval.current) clearInterval(countdownInterval.current);
 
                 countdownInterval.current = setInterval(() => {
                     setReconnectCountdown(prev => {
                         if (prev <= 1) {
                             if (countdownInterval.current) clearInterval(countdownInterval.current);
-                            toast.error("Reconnection timed out. Ending session.");
                             router.replace("/dashboard");
                             return 0;
                         }
                         return prev - 1;
                     });
                 }, 1000);
-
-                toast.warning("Connection lost. Trying to stabilize...");
             }}
             data-lk-theme="default"
         >
             {isSessionLoading ? (
-                <ArjunaLoader variant="fullscreen" message="Connecting to Interview..." />
+                <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+                    <PremiumLogoLoader text="Connecting to Interview..." />
+                </div>
             ) : (
                 <>
                     <LiveInterviewSession
                         sessionId={currentSessionId}
                         userId={user?.id || ""}
                         sessionData={session}
-                        initialTranscripts={(session?.transcript as any) || []}
+                        initialTranscripts={(session?.transcript as unknown as TranscriptEntry[]) || []}
                         onEndSession={handleEndSession}
                         onAgentReady={async () => {
-                            // 1. UI Timer: Only start once
                             if (!isTimerActive) {
-                                console.log("⏱️ Starting session timer UI - Agent Ready");
+                                lastSyncTimeRef.current = Date.now();
                                 setIsTimerActive(true);
-                            }
-
-                            // 2. Segment Tracking: Resume if we don't have an active segment
-                            if (!sessionSegmentStart.current) {
-                                console.log("🚀 Starting new usage segment - Agent Ready");
-                                sessionSegmentStart.current = new Date();
-                                try {
-                                    const transcriptCount = await (interviewService as any).getTranscriptCount(currentSessionId);
-                                    sessionStartTranscriptIndex.current = transcriptCount;
-                                    console.log(`🚀 Usage segment started at index ${transcriptCount}`);
-                                } catch (e) {
-                                    console.error("Failed to get transcript count, defaulting to 0", e);
-                                    sessionStartTranscriptIndex.current = 0;
-                                }
-                            } else {
-                                console.log("ℹ️ Segment tracking already active.");
                             }
                         }}
                         remainingMinutes={subscriptionTimer.remainingMinutes}
@@ -486,11 +437,12 @@ export default function LiveInterview() {
                         initialMicEnabled={initialMicEnabled}
                         initialCameraEnabled={initialCameraEnabled}
                         onHintsUpdate={setHintsUsed}
+                        isEnding={isEndingSession.current}
                     />
 
                     {isDisconnected && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
-                            <div className="max-w-md w-full bg-card border border-white/10 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex items-center justify-center p-4">
+                            <div className="max-w-md w-full bg-card border border-border/50 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
                                 <div className="flex flex-col items-center text-center space-y-6">
                                     <div className="relative">
                                         <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -502,13 +454,13 @@ export default function LiveInterview() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <h3 className="text-2xl font-black uppercase tracking-tighter text-white">Operational Link Severed</h3>
-                                        <p className="text-sm text-muted-foreground font-bold tracking-widest uppercase">
-                                            Attempting to stabilize uplink... {reconnectCountdown}s
+                                        <h3 className="text-2xl font-bold text-foreground">Connection Lost</h3>
+                                        <p className="text-sm text-muted-foreground font-medium">
+                                            Attempting to reconnect... {reconnectCountdown}s
                                         </p>
                                     </div>
 
-                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-destructive transition-all duration-1000 ease-linear"
                                             style={{ width: `${(reconnectCountdown / 60) * 100}%` }}
@@ -518,16 +470,16 @@ export default function LiveInterview() {
                                     <div className="flex flex-col w-full gap-3">
                                         <Button
                                             onClick={handleReconnect}
-                                            className="h-12 bg-primary hover:bg-primary/90 text-black font-black uppercase tracking-widest text-[10px] rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                                            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl shadow-xl shadow-primary/20"
                                         >
-                                            Force Reconnect Now
+                                            Reconnect Now
                                         </Button>
                                         <Button
                                             variant="ghost"
                                             onClick={() => router.replace("/dashboard")}
-                                            className="h-12 text-muted-foreground hover:text-white uppercase tracking-widest text-[10px] font-bold"
+                                            className="h-12 text-muted-foreground hover:text-foreground text-sm font-medium"
                                         >
-                                            Return to Headquarters
+                                            Return to Dashboard
                                         </Button>
                                     </div>
                                 </div>

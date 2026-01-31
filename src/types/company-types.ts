@@ -9,7 +9,7 @@ export interface CompanyTemplate {
   description: string | null;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | null;
   common_roles: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -24,7 +24,7 @@ export interface CompanyQuestion {
   role: string | null;
   experience_level: 'Entry' | 'Mid' | 'Senior' | 'Staff' | 'Principal' | null;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;

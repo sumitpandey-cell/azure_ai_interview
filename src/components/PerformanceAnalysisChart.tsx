@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, Area, ComposedChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PerformanceAnalysisChartProps {
     data: Array<{
@@ -11,18 +11,13 @@ interface PerformanceAnalysisChartProps {
         interviewCount: number;
         averageScore: number;
     }>;
+    loading?: boolean;
 }
 
-export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps) {
+export function PerformanceAnalysisChart({ data, loading }: PerformanceAnalysisChartProps) {
     const hasData = data.some(d => d.interviewCount > 0);
 
-    // Calculate Trend (Mock logic for display purposes if real historical data isn't deep enough)
-    const currentScore = data[data.length - 1]?.averageScore || 0;
-    const previousScore = data[data.length - 2]?.averageScore || 0;
-    const trend = currentScore - previousScore;
-    const trendPercentage = previousScore > 0 ? ((trend / previousScore) * 100).toFixed(1) : 0;
-
-    if (!hasData) {
+    if (loading || !hasData) {
         return (
             <Card className="border-border/40 shadow-sm bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden flex flex-col">
                 <CardHeader className="p-6 pb-2">
@@ -35,23 +30,42 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                     <CardDescription>Track your interview mastery over time.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col items-center justify-center p-6 min-h-[200px]">
-                    <div className="text-center space-y-3 max-w-[200px]">
-                        <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
-                            <TrendingUp className="h-8 w-8 text-muted-foreground/40" />
+                    {loading ? (
+                        <div className="w-full h-full space-y-6">
+                            <div className="flex items-end justify-between h-32 gap-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="flex-1 flex flex-col justify-end gap-1 h-full">
+                                        <Skeleton className="w-full bg-accent/30 rounded-t-md" style={{ height: `${Math.random() * 40 + 10}%` }} />
+                                        <Skeleton className="w-full bg-primary/20 rounded-md" style={{ height: `${Math.random() * 30 + 30}%` }} />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-between">
+                                {[...Array(6)].map((_, i) => (
+                                    <Skeleton key={i} className="h-2 w-10 bg-muted/40" />
+                                ))}
+                            </div>
                         </div>
-                        <h4 className="text-sm font-semibold text-foreground">No Data Available</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            Complete your first interview to unlock AI-driven insights and progress tracking.
-                        </p>
-                    </div>
+                    ) : (
+                        <div className="text-center space-y-3 max-w-[200px]">
+                            <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+                                <TrendingUp className="h-8 w-8 text-muted-foreground/40" />
+                            </div>
+                            <h4 className="text-sm font-semibold text-foreground">No Data Available</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Complete your first interview to unlock AI-driven insights and progress tracking.
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         );
     }
 
     return (
-        <Card className="border-border/40 shadow-xl shadow-primary/5 bg-card/50 backdrop-blur-xl rounded-3xl h-full overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group">
-            <CardHeader className="p-6 pb-4 border-b border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
+        <Card className="border shadow-sm bg-card rounded-xl h-full overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col">
+
+            <CardHeader className="p-6 pb-4 border-b border-border/50">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
                         <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -60,26 +74,14 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                         <CardDescription className="text-xs font-medium">Interviews Vs. Average Score</CardDescription>
                     </div>
 
-                    {/* Trend Badge */}
-                    <div className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm border",
-                        trend > 0 ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                            trend < 0 ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
-                                "bg-muted text-muted-foreground border-border"
-                    )}>
-                        {trend > 0 ? <TrendingUp className="h-3.5 w-3.5" /> :
-                            trend < 0 ? <TrendingDown className="h-3.5 w-3.5" /> :
-                                <Minus className="h-3.5 w-3.5" />}
-                        {Math.abs(Number(trendPercentage))}%
-                        <span className="opacity-70 font-normal">vs last month</span>
-                    </div>
+
                 </div>
             </CardHeader>
 
-            <CardContent className="p-0">
-                <div className="h-[250px] w-full mt-4 pr-2">
+            <CardContent className="p-0 flex-1 flex flex-col">
+                <div className="flex-1 w-full p-4">
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <ComposedChart data={data} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -104,18 +106,17 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                                 tickLine={false}
                                 axisLine={false}
                                 allowDecimals={false}
-                                dx={-5}
+                                width={50}
                             />
                             <YAxis
                                 yAxisId="right"
                                 orientation="right"
                                 domain={[0, 100]}
-                                tick={false}
-                                axisLine={false}
+                                hide
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    backgroundColor: 'hsl(var(--card))',
                                     backdropFilter: 'blur(12px)',
                                     borderColor: 'hsl(var(--border))',
                                     borderRadius: '16px',
@@ -123,11 +124,11 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                                     boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
                                     fontSize: '12px'
                                 }}
-                                itemStyle={{ fontWeight: 600, paddingBottom: '4px' }}
+                                itemStyle={{ fontWeight: 600, paddingBottom: '4px', color: 'hsl(var(--primary))' }}
                                 cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
                             />
                             <Legend
-                                wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '20px', paddingBottom: '10px' }}
+                                wrapperStyle={{ fontSize: '10px', fontWeight: '600', paddingTop: '20px' }}
                                 iconType="circle"
                             />
                             <Bar
@@ -136,7 +137,7 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                                 fill="url(#barGradient)"
                                 name="Interviews"
                                 radius={[6, 6, 0, 0]}
-                                barSize={24}
+                                barSize={32}
                                 animationDuration={1500}
                             />
                             <Area
@@ -154,13 +155,6 @@ export function PerformanceAnalysisChart({ data }: PerformanceAnalysisChartProps
                     </ResponsiveContainer>
                 </div>
 
-                {/* Micro Insight Footer */}
-                <div className="p-4 bg-muted/30 border-t border-border/50 flex items-start gap-3">
-                    <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground">
-                        <span className="font-semibold text-foreground">AI Insight:</span> Your consistency is improving. Try focusing on <span className="text-primary italic">System Design</span> topics to boost your average score above 85%.
-                    </p>
-                </div>
             </CardContent>
         </Card>
     );

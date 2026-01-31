@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { roadmapService } from '@/services/roadmap.service';
@@ -23,7 +23,7 @@ async function createClient() {
     );
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const supabase = await createClient();
 
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
         const eligibility = await roadmapService.checkPaymentEligibility(user.id);
 
         return NextResponse.json(eligibility, { status: 200 });
-    } catch (error: any) {
-        console.error('Eligibility check error:', error);
+    } catch (err: unknown) {
+        console.error(err);
         return NextResponse.json(
-            { error: error.message || 'Failed to check eligibility' },
+            { error: (err as Error).message || 'Failed to check eligibility' },
             { status: 500 }
         );
     }

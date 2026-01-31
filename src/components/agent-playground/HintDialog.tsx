@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Zap, Lightbulb, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Zap, Lightbulb } from 'lucide-react';
 
 interface HintDialogProps {
     open: boolean;
@@ -12,7 +11,7 @@ interface HintDialogProps {
 }
 
 export function HintDialog({ open, onOpenChange, hintText, hintsUsed }: HintDialogProps) {
-    const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null);
+    const [, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (open) {
@@ -30,45 +29,38 @@ export function HintDialog({ open, onOpenChange, hintText, hintsUsed }: HintDial
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl border border-amber-500/20 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/20 backdrop-blur-3xl shadow-2xl shadow-amber-500/10">
+            <DialogContent className="sm:max-w-2xl border border-amber-500/50 dark:border-amber-500/30 bg-card/98 dark:bg-card/98 backdrop-blur-3xl shadow-2xl dark:shadow-amber-500/20 overflow-hidden">
                 {/* Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-500/5 rounded-lg pointer-events-none animate-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/10 rounded-lg pointer-events-none animate-pulse" />
 
                 <DialogHeader className="relative z-10 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="relative">
-                                <div className="h-12 w-12 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse">
-                                    <Zap className="h-6 w-6 text-amber-500" />
+                                <div className="h-12 w-12 rounded-xl bg-amber-500/20 dark:bg-amber-500/10 flex items-center justify-center border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse">
+                                    <Zap className="h-6 w-6 text-amber-600 dark:text-amber-500" />
                                 </div>
                                 {/* Glow rings */}
                                 <div className="absolute inset-0 bg-amber-500/20 rounded-xl blur-xl animate-ping" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-amber-500 flex items-center gap-2">
+                                <DialogTitle className="text-2xl font-bold uppercase tracking-tight text-amber-600 dark:text-amber-500 flex items-center gap-2">
                                     <Lightbulb className="h-5 w-5" />
-                                    Lifeline Activated
+                                    Hint Assistance
                                 </DialogTitle>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500/60 mt-1">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-500/60 mt-1">
                                     Hint #{hintsUsed}
                                 </p>
                             </div>
                         </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onOpenChange(false)}
-                            className="h-8 w-8 rounded-lg hover:bg-white/5"
-                        >
-                            <X className="h-4 w-4 text-muted-foreground" />
-                        </Button>
                     </div>
                 </DialogHeader>
 
                 <div className="relative z-10 space-y-6 pt-4">
                     {/* Hint Text */}
-                    <div className="p-6 rounded-2xl bg-white/[0.03] border border-amber-500/20 backdrop-blur-xl shadow-inner">
-                        <p className="text-base font-bold text-foreground/90 leading-relaxed">
+                    <div className="p-8 rounded-2xl bg-muted/50 dark:bg-muted/40 border border-amber-500/20 dark:border-amber-500/10 backdrop-blur-xl shadow-inner relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                        <p className="text-lg sm:text-xl font-bold text-foreground leading-relaxed">
                             {hintText}
                         </p>
                     </div>
@@ -77,7 +69,7 @@ export function HintDialog({ open, onOpenChange, hintText, hintsUsed }: HintDial
                     <div className="flex justify-end">
                         <Button
                             onClick={() => onOpenChange(false)}
-                            className="h-12 px-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black uppercase tracking-widest text-[10px] shadow-xl shadow-amber-500/20 transition-all hover:scale-105"
+                            className="h-12 px-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 dark:text-black font-bold uppercase tracking-widest text-[11px] shadow-xl shadow-amber-500/30 transition-all hover:scale-[1.05] active:scale-95"
                         >
                             <Zap className="h-4 w-4 mr-2" />
                             Got it!
@@ -85,9 +77,9 @@ export function HintDialog({ open, onOpenChange, hintText, hintsUsed }: HintDial
                     </div>
 
                     {/* Hint Tips */}
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
-                        <div className="h-1 w-1 rounded-full bg-amber-500/40" />
-                        <span>Use hints wisely • Cooldown: 30s between hints</span>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                        <div className="h-1.5 w-1.5 rounded-full bg-amber-600 dark:bg-amber-500 animate-pulse" />
+                        <span>Use hints wisely • 30s cooldown active</span>
                     </div>
                 </div>
             </DialogContent>

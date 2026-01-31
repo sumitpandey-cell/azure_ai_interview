@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ReportsPageSkeleton() {
     return (

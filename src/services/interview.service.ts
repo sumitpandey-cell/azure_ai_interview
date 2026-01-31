@@ -1,16 +1,24 @@
 import { supabase, publicSupabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
 import { subscriptionService } from "./subscription.service";
 import { badgeService } from "./badge.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
 
+// Types for interview sessions are handled by Supabase types
 export type InterviewSession = Tables<"interview_sessions">;
 export type InterviewSessionInsert = TablesInsert<"interview_sessions">;
 export type InterviewSessionUpdate = TablesUpdate<"interview_sessions">;
 
-export type InterviewResumption = Tables<"interview_resumptions">;
-export type InterviewResumptionInsert = TablesInsert<"interview_resumptions">;
-export type InterviewResumptionUpdate = TablesUpdate<"interview_resumptions">;
+export interface InterviewSessionFrontendUpdate {
+    status?: string;
+    score?: number;
+    durationSeconds?: number;
+    totalHintsUsed?: number;
+    averagePerformanceScore?: number;
+    feedback?: Json;
+    transcript?: Json;
+    config?: Json;
+}
 
 export interface CreateSessionConfig {
     userId: string;
@@ -18,13 +26,13 @@ export interface CreateSessionConfig {
     position: string;
     difficulty?: string;
     jobDescription?: string;
-    config?: any;
+    config?: Json;
 }
 
 export interface CompleteSessionData {
     score?: number;
-    feedback?: any;
-    transcript?: any;
+    feedback?: Json;
+    transcript?: Json;
     durationSeconds?: number;
     totalHintsUsed?: number;
     averagePerformanceScore?: number;
@@ -40,23 +48,24 @@ export const interviewService = {
      */
     async createSession(config: CreateSessionConfig): Promise<InterviewSession | null> {
         try {
-            // 1. Extra safety check: see if an in-progress session already exists
+            // 1. Existing in-progress sessions are now kept so they can be resumed from the dashboard
+            /* 
             const inProgress = await this.getInProgressSessions(config.userId);
-            if (inProgress.length > 0) {
-                console.warn("⚠️ User already has an active session:", inProgress[0].id);
-                // Return null to indicate failure due to existing session
-                // The UI should handle this and ask to continue/abandon
-                return null;
+            for (const oldSession of inProgress) {
+                await this.abandonSession(oldSession.id);
             }
+            */
 
-            const sessionData: any = {
+            const sessionData: InterviewSessionInsert = {
                 user_id: config.userId,
                 interview_type: config.interviewType,
                 position: config.position,
-                difficulty: config.difficulty || config.config?.difficulty || "Intermediate",
-                job_description: config.jobDescription || config.config?.jobDescription || null,
+                difficulty: config.difficulty || (config.config as Record<string, unknown>)?.difficulty as string | undefined || "Intermediate",
                 status: "in_progress",
-                config: config.config || {},
+                config: {
+                    ...(config.config as Record<string, unknown> || {}),
+                    jobDescription: config.jobDescription || (config.config as Record<string, unknown>)?.jobDescription as string | undefined || null,
+                } as Json,
                 created_at: new Date().toISOString(),
             };
 
@@ -67,15 +76,14 @@ export const interviewService = {
                 .single();
 
             if (error) {
-                // Handle unique constraint violation (code 23505)
+                // If unique constraint still fails (unlikely after manual abandon), handle it
                 if (error.code === '23505') {
-                    console.error("❌ Unique constraint violation: User already has an active session.");
+                    console.error("❌ Unique constraint violation after auto-abandon.");
                     return null;
                 }
                 throw error;
             }
 
-            console.log("✓ Interview session created:", data.id);
             return data;
         } catch (error) {
             console.error("Error creating interview session:", error);
@@ -106,23 +114,54 @@ export const interviewService = {
     /**
      * Update interview session (for ongoing changes like transcript updates)
      */
-    async updateSession(sessionId: string, updates: InterviewSessionUpdate): Promise<InterviewSession | null> {
+    async updateSession(sessionId: string, updates: InterviewSessionFrontendUpdate): Promise<InterviewSession | null> {
         try {
+            // Fetch session to get user_id for trigger compatibility
+            const session = await this.getSessionById(sessionId);
+            if (!session) return null;
+
             // If status is being updated, validate the transition
             if (updates.status) {
                 const allowed = await this.canTransitionTo(sessionId, updates.status);
                 if (!allowed) return null;
             }
 
+            // Explicitly map allowed updates to snake_case
+            const mappedUpdates: InterviewSessionUpdate = {};
+            if (updates.status) mappedUpdates.status = updates.status;
+            if (updates.score !== undefined) mappedUpdates.score = updates.score;
+            if (updates.durationSeconds !== undefined) {
+                // Increment duration instead of overwriting
+                mappedUpdates.duration_seconds = (session.duration_seconds || 0) + updates.durationSeconds;
+
+                // Track usage in user subscription
+                if (updates.durationSeconds > 0) {
+                    try {
+                        await subscriptionService.trackUsage(session.user_id, updates.durationSeconds);
+                    } catch (usageError) {
+                        console.error("❌ Error tracking usage in updateSession:", usageError);
+                    }
+                }
+            }
+            if (updates.totalHintsUsed !== undefined) mappedUpdates.total_hints_used = updates.totalHintsUsed;
+            if (updates.averagePerformanceScore !== undefined) mappedUpdates.average_performance_score = updates.averagePerformanceScore;
+            if (updates.feedback !== undefined) mappedUpdates.feedback = updates.feedback;
+            if (updates.transcript !== undefined) mappedUpdates.transcript = updates.transcript;
+            if (updates.config !== undefined) mappedUpdates.config = updates.config;
+
+            // Logic for existing in_progress session auto-abandon relies on user_id
+            // providing it here ensures any triggers that check ownership during update pass
             const { data, error } = await supabase
                 .from("interview_sessions")
-                .update(updates)
+                .update(mappedUpdates)
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select();
 
-            if (error) throw error;
-            return data;
+            if (error) {
+                console.error("❌ [updateSession] Supabase error:", error);
+                throw error;
+            }
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error updating interview session:", error);
             return null;
@@ -131,11 +170,16 @@ export const interviewService = {
 
     /**
      * Complete an interview session with final results
+     * CRITICAL: Tracks usage BEFORE marking session as completed to prevent revenue leak
      */
-    async completeSession(sessionId: string, completionData: CompleteSessionData): Promise<InterviewSession | null> {
+    async completeSession(sessionId: string, completionData: CompleteSessionData, client = supabase): Promise<InterviewSession | null> {
         try {
-            console.log("🔧 [completeSession] Starting completion for:", sessionId);
-            console.log("🔧 [completeSession] Completion data:", completionData);
+            // 1. Fetch current session to ensure it exists and get user_id
+            const session = await this.getSessionById(sessionId, client);
+            if (!session) {
+                console.error("❌ [completeSession] Session not found:", sessionId);
+                return null;
+            }
 
             const {
                 durationSeconds,
@@ -144,54 +188,72 @@ export const interviewService = {
                 ...otherData
             } = completionData;
 
-            const updateData: any = {
+            // 2. CRITICAL: Track usage FIRST before marking session as completed
+            // This prevents revenue leak where session is completed but user isn't charged
+            if (durationSeconds !== undefined && durationSeconds > 0) {
+                try {
+                    const usageTracked = await subscriptionService.trackUsage(session.user_id, durationSeconds, client);
+
+                    if (!usageTracked) {
+                        console.error("❌ [completeSession] Failed to track usage - ABORTING session completion to prevent revenue leak");
+                        throw new Error("Usage tracking failed - cannot complete session");
+                    }
+                } catch (usageError) {
+                    console.error("❌ [completeSession] CRITICAL: Usage tracking failed:", usageError);
+                    // Re-throw to prevent session completion
+                    throw new Error(`Cannot complete session - usage tracking failed: ${usageError instanceof Error ? usageError.message : String(usageError)}`);
+                }
+            }
+
+            // 3. Prepare update data explicitly with snake_case columns
+            const updateData: InterviewSessionUpdate = {
                 status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                 completed_at: new Date().toISOString(),
-                ...otherData,
             };
 
-            // Validate transition
-            const allowed = await this.canTransitionTo(sessionId, updateData.status);
-            if (!allowed) return null;
-
-            // Map frontend camelCase to backend snake_case
+            // Map frontend camelCase to backend snake_case carefully
+            // Accumulate duration instead of overwriting to handle resumed sessions correctly
             if (durationSeconds !== undefined) {
-                updateData.duration_seconds = durationSeconds;
+                updateData.duration_seconds = (session.duration_seconds || 0) + durationSeconds;
             }
-            if (totalHintsUsed !== undefined) {
-                updateData.total_hints_used = totalHintsUsed;
-            }
-            if (averagePerformanceScore !== undefined) {
-                updateData.average_performance_score = averagePerformanceScore;
-            }
+            if (totalHintsUsed !== undefined) updateData.total_hints_used = totalHintsUsed;
+            if (averagePerformanceScore !== undefined) updateData.average_performance_score = averagePerformanceScore;
 
-            console.log("🔧 [completeSession] Update data (mapped):", updateData);
+            // Map other common fields if present in otherData
+            if (otherData.score !== undefined) updateData.score = otherData.score;
+            if (otherData.feedback !== undefined) updateData.feedback = otherData.feedback;
+            if (otherData.transcript !== undefined) updateData.transcript = otherData.transcript;
 
-            const { data, error } = await supabase
+            // 4. Now mark session as completed (usage already tracked)
+            const { data, error } = await client
                 .from("interview_sessions")
                 .update(updateData)
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select();
 
             if (error) {
                 console.error("❌ [completeSession] Supabase error:", error);
                 throw error;
             }
 
-            console.log("✓ Interview session completed:", sessionId);
-
-            // Check and award badges after completion
-            try {
-                await badgeService.checkAndAwardBadges(data.user_id);
-            } catch (badgeError) {
-                console.error("Error checking badges after completion:", badgeError);
+            if (!data || data.length === 0) {
+                console.warn("⚠️ [completeSession] No row updated.");
+                return null;
             }
 
-            return data;
+            const updatedSession = data[0];
+
+            // 5. Check and award badges after completion (non-critical, can fail)
+            try {
+                await badgeService.checkAndAwardBadges(updatedSession.user_id, client);
+            } catch (badgeError) {
+                console.error("Error checking badges after completion:", badgeError);
+                // Don't fail the whole operation if badge awarding fails
+            }
+
+            return updatedSession;
         } catch (error) {
             console.error("❌ [completeSession] Error completing interview session:", error);
-            console.error("❌ [completeSession] Error details:", JSON.stringify(error, null, 2));
             return null;
         }
     },
@@ -199,9 +261,9 @@ export const interviewService = {
     /**
      * Get interview session by ID
      */
-    async getSessionById(sessionId: string): Promise<InterviewSession | null> {
+    async getSessionById(sessionId: string, client = supabase): Promise<InterviewSession | null> {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("interview_sessions")
                 .select("*")
                 .eq("id", sessionId)
@@ -210,7 +272,7 @@ export const interviewService = {
             if (error) throw error;
             return data;
         } catch (error) {
-            console.error("Error fetching interview session:", error);
+            console.error("Error fetching interview session:", error instanceof Error ? error.message : error);
             return null;
         }
     },
@@ -266,6 +328,10 @@ export const interviewService = {
      */
     async abandonSession(sessionId: string): Promise<InterviewSession | null> {
         try {
+            // Fetch session to get user_id
+            const session = await this.getSessionById(sessionId);
+            if (!session) return null;
+
             // Validate transition
             const allowed = await this.canTransitionTo(sessionId, INTERVIEW_CONFIG.STATUS.COMPLETED);
             if (!allowed) return null;
@@ -273,6 +339,7 @@ export const interviewService = {
             const { data, error } = await supabase
                 .from("interview_sessions")
                 .update({
+                    user_id: session.user_id,
                     status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                     completed_at: new Date().toISOString(),
                     feedback: {
@@ -280,12 +347,10 @@ export const interviewService = {
                     }
                 })
                 .eq("id", sessionId)
-                .select()
-                .single();
+                .select();
 
             if (error) throw error;
-            console.log("✓ Session abandoned:", sessionId);
-            return data;
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error abandoning session:", error);
             return null;
@@ -352,22 +417,24 @@ export const interviewService = {
             speaker?: string; // Legacy support
             text: string;
             timestamp: number;
-            sentiment?: string;
-            confidence?: number;
         }
     ): Promise<boolean> {
         try {
             // Use the atomic RPC to append to transcript
-            const { error } = await (supabase as any).rpc('append_transcript_entry', {
+            const { error } = await (supabase as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }> }).rpc('append_transcript_entry', {
                 p_session_id: sessionId,
                 p_user_id: userId,
-                p_entry: entry as any
+                p_entry: entry as unknown as Record<string, unknown>
             });
 
             if (error) throw error;
             return true;
-        } catch (error) {
-            console.error("Error adding transcript entry:", error);
+        } catch (error: unknown) {
+            // Silence aborted requests during unmount
+            if (error && typeof error === 'object' && ('name' in error && error.name === 'AbortError' || 'message' in error && (error.message === 'Fetch is aborted' || (error.message as string).includes('aborted')))) {
+                return false;
+            }
+            console.error("Error adding transcript entry:", error instanceof Error ? error.message : error);
             return false;
         }
     },
@@ -375,18 +442,22 @@ export const interviewService = {
     /**
      * Get transcripts for a session
      */
-    async getTranscripts(sessionId: string): Promise<Array<{
+    async getTranscripts(sessionId: string, client = supabase): Promise<Array<{
         speaker: "user" | "ai";
         text: string;
         timestamp: number;
     }> | null> {
         try {
-            const session = await this.getSessionById(sessionId);
+            const session = await this.getSessionById(sessionId, client);
             if (!session) return null;
 
             // Return transcript array or empty array
-            const transcript = session.transcript as any[];
-            return Array.isArray(transcript) ? transcript : [];
+            const transcript = session.transcript;
+            return Array.isArray(transcript) ? (transcript as unknown as Array<{
+                speaker: "user" | "ai";
+                text: string;
+                timestamp: number;
+            }>) : [];
         } catch (error) {
             console.error("Error getting transcripts:", error);
             return null;
@@ -407,7 +478,6 @@ export const interviewService = {
             });
 
             if (response.ok) {
-                console.log("✅ Feedback generated for session:", sessionId);
                 return true;
             } else {
                 console.error("❌ Failed to generate feedback for session:", sessionId);
@@ -437,7 +507,7 @@ export const interviewService = {
             for (const session of sessions || []) {
                 try {
                     // Check if session has transcripts
-                    const transcripts = (session.transcript as any[]) || [];
+                    const transcripts = (session.transcript as unknown[]) || [];
 
                     if (transcripts.length > 0) {
                         // Complete the session and generate feedback
@@ -445,7 +515,7 @@ export const interviewService = {
 
                         await this.completeSession(session.id, {
                             durationSeconds,
-                            transcript: transcripts
+                            transcript: transcripts as unknown as Json
                         });
 
                         // Try to generate feedback
@@ -484,7 +554,6 @@ export const interviewService = {
                 .eq("id", sessionId);
 
             if (error) throw error;
-            console.log("✓ Interview session deleted:", sessionId);
             return true;
         } catch (error) {
             console.error("Error deleting interview session:", error);
@@ -569,7 +638,7 @@ export const interviewService = {
         interview_type: string;
         completed_at: string | null;
         score: number | null;
-        feedback: any;
+        feedback: Json;
     }[]> {
         try {
             const { data, error } = await supabase
@@ -593,7 +662,7 @@ export const interviewService = {
     /**
      * Get session configuration (for API routes and server-side usage)
      */
-    async getSessionConfig(sessionId: string): Promise<Record<string, any> | null> {
+    async getSessionConfig(sessionId: string): Promise<Record<string, unknown> | null> {
         try {
             const { data, error } = await supabase
                 .from('interview_sessions')
@@ -602,199 +671,15 @@ export const interviewService = {
                 .single();
 
             if (error) throw error;
-            return (data?.config as Record<string, any>) || null;
+            return (data?.config as Record<string, unknown>) || null;
         } catch (error) {
             console.error("Error fetching session config:", error);
             return null;
         }
     },
 
-    // ==========================================
-    // Interview Resumption Tracking Methods
-    // ==========================================
-
     /**
-     * Create a new resumption record when interview starts or resumes
-     */
-    async createResumption(sessionId: string, startTranscriptIndex: number = 0): Promise<InterviewResumption | null> {
-        try {
-            const resumptionData: InterviewResumptionInsert = {
-                interview_session_id: sessionId,
-                resumed_at: new Date().toISOString(),
-                start_transcript_index: startTranscriptIndex,
-            };
-
-            const { data, error } = await supabase
-                .from("interview_resumptions")
-                .insert(resumptionData)
-                .select()
-                .single();
-
-            if (error) throw error;
-            console.log("✓ Interview resumption created:", data.id);
-            return data;
-        } catch (error) {
-            console.error("Error creating interview resumption:", error);
-            return null;
-        }
-    },
-
-    /**
-     * Create a completed resumption record (used when disconnection occurs)
-     * This is the new method that creates a resumption with all data at once
-     */
-    async createCompletedResumption(
-        sessionId: string,
-        data: {
-            resumed_at: string;
-            ended_at: string;
-            start_transcript_index: number;
-            end_transcript_index: number;
-            duration_seconds: number;
-        }
-    ): Promise<InterviewResumption | null> {
-        try {
-            const resumptionData: InterviewResumptionInsert = {
-                interview_session_id: sessionId,
-                resumed_at: data.resumed_at,
-                ended_at: data.ended_at,
-                start_transcript_index: data.start_transcript_index,
-                end_transcript_index: data.end_transcript_index,
-                duration_seconds: data.duration_seconds,
-            };
-
-            const { data: result, error } = await supabase
-                .from("interview_resumptions")
-                .insert(resumptionData)
-                .select()
-                .single();
-
-            if (error) throw error;
-            console.log("✓ Completed resumption record created:", result.id, "Duration:", data.duration_seconds, "seconds");
-            return result;
-        } catch (error) {
-            console.error("Error creating completed resumption:", error);
-            return null;
-        }
-    },
-
-    /**
-     * End the current active resumption
-     */
-    async endCurrentResumption(sessionId: string, endTranscriptIndex: number): Promise<InterviewResumption | null> {
-        try {
-            // Get the active resumption (one without ended_at)
-            const { data: activeResumptions, error: fetchError } = await supabase
-                .from("interview_resumptions")
-                .select("*")
-                .eq("interview_session_id", sessionId)
-                .is("ended_at", null)
-                .order("resumed_at", { ascending: false })
-                .limit(1);
-
-            if (fetchError) throw fetchError;
-
-            if (!activeResumptions || activeResumptions.length === 0) {
-                console.warn("No active resumption found for session:", sessionId);
-                return null;
-            }
-
-            const activeResumption = activeResumptions[0];
-            const endedAt = new Date();
-            const resumedAt = new Date(activeResumption.resumed_at);
-
-            // Calculate duration in seconds (rounded)
-            const durationMs = endedAt.getTime() - resumedAt.getTime();
-            const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
-
-            // Update the resumption with end time, transcript index, and duration
-            const { data, error } = await supabase
-                .from("interview_resumptions")
-                .update({
-                    ended_at: endedAt.toISOString(),
-                    end_transcript_index: endTranscriptIndex,
-                    duration_seconds: durationSeconds,
-                })
-                .eq("id", activeResumption.id)
-                .select()
-                .single();
-
-            if (error) throw error;
-            console.log("✓ Interview resumption ended:", data.id, "Duration:", durationSeconds, "seconds");
-
-            // Update the total duration in the interview_sessions table ATOMICALLY
-            const { error: durationError } = await (supabase as any).rpc('increment_session_duration', {
-                p_session_id: sessionId,
-                p_seconds: durationSeconds
-            });
-
-            if (durationError) {
-                console.error("Error updating session duration:", durationError);
-            } else {
-                console.log("✓ Session total duration incremented:", durationSeconds, "seconds");
-            }
-
-            // Track usage in subscription ATOMICALLY via RPC
-            const session = await this.getSessionById(sessionId);
-            if (session) {
-                await subscriptionService.trackUsage(session.user_id, durationSeconds);
-            }
-
-            return data;
-        } catch (error) {
-            console.error("Error ending interview resumption:", error);
-            return null;
-        }
-    },
-
-    /**
-     * Get all resumptions for a session
-     */
-    async getResumptionHistory(sessionId: string): Promise<InterviewResumption[]> {
-        try {
-            const { data, error } = await supabase
-                .from("interview_resumptions")
-                .select("*")
-                .eq("interview_session_id", sessionId)
-                .order("resumed_at", { ascending: true });
-
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            console.error("Error fetching resumption history:", error);
-            return [];
-        }
-    },
-
-    /**
-     * Get the current active resumption (not ended)
-     */
-    async getCurrentResumption(sessionId: string): Promise<InterviewResumption | null> {
-        try {
-            const { data, error } = await supabase
-                .from("interview_resumptions")
-                .select("*")
-                .eq("interview_session_id", sessionId)
-                .is("ended_at", null)
-                .order("resumed_at", { ascending: false })
-                .limit(1)
-                .single();
-
-            if (error) {
-                // If no rows found, that's okay - return null
-                if (error.code === 'PGRST116') return null;
-                throw error;
-            }
-
-            return data;
-        } catch (error) {
-            console.error("Error fetching current resumption:", error);
-            return null;
-        }
-    },
-
-    /**
-     * Get transcript count for a session
+     * Get the count of transcripts in a session
      */
     async getTranscriptCount(sessionId: string): Promise<number> {
         try {
@@ -807,29 +692,14 @@ export const interviewService = {
     },
 
     /**
-     * Get a slice of the transcript array
-     */
-    async getTranscriptSlice(sessionId: string, startIndex: number, endIndex: number): Promise<any[]> {
-        try {
-            const transcripts = await this.getTranscripts(sessionId);
-            if (!Array.isArray(transcripts)) return [];
-
-            return transcripts.slice(startIndex, endIndex);
-        } catch (error) {
-            console.error("Error getting transcript slice:", error);
-            return [];
-        }
-    },
-
-    /**
      * Get the count of user turns in a transcript
      */
-    async getUserTurnCount(sessionId: string): Promise<number> {
+    async getUserTurnCount(sessionId: string, client = supabase): Promise<number> {
         try {
-            const transcripts = await this.getTranscripts(sessionId);
+            const transcripts = await this.getTranscripts(sessionId, client);
             if (!Array.isArray(transcripts)) return 0;
 
-            return transcripts.filter((t: any) =>
+            return transcripts.filter((t: { role?: string; speaker?: string; sender?: string }) =>
                 (t.role === 'user' || t.speaker === 'user' || t.sender === 'user')
             ).length;
         } catch (error) {
@@ -839,177 +709,74 @@ export const interviewService = {
     },
 
     /**
-     * Generate feedback for all resumptions (called only at interview completion)
+     * Generate session feedback (Isolated Version)
      */
-    async generateAllResumptionFeedback(
+    async generateSessionFeedback(
         sessionId: string,
-        onProgress?: (progress: number, statusText: string) => void
+        onProgress?: (progress: number, statusText: string) => void,
+        client = supabase
     ): Promise<boolean> {
         try {
-            if (onProgress) onProgress(5, "Fetching session data...");
-
-            // Get session and resumptions
-            const session = await this.getSessionById(sessionId);
+            if (onProgress) onProgress(10, "Fetching session data...");
+            const session = await this.getSessionById(sessionId, client);
             if (!session || session.status !== 'completed') {
-                console.log("Session must be completed to generate resumption feedback");
                 return false;
             }
 
-            if (onProgress) onProgress(10, "Retrieving conversation segments...");
-            let resumptions = await this.getResumptionHistory(sessionId);
-
-            // Log for debugging
-            console.log(`[FeedbackService] Found ${resumptions.length} segments for session ${sessionId}`);
-            if (resumptions.length === 0) {
-                console.log("⚠️ No resumptions found for session:", sessionId, "- falling back to full session transcript");
-                const transcriptCount = await this.getTranscriptCount(sessionId);
-
-                if (transcriptCount === 0) {
-                    console.error("❌ No transcript found for session. Cannot generate feedback.");
-                    return false;
-                }
-
-                // Create a virtual resumption for the entire session
-                resumptions = [{
-                    id: 'full-session-resumption',
-                    interview_session_id: sessionId,
-                    start_transcript_index: 0,
-                    end_transcript_index: transcriptCount,
-                    resumed_at: session.created_at,
-                    ended_at: session.completed_at || new Date().toISOString(),
-                    duration_seconds: session.duration_seconds || 0,
-                } as any];
+            const transcripts = await this.getTranscripts(sessionId, client);
+            if (!transcripts || transcripts.length === 0) {
+                console.error("No transcript found for session.");
+                return false;
             }
 
-            console.log(`🤖 Processing feedback for ${resumptions.length} conversation segment(s)`);
+            if (onProgress) onProgress(30, "Analyzing interview content...");
+            const { generateFeedback } = await import('@/lib/gemini-feedback');
 
-            // Generate feedback for each resumption
-            const resumptionFeedbacks: any[] = [];
+            const { data: profile } = await client
+                .from('profiles')
+                .select('resume_content')
+                .eq('id', session.user_id)
+                .single();
 
-            for (let i = 0; i < resumptions.length; i++) {
-                // Segment analysis: 15% to 85%
-                const segmentStartProgress = 15 + Math.round((i / resumptions.length) * 70);
-                const segmentEndProgress = 15 + Math.round(((i + 0.9) / resumptions.length) * 70);
-
-                if (onProgress) onProgress(segmentStartProgress, `Analyzing segment ${i + 1} of ${resumptions.length}...`);
-
-                const resumption = resumptions[i];
-                const startIndex = resumption.start_transcript_index;
-                const endIndex = resumption.end_transcript_index || await this.getTranscriptCount(sessionId);
-
-                // Get transcript slice for this resumption
-                const transcriptSlice = await this.getTranscriptSlice(sessionId, startIndex, endIndex);
-
-                if (transcriptSlice.length > 0) {
-                    // Call Gemini API to generate feedback for this specific session
-                    const { generateFeedback } = await import('@/lib/gemini-feedback');
-
-                    const sessionData = {
-                        id: sessionId,
-                        interview_type: session.interview_type,
-                        position: session.position,
-                        config: (session.config as any) || {},
-                    };
-
-                    if (onProgress) onProgress(segmentStartProgress + 5, `Synthesizing results for segment ${i + 1}...`);
-                    const feedback = await generateFeedback(transcriptSlice, sessionData);
-
-                    if (onProgress) onProgress(segmentEndProgress, `Segment ${i + 1} analysis complete.`);
-
-                    resumptionFeedbacks.push({
-                        resumption_id: resumption.id,
-                        session_number: i + 1,
-                        score: Math.round(
-                            (feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / (feedback.overallSkills.length || 1))
-                        ),
-                        executiveSummary: feedback.executiveSummary,
-                        strengths: feedback.strengths,
-                        improvements: feedback.improvements,
-                        overallSkills: feedback.overallSkills,
-                        technicalSkills: feedback.technicalSkills,
-                        comparisons: feedback.comparisons || [],
-                        confidenceFlow: feedback.confidenceFlow || [],
-                    });
-                }
-            }
-
-            if (onProgress) onProgress(90, "Finalizing report structure...");
-
-            // Calculate overall session score (average of resumption scores)
-            let sessionScore = 0;
-            if (resumptionFeedbacks.length > 0) {
-                const totalScore = resumptionFeedbacks.reduce((sum, r) => sum + (r.score || 0), 0);
-                sessionScore = Math.round(totalScore / resumptionFeedbacks.length);
-            }
-
-            // Aggregated feedback structure (Standardized)
-            // We always use the same structure: { overall: Feedback, resumptions: Feedback[], multipleResumptions: boolean }
-            // This ensures front-end consistency and simplifies report rendering logic.
-
-            const aggregatedOverall = resumptionFeedbacks.length === 1
-                ? {
-                    score: resumptionFeedbacks[0].score,
-                    executiveSummary: resumptionFeedbacks[0].executiveSummary,
-                    strengths: resumptionFeedbacks[0].strengths,
-                    improvements: resumptionFeedbacks[0].improvements,
-                    overallSkills: resumptionFeedbacks[0].overallSkills,
-                    technicalSkills: resumptionFeedbacks[0].technicalSkills,
-                    comparisons: resumptionFeedbacks[0].comparisons || [],
-                    confidenceFlow: resumptionFeedbacks[0].confidenceFlow || [],
-                    generatedAt: new Date().toISOString(),
-                }
-                : {
-                    score: sessionScore,
-                    executiveSummary: resumptionFeedbacks[0]?.executiveSummary || "Summary aggregated from multiple session segments.",
-                    strengths: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.strengths))),
-                    improvements: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.improvements))),
-                    overallSkills: resumptionFeedbacks[0]?.overallSkills.map((skill: any) => ({
-                        ...skill,
-                        score: Math.round(resumptionFeedbacks.reduce((sum, r) => {
-                            const s = r.overallSkills.find((os: any) => os.name === skill.name);
-                            return sum + (s?.score || 0);
-                        }, 0) / resumptionFeedbacks.length)
-                    })),
-                    technicalSkills: Array.from(new Set(resumptionFeedbacks.flatMap(r => r.technicalSkills.map((s: any) => s.name)))).map(name => {
-                        const occurrences = resumptionFeedbacks.filter(r => r.technicalSkills.some((ts: any) => ts.name === name));
-                        return {
-                            name,
-                            score: Math.round(occurrences.reduce((sum, r) => {
-                                const s = r.technicalSkills.find((ts: any) => ts.name === name);
-                                return sum + (s?.score || 0);
-                            }, 0) / (occurrences.length || 1)),
-                            feedback: occurrences[0].technicalSkills.find((ts: any) => ts.name === name)?.feedback || ""
-                        };
-                    }),
-                    comparisons: resumptionFeedbacks.flatMap(r => r.comparisons || []),
-                    confidenceFlow: resumptionFeedbacks.flatMap((r, idx) =>
-                        (r.confidenceFlow || []).map((cf: any) => ({
-                            ...cf,
-                            segment: resumptionFeedbacks.length > 1 ? `[S${idx + 1}] ${cf.segment}` : cf.segment
-                        }))
-                    ),
-                    generatedAt: new Date().toISOString(),
-                };
-
-            const updatedFeedback = {
-                overall: aggregatedOverall,
-                resumptions: resumptionFeedbacks,
-                multipleResumptions: resumptionFeedbacks.length > 1,
-                feedbackVer: "2.0" // Versioning to help handle legacy data if needed
+            const sessionData: {
+                id: string;
+                interview_type: string;
+                position: string;
+                config: Record<string, unknown>;
+                resumeContent: string | null;
+            } = {
+                id: sessionId,
+                interview_type: session.interview_type,
+                position: session.position,
+                config: (session.config as unknown as Record<string, unknown>) || {},
+                resumeContent: (profile?.resume_content as string) || null
             };
 
-            if (onProgress) onProgress(95, "Storing operational report...");
+            const feedback = await generateFeedback(transcripts, sessionData);
+            if (onProgress) onProgress(80, "Finalizing report...");
+
+            const score = Math.round(
+                (feedback.overallSkills.reduce((sum, s) => sum + s.score, 0) / (feedback.overallSkills.length || 1))
+            );
+
+            const updatedFeedback = {
+                overall: {
+                    ...feedback,
+                    score,
+                    generatedAt: new Date().toISOString(),
+                },
+                feedbackVer: "2.0"
+            };
+
             await this.updateSession(sessionId, {
-                feedback: updatedFeedback as any,
-                score: sessionScore, // Save the calculated score
+                feedback: updatedFeedback as Json,
+                score,
             });
 
-            if (onProgress) onProgress(100, "Report generation complete.");
-
-            console.log(`✅ Generated feedback for ${resumptionFeedbacks.length} resumptions`);
+            if (onProgress) onProgress(100, "Report complete.");
             return true;
         } catch (error) {
-            console.error("Error generating resumption feedback:", error);
+            console.error("Error generating feedback:", error);
             return false;
         }
     },
@@ -1055,7 +822,7 @@ export const interviewService = {
     /**
      * Get safe recent interviews for a public profile
      */
-    async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<any[]> {
+    async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<unknown[]> {
         try {
             const { data, error } = await publicSupabase!
                 .from("interview_sessions")

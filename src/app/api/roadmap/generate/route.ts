@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         const ip = request.headers.get('x-forwarded-for') || 'anonymous';
         try {
             await limiters.supabase.check(null, 3, `roadmap-gen-${ip}`);
-        } catch (e) {
+        } catch{
             return NextResponse.json(
                 { error: 'Too many requests. Roadmap generation is limited to 3 per 5 minutes.' },
                 { status: 429 }
@@ -45,42 +45,41 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        console.log(`Generating roadmap for user: ${user.id} (${user.email})`);
 
-        // Get payment ID from request (if provided)
+        // Get inputs from request
         const body = await request.json().catch(() => ({}));
-        const { paymentId } = body;
+        const { paymentId, domain, role, level } = body;
 
-        // Generate roadmap - pass supabase client
-        const roadmap = await roadmapService.generateRoadmap(user.id, paymentId, supabase);
+        // Generate roadmap - pass supabase client and user inputs
+        const roadmap = await roadmapService.generateRoadmap(user.id, paymentId, supabase, false, domain, role, level);
 
         return NextResponse.json({ roadmap }, { status: 200 });
-    } catch (error: any) {
-        console.error('Roadmap generation error:', error);
+    } catch (err: unknown) {
+        console.error(err);
 
-        // Handle specific error messages
-        if (error.message === 'Minimum 3 completed interviews required') {
+        // Handle specific (err as Error).messages
+        if ((err as Error).message === 'Minimum 3 completed interviews required') {
             return NextResponse.json(
-                { error: 'insufficient_interviews', message: error.message },
+                { error: 'insufficient_interviews', message: (err as Error).message },
                 { status: 400 }
             );
         }
 
-        if (error.message === 'Payment required for additional roadmap') {
+        if ((err as Error).message === 'Payment required for additional roadmap') {
             return NextResponse.json(
-                { error: 'payment_required', message: error.message },
+                { error: 'payment_required', message: (err as Error).message },
                 { status: 402 }
             );
         }
 
         return NextResponse.json(
-            { error: error.message || 'Failed to generate roadmap' },
+            { error: (err as Error).message || 'Failed to generate roadmap' },
             { status: 500 }
         );
     }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const supabase = await createClient();
 
@@ -100,10 +99,10 @@ export async function GET(request: NextRequest) {
         const progress = await roadmapService.getProgress(user.id, roadmap.id, supabase);
 
         return NextResponse.json({ roadmap, progress }, { status: 200 });
-    } catch (error: any) {
-        console.error('Roadmap fetch error:', error);
+    } catch (err: unknown) {
+        console.error(err);
         return NextResponse.json(
-            { error: error.message || 'Failed to fetch roadmap' },
+            { error: (err as Error).message || 'Failed to fetch roadmap' },
             { status: 500 }
         );
     }

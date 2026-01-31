@@ -44,7 +44,7 @@ function isOnline(): boolean {
 /**
  * Determine if an error is network-related
  */
-export function isNetworkError(error: any): boolean {
+export function isNetworkError(error: unknown): boolean {
     // Check browser online status
     if (!isOnline()) return true;
 
@@ -61,7 +61,7 @@ export function isNetworkError(error: any): boolean {
         'ETIMEDOUT',
     ];
 
-    const errorMessage = error?.message?.toLowerCase() || '';
+    const errorMessage = (error as { message?: string })?.message?.toLowerCase() || '';
     return networkErrorMessages.some(msg => errorMessage.includes(msg));
 }
 
@@ -69,7 +69,7 @@ export function isNetworkError(error: any): boolean {
  * Classify an error based on its type and HTTP response
  */
 export function classifyError(
-    error: any,
+    error: unknown,
     response?: Response,
     retryCount: number = 0
 ): FeedbackError {
@@ -148,12 +148,13 @@ export function classifyError(
             message: 'Network connection issue detected. Retrying automatically...',
             severity: ErrorSeverity.RETRYABLE,
             retryCount,
-            technicalDetails: error?.message || 'Network error',
+            technicalDetails: (error as { message?: string })?.message || 'Network error',
         };
     }
 
     // Gemini API specific errors
-    if (error?.message?.includes('quota') || error?.message?.includes('QUOTA_EXCEEDED')) {
+    const errorMessage = (error as { message?: string })?.message || '';
+    if (errorMessage.includes('quota') || errorMessage.includes('QUOTA_EXCEEDED')) {
         return {
             message: 'API quota exceeded. Please contact the developer.',
             severity: ErrorSeverity.FATAL,
@@ -168,7 +169,7 @@ export function classifyError(
         message: 'An unexpected error occurred. Please try again or contact support.',
         severity: ErrorSeverity.FATAL,
         retryCount,
-        technicalDetails: error?.message || 'Unknown error',
+        technicalDetails: (error as { message?: string })?.message || 'Unknown error',
     };
 }
 

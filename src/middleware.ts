@@ -9,18 +9,20 @@ const PUBLIC_ROUTES = [
     '/auth/callback',
     '/about',
     '/contact',
+    '/pricing',
     '/site.webmanifest',
+    '/manifest.webmanifest',
+    '/manifest.json',
+    '/sw.js',
+    '/workbox-',
     '/p',
     '/faq',
     '/terms',
     '/privacy',
-    '/careers',
     '/blog',
-    '/community',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated
-const AUTH_ROUTES = ['/auth', '/auth/callback'];
 
 export async function middleware(req: NextRequest) {
     // Create an unmodified response first
@@ -83,8 +85,8 @@ export async function middleware(req: NextRequest) {
     // IMPORTANT: Refresh session to ensure cookies are updated
     // This call will invoke the 'set' or 'remove' cookie methods above if needed
     const {
-        data: { session },
-    } = await supabase.auth.getSession();
+        data: { user },
+    } = await supabase.auth.getUser();
 
     const { pathname } = req.nextUrl;
 
@@ -96,14 +98,39 @@ export async function middleware(req: NextRequest) {
     // Check if the current route is an auth route (excluding callback)
     const isAuthRoute = pathname === '/auth';
 
+    // Check if user is trying to access reactivate page
+    const isReactivateRoute = pathname === '/reactivate';
+
+    // If user is authenticated, check if account is deactivated
+    // Don't redirect if it's already the reactivate route OR an API route
+    const isApiRoute = pathname.startsWith('/api/');
+    if (user && !isReactivateRoute && !isApiRoute) {
+        try {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_active')
+                .eq('id', user.id)
+                .maybeSingle() as { data: { is_active: boolean } | null };
+
+            // If account is deactivated, redirect to reactivate page
+            if (profile && profile.is_active === false) {
+                const reactivateUrl = new URL('/reactivate', req.url);
+                return NextResponse.redirect(reactivateUrl);
+            }
+        } catch (err: unknown) {
+            console.error('Error checking account status in middleware:', err);
+            // Continue on error to avoid blocking legitimate users
+        }
+    }
+
     // If user is authenticated and trying to access auth page, redirect to dashboard
-    if (session && isAuthRoute) {
+    if (user && isAuthRoute) {
         const dashboardUrl = new URL('/dashboard', req.url);
         return NextResponse.redirect(dashboardUrl);
     }
 
     // If user is not authenticated and trying to access protected routes, redirect to auth
-    if (!session && !isPublicRoute) {
+    if (!user && !isPublicRoute && !isReactivateRoute) {
         const authUrl = new URL('/auth', req.url);
         // Store the original URL to redirect back after login
         authUrl.searchParams.set('redirectTo', pathname);
@@ -125,6 +152,6 @@ export const config = {
          * - public folder
          * - api routes (handled separately)
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|manifest\\.json|site\\.webmanifest|sw\\.js|workbox-.*\\.js|apple-touch-icon.*\\.png|robots\\.txt|sitemap.*\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 };

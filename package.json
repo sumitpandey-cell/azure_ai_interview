@@ -12,6 +12,8 @@
     "test-session": "node test-session-setup.js"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.5",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
@@ -53,6 +55,7 @@
     "@types/crypto-js": "^4.2.2",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
+    "cashfree-pg": "^5.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -68,7 +71,7 @@
     "mammoth": "^1.11.0",
     "next": "^15.1.0",
     "next-themes": "^0.3.0",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "^4.4.168",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -84,6 +87,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "@jest/globals": "^30.2.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/jest": "^30.0.0",

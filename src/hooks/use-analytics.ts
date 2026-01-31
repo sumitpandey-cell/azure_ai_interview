@@ -50,7 +50,7 @@ export function useAnalytics(userId: string | undefined): UseAnalyticsReturn {
             const needsStreakData = force || !isStreakDataCacheValid();
             const needsPerformanceData = force || !isPerformanceDataCacheValid();
 
-            const promises: Promise<any>[] = [];
+            const promises: Promise<void>[] = [];
 
             if (needsSkillProgress) {
                 promises.push(analyticsService.getSkillProgress(userId).then(setSkillProgress));

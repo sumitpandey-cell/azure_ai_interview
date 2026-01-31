@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Target, Star, Brain, Lightbulb, Rocket, Lock, CheckCircle2, Hexagon, Zap, ArrowDown } from 'lucide-react';
+import { Rocket, CheckCircle2, Hexagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SkillNode {
@@ -13,28 +13,40 @@ interface SkillNode {
     children?: SkillNode[];
 }
 
+interface RoadmapPhase {
+    phase_number: number;
+    title: string;
+    description: string;
+    goals: { id: string; description: string }[];
+}
+
+interface RoadmapProgress {
+    milestone_id: string;
+    item_type: string;
+}
+
 interface SkillTreeProps {
-    phases: any[];
-    progress: any[];
+    phases: RoadmapPhase[];
+    progress: RoadmapProgress[];
 }
 
 export function SkillTree({ phases, progress }: SkillTreeProps) {
     // Transform phases into a tree structure
     const treeData = phases.map((phase, pIdx) => {
-        const isUnlocked = pIdx === 0 || (phases[pIdx - 1]?.goals?.length > 0 && phases[pIdx - 1]?.goals?.every((g: any) => progress.some((p: any) => p.milestone_id === g.id)));
-        const isCompleted = phase.goals?.length > 0 && phase.goals?.every((g: any) => progress.some((p: any) => p.milestone_id === g.id));
+        const isUnlocked = pIdx === 0 || (phases[pIdx - 1]?.goals?.length > 0 && phases[pIdx - 1]?.goals?.every((g) => progress.some((p) => p.milestone_id === g.id)));
+        const isCompleted = phase.goals?.length > 0 && phase.goals?.every((g) => progress.some((p) => p.milestone_id === g.id));
 
         return {
             id: `phase-${phase.phase_number}`,
             title: phase.title,
             type: 'phase' as const,
-            status: isCompleted ? 'completed' : isUnlocked ? 'active' : 'locked',
+            status: (isCompleted ? 'completed' : isUnlocked ? 'active' : 'locked') as 'completed' | 'active' | 'locked',
             depth: 0,
-            children: phase.goals?.map((goal: any) => ({
+            children: phase.goals?.map((goal) => ({
                 id: goal.id,
                 title: goal.description,
                 type: 'goal' as const,
-                status: progress.some((p: any) => p.milestone_id === goal.id) ? 'completed' : (isUnlocked ? 'active' : 'locked'),
+                status: (progress.some((p) => p.milestone_id === goal.id) ? 'completed' : (isUnlocked ? 'active' : 'locked')) as 'completed' | 'active' | 'locked',
                 depth: 1
             }))
         };
@@ -73,7 +85,7 @@ export function SkillTree({ phases, progress }: SkillTreeProps) {
                                 {/* Desktop/Tablet Horizontal Connectors */}
                                 <div className="absolute -top-12 left-0 w-full h-12 hidden sm:flex justify-center">
                                     <svg width="100%" height="48" viewBox="0 0 1000 48" preserveAspectRatio="none" className="overflow-visible">
-                                        {phaseNode.children.map((goalNode: any, gIdx: number) => {
+                                        {phaseNode.children.map((goalNode, gIdx: number) => {
                                             const total = phaseNode.children!.length;
                                             const step = 1000 / (total + 1);
                                             const targetX = (gIdx + 1) * step;
@@ -109,7 +121,7 @@ export function SkillTree({ phases, progress }: SkillTreeProps) {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-8 w-full">
-                                    {phaseNode.children.map((goalNode: any) => (
+                                    {phaseNode.children.map((goalNode) => (
                                         <div key={goalNode.id} className="relative w-full sm:w-auto flex flex-col items-center">
                                             {/* Mobile-only connector between stacked goals */}
                                             <SkillNodeItem node={goalNode} />
@@ -145,11 +157,10 @@ export function SkillTree({ phases, progress }: SkillTreeProps) {
     );
 }
 
-function SkillNodeItem({ node }: { node: any }) {
+function SkillNodeItem({ node }: { node: SkillNode }) {
     const isPhase = node.type === 'phase';
     const isActive = node.status === 'active';
     const isCompleted = node.status === 'completed';
-    const isLocked = node.status === 'locked';
 
     return (
         <motion.div

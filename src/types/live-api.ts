@@ -19,7 +19,7 @@ export type LiveConfig = {
       text: string;
     }[];
   };
-  tools?: Array<{ googleSearch: {} } | { codeExecution: {} }>;
+  tools?: Array<{ googleSearch: Record<string, never> } | { codeExecution: Record<string, never> }>;
   // Configure Voice Activity Detection for background noise reduction
   realtimeInputConfig?: {
     automaticActivityDetection?: {
@@ -71,13 +71,13 @@ export type LiveIncomingMessage =
     };
   }
   | {
-    setupComplete: {};
+    setupComplete: Record<string, never>;
   }
   | {
     toolCall: {
       functionCalls: {
         name: string;
-        args: any;
+        args: Record<string, unknown>;
         id: string;
       }[];
     };
@@ -118,7 +118,7 @@ export type LiveOutgoingMessage =
   | {
     toolResponse: {
       functionResponses: {
-        response: any;
+        response: unknown;
         id: string;
       }[];
     };

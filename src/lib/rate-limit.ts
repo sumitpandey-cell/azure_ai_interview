@@ -16,7 +16,7 @@ export const rateLimit = (options: RateLimitConfig) => {
     });
 
     return {
-        check: (res: any, limit: number, token: string) =>
+        check: (res: unknown, limit: number, token: string) =>
             new Promise<void>((resolve, reject) => {
                 const currentUsage = tokenCache.get(token) || 0;
                 const newUsage = currentUsage + 1;
@@ -25,9 +25,10 @@ export const rateLimit = (options: RateLimitConfig) => {
                 const isRateLimited = newUsage > limit;
 
                 // Add headers (only if res exists and has setHeaders)
-                if (res?.headers && typeof res.headers.set === 'function') {
-                    res.headers.set('X-RateLimit-Limit', limit.toString());
-                    res.headers.set('X-RateLimit-Remaining', isRateLimited ? '0' : (limit - newUsage).toString());
+                const response = res as { headers?: { set: (k: string, v: string) => void } };
+                if (response?.headers && typeof response.headers.set === 'function') {
+                    response.headers.set('X-RateLimit-Limit', limit.toString());
+                    response.headers.set('X-RateLimit-Remaining', isRateLimited ? '0' : (limit - newUsage).toString());
                 }
 
                 return isRateLimited ? reject(new Error('Rate limit exceeded')) : resolve();

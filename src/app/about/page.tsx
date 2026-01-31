@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Target, Users, BookOpen, Globe, Award, ArrowRight, Zap, Shield, Briefcase } from "lucide-react";
+import { Target, Users, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
+import { PublicHeader } from "@/components/PublicHeader";
 import { Footer } from "@/components/Footer";
 
 export default function AboutPage() {
@@ -9,26 +10,7 @@ export default function AboutPage() {
         <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
             <GlobalBackground />
 
-            {/* Navigation - Simple version for SEO pages */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                            <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain relative z-10" />
-                        </div>
-                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent group-hover:to-indigo-300 transition-all">
-                            Arjuna AI
-                        </span>
-                    </Link>
-                    <div className="flex items-center gap-6">
-                        <Link href="/auth" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
-                        <Button size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full font-medium px-6" asChild>
-                            <Link href="/auth">Get Started</Link>
-                        </Button>
-                    </div>
-                </div>
-            </header>
+            <PublicHeader />
 
             <main className="pt-32 pb-20 relative z-10">
                 {/* Hero Section */}
@@ -43,33 +25,13 @@ export default function AboutPage() {
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-700">
-                            We're building the <br className="hidden md:block" />
+                            We&apos;re building the <br className="hidden md:block" />
                             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">future of career growth</span>
                         </h1>
 
                         <p className="text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
                             Arjuna AI bridges the gap between potential and opportunity. We use advanced AI to democratize access to world-class coaching, making interview mastery accessible to everyone.
                         </p>
-                    </div>
-                </div>
-
-                {/* Impact Stats */}
-                <div className="container mx-auto px-4 mb-32">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                        {[
-                            { label: "Interviews Conducted", value: "50k+", icon: Zap },
-                            { label: "Success Rate", value: "92%", icon: Award },
-                            { label: "Countries Served", value: "45+", icon: Globe },
-                            { label: "Partner Companies", value: "120+", icon: Briefcase },
-                        ].map((stat, i) => (
-                            <div key={i} className="group p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-indigo-500/20 hover:bg-white/[0.04] transition-all duration-300 text-center">
-                                <div className="mx-auto w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                    <stat.icon className="h-6 w-6 text-indigo-400" />
-                                </div>
-                                <div className="text-3xl font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">{stat.value}</div>
-                                <div className="text-sm text-slate-500">{stat.label}</div>
-                            </div>
-                        ))}
                     </div>
                 </div>
 
@@ -146,18 +108,6 @@ export default function AboutPage() {
                     </div>
                 </div>
 
-                {/* Trusted By Section (New Component to fill gap) */}
-                <div className="container mx-auto px-4 mb-32">
-                    <div className="pt-8 flex flex-col items-center gap-8 border-t border-b border-white/5 py-12 bg-white/[0.01]">
-                        <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Trusted by engineers from</p>
-                        <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                            {['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix', 'Uber', 'Airbnb', 'Stripe'].map((company) => (
-                                <span key={company} className="text-xl md:text-2xl font-bold text-white">{company}</span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
                 {/* The "Timeline" Story Section */}
                 <div className="container mx-auto px-4 mb-32">
                     <div className="max-w-4xl mx-auto">
@@ -201,7 +151,7 @@ export default function AboutPage() {
                                 <span className="text-indigo-400">next interview?</span>
                             </h2>
                             <p className="text-xl text-slate-400 mb-10 leading-relaxed">
-                                Join the community of high-performers who trust Arjuna AI to help them land offers at the world's most competitive companies.
+                                Join the thousands of high-performers who trust Arjuna AI to help them land offers at the world&apos;s most competitive companies.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <Button size="lg" className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 rounded-full font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105" asChild>
@@ -223,26 +173,4 @@ export default function AboutPage() {
             <Footer />
         </div>
     );
-}
-
-// Needed for the GlobeIcon used above - Lucide exports it as Globe
-function Globe({ className }: { className?: string }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" x2="22" y1="12" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-    )
 }

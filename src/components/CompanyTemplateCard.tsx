@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { CompanyTemplate } from "@/types/company-types";
 import { Building2, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getCompanyLogo } from "@/lib/utils";
+import Image from "next/image";
 
 interface CompanyTemplateCardProps {
     template: CompanyTemplate;
@@ -22,27 +23,35 @@ export function CompanyTemplateCard({ template, onSelect, isLoading }: CompanyTe
     };
 
     return (
-        <Card className="flex flex-col h-full hover:shadow-md transition-all">
+        <Card className="flex flex-col h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 border-border/80 dark:border-border/50 shadow-sm overflow-hidden">
+
             <CardHeader className="pb-4">
                 <div className="flex justify-between items-start gap-4">
                     <div className="flex gap-4">
-                        <div className="relative h-14 w-14 rounded-lg bg-muted border flex items-center justify-center shrink-0">
-                            {template.logo_url ? (
-                                <img
-                                    src={template.logo_url}
+                        <div className="relative h-14 w-14 rounded-lg bg-muted/30 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-inner font-bold">
+
+                            {getCompanyLogo(template.slug, template.logo_url) ? (
+                                <Image
+                                    src={getCompanyLogo(template.slug, template.logo_url)}
                                     alt={`${template.name} logo`}
-                                    className="w-8 h-8 object-contain"
+                                    fill
+                                    unoptimized
+                                    className="object-contain p-2"
                                     onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                        // Hide the image if it fails to load
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        // Show the fallback icon
+                                        const fallback = (e.target as HTMLImageElement).parentElement?.nextElementSibling;
+                                        if (fallback) fallback.classList.remove('hidden');
                                     }}
                                 />
                             ) : null}
-                            <Building2 className={`h-6 w-6 text-muted-foreground ${template.logo_url ? 'hidden' : ''}`} />
+                            <Building2 className={`h-6 w-6 text-muted-foreground ${getCompanyLogo(template.slug, template.logo_url) ? 'hidden' : ''}`} />
                             <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-primary text-primary-foreground rounded-full flex items-center justify-center ring-2 ring-card">
                                 <CheckCircle2 className="h-2.5 w-2.5" />
                             </div>
                         </div>
+
 
                         <div className="space-y-1">
                             <h3 className="font-semibold text-lg leading-tight">

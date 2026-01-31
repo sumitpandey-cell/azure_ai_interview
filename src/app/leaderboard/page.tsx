@@ -1,17 +1,18 @@
 'use client'
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Loader2, Search, TrendingUp, Users, Award, Settings as SettingsIcon, LogOut, Share2, Download, Copy, Check, Crown, ArrowRight, Star } from "lucide-react";
+import { Trophy, Search, Users, Award, Download, Copy, Check, ArrowRight, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getAvatarUrl, getInitials } from "@/lib/avatar-utils";
+import { getAvatarUrl } from "@/lib/avatar-utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import {
@@ -44,8 +45,7 @@ const Leaderboard = () => {
   const [selectedRank, setSelectedRank] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { profile, leaderboard, fetchLeaderboard, isCached } = useOptimizedQueries();
 
   useEffect(() => {
@@ -55,14 +55,12 @@ const Leaderboard = () => {
 
         // Check if we have cached data
         if (isCached.leaderboard && leaderboard.length > 0) {
-          console.log('📦 Using cached leaderboard data');
           setUsers(leaderboard);
           setLoading(false);
           return;
         }
 
         // Fetch fresh data
-        console.log('🔄 Fetching fresh leaderboard data');
         const data = await fetchLeaderboard();
         setUsers(data);
       } catch (error) {
@@ -251,7 +249,7 @@ const Leaderboard = () => {
       ctx.fillText('SCORE', infoX, statsY);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 32px Inter, sans-serif';
-      ctx.fillText(`${selectedUser?.bayesianScore.toFixed(0)}%`, infoX, statsY + 35);
+      ctx.fillText(`${selectedUser?.bayesianScore.toFixed(0)} Pts`, infoX, statsY + 35);
 
       // Stat 2: Interviews
       ctx.fillStyle = '#818cf8';
@@ -329,39 +327,7 @@ const Leaderboard = () => {
     }
   };
 
-  const handleNativeShare = async () => {
-    try {
-      const shareData = {
-        title: `${selectedUser?.fullName || 'Candidate'} - ArjunaAI Interview Profile`,
-        text: `Check out this interview profile on ArjunaAI! Global Rank #${selectedRank} with a score of ${selectedUser?.bayesianScore.toFixed(0)}%`,
-        url: `${window.location.origin}/p/${selectedUser?.userId}`,
-      };
 
-      if (navigator.share && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        toast({
-          title: "Success",
-          description: "Shared successfully!",
-        });
-      } else {
-        // Fallback to copy link
-        await navigator.clipboard.writeText(shareData.url);
-        toast({
-          title: "Link Copied",
-          description: "Share link copied to clipboard!",
-        });
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Error sharing:', error);
-        toast({
-          title: "Error",
-          description: "Failed to share.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
 
   const handleCopyLink = () => {
     const shareUrl = `${window.location.origin}/p/${selectedUser?.userId}`;
@@ -385,105 +351,152 @@ const Leaderboard = () => {
 
   const TopPlayerCard = ({ user: player, rank, className }: { user: LeaderboardUser; rank: number; className?: string }) => {
     const isFirst = rank === 1;
+    const isSecond = rank === 2;
     const isMe = player.userId === user?.id;
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 640);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const displayName = isMe
       ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || player.fullName || "Unknown Candidate")
       : (player.fullName || "Unknown Candidate");
 
+    const getRankStyles = () => {
+      if (isFirst) return {
+        border: "border-yellow-500/50 shadow-yellow-500/20",
+        glow: "bg-yellow-500/10",
+        text: "text-yellow-600 dark:text-yellow-400",
+        badge: "bg-yellow-500 text-yellow-950",
+        icon: <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+      };
+      if (isSecond) return {
+        border: "border-slate-300/50 shadow-slate-300/20",
+        glow: "bg-slate-300/10",
+        text: "text-slate-600 dark:text-slate-300",
+        badge: "bg-slate-300 text-slate-900",
+        icon: <Award className="h-4 w-4 sm:h-5 sm:w-5 text-slate-300" />
+      };
+      return {
+        border: "border-amber-600/50 shadow-amber-600/20",
+        glow: "bg-amber-600/10",
+        text: "text-amber-700 dark:text-amber-500",
+        badge: "bg-amber-600 text-amber-50",
+        icon: <Star className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+      };
+    };
+
+    const styles = getRankStyles();
+
     return (
-      <div className={cn(
-        "relative flex flex-col items-center transition-all duration-300",
-        isFirst ? "scale-100 lg:scale-110 z-20 mb-8" : "scale-95 lg:scale-100 z-10 opacity-70 hover:opacity-100 hover:scale-105",
-        className
-      )}>
-        {/* Visual Rank Indicator */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30">
-          <div className={cn(
-            "flex items-center justify-center h-8 px-4 rounded-full text-xs font-bold shadow-sm border bg-card",
-            rank === 1 ? "text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-800 dark:text-yellow-400" :
-              rank === 2 ? "text-slate-600 border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400" :
-                "text-amber-700 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-500"
-          )}>
-            #{rank}
-          </div>
-        </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: rank * 0.1, duration: 0.5 }}
+        className={cn(
+          "relative flex flex-col items-center transition-all duration-500 group",
+          isFirst ? "z-30 scale-100 lg:scale-110" : "z-10 scale-90 lg:scale-95",
+          className
+        )}
+      >
+        {/* Animated Background Glow */}
+        <div className={cn(
+          "absolute inset-0 blur-3xl opacity-20 transition-all duration-700 group-hover:opacity-40",
+          styles.glow
+        )} />
 
         <Card className={cn(
-          "w-full overflow-hidden border transition-all duration-300 bg-card",
-          rank === 1 ? "border-yellow-400/50 shadow-lg shadow-yellow-500/5 ring-1 ring-yellow-500/20" : "border-border shadow-sm"
+          "w-full overflow-hidden border-2 transition-all duration-500 bg-background/60 backdrop-blur-xl relative z-10",
+          styles.border,
+          "hover:shadow-2xl hover:translate-y-[-4px]"
         )}>
-          {rank === 1 && <div className="h-1 w-full bg-yellow-500" />}
+          {/* Top Rank Banner */}
+          <div className={cn("h-1.5 w-full", isFirst ? "bg-yellow-500" : isSecond ? "bg-slate-300" : "bg-amber-600")} />
 
-          <CardContent className="p-6 flex flex-col items-center pt-8">
-            {/* Avatar Cluster */}
-            <div className="relative mb-4">
+          <CardContent className="p-3 sm:p-6 flex flex-col items-center pt-6 sm:pt-10">
+            {/* Rank Badge */}
+            <div className={cn(
+              "absolute top-2 right-2 sm:top-4 sm:right-4 h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-[10px] sm:text-sm shadow-inner",
+              styles.badge
+            )}>
+              {rank}
+            </div>
+
+            {/* Avatar Section */}
+            <div className="relative mb-3 sm:mb-6">
               <div className={cn(
-                "w-20 h-20 rounded-full p-1 border-2 relative bg-background",
-                rank === 1 ? "border-yellow-500" : "border-muted/40"
+                "w-14 h-14 sm:w-24 sm:h-24 rounded-full p-1 sm:p-1.5 border-2 sm:border-4 relative transition-transform duration-500 group-hover:rotate-6",
+                isFirst ? "border-yellow-500" : isSecond ? "border-slate-300" : "border-amber-600"
               )}>
-                <Avatar className="w-full h-full rounded-full">
+                <Avatar className="w-full h-full rounded-full ring-2 sm:ring-4 ring-black/5 dark:ring-white/5">
                   <AvatarImage
                     src={getAvatarUrl(player.avatarUrl, player.userId, 'avataaars', player.oauthPicture, player.gender)}
                     className="object-cover"
                   />
-                  <AvatarFallback className="text-xl font-bold bg-muted/50">
+                  <AvatarFallback className="text-sm sm:text-2xl font-black bg-muted/30">
                     {displayName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-              </div>
-              {isFirst && (
-                <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-yellow-500 rounded-full flex items-center justify-center border-2 border-background shadow-sm">
-                  <TrendingUp className="h-3 w-3 text-white" />
+
+                {/* Floating Rank Icon */}
+                <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-background rounded-full p-1 sm:p-1.5 shadow-xl border border-border">
+                  {styles.icon}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Intel Display */}
-            <div className="text-center space-y-1 w-full mb-5">
-              <h3 className="text-foreground font-bold text-base truncate w-full px-2">
+            {/* Candidate Info */}
+            <div className="text-center space-y-1 w-full mb-3 sm:mb-6">
+              <h3 className="text-foreground font-black text-[10px] sm:text-xl truncate w-full px-1 tracking-tight group-hover:text-primary transition-colors">
                 {displayName}
               </h3>
               <div className={cn(
-                "inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                rank === 1 ? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400" : "bg-muted text-muted-foreground"
+                "inline-flex text-[7px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] px-2 py-0.5 sm:px-3 sm:py-1 rounded-md sm:rounded-lg border",
+                isFirst ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400" :
+                  isSecond ? "bg-slate-300/10 border-slate-300/30 text-slate-600 dark:text-slate-300" :
+                    "bg-amber-600/10 border-amber-600/30 text-amber-700 dark:text-amber-500"
               )}>
-                {rank === 1 ? "Market Leader" : rank === 2 ? "Runner Up" : "Top Performer"}
+                {isFirst ? "MVP" : isSecond ? "Pro" : "Elite"}
               </div>
             </div>
 
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-2 gap-4 w-full pt-4 border-t border-border/50">
-              <div className="text-center">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Score</p>
-                <div className="flex items-center justify-center gap-1">
-                  <p className={cn("text-lg font-bold tracking-tight", rank === 1 ? "text-yellow-600 dark:text-yellow-400" : "text-foreground")}>
-                    {player.bayesianScore.toFixed(0)}
-                  </p>
-                  <span className="text-xs text-muted-foreground font-medium">%</span>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-px bg-border/20 w-full rounded-xl sm:rounded-2xl overflow-hidden border border-border/20">
+              <div className="bg-background/40 p-2 sm:p-3 text-center backdrop-blur-md">
+                <p className="hidden sm:block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Score</p>
+                <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                  <span className={cn("text-[10px] sm:text-xl font-black tabular-nums", styles.text)}>
+                    {player.bayesianScore.toFixed(0)} pts
+                  </span>
                 </div>
               </div>
-              <div className="text-center border-l border-border/50">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Sessions</p>
-                <p className="text-lg font-bold tracking-tight text-foreground">{player.interviewCount}</p>
+              <div className="bg-background/40 p-2 sm:p-3 text-center backdrop-blur-md border-l border-border/20">
+                <p className="hidden sm:block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Interviews</p>
+                <p className="text-[10px] sm:text-xl font-black tabular-nums text-foreground">
+                  {player.interviewCount}
+                </p>
               </div>
             </div>
 
-            {/* Action Module */}
+            {/* Profile CTA */}
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => handleShare(player, rank)}
-              className="w-full mt-4 h-9 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+              className="w-full mt-3 sm:mt-6 h-8 sm:h-11 text-[9px] sm:text-xs font-bold rounded-lg sm:rounded-xl border-dashed hover:border-solid hover:bg-primary hover:text-primary-foreground group-hover:scale-[1.02] transition-all"
             >
-              <Users className="h-3.5 w-3.5 mr-2" />
-              View Profile
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 shrink-0" />
+              <span className="truncate">{isMobile ? "View" : "Analyze Insights"}</span>
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     );
   };
-
   return (
     <DashboardLayout>
       <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -494,7 +507,7 @@ const Leaderboard = () => {
               Leaderboard
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              See how you stack up against the global developer community.
+              See how you stack up against the global network of developers.
             </p>
 
             {!loading && users.length > 0 && (
@@ -519,23 +532,24 @@ const Leaderboard = () => {
             const userScore = users.find(u => u.userId === user.id)?.bayesianScore.toFixed(0);
 
             return (
-              <Card className="flex flex-row items-center gap-6 p-4 sm:p-5 border-primary/20 bg-primary/5 shadow-sm">
+              <Card className="flex flex-row items-center gap-6 p-4 sm:p-5 border-primary/30 dark:border-primary/20 bg-primary/[0.03] dark:bg-primary/5 shadow-sm">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Rank</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Rank</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">#{userRank}</span>
+                    <span className="text-2xl font-black text-foreground">#{userRank}</span>
                     <span className="text-xs text-muted-foreground">/{users.length}</span>
                   </div>
                 </div>
                 <div className="h-8 w-px bg-border/50" />
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mastery</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your Score</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">{userScore}</span>
-                    <span className="text-xs text-muted-foreground">%</span>
+                    <span className="text-2xl font-black text-foreground">{userScore}</span>
+                    <span className="text-xs text-muted-foreground">pts</span>
                   </div>
                 </div>
               </Card>
+
             );
           })()}
         </div>
@@ -553,34 +567,52 @@ const Leaderboard = () => {
           </Card>
         ) : (
           <>
-            {/* Podium Section */}
-            <div className="w-full mt-4 mb-12">
-              <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-6 md:gap-8 pb-4">
-                {/* Mobile: Stacked */}
-                <div className="w-full md:hidden space-y-6">
-                  <TopPlayerCard user={users[0]} rank={1} className="w-full max-w-[280px] mx-auto" />
-                  <div className="flex gap-4 px-2">
-                    {users[1] && <TopPlayerCard user={users[1]} rank={2} className="flex-1" />}
-                    {users[2] && <TopPlayerCard user={users[2]} rank={3} className="flex-1" />}
-                  </div>
-                </div>
+            {/* Podium Section - Premium Horizontal Layout */}
+            <div className="w-full mt-12 mb-16 relative overflow-visible">
+              {/* Podium Decorative Elements */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[400px] bg-primary/5 blur-[100px] -z-10 pointer-events-none" />
 
-                {/* Desktop: 2 - 1 - 3 Layout */}
-                <div className="hidden md:flex flex-row items-end justify-center gap-6 w-full">
-                  {users[1] && <TopPlayerCard user={users[1]} rank={2} className="w-[240px]" />}
-                  <TopPlayerCard user={users[0]} rank={1} className="w-[260px]" />
-                  {users[2] && <TopPlayerCard user={users[2]} rank={3} className="w-[240px]" />}
-                </div>
+              <div className="flex flex-row items-end justify-center gap-2 sm:gap-6 lg:gap-10 w-full max-w-6xl mx-auto px-2">
+                {/* 2nd Place */}
+                {users[1] && (
+                  <TopPlayerCard
+                    user={users[1]}
+                    rank={2}
+                    className="flex-1 min-w-0 max-w-[280px]"
+                  />
+                )}
+
+                {/* 1st Place */}
+                {users[0] && (
+                  <TopPlayerCard
+                    user={users[0]}
+                    rank={1}
+                    className="flex-1 min-w-0 max-w-[320px] -mb-4 sm:-mb-6"
+                  />
+                )}
+
+                {/* 3rd Place */}
+                {users[2] && (
+                  <TopPlayerCard
+                    user={users[2]}
+                    rank={3}
+                    className="flex-1 min-w-0 max-w-[280px]"
+                  />
+                )}
               </div>
+
+              {/* Podium Floor Shadow */}
+              <div className="mt-8 h-4 w-4/5 mx-auto bg-foreground/5 dark:bg-foreground/5 blur-xl rounded-[100%]" />
             </div>
 
             {/* Filters & Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card border rounded-lg p-1.5 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card dark:bg-card/50 border border-border/80 dark:border-border rounded-xl p-1.5 mb-6 shadow-sm">
+
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search candidate..."
-                  className="pl-9 bg-transparent border-none shadow-none focus-visible:ring-0"
+                  className="pl-9 bg-muted/40 dark:bg-transparent border-none shadow-none focus-visible:ring-0 rounded-lg h-9 font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -588,7 +620,8 @@ const Leaderboard = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="h-6 w-px bg-border/60 hidden sm:block" />
                 <Select>
-                  <SelectTrigger className="w-full sm:w-[180px] border-none shadow-none bg-transparent">
+                  <SelectTrigger className="w-full sm:w-[130px] border-none shadow-none bg-muted/40 dark:bg-transparent rounded-lg h-9 font-bold text-xs">
+
                     <SelectValue placeholder="All Sectors" />
                   </SelectTrigger>
                   <SelectContent align="end">
@@ -602,98 +635,120 @@ const Leaderboard = () => {
             </div>
 
             {/* Rankings Table */}
-            <Card className="border shadow-sm overflow-hidden bg-card">
+            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm overflow-hidden bg-card dark:bg-card">
+
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="w-[80px] text-center font-bold text-xs uppercase text-muted-foreground">Rank</TableHead>
-                    <TableHead className="font-bold text-xs uppercase text-muted-foreground">Candidate</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Mastery</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Sessions</TableHead>
-                    <TableHead className="text-center font-bold text-xs uppercase text-muted-foreground">Status</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-xs uppercase text-muted-foreground">Action</TableHead>
+                  <TableRow className="bg-muted/30 dark:bg-muted/40 hover:bg-muted/30 border-b border-border">
+                    <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Rank</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Candidate</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Score</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Interviews</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Status</TableHead>
+                    <TableHead className="text-right pr-6 font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Action</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((leaderboardUser, index) => {
-                    const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
-                    const isTop3 = actualRank <= 3;
-                    const isCurrentUser = leaderboardUser.userId === user?.id;
-                    const displayName = isCurrentUser
-                      ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || leaderboardUser.fullName || "Unknown Candidate")
-                      : (leaderboardUser.fullName || "Unknown Candidate");
 
-                    return (
-                      <TableRow
-                        key={leaderboardUser.userId}
-                        className={cn(
-                          "cursor-pointer transition-colors",
-                          isCurrentUser && "bg-primary/5 hover:bg-primary/10"
-                        )}
-                      >
-                        <TableCell className="text-center py-4">
-                          <div className={cn(
-                            "inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold",
-                            actualRank === 1 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                              actualRank === 2 ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" :
-                                actualRank === 3 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-500" :
-                                  "text-muted-foreground bg-muted/50"
-                          )}>
-                            {actualRank}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9 border border-border">
-                              <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
-                              <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className={cn("text-sm font-semibold", isCurrentUser && "text-primary")}>
-                                {displayName} {isCurrentUser && "(You)"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                ID: {leaderboardUser.userId.slice(0, 8)}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-4">
-                          <div className="font-bold text-foreground">{leaderboardUser.bayesianScore.toFixed(0)}%</div>
-                        </TableCell>
-                        <TableCell className="text-center py-4">
-                          <span className="text-sm text-foreground">
-                            {leaderboardUser.interviewCount}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center py-4">
-                          {isTop3 ? (
-                            <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                              Elite
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal">
-                              Active
-                            </Badge>
+                <TableBody>
+                  <AnimatePresence mode="popLayout">
+                    {filteredUsers.map((leaderboardUser, index) => {
+                      const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
+                      const isTop3 = actualRank <= 3;
+                      const isCurrentUser = leaderboardUser.userId === user?.id;
+                      const displayName = isCurrentUser
+                        ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || leaderboardUser.fullName || "Unknown Candidate")
+                        : (leaderboardUser.fullName || "Unknown Candidate");
+
+                      return (
+                        <motion.tr
+                          layout
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ delay: index * 0.05, duration: 0.3 }}
+                          key={leaderboardUser.userId}
+                          className={cn(
+                            "cursor-pointer transition-colors border-b border-border/10 last:border-0 group",
+                            isCurrentUser ? "bg-primary/[0.05] dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20" : "hover:bg-muted/30"
                           )}
-                        </TableCell>
-                        <TableCell className="text-right py-4 pr-6">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleShare(leaderboardUser, actualRank)}
-                          >
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          onClick={() => handleShare(leaderboardUser, actualRank)}
+                        >
+                          <TableCell className="text-center py-5">
+                            <div className={cn(
+                              "inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black shadow-inner transition-transform group-hover:scale-110",
+                              actualRank === 1 ? "bg-yellow-500 text-yellow-950 shadow-yellow-500/20" :
+                                actualRank === 2 ? "bg-slate-300 text-slate-900 shadow-slate-300/20" :
+                                  actualRank === 3 ? "bg-amber-600 text-amber-50 shadow-amber-600/20" :
+                                    "text-muted-foreground bg-muted/20"
+                            )}>
+                              {actualRank}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+                                  <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
+                                  <AvatarFallback className="font-bold">{displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                {isCurrentUser && (
+                                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
+                                )}
+                              </div>
+                              <div>
+                                <p className={cn("text-sm font-black tracking-tight", isCurrentUser ? "text-primary" : "text-foreground")}>
+                                  {displayName}
+                                </p>
+                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                                  {leaderboardUser.userId.slice(0, 8)} • Verified
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center py-5">
+                            <div className="flex flex-col items-center">
+                              <span className="font-black text-foreground text-sm">{leaderboardUser.bayesianScore.toFixed(0)} pts</span>
+                              <div className="h-1 w-12 bg-muted/30 rounded-full mt-1 overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${leaderboardUser.bayesianScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center py-5">
+                            <span className="text-sm font-bold text-foreground/80 bg-muted/20 px-3 py-1 rounded-lg">
+                              {leaderboardUser.interviewCount}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center py-5">
+                            {isTop3 ? (
+                              <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 border-none text-[9px] font-black tracking-widest uppercase px-2 py-0.5 shadow-lg shadow-indigo-500/20">
+                                Legends
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-border/50">
+                                Candidate
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right py-5 pr-6">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full hover:bg-primary hover:text-primary-foreground group-hover:translate-x-1 transition-all"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
                   {filteredUsers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        No matches for "{searchQuery}"
+                        No matches for &quot;{searchQuery}&quot;
                       </TableCell>
                     </TableRow>
                   )}
@@ -705,35 +760,36 @@ const Leaderboard = () => {
 
         {/* Footer Info */}
         {!loading && users.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <Card className="p-6 border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
                   <Award className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm mb-1">Ranking System</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-bold text-sm mb-1 text-foreground">Ranking System</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">
                     Scores are calculated using a Bayesian average that balances your raw interview performance with your consistency over time (logarithmic scale).
                   </p>
                 </div>
               </div>
             </Card>
-            <Card className="p-6">
+            <Card className="p-6 border border-border/80 dark:border-border shadow-sm bg-card/80 dark:bg-card">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
                   <Star className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed italic">
-                    "High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality."
+                  <h4 className="font-bold text-sm mb-1 text-foreground">Pro Tip</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed italic font-medium">
+                    &quot;High-caliber performance in fewer sessions outweighs high attrition rates. Focus on quality over raw volume.&quot;
                   </p>
                 </div>
               </div>
             </Card>
           </div>
         )}
+
 
         {/* Share Modal */}
         <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
@@ -813,7 +869,7 @@ const Leaderboard = () => {
                       </h1>
                       <div className="flex flex-wrap justify-center md:justify-start items-center gap-2">
                         <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border-indigo-500/20 text-[10px] uppercase font-bold tracking-widest">
-                          Elite Talent
+                          Top Talent
                         </Badge>
                         <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/20 text-[10px] uppercase font-bold tracking-widest">
                           Interview Candidate
@@ -828,12 +884,12 @@ const Leaderboard = () => {
                           <span className="text-2xl sm:text-3xl font-black text-white leading-none">
                             {selectedUser?.bayesianScore.toFixed(0)}
                           </span>
-                          <span className="text-sm sm:text-lg text-slate-500 font-bold">%</span>
+                          <span className="text-sm sm:text-lg text-slate-500 font-bold">pts</span>
                         </div>
                       </div>
                       <div className="border-x border-white/10 px-3 sm:px-6">
                         <p className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">Interviews</p>
-                        <p className="text-2xl sm:text-3xl font-black text-white leading-none">
+                        <p className="text-2xl sm:text-3xl font-bold text-white leading-none">
                           {selectedUser?.interviewCount}
                         </p>
                       </div>

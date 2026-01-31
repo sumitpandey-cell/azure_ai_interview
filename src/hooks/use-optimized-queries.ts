@@ -7,9 +7,9 @@ import { PerformanceHistory, PerformanceMetrics } from '@/types/performance-type
 import { interviewService } from '@/services/interview.service';
 import { companyService } from '@/services/company.service';
 import { profileService } from '@/services/profile.service';
-import { leaderboardService } from '@/services/leaderboard.service';
-import { templateService, Template } from '@/services/template.service';
+import { templateService } from '@/services/template.service';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export function useOptimizedQueries() {
   const { user } = useAuth();
@@ -32,7 +32,6 @@ export function useOptimizedQueries() {
     onInterviewCreated,
     onInterviewCompleted,
     onInterviewUpdated,
-    onProfileUpdated,
   } = useCacheStore();
 
   // Optimized sessions fetch
@@ -41,11 +40,9 @@ export function useOptimizedQueries() {
 
     // Return cached data if valid and not forcing refresh
     if (!forceRefresh && isSessionsCacheValid() && sessions.length > 0) {
-      console.log('📦 Using cached sessions data');
       return sessions;
     }
 
-    console.log('🔄 Fetching sessions from database');
     try {
       const data = await interviewService.getUserSessions(user.id);
 
@@ -68,11 +65,9 @@ export function useOptimizedQueries() {
 
     // Return cached stats if valid and not forcing refresh
     if (!forceRefresh && isStatsCacheValid() && stats) {
-      console.log('📦 Using cached stats data');
       return stats;
     }
 
-    console.log('🔄 Calculating stats from database');
     try {
       // Get fresh sessions data for stats calculation
       const sessionsData = await fetchSessions(forceRefresh);
@@ -110,11 +105,9 @@ export function useOptimizedQueries() {
 
     // Return cached profile if valid and not forcing refresh
     if (!forceRefresh && isProfileCacheValid() && profile) {
-      console.log('📦 Using cached profile data');
       return profile;
     }
 
-    console.log('🔄 Fetching profile from database');
     try {
       const data = await profileService.getProfile(user.id);
 
@@ -143,16 +136,14 @@ export function useOptimizedQueries() {
 
     // Return cached session if valid and not forcing refresh
     if (!forceRefresh && isSessionDetailCacheValid(sessionId) && sessionDetails[sessionId]) {
-      console.log(`📦 Using cached session detail for ${sessionId}`);
       return sessionDetails[sessionId];
     }
 
-    console.log(`🔄 Fetching session detail from database: ${sessionId}`);
     try {
       const data = await interviewService.getSessionById(sessionId);
 
       if (data) {
-        setSessionDetail(sessionId, data as any);
+        setSessionDetail(sessionId, data as unknown as Parameters<typeof setSessionDetail>[1]);
         return data;
       }
 
@@ -167,41 +158,42 @@ export function useOptimizedQueries() {
   const fetchLeaderboard = useCallback(async (forceRefresh = false) => {
     // Return cached leaderboard if valid and not forcing refresh
     if (!forceRefresh && isLeaderboardCacheValid() && leaderboard.length > 0) {
-      console.log('📦 Using cached leaderboard data');
       return leaderboard;
     }
 
-    console.log('🔄 Fetching leaderboard from database');
     try {
-      // 1. Fetch all completed interview sessions with scores
+      // 1. Fetch all completed interview sessions
       const { data: sessions, error: sessionsError } = await supabase
         .from("interview_sessions")
         .select("user_id, score")
-        .not("score", "is", null)
         .eq("status", "completed");
 
       if (sessionsError) throw sessionsError;
 
       // 2. Aggregate scores by user
-      const userStats: Record<string, { totalScore: number; count: number }> = {};
+      const userStats: Record<string, { totalScore: number; scoreCount: number; totalCount: number }> = {};
 
       sessions?.forEach((session) => {
         if (!userStats[session.user_id]) {
-          userStats[session.user_id] = { totalScore: 0, count: 0 };
+          userStats[session.user_id] = { totalScore: 0, scoreCount: 0, totalCount: 0 };
         }
-        userStats[session.user_id].totalScore += session.score || 0;
-        userStats[session.user_id].count += 1;
+        userStats[session.user_id].totalCount += 1;
+        if (session.score !== null) {
+          userStats[session.user_id].totalScore += session.score;
+          userStats[session.user_id].scoreCount += 1;
+        }
       });
 
       // 3. Calculate Weighted Score (rewards both performance and experience)
       const rankedUsers = Object.entries(userStats).map(([userId, stats]) => {
-        const avgScore = stats.totalScore / stats.count;
-        const experienceMultiplier = 1 + (Math.log10(stats.count) / 10);
+        const avgScore = stats.scoreCount > 0 ? stats.totalScore / stats.scoreCount : 0;
+        // Total completed sessions contribute to rank visibility
+        const experienceMultiplier = 1 + (Math.log10(stats.totalCount) / 10);
         const weightedScore = avgScore * experienceMultiplier;
 
         return {
           userId,
-          interviewCount: stats.count,
+          interviewCount: stats.totalCount,
           averageScore: avgScore,
           bayesianScore: weightedScore,
         };
@@ -247,10 +239,16 @@ export function useOptimizedQueries() {
         setLeaderboard([]);
         return [];
       }
-    } catch (error) {
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
       console.error("Error in fetchLeaderboard:", error);
-      toast.error("Failed to load leaderboard data");
-      return leaderboard;
+      // Handle RLS or permission errors silently for a better user experience
+      const isRlsError = error?.code === '42501' || error?.message?.includes('row-level security');
+      if (!isRlsError) {
+        toast.error("Failed to load leaderboard data");
+      }
+      setLeaderboard([]);
+      return [];
     }
   }, [leaderboard, isLeaderboardCacheValid, setLeaderboard]);
 
@@ -284,32 +282,20 @@ export function useOptimizedQueries() {
     difficulty?: string;
     duration_seconds?: number;
     jobDescription?: string;
-    config?: any;
+    config?: Json;
   }) => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     try {
-      // Get fresh user to ensure we have the latest metadata (sentiment preference)
-      const { data: { user: freshUser } } = await supabase.auth.getUser();
-      const metadata = freshUser?.user_metadata || user?.user_metadata || {};
-
-      // Sync sentiment analysis preference from global settings
-      const isSentimentEnabled =
-        metadata.sentiment_analysis_enabled === true ||
-        metadata.sentimentAnalysisEnabled === true;
-
       const session = await interviewService.createSession({
         userId: user.id,
         interviewType: sessionData.interview_type,
         position: sessionData.position,
-        difficulty: sessionData.difficulty || sessionData.config?.difficulty,
-        jobDescription: sessionData.jobDescription || sessionData.config?.jobDescription,
-        config: {
-          ...(sessionData.config || {}),
-          sentimentAnalysisEnabled: isSentimentEnabled
-        },
+        difficulty: sessionData.difficulty || (sessionData.config as Record<string, unknown> | undefined)?.difficulty as string | undefined,
+        jobDescription: sessionData.jobDescription || (sessionData.config as Record<string, unknown> | undefined)?.jobDescription as string | undefined,
+        config: (sessionData.config as Json) || {},
       });
 
       if (!session) {
@@ -319,7 +305,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we added a new interview
       onInterviewCreated();
 
-      console.log('✅ Interview session created, cache invalidated');
       return session;
     } catch (error) {
       console.error('Error creating interview session:', error);
@@ -332,8 +317,8 @@ export function useOptimizedQueries() {
     sessionId: string,
     updateData: {
       score?: number;
-      feedback?: any;
-      transcript?: any;
+      feedback?: Json;
+      transcript?: Json;
       durationSeconds?: number;
       totalHintsUsed?: number;
       averagePerformanceScore?: number;
@@ -349,7 +334,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we updated an interview
       onInterviewCompleted(sessionId);
 
-      console.log(`✅ Interview ${sessionId} completed, cache invalidated`);
       return session;
     } catch (error) {
       console.error('Error completing interview session:', error);
@@ -360,7 +344,7 @@ export function useOptimizedQueries() {
   // Update interview session with cache invalidation
   const updateInterviewSession = useCallback(async (
     sessionId: string,
-    updateData: Partial<any>
+    updateData: Parameters<typeof interviewService.updateSession>[1]
   ) => {
     try {
       const session = await interviewService.updateSession(sessionId, updateData);
@@ -372,7 +356,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we updated an interview
       onInterviewUpdated(sessionId);
 
-      console.log(`✅ Interview ${sessionId} updated, cache invalidated`);
       return session;
     } catch (error) {
       console.error('Error updating interview session:', error);
@@ -387,7 +370,6 @@ export function useOptimizedQueries() {
     }
 
     try {
-      console.log(`🗑️ Attempting to delete session ${sessionId}`);
 
       const success = await interviewService.deleteSession(sessionId);
 
@@ -398,7 +380,6 @@ export function useOptimizedQueries() {
       // Invalidate cache since we deleted an interview
       onInterviewUpdated(sessionId);
 
-      console.log(`✅ Interview ${sessionId} deleted successfully, cache invalidated`);
       return true;
     } catch (error) {
       console.error('Error deleting interview session:', error);
@@ -423,13 +404,11 @@ export function useOptimizedQueries() {
     }
 
     try {
-      console.log('🔍 Fetching recent performance metrics for user:', user.id);
 
       // Fetch last 3 completed interviews with feedback
       const data = await interviewService.getRecentPerformanceMetrics(user.id, 3);
 
       if (!data || data.length === 0) {
-        console.log('📊 No previous interview data found');
         return {
           recentInterviews: [],
           averageScores: {
@@ -443,19 +422,18 @@ export function useOptimizedQueries() {
         };
       }
 
-      console.log(`📊 Found ${data.length} previous interviews with feedback`);
 
       // Extract performance metrics from each session
       const recentInterviews: PerformanceMetrics[] = data.map((session) => {
-        const feedback = session.feedback as any;
-        const skills = feedback?.skills || [];
+        const feedback = session.feedback as Record<string, unknown> | null;
+        const skills = (feedback?.skills as Array<{ name: string; score?: number; feedback?: string }>) || [];
 
         return {
           sessionId: session.id,
           position: session.position,
           interviewType: session.interview_type,
           completedAt: session.completed_at || '',
-          skills: skills.map((skill: any) => ({
+          skills: skills.map((skill) => ({
             name: skill.name,
             score: skill.score || 0,
             feedback: skill.feedback || '',
@@ -499,13 +477,9 @@ export function useOptimizedQueries() {
         else trend = 'consistent';
       }
 
-      console.log('📈 Performance metrics calculated:', {
-        totalInterviews,
-        averageScores,
-        trend,
-      });
 
       return {
+
         recentInterviews,
         averageScores,
         trend,

@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, Calendar, User, Briefcase, Bot, ArrowRight, MessageSquare, Clock, Code, Award, Target, TrendingUp, Sparkles } from "lucide-react";
+import { CheckCircle2, Calendar, Bot, ArrowRight, MessageSquare, Clock, Target, TrendingUp, Sparkles } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import Link from "next/link";
+import Image from "next/image";
 import { GlobalBackground } from "@/components/GlobalBackground";
 
 export default function SampleReport() {
@@ -58,7 +58,7 @@ export default function SampleReport() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
-                        <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8" />
+                        <Image src="/arjuna_logo.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8" />
                         <span className="font-bold text-xl bg-gradient-to-r from-white to-indigo-300 bg-clip-text text-transparent">Arjuna AI</span>
                     </Link>
                     <div className="flex items-center gap-4">
@@ -113,7 +113,7 @@ export default function SampleReport() {
                                 </CardHeader>
                                 <CardContent className="pt-6">
                                     <p className="text-lg text-slate-300 leading-relaxed italic">
-                                        "{mockData.executiveSummary}"
+                                        &quot;{mockData.executiveSummary}&quot;
                                     </p>
                                 </CardContent>
                             </Card>
@@ -220,8 +220,8 @@ export default function SampleReport() {
                                                     <span className="text-[10px] text-slate-600">{msg.timestamp}</span>
                                                 </div>
                                                 <div className={`p-4 rounded-[1.5rem] text-sm leading-relaxed max-w-[90%] ${msg.sender === 'ai'
-                                                        ? 'bg-indigo-500/10 border border-indigo-500/20 text-slate-300 rounded-tl-none'
-                                                        : 'bg-white/5 border border-white/10 text-white rounded-tr-none'
+                                                    ? 'bg-indigo-500/10 border border-indigo-500/20 text-slate-300 rounded-tl-none'
+                                                    : 'bg-white/5 border border-white/10 text-white rounded-tr-none'
                                                     }`}>
                                                     {msg.text}
                                                 </div>
@@ -248,7 +248,7 @@ export default function SampleReport() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                         <div className="md:col-span-2">
                             <Link href="/" className="flex items-center gap-2 text-xl font-bold mb-6">
-                                <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain" />
+                                <Image src="/arjuna_logo.png" alt="Arjuna AI" width={32} height={32} className="h-8 w-8 object-contain" />
                                 <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">Arjuna AI</span>
                             </Link>
                             <p className="text-slate-400 max-w-xs mb-6">

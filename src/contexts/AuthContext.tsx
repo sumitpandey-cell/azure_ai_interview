@@ -20,6 +20,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,9 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success(
         "Account created successfully! Please check your email to verify.",
       );
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to create account");
-      throw error;
+      throw err;
     }
   };
 
@@ -90,24 +93,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       toast.success("Welcome back!");
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to sign in");
-      throw error;
+      throw err;
     }
   };
 
   const signOut = async () => {
     try {
-      router.push("/");
+      // 1. Clear session and local state
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      // 2. Clear stores to prevent stale data flash
+      // We import these dynamically to avoid circular dependencies if any
+      const { useCacheStore } = await import("@/stores/use-cache-store");
+      const { useInterviewStore } = await import("@/stores/use-interview-store");
+
+      useCacheStore.getState().invalidateAllCache();
+      useInterviewStore.getState().clearSession();
+
       setUser(null);
       setSession(null);
+
       toast.success("Signed out successfully");
-    } catch (error: any) {
+      router.push("/");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error("Sign out error:", error);
       toast.error(error.message || "Failed to sign out");
-      throw error;
     }
   };
 
@@ -124,15 +139,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       toast.error(error.message || "Failed to sign in with Google");
-      throw error;
+      throw err;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password reset email sent! Please check your inbox.");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Failed to send reset email");
+      throw err;
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password updated successfully!");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Failed to update password");
+      throw err;
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signUp, signIn, signOut, signInWithGoogle }}
+      value={{ user, session, loading, signUp, signIn, signOut, signInWithGoogle, resetPassword, updatePassword }}
     >
       {children}
     </AuthContext.Provider>

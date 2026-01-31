@@ -37,7 +37,7 @@ export function CircularBlobVisualizer({
         const audioTrack = agentTrackRef?.publication?.track;
         if (audioTrack && audioTrack.kind === "audio") {
             const mediaStreamTrack = audioTrack.mediaStreamTrack;
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([mediaStreamTrack]));
             const analyser = audioContext.createAnalyser();
@@ -58,7 +58,7 @@ export function CircularBlobVisualizer({
     // Setup Local Audio
     useEffect(() => {
         if (localTrack && localTrack.kind === "audio") {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             const source = audioContext.createMediaStreamSource(new MediaStream([localTrack]));
             const analyser = audioContext.createAnalyser();
@@ -94,25 +94,32 @@ export function CircularBlobVisualizer({
 
         // Initialize particles if not already done
         if (particlesRef.current.length === 0) {
-            const count = 400; // Increased density
+            const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+            const count = isMobile ? 150 : 350; // Reduced density for mobile
             for (let i = 0; i < count; i++) {
                 const phi = Math.acos(-1 + (2 * i) / count);
                 const theta = Math.sqrt(count * Math.PI) * phi;
                 particlesRef.current.push({
                     phi,
                     theta,
-                    size: Math.random() * 1.0 + 0.5, // Slightly smaller dots
+                    size: Math.random() * 1.0 + 0.5,
                 });
             }
         }
 
-        let rotationX = 0;
         let rotationY = 0;
+        let rotationX = 0;
         let smoothedVolume = 0;
         let smoothedAgentVolume = 0;
         let smoothedLocalVolume = 0;
+        let lastFrameTime = Date.now();
 
         const animate = () => {
+            const now = Date.now();
+            const deltaTime = now - lastFrameTime;
+            lastFrameTime = now;
+
+            const isDark = document.documentElement.classList.contains('dark');
             ctx.clearRect(0, 0, size, size);
 
             let agentVolume = 0;
@@ -122,73 +129,87 @@ export function CircularBlobVisualizer({
                 if (agentAnalyserRef.current.context.state === 'suspended') {
                     (agentAnalyserRef.current.context as AudioContext).resume();
                 }
-                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
-                agentVolume = Array.from(agentDataRef.current).reduce((a, b) => a + b, 0) / agentDataRef.current.length;
+                if (agentAnalyserRef.current && agentDataRef.current) {
+                    // @ts-expect-error - frequency data buffer mismatch
+                    agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
+                    let sum = 0;
+                    for (let i = 0; i < agentDataRef.current.length; i++) sum += agentDataRef.current[i];
+                    agentVolume = sum / agentDataRef.current.length;
+                }
             }
 
             if (localAnalyserRef.current && localDataRef.current) {
                 if (localAnalyserRef.current.context.state === 'suspended') {
                     (localAnalyserRef.current.context as AudioContext).resume();
                 }
-                localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
-                localVolume = Array.from(localDataRef.current).reduce((a, b) => a + b, 0) / localDataRef.current.length;
+                if (localAnalyserRef.current && localDataRef.current) {
+                    // @ts-expect-error - frequency data buffer mismatch
+                    localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
+                    let sum = 0;
+                    for (let i = 0; i < localDataRef.current.length; i++) sum += localDataRef.current[i];
+                    localVolume = sum / localDataRef.current.length;
+                }
             }
 
-            // Smoothing
-            smoothedAgentVolume = smoothedAgentVolume * 0.8 + agentVolume * 0.2;
-            smoothedLocalVolume = smoothedLocalVolume * 0.8 + localVolume * 0.2;
+            // Smoothing - use deltaTime for consistent speed
+            const lerpFactor = Math.min(deltaTime / 50, 0.5);
+            smoothedAgentVolume = smoothedAgentVolume * (1 - lerpFactor) + agentVolume * lerpFactor;
+            smoothedLocalVolume = smoothedLocalVolume * (1 - lerpFactor) + localVolume * lerpFactor;
 
             const activeVolume = Math.max(smoothedLocalVolume, smoothedAgentVolume);
             smoothedVolume = smoothedVolume * 0.7 + activeVolume * 0.3;
-            const normalizedVolume = smoothedVolume / 150;
+            const normalizedVolume = Math.min(smoothedVolume / 150, 1.0);
 
             // State indicators
             const AGENT_ACTIVE = state === "speaking" || smoothedAgentVolume > 10;
             const LOCAL_ACTIVE = smoothedLocalVolume > 12;
 
-            // Base Colors
+            // Base Colors & Opacities based on theme
             let primaryColor = { r: 168, g: 85, b: 247 }; // Purple (Agent)
-            let glowOpacity = 0.15;
+            let glowOpacity = isDark ? 0.12 : 0.2;
 
             if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
-                primaryColor = { r: 251, g: 191, b: 36 }; // Amber (Local)
+                primaryColor = { r: 245, g: 158, b: 11 }; // Amber-500 (Local)
             } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
-                primaryColor = { r: 71, g: 85, b: 105 }; // Slate (Idle)
-                glowOpacity = 0.05;
+                primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 };
+                glowOpacity = isDark ? 0.05 : 0.15;
             }
 
             // Background Ambient Glow
             const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size / 2);
-            const dynamicGlow = glowOpacity + normalizedVolume * 0.4;
+            const dynamicGlow = glowOpacity + (normalizedVolume * (isDark ? 0.35 : 0.25));
             glowGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`);
             glowGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
             ctx.fillStyle = glowGradient;
             ctx.fillRect(0, 0, size, size);
 
             // Update Rotations
-            rotationY += 0.005 + normalizedVolume * 0.02;
-            rotationX += 0.002 + normalizedVolume * 0.01;
+            const rotationSpeed = deltaTime / 1000;
+            rotationY += (0.2 + normalizedVolume * 1.5) * rotationSpeed;
+            rotationX += (0.1 + normalizedVolume * 0.8) * rotationSpeed;
 
-            const time = Date.now() / 1000;
+            const time = now / 1000;
 
-            // Sort particles by Z-depth for correct rendering (optional for simple dots but better)
+            // Projected Particles
             const projectedParticles = particlesRef.current.map(p => {
-                // Spherical to Cartesian
                 let x = Math.sin(p.phi) * Math.cos(p.theta);
                 let y = Math.sin(p.phi) * Math.sin(p.theta);
                 let z = Math.cos(p.phi);
 
                 // Rotate around Y
-                const x1 = x * Math.cos(rotationY) - z * Math.sin(rotationY);
-                const z1 = x * Math.sin(rotationY) + z * Math.cos(rotationY);
+                const cosY = Math.cos(rotationY);
+                const sinY = Math.sin(rotationY);
+                const x1 = x * cosY - z * sinY;
+                const z1 = x * sinY + z * cosY;
                 x = x1; z = z1;
 
                 // Rotate around X
-                const y2 = y * Math.cos(rotationX) - z * Math.sin(rotationX);
-                const z2 = y * Math.sin(rotationX) + z * Math.cos(rotationX);
+                const cosX = Math.cos(rotationX);
+                const sinX = Math.sin(rotationX);
+                const y2 = y * cosX - z * sinX;
+                const z2 = y * sinX + z * cosX;
                 y = y2; z = z2;
 
-                // Displacement / Noise
                 const noise = Math.sin(p.phi * 5 + time * 2) * Math.cos(p.theta * 5 + time * 3) * 0.05;
                 const volumeOffset = normalizedVolume * 0.4;
                 const radius = baseRadius * (1 + noise + volumeOffset);
@@ -197,35 +218,33 @@ export function CircularBlobVisualizer({
                     x: centerX + x * radius,
                     y: centerY + y * radius,
                     z,
-                    size: p.size * (z + 2) / 2 // Perspective size
+                    size: p.size * (z + 2) / 2
                 };
-            }).sort((a, b) => a.z - b.z);
+            });
+
+            // Only sort if we have enough performance overhead or limit sorting
+            projectedParticles.sort((a, b) => a.z - b.z);
 
             // Render Particles
             projectedParticles.forEach(p => {
-                const opacity = (p.z + 1.5) / 2.5; // Depth-based opacity
-                const brightness = Math.floor(200 + p.z * 55);
+                const depthFactor = (p.z + 1.5) / 2.5;
+                const opacity = isDark ? depthFactor : Math.min(depthFactor * 1.2 + 0.3, 1.0);
 
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 
                 if (AGENT_ACTIVE) {
-                    ctx.fillStyle = `rgba(192, 132, 252, ${opacity})`; // purple-400
+                    ctx.fillStyle = isDark ? `rgba(192, 132, 252, ${opacity})` : `rgba(126, 34, 206, ${opacity})`;
                 } else if (LOCAL_ACTIVE) {
-                    ctx.fillStyle = `rgba(252, 211, 77, ${opacity})`; // amber-300
+                    ctx.fillStyle = isDark ? `rgba(252, 211, 77, ${opacity})` : `rgba(217, 119, 6, ${opacity})`;
                 } else {
-                    ctx.fillStyle = `rgba(148, 163, 184, ${opacity * 0.5})`; // slate-400
+                    const idleColor = isDark ? '148, 163, 184' : '30, 41, 59';
+                    ctx.fillStyle = `rgba(${idleColor}, ${opacity})`;
                 }
 
                 ctx.fill();
 
-                // Add point glow for front particles
-                if (p.z > 0.5 && (AGENT_ACTIVE || LOCAL_ACTIVE)) {
-                    ctx.shadowBlur = 4;
-                    ctx.shadowColor = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${opacity})`;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
+                // NO shadowBlur here - it's too expensive
             });
 
             animationFrameRef.current = requestAnimationFrame(animate);

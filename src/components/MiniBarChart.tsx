@@ -4,7 +4,6 @@ interface MiniBarChartProps {
     data?: number[];
     height?: number;
     barWidth?: number;
-    gap?: number;
     color?: string;
 }
 
@@ -12,7 +11,6 @@ export function MiniBarChart({
     data = [30, 50, 40, 70, 60],
     height = 32,
     barWidth = 4,
-    gap = 3,
     color = 'currentColor'
 }: MiniBarChartProps) {
     // Normalize data to fit within the height

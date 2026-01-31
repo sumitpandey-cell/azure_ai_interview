@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -26,20 +26,22 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Clock, FileText, Code, User, Monitor, Building2, Target, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
-import { useCompanyQuestions } from "@/hooks/use-company-questions";
+import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
+import { InProgressSessionModal } from "@/components/InProgressSessionModal";
+
+
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useInterviewStore } from "@/stores/use-interview-store";
-import { interviewService, subscriptionService } from "@/services";
-import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
+import { subscriptionService, interviewService } from "@/services";
 import { cn } from "@/lib/utils";
 import { parseFile } from "@/lib/file-parser";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
+import { motion, AnimatePresence } from "framer-motion";
 
 const formSchema = z.object({
     interviewMode: z.enum(["general", "company"]),
@@ -50,7 +52,7 @@ const formSchema = z.object({
     role: z.string().optional(),
     experienceLevel: z.string().optional(),
     skills: z.string().optional(),
-    jobDescription: z.any().optional(),
+    jobDescription: z.string().optional(),
 });
 
 const COMMON_ROLES = [
@@ -95,6 +97,7 @@ function StartInterviewContent() {
     const [skillsList, setSkillsList] = useState<string[]>([]);
     const [skillInput, setSkillInput] = useState("");
     const [jobDescriptionType, setJobDescriptionType] = useState<'upload' | 'manual'>('upload');
+    const [positionInputType, setPositionInputType] = useState<'select' | 'custom'>('select');
     const [interviewMode, setInterviewMode] = useState<'general' | 'company'>(
         searchParams.get('mode') === 'company' ? 'company' : 'general'
     );
@@ -102,22 +105,25 @@ function StartInterviewContent() {
     const { fetchCompanyTemplates, createInterviewSession } = useOptimizedQueries();
     const [companyTemplates, setCompanyTemplates] = useState<CompanyTemplate[]>([]);
     const { setCurrentSession } = useInterviewStore();
-    const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
-    const [conflictSession, setConflictSession] = useState<any>(null);
-    const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
     const [isParsing, setIsParsing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showResumeCheck, setShowResumeCheck] = useState(false);
+    const [showInProgressWarning, setShowInProgressWarning] = useState(false);
+    const [existingSession, setExistingSession] = useState<{ id: string, position: string, created_at: string } | null>(null);
+    const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
+    const [currentStep, setCurrentStep] = useState(1); // 1: Mode, 2: Details, 3: Context
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             interviewMode: interviewMode,
-            interviewType: "",
+            interviewType: "Technical", // Set default
             position: companyTemplate?.common_roles?.[0] || "",
             difficulty: "Medium",
             companyId: companyTemplate?.id || "",
             role: "",
-            experienceLevel: "",
+            experienceLevel: "Mid", // Set default
             skills: "",
         },
     });
@@ -174,7 +180,7 @@ function StartInterviewContent() {
         try {
             // Use the file parser utility for all file types
             const text = await parseFile(file);
-            form.setValue('jobDescription', text);
+            form.setValue('jobDescription', `Attached file: ${file.name}\n${text}`);
             toast.success("Job description extracted successfully", { id: toastId });
         } catch (error) {
             console.error("Error reading file:", error);
@@ -210,21 +216,10 @@ function StartInterviewContent() {
     const handleRoleSelection = (role: string) => {
         const suggestedSkills = ROLE_SKILLS[role] || [];
         if (suggestedSkills.length > 0) {
-            // Merge with existing skills, avoiding case-insensitive duplicates
-            setSkillsList(prev => {
-                const newList = [...prev];
-                const lowerPrev = prev.map(s => s.toLowerCase());
+            // Replace existing skills with suggested ones for the new role
+            setSkillsList(suggestedSkills);
 
-                suggestedSkills.forEach(skill => {
-                    if (!lowerPrev.includes(skill.toLowerCase())) {
-                        newList.push(skill);
-                        lowerPrev.push(skill.toLowerCase());
-                    }
-                });
-                return newList;
-            });
-
-            toast.success(`Suggested skills added for ${role}`, {
+            toast.success(`Suggested skills updated for ${role}`, {
                 icon: <Sparkles className="h-4 w-4 text-primary" />,
                 duration: 3000
             });
@@ -254,79 +249,51 @@ function StartInterviewContent() {
                 return;
             }
 
-            // ✅ CHECK FOR EXISTING IN-PROGRESS SESSIONS using service
-            const existingSessions = await interviewService.getInProgressSessions(user.id);
+            // 1. Check for existing in-progress sessions for the same domain
+            const inProgressSessions = await interviewService.getInProgressSessions(user.id);
 
-            // If there is ANY in-progress session, show dialog
-            if (existingSessions && existingSessions.length > 0) {
-                const activeSession = existingSessions[0];
-                setConflictSession(activeSession);
-                setPendingValues(values);
-                setConflictDialogOpen(true);
+            const duplicateSession = inProgressSessions?.find((s: { position?: string; id: string; created_at: string }) =>
+                s.position?.toLowerCase() === values.position?.toLowerCase()
+            );
+
+            if (duplicateSession) {
+                setExistingSession({
+                    id: duplicateSession.id,
+                    position: duplicateSession.position || values.position,
+                    created_at: duplicateSession.created_at
+                });
+                setShowInProgressWarning(true);
                 setIsLoading(false);
                 return;
             }
 
-            await executeStartInterview(values);
+
+            setPendingValues(values);
+            setShowResumeCheck(true);
         } catch (error) {
             console.error("Error in onSubmit:", error);
-            toast.error("Failed to start interview");
+            toast.error("Failed to process request");
             setIsLoading(false);
         }
     };
 
-    const handleContinuePrevious = () => {
-        if (!conflictSession) return;
-        toast.info("Redirecting to previous interview...");
-        const stage = (conflictSession.config as any)?.currentStage || 'setup';
-        router.push(`/interview/${conflictSession.id}/${stage}`);
-        setConflictDialogOpen(false);
+
+    const handleResumeContinue = async (useResume: boolean) => {
+        if (!pendingValues) return;
+        setShowResumeCheck(false);
+        await executeStartInterview(pendingValues, useResume);
     };
 
-    const handleStartNewAfterAbandon = async () => {
-        if (!conflictSession || !pendingValues) return;
 
-        setConflictDialogOpen(false);
-        setIsLoading(true);
-
+    const executeStartInterview = async (values: z.infer<typeof formSchema>, useResume: boolean) => {
         try {
-            // Abandon previous session using service
-            const abandoned = await interviewService.abandonSession(conflictSession.id);
-
-            if (abandoned) {
-                toast.success("Previous interview abandoned. Starting new session...");
-                await executeStartInterview(pendingValues);
-            } else {
-                toast.error("Failed to abandon previous session. Please try again.");
-                setIsLoading(false);
-            }
-        } catch (error) {
-            console.error("Error abandoning session:", error);
-            toast.error("An error occurred. Please try again.");
-            setIsLoading(false);
-        }
-    };
-
-    const executeStartInterview = async (values: z.infer<typeof formSchema>) => {
-        try {
-            // Get fresh user to avoid stale metadata issues
-            const { data: { user: freshUser } } = await supabase.auth.getUser();
-            const metadata = freshUser?.user_metadata || user?.user_metadata || {};
-
-            // Sync sentiment analysis preference from global profile settings
-            const isSentimentEnabled =
-                metadata.sentiment_analysis_enabled === true ||
-                metadata.sentimentAnalysisEnabled === true;
-
             // Continue with creating new session
-            const config: any = {
+            const config: Record<string, unknown> = {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
                 difficulty: values.difficulty,
-                sentimentAnalysisEnabled: isSentimentEnabled,
             };
 
-            console.log("📝 Final Session Config:", config);
 
             // Add company-specific config if company interview
             if (values.interviewMode === 'company' && values.companyId) {
@@ -339,7 +306,7 @@ function StartInterviewContent() {
                 };
             }
 
-            // ✅ CREATE NEW SESSION USING OPTIMIZED HOOK
+            // CREATE NEW SESSION USING OPTIMIZED HOOK
             const session = await createInterviewSession({
                 position: values.position,
                 interview_type: values.interviewType,
@@ -347,20 +314,20 @@ function StartInterviewContent() {
                 jobDescription: values.jobDescription,
                 config: {
                     ...config,
+                    useResume,
                     currentStage: 'setup' // Initialize with setup stage
                 }
             });
 
             if (session) {
                 // Store complete session data in Zustand for immediate access
-                console.log("💾 Storing session in Zustand:", session.id);
                 setCurrentSession({
                     id: session.id,
                     user_id: session.user_id,
                     position: session.position,
                     interview_type: session.interview_type,
                     status: session.status,
-                    config: (session.config as any) || {},
+                    config: (session.config as Record<string, unknown>) || {},
                     created_at: session.created_at
                 });
 
@@ -375,526 +342,368 @@ function StartInterviewContent() {
         }
     };
 
+    const nextStep = async () => {
+        // Validate fields before moving to next step
+        if (currentStep === 1) {
+            // No strict validation needing trigger for mode selection as it has default
+            setCurrentStep(2);
+        } else if (currentStep === 2) {
+            const valid = await form.trigger([
+                'interviewType',
+                'position',
+                'difficulty',
+                'companyId',
+                'role',
+                'experienceLevel'
+            ]);
+            if (valid) setCurrentStep(3);
+        }
+    };
+
+    const prevStep = () => {
+        if (currentStep > 1) setCurrentStep(currentStep - 1);
+    };
+
     return (
         <DashboardLayout>
-            <div className="mx-auto max-w-3xl space-y-8 pb-12 pt-10 sm:pt-0">
-                <div className="text-center space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans">
-                    <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-primary shadow-sm border border-primary/20">
-                        <Sparkles className="mr-2 h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        AI-Powered Career Prep
-                    </div>
-                    <div className="space-y-2 sm:space-y-3 px-4 sm:px-0">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground">
-                            Ready to <span className="text-primary italic">Ace</span> it?
-                        </h1>
-                        <p className="text-muted-foreground max-w-xl mx-auto text-xs sm:text-sm md:text-lg font-medium leading-relaxed">
-                            Customize your session below and let our AI simulate a high-stakes interview tailored just for you.
-                        </p>
-                    </div>
+            <div className="mx-auto max-w-2xl px-4 py-8 h-full flex flex-col justify-center min-h-[80vh]">
+
+                {/* Progress Indicator */}
+                <div className="flex items-center justify-center gap-2 mb-8">
+                    {[1, 2, 3].map((step) => (
+                        <div key={step} className={cn(
+                            "h-2 rounded-full transition-all duration-500",
+                            currentStep >= step ? "w-8 bg-primary" : "w-2 bg-muted"
+                        )} />
+                    ))}
                 </div>
 
-                <Card className="border-2 border-border/50 shadow-2xl bg-card/50 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 rounded-[1.5rem] sm:rounded-2xl overflow-hidden">
-                    <CardContent className="p-5 sm:p-10">
+                <div className="text-center space-y-2 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                        {currentStep === 1 ? "Select Interview Mode" : currentStep === 2 ? "Configure Session" : "Tailor Experience"}
+                    </h1>
+                    <p className="text-muted-foreground text-sm font-medium">
+                        {currentStep === 1 ? "Choose how you want to practice today." : currentStep === 2 ? "Set the parameters for your mock interview." : "Add context to make it relevant."}
+                    </p>
+                </div>
+
+
+                <Card className="border-none shadow-2xl bg-card/60 backdrop-blur-2xl rounded-[2rem] overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+
+                    <CardContent className="p-8">
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-
-                                {/* Step 1: Mode Selection */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 border-l-4 border-primary pl-4 py-1">
-                                        <h2 className="text-lg font-bold">1. Interview Mode</h2>
-                                    </div>
-
-                                    <FormField
-                                        control={form.control}
-                                        name="interviewMode"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormControl>
-                                                    <RadioGroup
-                                                        onValueChange={(value) => {
-                                                            field.onChange(value);
-                                                            setInterviewMode(value as 'general' | 'company');
-                                                        }}
-                                                        defaultValue={field.value}
-                                                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                                                    >
-                                                        <div
-                                                            className={cn(
-                                                                "relative flex items-start space-x-3 rounded-2xl border-2 p-5 cursor-pointer transition-all duration-300",
-                                                                field.value === 'general'
-                                                                    ? "border-primary bg-primary/5 shadow-md"
-                                                                    : "border-border bg-card/50 hover:border-primary/50"
-                                                            )}
-                                                            onClick={() => {
-                                                                field.onChange('general');
-                                                                setInterviewMode('general');
-                                                            }}
-                                                        >
-                                                            <RadioGroupItem value="general" id="general" className="mt-1" />
-                                                            <Label htmlFor="general" className="flex-1 cursor-pointer">
-                                                                <div className="font-black text-foreground uppercase tracking-wider text-xs sm:text-sm">General</div>
-                                                                <div className="text-[10px] sm:text-xs mt-1 text-muted-foreground leading-relaxed font-medium">Focus on core domain skills and situational judgment.</div>
-                                                            </Label>
-                                                        </div>
-                                                        <div
-                                                            className={cn(
-                                                                "relative flex items-start space-x-3 rounded-2xl border-2 p-5 cursor-pointer transition-all duration-300",
-                                                                field.value === 'company'
-                                                                    ? "border-primary bg-primary/5 shadow-md"
-                                                                    : "border-border bg-card/50 hover:border-primary/50"
-                                                            )}
-                                                            onClick={() => {
-                                                                field.onChange('company');
-                                                                setInterviewMode('company');
-                                                            }}
-                                                        >
-                                                            <RadioGroupItem value="company" id="company" className="mt-1" />
-                                                            <Label htmlFor="company" className="flex-1 cursor-pointer">
-                                                                <div className="font-black text-foreground uppercase tracking-wider text-xs sm:text-sm">Company Specific</div>
-                                                                <div className="text-[10px] sm:text-xs mt-1 text-muted-foreground leading-relaxed font-medium">Practice with curated questions from top-tier tech giants.</div>
-                                                            </Label>
-                                                        </div>
-                                                    </RadioGroup>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Step 2: Session Configuration */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 border-l-4 border-primary pl-4 py-1">
-                                        <h2 className="text-lg font-bold">2. Session Configuration</h2>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Company Selection - Only for company mode */}
-                                        {interviewMode === 'company' && (
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <AnimatePresence mode="wait">
+                                    {currentStep === 1 && (
+                                        <motion.div
+                                            key="step1"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="space-y-6"
+                                        >
                                             <FormField
                                                 control={form.control}
-                                                name="companyId"
+                                                name="interviewMode"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                            Select Company
-                                                        </FormLabel>
-                                                        <Select
-                                                            onValueChange={(value) => {
-                                                                field.onChange(value);
-                                                                const selected = companyTemplates.find(c => c.id === value);
-                                                                setCompanyTemplate(selected || null);
-                                                            }}
-                                                            defaultValue={field.value}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger className="bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary focus:border-primary text-xs sm:text-sm font-bold">
-                                                                    <SelectValue placeholder="Choose a company" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                                {companyTemplates.map((company) => (
-                                                                    <SelectItem key={company.id} value={company.id} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span>{company.name}</span>
-                                                                            {company.industry && (
-                                                                                <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-widest font-black">{company.industry}</span>
-                                                                            )}
+                                                        <FormControl>
+                                                            <RadioGroup
+                                                                onValueChange={(value) => {
+                                                                    field.onChange(value);
+                                                                    setInterviewMode(value as 'general' | 'company');
+                                                                }}
+                                                                defaultValue={field.value}
+                                                                className="grid grid-cols-1 gap-4"
+                                                            >
+                                                                {['general', 'company'].map((mode) => (
+                                                                    <div
+                                                                        key={mode}
+                                                                        className={cn(
+                                                                            "relative flex items-center space-x-4 rounded-xl border-2 p-6 cursor-pointer transition-all duration-300 hover:scale-[1.02]",
+                                                                            field.value === mode
+                                                                                ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                                                                                : "border-border bg-background hover:border-primary/30"
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            field.onChange(mode);
+                                                                            setInterviewMode(mode as 'general' | 'company');
+                                                                        }}
+                                                                    >
+                                                                        <div className={cn(
+                                                                            "h-12 w-12 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                                                                            field.value === mode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                                                        )}>
+                                                                            {mode === 'general' ? <Code className="h-6 w-6" /> : <Briefcase className="h-6 w-6" />}
                                                                         </div>
-                                                                    </SelectItem>
+                                                                        <div className="flex-1">
+                                                                            <div className="font-bold text-foreground text-lg capitalize">{mode} Interview</div>
+                                                                            <div className="text-xs text-muted-foreground mt-1 font-medium">
+                                                                                {mode === 'general' ? "Standard practice for core skills." : "Simulate top-tier tech company rounds."}
+                                                                            </div>
+                                                                        </div>
+                                                                        <RadioGroupItem value={mode} id={mode} className="sr-only" />
+                                                                        {field.value === mode && (
+                                                                            <CheckCircle2 className="h-6 w-6 text-primary animate-in zoom-in spin-in-90 duration-300" />
+                                                                        )}
+                                                                    </div>
                                                                 ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage className="text-[10px] font-bold" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        )}
-
-                                        {interviewMode === 'company' ? (
-                                            <FormField
-                                                control={form.control}
-                                                name="role"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                            Specific Role
-                                                        </FormLabel>
-                                                        <Select onValueChange={(value) => {
-                                                            field.onChange(value);
-                                                            handleRoleSelection(value);
-                                                        }} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <div className="relative group">
-                                                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground z-10 transition-colors group-focus-within:text-primary" />
-                                                                    <SelectTrigger className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary text-xs sm:text-sm font-bold">
-                                                                        <SelectValue placeholder="e.g. Frontend Developer" />
-                                                                    </SelectTrigger>
-                                                                </div>
-                                                            </FormControl>
-                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                                {COMMON_ROLES.map((role) => (
-                                                                    <SelectItem key={role} value={role} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
-                                                                        {role}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage className="text-[10px] font-bold" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        ) : (
-                                            <FormField
-                                                control={form.control}
-                                                name="position"
-                                                render={({ field }) => (
-                                                    <FormItem className="md:col-span-2">
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                            Target Position
-                                                        </FormLabel>
-                                                        <Select onValueChange={(value) => {
-                                                            field.onChange(value);
-                                                            handleRoleSelection(value);
-                                                        }} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <div className="relative group">
-                                                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground z-10 transition-colors group-focus-within:text-primary" />
-                                                                    <SelectTrigger className="pl-11 bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary text-xs sm:text-sm font-bold">
-                                                                        <SelectValue placeholder="e.g. Senior Frontend Engineer" />
-                                                                    </SelectTrigger>
-                                                                </div>
-                                                            </FormControl>
-                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                                {COMMON_ROLES.map((role) => (
-                                                                    <SelectItem key={role} value={role} className="font-bold text-xs sm:text-sm py-2.5 sm:py-3 cursor-pointer">
-                                                                        {role}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage className="text-[10px] font-bold" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        )}
-
-                                        {interviewMode === 'company' && (
-                                            <FormField
-                                                control={form.control}
-                                                name="experienceLevel"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                            Experience Level
-                                                        </FormLabel>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary focus:border-primary text-xs sm:text-sm font-bold">
-                                                                    <SelectValue placeholder="Select level" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                                <SelectItem value="Junior" className="font-bold text-xs sm:text-sm py-2 sm:py-3 curso-pointer">Junior (0-2 years)</SelectItem>
-                                                                <SelectItem value="Mid" className="font-bold text-xs sm:text-sm py-2 sm:py-3 curso-pointer">Mid-Level (3-5 years)</SelectItem>
-                                                                <SelectItem value="Senior" className="font-bold text-xs sm:text-sm py-2 sm:py-3 curso-pointer">Senior (5+ years)</SelectItem>
-                                                                <SelectItem value="Lead" className="font-bold text-xs sm:text-sm py-2 sm:py-3 curso-pointer">Lead / Principal</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage className="text-[10px] font-bold" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        )}
-
-                                        <FormField
-                                            control={form.control}
-                                            name="interviewType"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                        Interview Type
-                                                    </FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger className="bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary focus:border-primary text-xs sm:text-sm font-bold">
-                                                                <SelectValue placeholder="Select type" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                            <SelectItem value="Technical" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Code className="h-4 w-4 text-primary" />
-                                                                    Technical
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="Behavioral" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <User className="h-4 w-4 text-primary" />
-                                                                    Behavioral
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="System Design" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Monitor className="h-4 w-4 text-primary" />
-                                                                    System Design
-                                                                </div>
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage className="text-[10px] font-bold" />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="difficulty"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
-                                                        Challenge Level
-                                                    </FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger className="bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary focus:border-primary text-xs sm:text-sm font-bold">
-                                                                <SelectValue placeholder="Select difficulty" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
-                                                            <SelectItem value="Easy" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
-                                                                    <span>Novice / Entry</span>
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="Medium" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"></div>
-                                                                    <span>Professional / Mid</span>
-                                                                </div>
-                                                            </SelectItem>
-                                                            <SelectItem value="Hard" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
-                                                                    <span>Veteran / Senior</span>
-                                                                </div>
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage className="text-[10px] font-bold" />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Step 3: Context & Experience */}
-                                <div className="space-y-6 pt-2">
-                                    <div className="flex items-center justify-between border-l-4 border-primary pl-4 py-1">
-                                        <h2 className="text-lg font-bold">3. Tailor Your Session</h2>
-                                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">Recommended</span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <FormLabel className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 pl-1">
-                                            Relevant Skills
-                                        </FormLabel>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                placeholder="e.g. React, Docker, Leadership"
-                                                value={skillInput}
-                                                onChange={(e) => setSkillInput(e.target.value)}
-                                                className="bg-card/50 border-border h-12 rounded-xl focus-visible:ring-primary"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        handleAddSkill();
-                                                    }
-                                                }}
-                                            />
-                                            <Button type="button" onClick={handleAddSkill} className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all active:scale-95">
-                                                Add
-                                            </Button>
-                                        </div>
-                                        {skillsList.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 mt-2 p-3 rounded-2xl bg-muted/20 border border-border/30">
-                                                {skillsList.map((skill, index) => (
-                                                    <div key={index} className="bg-card border border-border shadow-sm px-3 py-1.5 rounded-xl text-xs font-bold text-foreground flex items-center gap-2 animate-in zoom-in-95 duration-200">
-                                                        {skill}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSkillsList(skillsList.filter((_, i) => i !== index))}
-                                                            className="text-muted-foreground hover:text-destructive transition-colors"
-                                                        >
-                                                            <Plus className="h-3 w-3 rotate-45" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-4 pt-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <FormLabel className="text-sm font-bold uppercase tracking-wider text-muted-foreground pl-1">
-                                                Job Description (Optional)
-                                            </FormLabel>
-                                            <div className="inline-flex p-1 bg-muted/40 rounded-xl border border-border/50">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setJobDescriptionType('upload')}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                                                        jobDescriptionType === 'upload' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                                    )}
-                                                >
-                                                    File Upload
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setJobDescriptionType('manual')}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                                                        jobDescriptionType === 'manual' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                                    )}
-                                                >
-                                                    Text Entry
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {jobDescriptionType === 'upload' ? (
-                                            <div
-                                                className={cn(
-                                                    "border-2 border-dashed border-border rounded-2xl bg-card/30 p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group relative overflow-hidden",
-                                                    isParsing && "opacity-70 pointer-events-none"
-                                                )}
-                                            >
-                                                <input
-                                                    type="file"
-                                                    ref={fileInputRef}
-                                                    onChange={handleFileChange}
-                                                    className="hidden"
-                                                    accept=".pdf,.docx,.txt"
-                                                    multiple={false}
-                                                />
-                                                {form.watch('jobDescription') && typeof form.watch('jobDescription') === 'string' && form.watch('jobDescription').startsWith('Attached file:') ? (
-                                                    <div className="flex flex-col items-center">
-                                                        <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                            <CheckCircle2 className="h-5 w-5" />
-                                                        </div>
-                                                        <h3 className="text-sm font-bold mb-1 text-emerald-500">File Attached</h3>
-                                                        <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest px-4 truncate max-w-full">
-                                                            {form.watch('jobDescription').split('\n')[0].replace('Attached file: ', '')}
-                                                        </p>
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    fileInputRef.current?.click();
-                                                                }}
-                                                                className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest bg-background"
-                                                            >
-                                                                Change
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    form.setValue('jobDescription', '');
-                                                                    if (fileInputRef.current) fileInputRef.current.value = '';
-                                                                }}
-                                                                className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest"
-                                                            >
-                                                                Remove
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div onClick={() => fileInputRef.current?.click()}>
-                                                        <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
-                                                            {isParsing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                                                        </div>
-                                                        <h3 className="text-sm font-bold mb-1">Upload JD</h3>
-                                                        <p className="text-[10px] text-muted-foreground mb-4 uppercase tracking-widest">
-                                                            PDF, DOCX up to 5MB
-                                                        </p>
-                                                        <Button type="button" variant="outline" size="sm" className="rounded-lg h-9 font-bold text-xs uppercase tracking-widest border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground">
-                                                            {isParsing ? "Analyzing..." : "Choose File"}
-                                                        </Button>
-                                                    </div>
-                                                )}
-
-                                                {isParsing && (
-                                                    <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px] flex items-center justify-center">
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                                            <span className="text-[10px] font-bold uppercase tracking-tighter text-primary">Intelligence Extraction Active</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <FormField
-                                                control={form.control}
-                                                name="jobDescription"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            <Textarea
-                                                                placeholder="Paste the job requirements to help AI tailor its questions..."
-                                                                className="min-h-[140px] bg-card/50 border-border rounded-xl resize-none focus-visible:ring-primary"
-                                                                {...field}
-                                                            />
+                                                            </RadioGroup>
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
-                                        )}
-                                    </div>
+                                        </motion.div>
+                                    )}
 
+                                    {currentStep === 2 && (
+                                        <motion.div
+                                            key="step2"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="space-y-6"
+                                        >
+                                            <div className="grid grid-cols-1 gap-6">
+                                                {/* Logic for Company/General Fields (Same as before but grid layout) */}
+                                                {interviewMode === 'company' ? (
+                                                    <>
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="companyId"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className="font-semibold">Target Company</FormLabel>
+                                                                    <Select onValueChange={(v) => {
+                                                                        field.onChange(v);
+                                                                        const selected = companyTemplates.find(c => c.id === v);
+                                                                        setCompanyTemplate(selected || null);
+                                                                    }} defaultValue={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger className="h-12 rounded-xl bg-background border-border/60"><SelectValue placeholder="Select Company" /></SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {companyTemplates.map((c) => (
+                                                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="role"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className="font-semibold">Target Role</FormLabel>
+                                                                    <Select onValueChange={(v) => { field.onChange(v); handleRoleSelection(v); }} defaultValue={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger className="h-12 rounded-xl bg-background border-border/60"><SelectValue placeholder="Select Role" /></SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {COMMON_ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </>
+                                                ) : (
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="position"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <FormLabel className="font-semibold">Target Position</FormLabel>
+                                                                    <Button type="button" variant="ghost" size="sm" onClick={() => setPositionInputType(positionInputType === 'select' ? 'custom' : 'select')} className="h-6 text-[10px] uppercase font-bold text-primary">
+                                                                        {positionInputType === 'select' ? "Type Manually" : "Select from list"}
+                                                                    </Button>
+                                                                </div>
+
+                                                                {positionInputType === 'select' ? (
+                                                                    <Select onValueChange={(v) => { field.onChange(v); handleRoleSelection(v); }} value={field.value || ""}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger className="h-12 rounded-xl bg-background border-border/60"><SelectValue placeholder="Select Position" /></SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {COMMON_ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <FormControl>
+                                                                        <Input {...field} className="h-12 rounded-xl bg-background border-border/60" placeholder="e.g. Senior Frontend Engineer" />
+                                                                    </FormControl>
+                                                                )}
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                )}
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="interviewType"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="font-semibold">Type</FormLabel>
+                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/60"><SelectValue placeholder="Type" /></SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Technical">Technical</SelectItem>
+                                                                        <SelectItem value="Behavioral">Behavioral</SelectItem>
+                                                                        <SelectItem value="System Design">System Design</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="difficulty"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="font-semibold">Difficulty</FormLabel>
+                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/60"><SelectValue placeholder="Level" /></SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Easy">Easy</SelectItem>
+                                                                        <SelectItem value="Medium">Medium</SelectItem>
+                                                                        <SelectItem value="Hard">Hard</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {currentStep === 3 && (
+                                        <motion.div
+                                            key="step3"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="space-y-6"
+                                        >
+                                            <div className="space-y-4">
+                                                <Label className="font-semibold">Skills (Optional)</Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={skillInput}
+                                                        onChange={(e) => setSkillInput(e.target.value)}
+                                                        placeholder="Add key skills..."
+                                                        className="h-12 rounded-xl bg-background border-border/60"
+                                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                                                    />
+                                                    <Button type="button" onClick={handleAddSkill} className="h-12 rounded-xl px-6">Add</Button>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                                    {skillsList.map((skill, i) => (
+                                                        <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                                                            {skill}
+                                                            <button type="button" onClick={() => setSkillsList(skillsList.filter((_, idx) => idx !== i))}><Plus className="h-3 w-3 rotate-45" /></button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <Label className="font-semibold">Job Description / Context (Optional)</Label>
+                                                {jobDescriptionType === 'upload' ? (
+                                                    <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all gap-2 text-center h-40">
+                                                        <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.docx,.txt" />
+                                                        {form.watch('jobDescription')?.startsWith('Attached file:') ? (
+                                                            <div className="text-emerald-500 font-bold flex flex-col items-center">
+                                                                <CheckCircle2 className="h-8 w-8 mb-2" />
+                                                                <span className="text-sm">File Attached</span>
+                                                                <span className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">{form.watch('jobDescription')?.split('\n')[0].replace('Attached file: ', '')}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {isParsing ? <Loader2 className="h-8 w-8 text-primary animate-spin" /> : <Upload className="h-8 w-8 text-muted-foreground" />}
+                                                                <span className="text-sm font-medium text-foreground">Click to upload JD</span>
+                                                                <span className="text-xs text-muted-foreground">PDF, DOCX, TXT</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <Textarea
+                                                        {...form.register('jobDescription')}
+                                                        placeholder="Paste job requirements here..."
+                                                        className="min-h-[160px] rounded-xl bg-background border-border/60 resize-none p-4"
+                                                    />
+                                                )}
+                                                <div className="flex justify-center">
+                                                    <button type="button" onClick={() => setJobDescriptionType(jobDescriptionType === 'upload' ? 'manual' : 'upload')} className="text-xs font-bold text-primary hover:underline">
+                                                        Switch to {jobDescriptionType === 'upload' ? 'Manual Entry' : 'File Upload'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Navigation Actions */}
+                                <div className="flex items-center justify-between pt-4 mt-8 border-t border-border/40">
+                                    {currentStep > 1 ? (
+                                        <Button type="button" variant="ghost" onClick={prevStep} className="gap-2 h-12 rounded-xl text-muted-foreground hover:text-foreground">
+                                            <ArrowLeft className="h-4 w-4" /> Back
+                                        </Button>
+                                    ) : (
+                                        <div />
+                                    )}
+
+                                    {currentStep < 3 ? (
+                                        <Button type="button" onClick={nextStep} className="h-12 px-8 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                                            Next Step <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button type="submit" disabled={isLoading} className="h-12 px-8 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all min-w-[160px]">
+                                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Start Session <Play className="ml-2 h-4 w-4 fill-current" /></>}
+                                        </Button>
+                                    )}
                                 </div>
 
-                                <Button
-                                    type="submit"
-                                    className="w-full h-12 sm:h-14 text-xs sm:text-base uppercase tracking-[0.2em] bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                                            Starting Session...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 fill-current" />
-                                            Start Interview Session
-                                        </>
-                                    )}
-                                </Button>
                             </form>
                         </Form>
                     </CardContent>
                 </Card>
             </div >
-            <InterviewConflictDialog
-                isOpen={conflictDialogOpen}
-                onClose={() => setConflictDialogOpen(false)}
-                onContinue={handleContinuePrevious}
-                onStartNew={handleStartNewAfterAbandon}
-                sessionDetails={conflictSession ? {
-                    position: conflictSession.position,
-                    type: conflictSession.interview_type,
-                    startedAt: new Date(conflictSession.created_at).toLocaleString()
-                } : null}
-            />
+
+            {user?.id && (
+                <>
+                    <ResumeCheckDialog
+                        isOpen={showResumeCheck}
+                        onOpenChange={setShowResumeCheck}
+                        userId={user.id}
+                        onContinue={handleResumeContinue}
+                    />
+                    <InProgressSessionModal
+                        isOpen={showInProgressWarning}
+                        onOpenChange={setShowInProgressWarning}
+                        existingSession={existingSession}
+                    />
+                </>
+            )}
+
         </DashboardLayout >
     );
 }

@@ -1,12 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Award, TrendingUp, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BADGE_DEFINITIONS, getRarityColor, getRarityGlowColor } from "@/config/badges";
+import { BADGE_DEFINITIONS, getRarityColor } from "@/config/badges";
+import { UserBadgeData } from "@/types/badge-types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap } from "lucide-react";
 
 interface BadgeProgressWidgetProps {
     earnedBadges: string[];
@@ -28,18 +27,6 @@ export function BadgeProgressWidget({
     const earnedCount = earnedBadges.length;
     const progressPercentage = totalBadges > 0 ? Math.round((earnedCount / totalBadges) * 100) : 0;
 
-    // Calculate badge score (weighted by rarity)
-    const badgeScore = BADGE_DEFINITIONS.reduce((score, badge) => {
-        if (!earnedBadges.includes(badge.id)) return score;
-        const rarityPoints = {
-            bronze: 10,
-            silver: 25,
-            gold: 50,
-            platinum: 100,
-            special: 75,
-        };
-        return score + (rarityPoints[badge.rarity] || 0);
-    }, 0);
 
     // Get recently earned badges from real data
     // We sort the definitions by those that are in the earnedBadges list
@@ -50,7 +37,7 @@ export function BadgeProgressWidget({
         .reverse();
 
     // Get next achievable badges
-    const mockUserData = {
+    const mockUserData: UserBadgeData = {
         streak: currentStreak,
         totalInterviews,
         weeklyRank: null,
@@ -62,17 +49,24 @@ export function BadgeProgressWidget({
         earnedBadges,
         highestScore: averageScore,
         averageScore,
+        communicationScore: 0,
+        skillMastery: 0,
+        technicalScore: 0,
+        fastestTime: 0,
+        interviewTypes: 0,
+        morningInterviews: 0,
+        nightInterviews: 0,
     };
 
     const nextBadges = BADGE_DEFINITIONS.filter((badge) => {
         if (earnedBadges.includes(badge.id)) return false;
         if (!badge.getProgress) return false;
-        const progress = badge.getProgress(mockUserData as any);
+        const progress = badge.getProgress(mockUserData);
         return progress.current > 0 && progress.current < progress.max;
     })
         .map((badge) => ({
             ...badge,
-            progress: badge.getProgress!(mockUserData as any),
+            progress: badge.getProgress!(mockUserData),
         }))
         .sort((a, b) => {
             const aPercent = (a.progress.current / a.progress.max) * 100;
@@ -87,13 +81,13 @@ export function BadgeProgressWidget({
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                     <Trophy className="h-3.5 w-3.5 text-yellow-500" />
-                    <h3 className="text-[10px] sm:text-xs font-bold text-foreground">Achievements</h3>
+                    <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-foreground">Achievements</h3>
                 </div>
                 <button
                     onClick={() => router.push("/badges")}
-                    className="text-[9px] sm:text-[10px] text-primary hover:text-primary/80 font-medium flex items-center gap-0.5 transition-colors"
+                    className="text-[9px] sm:text-[10px] text-primary hover:text-primary/80 font-bold uppercase tracking-wider flex items-center gap-0.5 transition-colors"
                 >
-                    View All
+                    All
                     <ChevronRight className="h-2.5 w-2.5" />
                 </button>
             </div>
@@ -101,8 +95,8 @@ export function BadgeProgressWidget({
             {/* Compact Stats Row */}
             <div className="flex items-center gap-2 mb-2">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 border border-primary/20">
-                    <span className="text-[9px] font-medium text-primary">Earned</span>
-                    <span className="text-sm font-bold text-primary">{earnedCount}</span>
+                    <span className="text-[9px] font-bold text-primary uppercase tracking-wide">Earned</span>
+                    <span className="text-sm font-black text-primary">{earnedCount}</span>
                 </div>
                 <div className="flex-1 bg-muted rounded-full h-1 overflow-hidden">
                     <div
@@ -110,7 +104,7 @@ export function BadgeProgressWidget({
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
-                <span className="text-[9px] font-medium text-muted-foreground">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">
                     {progressPercentage}%
                 </span>
             </div>
@@ -143,7 +137,7 @@ export function BadgeProgressWidget({
                     <div className="flex-1 flex items-center gap-1.5 bg-muted/30 rounded-lg p-1.5 border border-border/50">
                         <span className="text-base">{nextBadges[0].icon}</span>
                         <div className="flex-1 min-w-0">
-                            <div className="text-[9px] font-bold text-foreground truncate">{nextBadges[0].name}</div>
+                            <div className="text-[9px] font-bold text-foreground truncate uppercase tracking-wide">{nextBadges[0].name}</div>
                             <div className="flex items-center gap-1">
                                 <div className="flex-1 bg-muted rounded-full h-0.5 overflow-hidden">
                                     <div

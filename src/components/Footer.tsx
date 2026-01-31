@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Twitter, Github, Linkedin, Instagram, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
     return (
@@ -17,7 +18,7 @@ export function Footer() {
                             <Link href="/" className="flex items-center gap-3 text-2xl font-bold mb-6 group w-fit">
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                                    <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-10 w-10 object-contain relative z-10" />
+                                    <Image src="/arjuna_logo.png" alt="Arjuna AI" width={40} height={40} className="h-10 w-10 object-contain relative z-10" />
                                 </div>
                                 <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent group-hover:to-white transition-all">
                                     Arjuna AI
@@ -44,7 +45,6 @@ export function Footer() {
                             <h4 className="text-white font-semibold mb-2">Product</h4>
 
                             <Link href="/#features" className="text-slate-400 hover:text-white transition-colors w-fit">Features</Link>
-                            <Link href="/community" className="text-slate-400 hover:text-white transition-colors w-fit">Community</Link>
                             <Link href="/faq" className="text-slate-400 hover:text-white transition-colors w-fit">FAQ</Link>
                         </div>
 
@@ -52,7 +52,6 @@ export function Footer() {
                         <div className="flex flex-col gap-4">
                             <h4 className="text-white font-semibold mb-2">Company</h4>
                             <Link href="/about" className="text-slate-400 hover:text-white transition-colors w-fit">About</Link>
-                            <Link href="/careers" className="text-slate-400 hover:text-white transition-colors w-fit">Careers</Link>
                             <Link href="/blog" className="text-slate-400 hover:text-white transition-colors w-fit">Blog</Link>
                             <Link href="/contact" className="text-slate-400 hover:text-white transition-colors w-fit">Contact</Link>
                         </div>

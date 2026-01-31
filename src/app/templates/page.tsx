@@ -1,37 +1,37 @@
 'use client'
-import { useState, useEffect } from "react";
+import Image from "next/image"
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyTemplateCard } from "@/components/CompanyTemplateCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { CompanyTemplate } from "@/types/company-types";
 import { toast } from "sonner";
-import { interviewService, subscriptionService } from "@/services";
-import { InterviewConflictDialog } from "@/components/InterviewConflictDialog";
+import { subscriptionService, interviewService } from "@/services";
 import {
   Search,
   Code2,
   Loader2,
-  Settings as SettingsIcon,
   ChevronLeft,
   Code,
   Clock,
   Briefcase,
-  CheckCircle2,
   ArrowRight,
   Sparkles
 } from "lucide-react";
 import { TemplatesPageSkeleton, CompanyTemplatesPageSkeleton } from "@/components/TemplatesPageSkeleton";
 import { Template } from "@/services/template.service";
+import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
+import { InProgressSessionModal } from "@/components/InProgressSessionModal";
 import * as LucideIcons from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getCompanyLogo } from "@/lib/utils";
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,12 +43,15 @@ export default function Templates() {
   const [selectedCompany, setSelectedCompany] = useState<CompanyTemplate | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [showResumeCheck, setShowResumeCheck] = useState(false);
+  const [showInProgressWarning, setShowInProgressWarning] = useState(false);
+  const [existingSession, setExistingSession] = useState<{ id: string, position: string, created_at: string } | null>(null);
+  const [pendingGeneralTemplate, setPendingGeneralTemplate] = useState<Template | null>(null);
+  const [pendingCompanyRole, setPendingCompanyRole] = useState<{ company: CompanyTemplate; role: string } | null>(null);
+
   const router = useRouter();
-  const { user, signOut } = useAuth();
-  const { createInterviewSession, profile, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
-  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
-  const [conflictSession, setConflictSession] = useState<any>(null);
-  const [pendingAction, setPendingAction] = useState<{ type: 'general' | 'company', data: any } | null>(null);
+  const { user } = useAuth();
+  const { createInterviewSession, fetchCompanyTemplates, fetchTemplates } = useOptimizedQueries();
 
   // Fetch general templates on mount
   useEffect(() => {
@@ -97,37 +100,31 @@ export default function Templates() {
 
   // Get icon component from icon name string
   const getIconComponent = (iconName: string) => {
-    const IconComponent = (LucideIcons as any)[iconName];
+    const IconComponent = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName];
     return IconComponent || Code2; // Fallback to Code2 if icon not found
   };
 
-  // Filter templates based on category
-  const getCategoryTemplates = () => {
-    switch (activeCategory) {
-      case "Popular":
-        return templates.filter(t => t.is_popular);
-      case "Engineer":
-        return templates.filter(t =>
-          t.title.toLowerCase().includes("developer") ||
-          t.title.toLowerCase().includes("engineer") ||
-          t.title.toLowerCase().includes("devops")
-        );
-      case "Marketing":
-        return templates.filter(t =>
-          t.title.toLowerCase().includes("marketing") ||
-          t.title.toLowerCase().includes("content")
-        );
-      default:
-        return templates;
-    }
-  };
+
 
   // Filter templates based on search term and category
-  const filteredTemplates = getCategoryTemplates().filter(template =>
-    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      template.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (activeCategory === "All") return matchesSearch;
+    if (activeCategory === "Popular") return matchesSearch && template.is_popular;
+    if (activeCategory === "Engineer") return matchesSearch && (
+      template.title.toLowerCase().includes("developer") ||
+      template.title.toLowerCase().includes("engineer") ||
+      template.title.toLowerCase().includes("devops")
+    );
+    if (activeCategory === "Marketing") return matchesSearch && (
+      template.title.toLowerCase().includes("marketing") ||
+      template.title.toLowerCase().includes("content")
+    );
+    return matchesSearch;
+  });
 
   // Function to start interview with selected template
   const startInterviewWithTemplate = async (template: Template) => {
@@ -137,7 +134,6 @@ export default function Templates() {
     }
 
     setLoadingTemplate(template.id);
-
     try {
       // Check balance before creating session (min 2 minutes / 120 seconds)
       const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
@@ -152,26 +148,36 @@ export default function Templates() {
         return;
       }
 
-      // Check for existing sessions
-      const existingSessions = await interviewService.getInProgressSessions(user.id);
+      // 1. Check for existing in-progress sessions for the same domain
+      const inProgressSessions = await interviewService.getInProgressSessions(user.id);
 
-      if (existingSessions && existingSessions.length > 0) {
-        setConflictSession(existingSessions[0]);
-        setPendingAction({ type: 'general', data: template });
-        setConflictDialogOpen(true);
-        setLoadingTemplate(null);
+      const duplicateSession = inProgressSessions?.find((s: { position?: string }) =>
+        s.position?.toLowerCase() === template.title?.toLowerCase()
+      );
+
+      if (duplicateSession) {
+        setExistingSession({
+          id: duplicateSession.id,
+          position: duplicateSession.position || template.title,
+          created_at: duplicateSession.created_at
+        });
+        setShowInProgressWarning(true);
         return;
       }
 
-      await executeStartGeneralInterview(template);
-    } catch (error: any) {
+      setPendingGeneralTemplate(template);
+      setPendingCompanyRole(null);
+      setShowResumeCheck(true);
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error starting interview:', error);
       toast.error(error.message || "Failed to start interview");
+    } finally {
       setLoadingTemplate(null);
     }
   };
 
-  const executeStartGeneralInterview = async (template: Template) => {
+  const executeStartGeneralInterview = async (template: Template, useResume: boolean) => {
     try {
       setLoadingTemplate(template.id);
       // Create a new interview session using optimized method
@@ -182,6 +188,7 @@ export default function Templates() {
         config: {
           skills: template.skills,
           difficulty: template.difficulty,
+          useResume,
           currentStage: 'setup'
         }
       });
@@ -192,21 +199,12 @@ export default function Templates() {
 
       toast.success(`Starting ${template.title} interview...`);
       router.push(`/interview/${session.id}/setup`);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error in executeStartGeneralInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
       setLoadingTemplate(null);
-    }
-  };
-
-  // Get difficulty badge color
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner": return "bg-green-100 text-green-800";
-      case "Intermediate": return "bg-yellow-100 text-yellow-800";
-      case "Advanced": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -219,7 +217,6 @@ export default function Templates() {
 
     const templateKey = `${company.id}-${role}`;
     setLoadingTemplate(templateKey);
-
     try {
       // Check balance before creating session (min 2 minutes / 120 seconds)
       const { remainingSeconds } = await subscriptionService.checkUsageLimit(user.id);
@@ -234,26 +231,36 @@ export default function Templates() {
         return;
       }
 
-      // Check for existing sessions
-      const existingSessions = await interviewService.getInProgressSessions(user.id);
+      // 1. Check for existing in-progress sessions for the same domain
+      const inProgressSessions = await interviewService.getInProgressSessions(user.id);
 
-      if (existingSessions && existingSessions.length > 0) {
-        setConflictSession(existingSessions[0]);
-        setPendingAction({ type: 'company', data: { company, role } });
-        setConflictDialogOpen(true);
-        setLoadingTemplate(null);
+      const duplicateSession = inProgressSessions?.find((s: { position?: string }) =>
+        s.position?.toLowerCase() === role?.toLowerCase()
+      );
+
+      if (duplicateSession) {
+        setExistingSession({
+          id: duplicateSession.id,
+          position: duplicateSession.position || role,
+          created_at: duplicateSession.created_at
+        });
+        setShowInProgressWarning(true);
         return;
       }
 
-      await executeStartCompanyInterview(company, role);
-    } catch (error: any) {
+      setPendingCompanyRole({ company, role });
+      setPendingGeneralTemplate(null);
+      setShowResumeCheck(true);
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error starting company interview:', error);
       toast.error(error.message || "Failed to start interview");
+    } finally {
       setLoadingTemplate(null);
     }
   };
 
-  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string) => {
+  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string, useResume: boolean) => {
     try {
       const templateKey = `${company.id}-${role}`;
       setLoadingTemplate(templateKey);
@@ -270,6 +277,7 @@ export default function Templates() {
             role: role,
             experienceLevel: 'Mid'
           },
+          useResume,
           currentStage: 'setup'
         }
       });
@@ -280,7 +288,8 @@ export default function Templates() {
 
       toast.success(`Starting ${role} interview at ${company.name}...`);
       router.push(`/interview/${session.id}/setup`);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('Error in executeStartCompanyInterview:', error);
       toast.error(error.message || "Failed to start interview");
     } finally {
@@ -288,36 +297,12 @@ export default function Templates() {
     }
   };
 
-  const handleContinuePrevious = () => {
-    if (!conflictSession) return;
-    toast.info("Redirecting to previous interview...");
-    const stage = (conflictSession.config as any)?.currentStage || 'setup';
-    router.push(`/interview/${conflictSession.id}/${stage}`);
-    setConflictDialogOpen(false);
-  };
-
-  const handleStartNewAfterAbandon = async () => {
-    if (!conflictSession || !pendingAction) return;
-
-    setConflictDialogOpen(false);
-
-    try {
-      // Abandon previous session using service
-      const abandoned = await interviewService.abandonSession(conflictSession.id);
-
-      if (abandoned) {
-        toast.success("Previous interview abandoned. Starting new session...");
-        if (pendingAction.type === 'general') {
-          await executeStartGeneralInterview(pendingAction.data);
-        } else {
-          await executeStartCompanyInterview(pendingAction.data.company, pendingAction.data.role);
-        }
-      } else {
-        toast.error("Failed to abandon previous session. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error abandoning session:", error);
-      toast.error("An error occurred. Please try again.");
+  const handleResumeContinue = async (useResume: boolean) => {
+    setShowResumeCheck(false);
+    if (pendingGeneralTemplate) {
+      await executeStartGeneralInterview(pendingGeneralTemplate, useResume);
+    } else if (pendingCompanyRole) {
+      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role, useResume);
     }
   };
 
@@ -328,47 +313,47 @@ export default function Templates() {
     template.industry?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     template.common_roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-12 pt-10 sm:pt-0">
+      <div className="space-y-6 sm:space-y-8 pb-12 sm:pt-0">
         {/* Header Section with Controls */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="text-left space-y-1 sm:space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Interview Templates
-            </h2>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-lg">
-              Choose from a variety of interview scenarios to practice and improve your skills.
-            </p>
-          </div>
+        <div className="space-y-2 mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Interview Templates
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
+            Choose from a variety of interview scenarios to practice and improve your skills.
+          </p>
         </div>
 
         <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="inline-flex p-1 bg-muted/50 rounded-xl border border-border/50 mb-6 sm:mb-10 w-full sm:w-auto">
+          <TabsList className="inline-flex p-1 bg-muted/60 dark:bg-muted/50 rounded-xl border border-border mb-6 w-full sm:w-auto shadow-sm">
             <TabsTrigger
               value="general"
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:ring-1 data-[state=active]:ring-border/50"
             >
               General
             </TabsTrigger>
             <TabsTrigger
               value="company"
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold transition-all data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-md data-[state=active]:ring-1 data-[state=active]:ring-border/50"
             >
               Companies
             </TabsTrigger>
           </TabsList>
 
+
           {/* Category Tabs and Search Bar */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8">
+          <div className="flex flex-col gap-4 mb-8">
             {/* Category Tabs */}
-            <div className="flex gap-2 items-center overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 no-scrollbar px-1">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setActiveCategory(category)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
+                    "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors border whitespace-nowrap shrink-0",
                     activeCategory === category
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -380,11 +365,11 @@ export default function Templates() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative w-full lg:w-96 group">
+            <div className="relative w-full group">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" />
               <Input
                 placeholder="Search templates..."
-                className="pl-10 mr-12"
+                className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -398,7 +383,7 @@ export default function Templates() {
               <>
                 {searchTerm && (
                   <p className="text-sm text-muted-foreground mb-4">
-                    Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                    Found {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} matching &quot;{searchTerm}&quot;
                   </p>
                 )}
 
@@ -406,13 +391,15 @@ export default function Templates() {
                   {filteredTemplates.map((template) => {
                     const IconComponent = getIconComponent(template.icon_name);
                     return (
-                      <Card key={template.id} className="flex flex-col h-full hover:shadow-md transition-all">
+                      <Card key={template.id} className="flex flex-col h-full hover:shadow-xl hover:border-primary/20 transition-all duration-300 border-border/80 dark:border-border/50 shadow-sm">
+
                         <CardHeader className="space-y-4">
                           <div className="flex justify-between items-start gap-4">
                             <div className="flex gap-4">
-                              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center bg-muted shrink-0", template.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100'))}>
+                              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0 border border-border/50 shadow-inner", template.color.replace('text-', 'bg-').replace('600', '100').replace('500', '100'), "dark:bg-muted")}>
                                 <IconComponent className={cn("h-5 w-5", template.color)} />
                               </div>
+
                               <div className="space-y-1">
                                 <CardTitle className="text-base font-semibold leading-tight">
                                   {template.title}
@@ -503,13 +490,13 @@ export default function Templates() {
               <>
                 {/* Step 1: Select Company */}
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Select a Company</h3>
-                  <p className="text-muted-foreground text-sm">Choose a company to see role-specific interview templates</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-foreground mb-1 sm:mb-2">Select a Company</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm">Choose a company to see role-specific interview templates</p>
                 </div>
 
                 {searchTerm && (
                   <p className="text-sm text-muted-foreground mb-4">
-                    Found {filteredCompanyTemplates.length} company{filteredCompanyTemplates.length !== 1 ? 's' : ''} matching "{searchTerm}"
+                    Found {filteredCompanyTemplates.length} company{filteredCompanyTemplates.length !== 1 ? 's' : ''} matching &quot;{searchTerm}&quot;
                   </p>
                 )}
 
@@ -567,19 +554,27 @@ export default function Templates() {
                     Back to Companies
                   </Button>
 
-                  <div className="relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm">
+                  <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-md">
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
-                      <div className="h-20 w-20 rounded-lg border bg-muted p-2 flex items-center justify-center shrink-0">
-                        {selectedCompany.logo_url ? (
-                          <img
-                            src={selectedCompany.logo_url}
+                      <div className="h-20 w-20 rounded-lg border border-border bg-muted/30 p-2 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
+
+                        {getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url) ? (
+                          <Image
+                            src={getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url)}
                             alt={`${selectedCompany.name} logo`}
-                            className="w-full h-full object-contain"
+                            fill
+                            unoptimized
+                            className="object-contain p-2"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              const fallback = (e.target as HTMLImageElement).parentElement?.nextElementSibling;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
                           />
-                        ) : (
-                          <Briefcase className="h-8 w-8 text-muted-foreground" />
-                        )}
+                        ) : null}
+                        <Briefcase className={`h-8 w-8 text-muted-foreground ${getCompanyLogo(selectedCompany.slug, selectedCompany.logo_url) ? 'hidden' : ''}`} />
                       </div>
+
 
                       <div className="flex-1 space-y-2">
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
@@ -659,18 +654,25 @@ export default function Templates() {
             )}
           </TabsContent>
         </Tabs>
-      </div >
-      <InterviewConflictDialog
-        isOpen={conflictDialogOpen}
-        onClose={() => setConflictDialogOpen(false)}
-        onContinue={handleContinuePrevious}
-        onStartNew={handleStartNewAfterAbandon}
-        sessionDetails={conflictSession ? {
-          position: conflictSession.position,
-          type: conflictSession.interview_type,
-          startedAt: new Date(conflictSession.created_at).toLocaleString()
-        } : null}
-      />
-    </DashboardLayout >
+      </div>
+
+      <Suspense fallback={null}>
+        {user?.id && (
+          <>
+            <ResumeCheckDialog
+              isOpen={showResumeCheck}
+              onOpenChange={setShowResumeCheck}
+              userId={user.id}
+              onContinue={handleResumeContinue}
+            />
+            <InProgressSessionModal
+              isOpen={showInProgressWarning}
+              onOpenChange={setShowInProgressWarning}
+              existingSession={existingSession}
+            />
+          </>
+        )}
+      </Suspense>
+    </DashboardLayout>
   );
 }

@@ -1,36 +1,56 @@
-import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
-
-// Set up the worker for PDF.js
-// In Next.js, we can use the CDN version or bundle it. 
-// For simplicity in this environment, using the CDN version of the worker.
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+import './polyfills';
 
 /**
  * Parses a PDF file and extracts its text content
  */
 export async function parsePDF(file: File): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
+    if (typeof window === 'undefined') return '';
 
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-        fullText += pageText + '\n';
+    try {
+        // Use the legacy build of pdfjs-dist which is much more stable in Next.js
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+        // version is now 4.4.168
+        const version = pdfjs.version || '4.4.168';
+
+        // Set worker using CDN matching this version
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.mjs`;
+
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+
+            // Extract text from items
+            const pageText = textContent.items
+                .map((item: unknown) => (item as { str: string }).str)
+                .join(' ');
+
+            fullText += pageText + '\n';
+        }
+
+        return fullText.trim();
+    } catch (err: unknown) {
+        const error = err as { message?: string; name?: string };
+        console.error("PDF Parsing Error:", error);
+
+        if (error.message?.includes('Object.defineProperty')) {
+            throw new Error("PDF compatibility issue. Please try copying the text or use a .txt/.docx file.");
+        }
+
+        throw new Error(`Failed to parse PDF: ${error.message || 'Unknown error'}`);
     }
-
-    return fullText.trim();
 }
 
 /**
  * Parses a DOCX file and extracts its text content
  */
 export async function parseDOCX(file: File): Promise<string> {
+    const mammoth = await import('mammoth');
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value.trim();

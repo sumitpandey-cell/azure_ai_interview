@@ -2,18 +2,16 @@
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 
-interface Message {
+export interface Message {
     id?: number;
     speaker: 'user' | 'ai';
     sender?: 'user' | 'ai';  // Legacy support
     role?: string;           // LLM standard support
     text: string;
     timestamp?: number;
-    sentiment?: string;
-    confidence?: number;
 }
 
-interface InterviewSessionData {
+export interface InterviewSessionData {
     id: string;
     interview_type: string;
     position: string;
@@ -32,9 +30,12 @@ interface InterviewSessionData {
             experienceLevel: string;
         };
     };
+    resumeContent?: string | null;
 }
 
 export interface FeedbackData {
+    status?: 'success' | 'failed';
+    error?: string;
     executiveSummary: string;
     strengths: string[];
     improvements: string[];
@@ -51,19 +52,6 @@ export interface FeedbackData {
         feedback: string;
     }[];
     actionPlan: string[];
-    // What you said vs. What you should have said
-    comparisons?: {
-        question: string;
-        actualAnswer: string;
-        eliteAnswer: string;
-        explanation: string;
-    }[];
-    // Confidence analysis over time
-    confidenceFlow?: {
-        segment: string;
-        score: number;
-        sentiment: string;
-    }[];
     // Deprecated: kept for backward compatibility
     skills?: {
         name: string;
@@ -244,8 +232,6 @@ export async function generateFeedback(
     transcript: Message[],
     sessionData: InterviewSessionData
 ): Promise<FeedbackData> {
-    console.log("Analyzing interview transcript:", transcript.length, "messages");
-    console.log("Session data:", sessionData);
 
     // Extract session context
     const { position, interview_type: interviewType, config } = sessionData;
@@ -257,14 +243,13 @@ export async function generateFeedback(
         `\n\nCOMPANY CONTEXT: This interview was conducted for ${config.companyName || config.companyInterviewConfig?.companyName} for the role of ${config.role || config.companyInterviewConfig?.role}. Experience level expected: ${config.experienceLevel || config.companyInterviewConfig?.experienceLevel}.` : '';
 
     const jdContext = jobDescription ? `\n\nJOB DESCRIPTION:\n${jobDescription}` : '';
+    const resumeContext = sessionData.resumeContent ? `\n\nCANDIDATE RESUME:\n${sessionData.resumeContent}` : '';
 
     // Analyze interview length before processing
     const lengthAnalysis = analyzeInterviewLength(transcript);
-    console.log("Interview analysis:", lengthAnalysis);
 
     // Return early if interview is too short
     if (lengthAnalysis.category === 'too-short') {
-        console.log("Interview too short - returning minimal feedback");
         return getTooShortInterviewFeedback(position, lengthAnalysis);
     }
 
@@ -286,8 +271,7 @@ export async function generateFeedback(
             // Standardize speaker identification for the prompt
             const rawRole = (msg.role || msg.speaker || msg.sender || 'unknown').toLowerCase();
             const speaker = ['ai', 'assistant', 'model', 'agent'].includes(rawRole) ? 'AI' : 'USER';
-            const sentimentInfo = msg.sentiment ? ` [Sentiment: ${msg.sentiment}, Confidence: ${msg.confidence}%]` : '';
-            return `${speaker}${sentimentInfo}: ${msg.text}`;
+            return `${speaker}: ${msg.text}`;
         })
         .join('\n');
 
@@ -299,17 +283,10 @@ export async function generateFeedback(
         ? `\n\nEXPECTED SKILLS TO ASSESS:\nThis interview was designed to evaluate the following skills: ${skills.join(', ')}.\nFocus your assessment on these specific areas when evaluating the candidate's performance.`
         : '';
 
-    const difficultyContext = difficulty
-        ? `\n\nINTERVIEW DIFFICULTY LEVEL: ${difficulty}\n${difficulty === 'Beginner'
-            ? 'This is a beginner-level interview. Adjust expectations accordingly - focus on fundamental understanding rather than advanced expertise.'
-            : difficulty === 'Intermediate'
-                ? 'This is an intermediate-level interview. Expect solid foundational knowledge and some practical experience.'
-                : 'This is an advanced-level interview. Expect deep technical knowledge, complex problem-solving, and extensive experience.'
-        }`
-        : '';
+    // difficultyContext was defined but never used
 
     const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
-${skillsContext}${companyContext}${jdContext}
+${skillsContext}${companyContext}${jdContext}${resumeContext}
 
 TRANSCRIPT:
 ${transcriptText}
@@ -348,11 +325,11 @@ Technical Knowledge:
 - 0-4: No knowledge or refuses to answer
 
 Communication:
-- 90-100: Crystal clear, professional, well-structured, high confidence
-- 70-89: Clear with minor issues, steady confidence
-- 50-69: Generally understandable, variable confidence
-- 30-49: Significant barriers, low confidence
-- 0-29: Poor, hard to understand, negative sentiment
+- 90-100: Crystal clear, professional, well-structured
+- 70-89: Clear with minor issues
+- 50-69: Generally understandable
+- 30-49: Significant barriers
+- 0-29: Poor, hard to understand
 
 Problem Solving:
 - 90-100: Systematic, breaks down problems, multiple solutions
@@ -368,12 +345,6 @@ Cultural Fit:
 - 30-49: Some concerns, negative outbursts or frustration
 - 0-29: Unprofessional or poor attitude
 
-SENTIMENT ANALYSIS (MANDATORY):
-The transcript includes [Sentiment: X, Confidence: Y%] metadata for user responses. Use this to:
-- Identify psychological stressors: When did the candidate lose confidence? (e.g., specific technical questions)
-- Evaluate soft skills: Does their sentiment match the professional context?
-- Refine communication score: High confidence with clear speech is better than low confidence with hesitation.
-
 STRICT RULES:
 - Lists tech without explanation = Tech: 5-10%
 - Gives up immediately = Problem Solving: 0-5%
@@ -381,43 +352,33 @@ STRICT RULES:
 - Heavy language mixing = Communication: 5-15%
 - "I don't know" without trying = Problem Solving: 0-10%
 
-OUTPUT (JSON only):
+OUTPUT FORMAT - STRICT JSON ONLY (NO MARKDOWN, NO EXPLANATIONS):
+CRITICAL: You MUST include ALL fields below. Missing any field will cause system failure.
+
 {
-  "executiveSummary": "2-3 sentences with specific examples and scores justification. Incorporate psychological observations from sentiment data.",
-  "strengths": ["Specific examples from transcript including confidence highlights"],
-  "improvements": ["Specific gaps with examples including confidence drops"],
-  "comparisons": [
-    {
-      "question": "Interviewer's prompt",
-      "actualAnswer": "Candidate's exact response",
-      "eliteAnswer": "A high-quality, professional, and deep technical answer they SHOULD have given",
-      "explanation": "Why this elite answer is superior"
-    }
-  ],
-  "confidenceFlow": [
-    {
-      "segment": "Phase (e.g. Intro, DB Deep-dive)",
-      "score": 0-100,
-      "sentiment": "Emotional state description based on provided metadata"
-    }
-  ],
+  "executiveSummary": "2-3 sentences with specific examples and scores justification. REQUIRED.",
+  "strengths": ["REQUIRED: At least 2 specific examples from transcript", "Another strength with evidence"],
+  "improvements": ["REQUIRED: At least 2 specific gaps with examples", "Another improvement area"],
   "overallSkills": [
     {"name": "Technical Knowledge", "score": 0-100, "feedback": "Evidence-based, match score"},
-    {"name": "Communication", "score": 0-100, "feedback": "Evidence-based, incorporating confidence level"},
+    {"name": "Communication", "score": 0-100, "feedback": "Evidence-based"},
     {"name": "Problem Solving", "score": 0-100, "feedback": "Evidence-based"},
-    {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based, incorporating sentiment signals"}
+    {"name": "Cultural Fit", "score": 0-100, "feedback": "Evidence-based"}
   ],
   "technicalSkills": [${skills.length > 0 ? `{"name": "SKILL", "score": 0-100, "feedback": "Evidence only"}` : ''}],
-  "actionPlan": ["Specific, actionable steps"]
+  "actionPlan": ["REQUIRED: At least 2 specific, actionable steps", "Another actionable step"]
 }
 
-MANDATORY FEATURE: 'comparisons'
-Identify 3-5 most impactful exchanges where the candidate's answer was weak or could be significantly improved. For EACH, provide a gold-standard 'eliteAnswer'. This is the most valued part of the report.
+MANDATORY REQUIREMENTS:
+1. 'strengths' array: MUST have at least 2 items, each with specific evidence
+2. 'improvements' array: MUST have at least 2 items, each with specific examples
+3. 'actionPlan' array: MUST have at least 2 actionable steps
+4. 'overallSkills' array: MUST have exactly 4 skills as shown above
 
-MANDATORY FEATURE: 'confidenceFlow'
-Analyze the psychological momentum. Divide the interview into 5-8 logical segments. Use the Sentiment and Confidence metadata to provide accurate tracking of their emotional state throughout the session.
+CRITICAL: Return ONLY valid JSON. Do not wrap in markdown code blocks. Do not add any text before or after the JSON.
 
-Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.`;
+Be brutally honest. Low scores with constructive feedback are more helpful than inflated scores.
+Compare their answers against their resume claims. If they claim expertise in a skill but struggle during the interview, highlight this discrepancy.`;
 
     // Validate API key is available
     if (!API_KEY) {
@@ -455,28 +416,76 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
         // Clean up markdown code blocks if present
         const jsonString = textResponse.replace(/^```json\n|\n```$/g, '').replace(/^```\n|\n```$/g, '').trim();
 
-        const parsedFeedback = JSON.parse(jsonString);
+        let parsedFeedback;
+        try {
+            parsedFeedback = JSON.parse(jsonString);
+        } catch (parseError) {
+            console.error('❌ Failed to parse Gemini response as JSON:', jsonString.substring(0, 500));
+            throw new Error(`Failed to parse AI response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+        }
+
+        // Log the parsed feedback for debugging
+        console.log('📋 Parsed feedback structure:', JSON.stringify({
+            hasExecutiveSummary: !!parsedFeedback.executiveSummary,
+            strengthsCount: parsedFeedback.strengths?.length || 0,
+            improvementsCount: parsedFeedback.improvements?.length || 0,
+            overallSkillsCount: parsedFeedback.overallSkills?.length || 0,
+            technicalSkillsCount: parsedFeedback.technicalSkills?.length || 0,
+            actionPlanCount: parsedFeedback.actionPlan?.length || 0,
+            comparisonsCount: parsedFeedback.comparisons?.length || 0
+        }));
+
+        // Ensure required fields exist with fallback values and valid string lengths
+        const normalizedFeedback = {
+            executiveSummary: (parsedFeedback.executiveSummary && parsedFeedback.executiveSummary.length >= 30)
+                ? parsedFeedback.executiveSummary
+                : (parsedFeedback.executiveSummary || 'Feedback generation complete. Please review the detailed assessment below.'),
+            strengths: (Array.isArray(parsedFeedback.strengths) && parsedFeedback.strengths.filter((s: unknown) => typeof s === 'string' && (s as string).length >= 3).length > 0)
+                ? (parsedFeedback.strengths as string[]).filter((s: string) => s.length >= 3)
+                : ['Demonstrated technical participation in the interview'],
+            improvements: (Array.isArray(parsedFeedback.improvements) && (parsedFeedback.improvements as unknown[]).filter((s: unknown) => typeof s === 'string' && (s as string).length >= 3).length > 0)
+                ? (parsedFeedback.improvements as string[]).filter((s: string) => s.length >= 3)
+                : ['Engage in more detailed technical discussions to showcase depth'],
+            overallSkills: Array.isArray(parsedFeedback.overallSkills) && parsedFeedback.overallSkills.length >= 3
+                ? parsedFeedback.overallSkills
+                : [
+                    { name: 'Technical Knowledge', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Communication', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Problem Solving', score: 0, feedback: 'Insufficient data for assessment' },
+                    { name: 'Cultural Fit', score: 0, feedback: 'Insufficient data for assessment' }
+                ],
+            technicalSkills: Array.isArray(parsedFeedback.technicalSkills) ? parsedFeedback.technicalSkills : [],
+            actionPlan: (Array.isArray(parsedFeedback.actionPlan) && (parsedFeedback.actionPlan as unknown[]).filter((s: unknown) => typeof s === 'string' && (s as string).length >= 5).length > 0)
+                ? (parsedFeedback.actionPlan as string[]).filter((s: string) => s.length >= 5)
+                : ['Continue practicing mock interviews to build confidence'],
+            // Backward compatibility
+            skills: parsedFeedback.skills || (Array.isArray(parsedFeedback.overallSkills) ? parsedFeedback.overallSkills : null)
+        };
 
         // Validate feedback before returning
         const { validateFeedbackSafe, calculateFeedbackQuality } = await import('./feedback-validator');
-        const validation = validateFeedbackSafe(parsedFeedback, lengthAnalysis.category);
+
+        console.log('🛡️ Validating normalized feedback...');
+        const validation = validateFeedbackSafe(normalizedFeedback, lengthAnalysis.category);
 
         if (!validation.success) {
-            console.error('❌ Feedback validation failed:', validation.error);
+            console.error('❌ Feedback validation failed after normalization:', validation.error);
+            console.error('📋 Normalized feedback content:', JSON.stringify(normalizedFeedback, null, 2));
             throw new Error(`Invalid feedback structure: ${validation.error}`);
         }
 
-        const qualityScore = calculateFeedbackQuality(validation.data!, lengthAnalysis.category);
-        console.log(`✅ Feedback validated successfully (quality: ${qualityScore}/100, length: ${lengthAnalysis.category})`);
+        calculateFeedbackQuality(validation.data!, lengthAnalysis.category);
 
         return validation.data! as FeedbackData;
     } catch (error) {
         console.error("Error generating feedback:", error);
-        // Return fallback data in case of error
+        // Return fallback data in case of error with explicit failure flag
         return {
-            executiveSummary: `Feedback generation failed. ${error instanceof Error ? error.message : "A technical error occurred"}. Please review the transcript manually.`,
-            strengths: ["Unable to analyze strengths"],
-            improvements: ["Unable to analyze improvements"],
+            status: 'failed',
+            error: error instanceof Error ? error.message : "A technical error occurred during feedback generation.",
+            executiveSummary: `Feedback generation failed. ${error instanceof Error ? error.message : "A technical error occurred"}. Please review the transcript manually or try regenerating.`,
+            strengths: ["Unable to analyze strengths due to technical error"],
+            improvements: ["Unable to analyze improvements due to technical error"],
             overallSkills: [
                 { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },
                 { name: "Communication", score: 0, feedback: "Analysis failed" },
@@ -484,7 +493,7 @@ Be brutally honest. Low scores with constructive feedback are more helpful than 
                 { name: "Cultural Fit", score: 0, feedback: "Analysis failed" }
             ],
             technicalSkills: [],
-            actionPlan: ["Please try again later"],
+            actionPlan: ["Please try regenerating the report"],
             // Backward compatibility
             skills: [
                 { name: "Technical Knowledge", score: 0, feedback: "Analysis failed" },

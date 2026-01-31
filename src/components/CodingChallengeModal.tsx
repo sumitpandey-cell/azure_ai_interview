@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,39 @@ export function CodingChallengeModal({
     const [timeLeft, setTimeLeft] = useState(CODING_TIME_LIMIT);
     const [startTime, setStartTime] = useState<number | null>(null);
 
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const getTimeSpent = useCallback(() => {
+        if (!startTime) return 0;
+        return Math.floor((Date.now() - startTime) / 1000);
+    }, [startTime]);
+
+    const resetState = useCallback(() => {
+        const prefix = language === 'python' ? '# ' : '// ';
+        const formattedQuestion = question
+            ? question
+                .split('\n')
+                .map(line => `${prefix}${line}`)
+                .join('\n')
+                .trim()
+            : '';
+        const template = DEFAULT_CODE_TEMPLATES[language];
+
+        setCode(formattedQuestion ? `${formattedQuestion}\n\n${template}` : template);
+        setTimeLeft(CODING_TIME_LIMIT);
+        setStartTime(null);
+    }, [language, question]);
+
+    const handleAutoSubmit = useCallback(() => {
+        const timeSpent = CODING_TIME_LIMIT;
+        onSubmit(code, language, timeSpent);
+        resetState();
+    }, [code, language, onSubmit, resetState]);
+
     // Initialize code template when language changes
     // Initialize code template when language changes or question changes
     useEffect(() => {
@@ -57,7 +90,7 @@ export function CodingChallengeModal({
             setStartTime(Date.now());
             setTimeLeft(CODING_TIME_LIMIT);
         }
-    }, [isOpen]);
+    }, [isOpen, startTime]);
 
     // Countdown timer
     useEffect(() => {
@@ -75,18 +108,7 @@ export function CodingChallengeModal({
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isOpen, timeLeft]);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const getTimeSpent = () => {
-        if (!startTime) return 0;
-        return Math.floor((Date.now() - startTime) / 1000);
-    };
+    }, [isOpen, timeLeft, handleAutoSubmit]);
 
     const handleSubmit = () => {
         const timeSpent = getTimeSpent();
@@ -94,30 +116,9 @@ export function CodingChallengeModal({
         resetState();
     };
 
-    const handleAutoSubmit = () => {
-        const timeSpent = CODING_TIME_LIMIT;
-        onSubmit(code, language, timeSpent);
-        resetState();
-    };
-
     const handleAbort = () => {
         onAbort();
         resetState();
-    };
-
-    const resetState = () => {
-        const prefix = language === 'python' ? '# ' : '// ';
-        const formattedQuestion = question
-            ? question
-                .split('\n')
-                .map(line => `${prefix}${line}`)
-                .join('\n')
-            : '';
-        const template = DEFAULT_CODE_TEMPLATES[language];
-
-        setCode(formattedQuestion ? `${formattedQuestion}\n\n${template}` : template);
-        setTimeLeft(CODING_TIME_LIMIT);
-        setStartTime(null);
     };
 
     const getTimerColor = () => {

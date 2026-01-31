@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { useTrackTranscription, useLocalParticipant, TrackReferenceOrPlaceholder } from "@livekit/components-react";
+import { useRef, useEffect, useCallback } from "react";
+import { useTrackTranscription, useLocalParticipant, TrackReferenceOrPlaceholder, useRoomContext, useChat } from "@livekit/components-react";
 import { Track, LocalParticipant, Participant, TranscriptionSegment } from "livekit-client";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
 import { interviewService } from "@/services/interview.service";
@@ -8,20 +8,20 @@ export function TranscriptTracker({
     sessionId,
     userId,
     agentAudioTrack,
-    sentimentData
+    isEnding = false,
 }: {
     sessionId: string;
     userId: string;
     agentAudioTrack?: TrackReferenceOrPlaceholder;
-    sentimentData?: {
-        sentiment: string;
-        confidence: number;
-        scores: { positive: number; neutral: number; negative: number };
-    } | null;
+    isEnding?: boolean;
 }) {
     const { addOrUpdateTranscript } = useTranscriptContext();
     // Keep track of processed FINAL segments to avoid double-saving to DB
     const processedSegments = useRef(new Set<string>());
+    const lastChatLength = useRef(-1); // Initialize to -1 to detect first run
+
+    // Chat Tracker (for typed messages)
+    const { chatMessages } = useChat();
 
     // Agent Tracker
     const agentMessages = useTrackTranscription(agentAudioTrack || undefined);
@@ -35,7 +35,7 @@ export function TranscriptTracker({
     });
 
     // Helper to process and save
-    const processSegment = (s: TranscriptionSegment, participant: Participant | undefined) => {
+    const processSegment = useCallback((s: TranscriptionSegment, participant: Participant | undefined) => {
         if (!participant) return;
 
         const isSelf = participant instanceof LocalParticipant;
@@ -47,18 +47,13 @@ export function TranscriptTracker({
             message: s.final ? s.text : `${s.text} ...`,
             isSelf,
             timestamp: s.firstReceivedTime || Date.now(),
-            ...(isSelf && sentimentData ? {
-                sentiment: sentimentData.sentiment,
-                confidence: sentimentData.confidence
-            } : {})
         });
 
-        // Save to DB (only final and new)
-        if (s.final && !processedSegments.current.has(s.id)) {
+        // Save to DB (only final and new, and not if ending)
+        if (s.final && !processedSegments.current.has(s.id) && !isEnding) {
             processedSegments.current.add(s.id);
 
             // Log debug
-            console.log(`📝 Saving transcript: [${name}] ${s.text}`);
 
             // Fire and forget save
             interviewService.addTranscriptEntry(sessionId, userId, {
@@ -66,39 +61,110 @@ export function TranscriptTracker({
                 speaker: isSelf ? 'user' : 'ai', // Keep speaker for legacy if needed
                 text: s.text,
                 timestamp: s.firstReceivedTime || Date.now(),
-                ...(isSelf && sentimentData ? {
-                    sentiment: sentimentData.sentiment,
-                    confidence: sentimentData.confidence
-                } : {})
             }).catch(err => console.error("Failed to save transcript:", err));
         }
-    };
+    }, [addOrUpdateTranscript, isEnding, sessionId, userId]);
 
     // Agent Effect
     useEffect(() => {
         if (agentAudioTrack && agentAudioTrack.participant) {
             agentMessages.segments.forEach(s => processSegment(s, agentAudioTrack.participant));
         }
-    }, [agentMessages.segments, agentAudioTrack]);
+    }, [agentMessages.segments, agentAudioTrack, processSegment]);
 
     // Local Effect
     useEffect(() => {
         localMessages.segments.forEach(s => processSegment(s, localParticipant));
-    }, [localMessages.segments, localParticipant]);
+    }, [localMessages.segments, localParticipant, processSegment]);
 
-    // Update recent local segments when sentiment arrives
+    // Chat Persistance Effect
     useEffect(() => {
-        if (sentimentData && localMessages.segments.length > 0) {
-            // Find all recent local segments (within last 30s) and update them
-            const now = Date.now();
-            localMessages.segments.forEach(s => {
-                const isRecent = (s.firstReceivedTime || now) > now - 30000;
-                if (isRecent) {
-                    processSegment(s, localParticipant);
-                }
-            });
+        if (isEnding) return;
+
+        // Initialize length on first run to current length to only catch NEW messages
+        if (lastChatLength.current === -1) {
+            lastChatLength.current = chatMessages.length;
+            return;
         }
-    }, [sentimentData, localMessages.segments, localParticipant]);
+
+        if (chatMessages.length > lastChatLength.current) {
+            const newMessages = chatMessages.slice(lastChatLength.current);
+            newMessages.forEach(msg => {
+                const isSelf = msg.from?.identity === localParticipant.identity;
+
+                // Determine if this is a message from the agent
+                // Note: agent identity might not be localParticipant
+                const role = isSelf ? 'user' : 'assistant';
+
+
+                interviewService.addTranscriptEntry(sessionId, userId, {
+                    role,
+                    speaker: isSelf ? 'user' : 'ai',
+                    text: msg.message,
+                    timestamp: msg.timestamp || Date.now(),
+                }).catch(err => console.error("Failed to save chat transcript:", err));
+            });
+            lastChatLength.current = chatMessages.length;
+        }
+    }, [chatMessages, localParticipant, sessionId, userId, isEnding]);
+
+    // ------------------------------------------------------------------------
+    // FALLBACK: Listen for explicit "transcription" data messages from Server
+    // (In case standard SFU transcription events are not firing for local user)
+    // ------------------------------------------------------------------------
+    const room = useRoomContext();
+
+    useEffect(() => {
+        if (!room) return;
+
+        const handleDataReceived = (payload: Uint8Array, participant: Participant | undefined, _kind: unknown, topic?: string) => {
+            // Check for transcription topic
+            if (topic === "transcription" || topic === "user_transcription") {
+                try {
+                    const decoder = new TextDecoder();
+                    const msg = decoder.decode(payload);
+                    const data = JSON.parse(msg);
+
+
+                    // Expecting format: { type: 'transcription', text: '...', isFinal: true, role: 'user' }
+                    if ((data.type === 'transcription' || data.role === 'user') && data.text) {
+
+                        // Create a synthetic segment to reuse processing logic
+                        const isSelf = data.role === 'user' || participant === localParticipant;
+
+                        // Uniquely identify this segment
+                        const segmentId = data.id || `data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+                        // Only process final segments from data channel to avoid jitter
+                        if (data.isFinal !== false) {
+                            const syntheticSegment: TranscriptionSegment = {
+                                id: segmentId,
+                                text: data.text,
+                                final: true,
+                                firstReceivedTime: Date.now(),
+                                lastReceivedTime: Date.now(),
+                                startTime: Date.now(),
+                                endTime: Date.now(),
+                                language: "en",
+                            };
+
+                            // Determine participant for logic (if user role, use localParticipant)
+                            const targetParticipant = isSelf ? localParticipant : participant;
+
+                            processSegment(syntheticSegment, targetParticipant);
+                        }
+                    }
+                } catch (err) {
+                    console.error("❌ [Tracker] Failed to parse transcription data:", err);
+                }
+            }
+        };
+
+        room.on('dataReceived', handleDataReceived);
+        return () => {
+            room.off('dataReceived', handleDataReceived);
+        };
+    }, [room, localParticipant, processSegment]);
 
     return null; // Invisible component
 }

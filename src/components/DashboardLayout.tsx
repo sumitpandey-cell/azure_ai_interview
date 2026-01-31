@@ -8,24 +8,25 @@ import {
   FileText,
   BarChart3,
   Settings,
-  LogOut,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Flame,
   Trophy,
   BellRing,
   Medal,
   Map,
 } from "lucide-react";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useFeedback } from "@/context/FeedbackContext";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import ReferralModal from "@/components/ReferralModal";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -35,11 +36,12 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, headerControls }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const {
     remaining_seconds,
-    monthly_seconds,
+    plan_seconds,
     plan_name,
     invalidateCache,
     loading: subscriptionLoading
@@ -47,29 +49,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const { currentSession } = useInterviewStore();
   const { generateFeedbackInBackground, isGenerating, currentSessionId: generatingSessionId } = useFeedback();
 
-  const isCurrentSessionGenerating = isGenerating && generatingSessionId === currentSession?.id;
-  const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
-  const isCompleted = currentSession?.status === 'completed';
-  const isActive = (path: string) => pathname === path;
-  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
-
-  // Force refresh subscription data when returning to dashboard
-  useEffect(() => {
-    invalidateCache();
-  }, [invalidateCache]);
-
-  // Get streak data from analytics cache
-  const { streakData, refetch: refetchAnalytics } = useAnalytics(user?.id);
-  const streak = streakData?.currentStreak || 0;
-
-  // Force refresh analytical data when returning to dashboard or mounting
-  useEffect(() => {
-    if (user?.id) {
-      refetchAnalytics();
-    }
-  }, [user?.id, refetchAnalytics]);
-
-  // Initialize sidebar state
+  // sidebar state initialization
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("sidebarCollapsed");
@@ -78,11 +58,49 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     return false;
   });
 
+  // Get streak data from analytics cache
+  const { refetch: refetchAnalytics } = useAnalytics(user?.id);
+
+  // sidebar persistence
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem("sidebarCollapsed", String(sidebarCollapsed));
     }
   }, [sidebarCollapsed]);
+
+  // Auth Guard: Redirect unauthenticated users
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
+
+  // Force refresh subscription data when returning to dashboard
+  useEffect(() => {
+    invalidateCache();
+  }, [invalidateCache]);
+
+  // Force refresh analytical data when returning to dashboard or mounting
+  useEffect(() => {
+    if (user?.id) {
+      refetchAnalytics();
+    }
+  }, [user?.id, refetchAnalytics]);
+
+  // Early return after all hooks
+  if (authLoading || (!user && pathname !== '/')) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-sidebar">
+        <PremiumLogoLoader text="Authenticating" />
+      </div>
+    );
+  }
+
+  const isCurrentSessionGenerating = isGenerating && generatingSessionId === currentSession?.id;
+  const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
+  const isCompleted = currentSession?.status === 'completed';
+  const isActive = (path: string) => pathname === path;
+  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
 
   // Check if user is admin
   const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
@@ -114,10 +132,11 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:sticky top-0 left-0 z-50 lg:z-0 h-screen
-          transition-all duration-300 ease-in-out
+          fixed lg:sticky top-0 left-0 z-50 lg:z-20 h-screen
+          transition-[width,transform] duration-300 ease-in-out
+          w-64 will-change-[width,transform]
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"}
+        ${sidebarCollapsed ? "lg:w-20" : ""}
         bg-sidebar text-sidebar-foreground border-r border-sidebar-border
         flex flex-col flex-shrink-0
       `}
@@ -127,14 +146,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           {!sidebarCollapsed ? (
             <div className="flex items-center gap-4 group cursor-default">
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-all duration-700 animate-pulse"></div>
-                <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-2xl">
-                  <img
-                    src="/favicon.ico"
-                    alt="Arjuna AI"
-                    className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
+                <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full group-hover:bg-primary/50 transition-colors duration-700 group-hover:animate-pulse"></div>
+                <Image
+                  src="/arjuna_logo.png"
+                  alt="Arjuna AI"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-foreground tracking-tight leading-tight">
@@ -146,13 +165,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           ) : (
             <div className="relative flex-shrink-0 group">
               <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse"></div>
-              <div className="relative h-12 w-12 bg-card/40 backdrop-blur-xl border border-sidebar-border rounded-2xl flex items-center justify-center p-2.5 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <img
-                  src="/favicon.ico"
-                  alt="Arjuna AI"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <Image
+                src="/arjuna_logo.png"
+                alt="Arjuna AI"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
+              />
+
             </div>
           )}
 
@@ -163,19 +183,19 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           >
             <X className="h-5 w-5" />
           </button>
-
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`hidden lg:flex items-center justify-center h-10 w-10 border border-sidebar-border/50 hover:bg-sidebar-accent hover:border-sidebar-border rounded-xl text-muted-foreground hover:text-foreground transition-all duration-300 ${sidebarCollapsed ? "" : "ml-auto"}`}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
         </div>
+
+        {/* Collapse Toggle - Now on the border */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden lg:flex absolute top-5 -right-3 z-50 items-center justify-center h-6 w-6 bg-sidebar border border-sidebar-border rounded-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent shadow-md transition-all duration-300"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+        </button>
 
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-3 py-6 overflow-y-auto scrollbar-hide">
@@ -325,7 +345,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                         : 'text-sidebar-foreground'
                       }`}>
                       {Math.floor(remaining_seconds / 60)} min
-                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">/ {Math.floor(monthly_seconds / 60)}</span>
+                      <span className="text-[10px] text-sidebar-foreground/50 ml-1">Balance</span>
                     </div>
                   </>
                 )}
@@ -339,7 +359,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
                           ? 'bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]'
                           : 'bg-primary shadow-[0_0_8px_rgba(168,85,247,0.5)]'
                       }`}
-                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_seconds / monthly_seconds) * 100, 100)}%` }}
+                    style={{ width: subscriptionLoading ? '40%' : `${Math.min((remaining_seconds / plan_seconds) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -362,12 +382,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-2xl border-b border-border/50 shadow-lg">
         <div className="h-full px-4 flex items-center justify-between">
           {/* Hamburger Menu */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="h-10 w-10 flex items-center justify-center bg-card/50 border border-border/50 rounded-xl shadow-sm group active:scale-90 transition-all duration-300"
-          >
-            <Menu className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="h-10 w-10 flex items-center justify-center bg-card/50 border border-border/50 rounded-xl shadow-sm group active:scale-90 transition-all duration-300"
+            >
+              <Menu className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
+            </button>
+          </div>
 
           {/* Header Controls from Page */}
           {headerControls}
@@ -375,9 +397,9 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-transparent lg:rounded-l-[2rem] rounded-none overflow-hidden ml-0 h-screen relative">
+      <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto overflow-x-hidden bg-background backdrop-blur-[2px] pt-20 lg:pt-6 relative z-10 w-full">
+        <main className="flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
           <div
             key={pathname}
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
@@ -386,6 +408,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
           </div>
         </main >
       </div >
+
+      <ReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+        userId={user?.id}
+        userName={user?.user_metadata?.full_name}
+      />
     </div >
   );
 }

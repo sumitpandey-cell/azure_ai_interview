@@ -26,16 +26,19 @@ export const leaderboardService = {
         timeFilter: 'all' | 'monthly' | 'weekly' = 'all'
     ): Promise<LeaderboardEntry[]> {
         try {
-            let dateFilter = '';
 
+            // Calculate date range based on filter
+            let startDate: Date | null = null;
             if (timeFilter === 'monthly') {
-                dateFilter = `AND created_at >= NOW() - INTERVAL '30 days'`;
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 30);
             } else if (timeFilter === 'weekly') {
-                dateFilter = `AND created_at >= NOW() - INTERVAL '7 days'`;
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
             }
 
             // Using a more detailed query to get comprehensive stats
-            const { data, error } = await supabase
+            let query = supabase
                 .from('interview_sessions')
                 .select(`
           user_id,
@@ -46,6 +49,12 @@ export const leaderboardService = {
         `)
                 .eq('status', 'completed')
                 .not('score', 'is', null);
+
+            if (startDate) {
+                query = query.gte('created_at', startDate.toISOString());
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 

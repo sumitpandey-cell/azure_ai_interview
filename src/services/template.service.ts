@@ -167,7 +167,6 @@ export const templateService = {
                 .single();
 
             if (error) throw error;
-            console.log('✓ Template created:', data.id);
             return data;
         } catch (error) {
             console.error('Error creating template:', error);
@@ -188,7 +187,6 @@ export const templateService = {
                 .single();
 
             if (error) throw error;
-            console.log('✓ Template updated:', id);
             return data;
         } catch (error) {
             console.error(`Error updating template ${id}:`, error);
@@ -207,7 +205,6 @@ export const templateService = {
                 .eq('id', id);
 
             if (error) throw error;
-            console.log('✓ Template deleted (soft):', id);
             return true;
         } catch (error) {
             console.error(`Error deleting template ${id}:`, error);

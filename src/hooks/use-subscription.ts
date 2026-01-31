@@ -2,13 +2,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { subscriptionService } from '@/services/subscription.service';
 
 export interface SubscriptionStatus {
     type: 'free' | 'paid';
     plan_name?: string;
     allowed: boolean;
     remaining_seconds: number;
-    monthly_seconds: number;
+    plan_seconds: number;
     plan_id?: string;
     loading: boolean;
 }
@@ -32,7 +33,7 @@ export function useSubscription() {
             type: 'free',
             allowed: true,
             remaining_seconds: 3600, // Initialize to 1 hour (seconds) to prevent "Low Time" flash
-            monthly_seconds: 3600,
+            plan_seconds: 3600,
             loading: true
         };
     };
@@ -48,56 +49,39 @@ export function useSubscription() {
         // Check cache first
         const cached = subscriptionCache.get(user.id);
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            console.log('📦 Using cached subscription data');
             setStatus(cached.data);
             return;
         }
 
         try {
-            console.log('🔄 Fetching fresh subscription data');
-            // Call the database function we created
-            const { data, error } = await (supabase as any).rpc('check_and_reset_monthly_usage', { user_uuid: user.id });
+            // Fetch usage limit from service which now uses balance_seconds
+            const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(user.id);
 
-            if (error) {
-                console.error('Error checking eligibility:', error);
-                return;
-            }
+            const subscription = await subscriptionService.getSubscription(user.id);
+            const planResponse = subscription?.plan_id ? await (supabase as unknown as { from: (t: string) => { select: (p: string) => { eq: (f: string, v: string) => { single: () => Promise<{ data: { name: string } | null }> } } } })
+                .from('plans')
+                .select('name')
+                .eq('id', subscription.plan_id)
+                .single() : null;
+            const planName = planResponse?.data?.name || 'Free';
 
-            if (data && data.length > 0) {
-                const subscriptionData = data[0]; // RPC returns an array
-                console.log('🔍 RPC Response:', subscriptionData);
-                let planName = 'Free';
-                if (subscriptionData.plan_id) {
-                    const { data: planData } = await (supabase as any)
-                        .from('plans')
-                        .select('name')
-                        .eq('id', subscriptionData.plan_id)
-                        .single();
-                    if (planData) {
-                        planName = planData.name;
-                    }
-                }
+            const newStatus: SubscriptionStatus = {
+                type: planName !== 'Free' ? 'paid' : 'free',
+                plan_name: planName,
+                allowed: !hasLimit,
+                remaining_seconds: remainingSeconds,
+                plan_seconds: subscription?.plan_seconds || 6000,
+                plan_id: subscription?.plan_id || undefined,
+                loading: false
+            };
 
-                const newStatus: SubscriptionStatus = {
-                    type: subscriptionData.type,
-                    plan_name: planName,
-                    allowed: subscriptionData.allowed,
-                    remaining_seconds: subscriptionData.remaining_seconds,
-                    monthly_seconds: subscriptionData.monthly_seconds,
-                    plan_id: subscriptionData.plan_id,
-                    loading: false
-                };
+            setStatus(newStatus);
 
-                console.log('📊 Final Status:', newStatus);
-
-                setStatus(newStatus);
-
-                // Cache the result
-                subscriptionCache.set(user.id, {
-                    data: newStatus,
-                    timestamp: Date.now()
-                });
-            }
+            // Cache the result
+            subscriptionCache.set(user.id, {
+                data: newStatus,
+                timestamp: Date.now()
+            });
         } catch (error) {
             console.error('Error in checkEligibility:', error);
         } finally {
@@ -109,13 +93,10 @@ export function useSubscription() {
         if (!user?.id) return;
 
         try {
-            const { error } = await (supabase as any).rpc('increment_usage', {
-                user_uuid: user.id,
-                seconds_to_add: Math.round(secondsToAdd)
-            });
+            const success = await subscriptionService.trackUsage(user.id, secondsToAdd);
 
-            if (error) {
-                console.error('Error recording usage:', error);
+            if (!success) {
+                console.error('Error recording usage with credit system');
             } else {
                 // Invalidate cache and refresh
                 subscriptionCache.delete(user.id);
@@ -146,7 +127,6 @@ export function useSubscription() {
     useEffect(() => {
         const handleGlobalUpdate = () => {
             if (user?.id) {
-                console.log('🔔 Subscription update event received, refreshing...');
                 subscriptionCache.delete(user.id);
                 checkEligibility();
             }

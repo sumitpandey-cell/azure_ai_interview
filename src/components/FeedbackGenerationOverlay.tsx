@@ -3,10 +3,9 @@
 import React from "react";
 import { useFeedback } from "@/context/FeedbackContext";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, Loader2, X, ChevronRight } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 export function FeedbackGenerationOverlay() {
@@ -48,8 +47,8 @@ export function FeedbackGenerationOverlay() {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 pt-1">
-                                <Loader2 className="h-3 w-3 text-slate-400 animate-spin" />
+                            <div className="flex items-center gap-3 pt-1">
+                                <PremiumLogoLoader size={40} logoSize={15} text="" className="min-h-0 w-auto" />
                                 <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Processing interview data</span>
                             </div>
                         </div>

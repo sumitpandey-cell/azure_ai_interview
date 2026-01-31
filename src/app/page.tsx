@@ -1,17 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Target, TrendingUp, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Users, Clock, Star, Menu, X, Plus, Building2, Github, Twitter, Linkedin, Instagram, Mail, Mic, PlayCircle, Trophy, Map, BarChart3, Rocket } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Target, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Star, Building2, Mic, PlayCircle, Trophy, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Footer } from "@/components/Footer";
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { TransitionButton } from "@/components/TransitionButton";
+import { PublicHeader } from "@/components/PublicHeader";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } }
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } }
 };
 
 const staggerContainer = {
@@ -43,257 +48,68 @@ const SectionWrapper = ({ children, className, id }: { children: React.ReactNode
 };
 
 export default function Landing() {
-  const [scrolled, setScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const heroHeight = window.innerHeight;
-
-      setScrolled(scrollY > 20);
-      // Hide navbar when scrolled past the hero section (with a small buffer)
-      setHidden(scrollY > heroHeight - 100);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    setMounted(true);
   }, []);
 
-  const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Interviews",
-      description: "Practice with advanced AI that adapts to your responses and simulates real interview scenarios",
-      gradient: "from-indigo-500 to-blue-500",
-    },
-    {
-      icon: Target,
-      title: "Personalized Feedback",
-      description: "Get detailed analysis with actionable improvement suggestions after each session",
-      gradient: "from-blue-500 to-cyan-500",
-    },
-    {
-      icon: Map,
-      title: "Adaptive AI Roadmap",
-      description: "AI-generated learning paths tailored to your interview performance and career goals",
-      gradient: "from-purple-500 to-indigo-500",
-    },
-    {
-      icon: MessageSquare,
-      title: "Real-Time Coaching",
-      description: "Receive intelligent guidance during practice sessions to learn on the go",
-      gradient: "from-cyan-500 to-blue-500",
-    },
-    {
-      icon: Award,
-      title: "Earn Achievements",
-      description: "Unlock badges and milestones as you master different interview skills",
-      gradient: "from-blue-500 to-indigo-500",
-    },
-    {
-      icon: Zap,
-      title: "Daily Free Practice",
-      description: "Get 30 minutes of free daily practice time to perfect your skills",
-      gradient: "from-indigo-500 to-purple-500",
-    },
-  ];
+  useEffect(() => {
+    if (mounted && !loading && user) {
+      router.push("/dashboard");
+    }
+  }, [mounted, loading, user, router]);
 
-  const steps = [
-    {
-      number: "01",
-      title: "Choose Your Role",
-      description: "Select the job position you're preparing for",
-      icon: Target,
-    },
-    {
-      number: "02",
-      title: "Start Interview",
-      description: "Begin your AI-powered practice session",
-      icon: MessageSquare,
-    },
-    {
-      number: "03",
-      title: "Get Feedback",
-      description: "Receive detailed analysis and improvement tips",
-      icon: TrendingUp,
-    },
-    {
-      number: "04",
-      title: "Improve & Repeat",
-      description: "Track progress and keep practicing",
-      icon: Award,
-    },
-  ];
 
-  const testimonials = [
-    {
-      text: "I was skeptical about AI interviews at first, but Aura blew me away. The voice interaction feels so natural, and the feedback on my tone and pacing was something I couldn't get from just practicing with friends. It really helped me polish my soft skills for the Google behavioral round.",
-      name: "Sarah Chen",
-      role: "Software Engineer at Google",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "The system design templates are gold. I used to struggle with structuring my answers, but the step-by-step guidance here gave me a solid framework. I felt much more in control during my actual interview at Meta. Definitely worth it.",
-      name: "Michael Rodriguez",
-      role: "Product Manager at Meta",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "What I love is the specificity of the feedback. It doesn't just say 'good job', it points out exactly where I missed an edge case or could have optimized my code better. It's like having a senior engineer reviewing your code 24/7.",
-      name: "Priya Sharma",
-      role: "Data Scientist at Amazon",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "As a UX designer, I get nervous explaining my design decisions. Aura helped me practice articulating my thought process clearly. The 'why' behind the design is just as important as the design itself, and this tool really gets that.",
-      name: "James Wilson",
-      role: "UX Designer at Apple",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "I had a gap in my resume and was terrified of the 'tell me about yourself' question. I practiced it 50 times on Aura until I nailed the delivery. The confidence boost was real, and I think that's what got me the offer.",
-      name: "Emily Taylor",
-      role: "Marketing Manager at Netflix",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-    {
-      text: "The daily challenges kept me consistent. It's easy to slack off on prep, but seeing my streak grow and my scores improve became a fun little game. It turned a stressful process into something actually manageable.",
-      name: "David Kim",
-      role: "Senior Dev at Microsoft",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces",
-      rating: 5,
-    },
-  ];
+  if (!mounted || loading || user) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+        <PremiumLogoLoader text="Initializing Arjuna AI..." />
+        {/* Simple loader or just the background to prevent flash */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
+          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-purple-600/20 rounded-full blur-[120px] translate-x-1/4" />
+        </div>
+      </div>
+    );
+  }
 
-  const stats = [
-    { value: "50K+", label: "Active Users" },
-    { value: "500K+", label: "Interviews Completed" },
-    { value: "95%", label: "Success Rate" },
-    { value: "4.9/5", label: "User Rating" },
-  ];
-
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
+      {/* JSON-LD Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Arjuna AI",
+            "alternateName": ["ArjunaAI", "AI Interviewer", "Arjuna Interview Coach"],
+            "operatingSystem": "Web",
+            "applicationCategory": "EducationalApplication",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "description": "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills.",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "ratingCount": "20000"
+            }
+          })
+        }}
+      />
       {/* Scroll Progress Bar - Disabled */}
       {/* <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]"
         style={{ scaleX }}
       /> */}
-      {/* Navbar */}
-      {/* Navbar */}
-      <header
-        className={`fixed left-0 right-0 z-50 transition-all duration-500 ease-in-out ${hidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-          } ${scrolled
-            ? "top-4 flex justify-center px-3"
-            : "top-0 py-6"
-          }`}
-      >
-        <div
-          className={`transition-all duration-500 ease-in-out flex items-center justify-between ${scrolled
-            ? "bg-[#0f1117]/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-4xl ring-1 ring-white/5"
-            : "w-full container mx-auto px-4 sm:px-6 bg-transparent border-transparent border ring-0"
-            }`}
-        >
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-            <div className="relative">
-              <img
-                src="/arjuna-icon.png"
-                alt="Arjuna AI"
-                className="h-9 w-9 object-contain drop-shadow-lg"
-              />
-            </div>
-            <span className={`bg-clip-text text-transparent transition-all duration-300 ${scrolled
-              ? "bg-gradient-to-r from-white to-slate-400"
-              : "bg-gradient-to-r from-white to-indigo-200"
-              }`}>
-              Arjuna AI
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className={`hidden md:flex items-center gap-8 text-sm font-medium transition-colors duration-300 ${scrolled ? "text-slate-300" : "text-slate-300"
-            }`}>
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">
-              How It Works
-            </a>
-            <a href="#testimonials" className="hover:text-white transition-colors">
-              Testimonials
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block">
-              <TransitionButton
-                variant={scrolled ? "ghost" : "secondary"}
-                href="/auth"
-                className={`transition-all duration-300 ${scrolled
-                  ? "text-white hover:bg-white/10 rounded-full px-6"
-                  : "bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.45)]"
-                  } font-medium border-0`}
-              >
-                {scrolled ? "Login" : "Get Started"}
-              </TransitionButton>
-            </div>
-
-            {/* Mobile Menu Toggle */}
-            <button
-              className={`md:hidden p-2 text-white transition-colors hover:bg-white/10 rounded-full`}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="absolute top-full left-4 right-4 mt-2 bg-[#0f1117] border border-white/10 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-5 z-50">
-            <a
-              href="#features"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              How It Works
-            </a>
-            <a
-              href="#testimonials"
-              className="text-sm font-medium text-slate-300 hover:text-white py-2 px-4 rounded-lg hover:bg-white/5"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Testimonials
-            </a>
-            <TransitionButton
-              href="/auth"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-            >
-              Get Started
-            </TransitionButton>
-          </div>
-        )}
-      </header>
+      <PublicHeader />
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
         {/* Animated Background Effects - Cool Blue/Purple/Indigo Theme */}
@@ -343,10 +159,12 @@ export default function Landing() {
                   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&q=80&fit=crop&crop=faces",
                   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&fit=crop&crop=faces"
                 ].map((src, i) => (
-                  <img
+                  <Image
                     key={i}
                     src={src}
                     alt="User"
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full border-2 border-[#0A0A0B] object-cover"
                   />
                 ))}
@@ -387,17 +205,17 @@ export default function Landing() {
             {/* Dashboard Mockup */}
             <motion.div
               variants={scaleIn}
-              className="relative mx-auto max-w-5xl"
+              className="relative mx-auto max-w-5xl will-change-transform"
             >
               <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-50 blur-3xl"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-30 blur-3xl pointer-events-none"
                 style={{
                   background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)"
                 }}
               ></div>
 
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-1000"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-1000"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
 
               <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
                 {/* Mac Window Header */}
@@ -411,17 +229,20 @@ export default function Landing() {
                     <div className="h-6 w-64 bg-white/5 rounded-md flex items-center justify-center border border-white/5">
                       <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
                         <div className="w-2 h-2 rounded-full bg-blue-500/50"></div>
-                        arjuna-interview.ai
+                        arjunaai.in
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="relative z-0 bg-[#0f1117]">
-                  <img
+                  <Image
                     src="/dashboard-preview.png"
                     alt="Dashboard Preview"
+                    width={1920}
+                    height={1080}
                     className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500"
+                    priority
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
                 </div>
@@ -720,7 +541,7 @@ export default function Landing() {
                   {/* Rank 2 */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-slate-200 mb-2 overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" alt="Rank 2" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" alt="Rank 2" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-16 w-12 bg-slate-100 rounded-t-lg flex items-center justify-center text-slate-600 font-bold text-sm">2</div>
                   </div>
@@ -730,14 +551,14 @@ export default function Landing() {
                       <Award className="h-6 w-6 fill-yellow-500" />
                     </div>
                     <div className="w-14 h-14 rounded-full bg-yellow-500/20 border-2 border-yellow-500 mb-2 overflow-hidden ring-4 ring-yellow-500/10">
-                      <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Rank 1" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Rank 1" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-24 w-16 bg-gradient-to-b from-yellow-500/20 to-yellow-500/5 rounded-t-lg flex items-center justify-center text-yellow-500 font-bold text-lg border-t border-yellow-500/30">1</div>
                   </div>
                   {/* Rank 3 */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-slate-200 mb-2 overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" alt="Rank 3" className="w-full h-full object-cover" />
+                      <Image src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop" alt="Rank 3" width={100} height={100} className="w-full h-full object-cover" />
                     </div>
                     <div className="h-12 w-12 bg-slate-100 rounded-t-lg flex items-center justify-center text-slate-600 font-bold text-sm">3</div>
                   </div>
@@ -964,7 +785,7 @@ export default function Landing() {
               Crack the <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Big Tech</span> Code
             </h2>
             <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Don't practice randomly. Train with the exact questions, patterns, and evaluation criteria used by top tech giants.
+              Don&apos;t practice randomly. Train with the exact questions, patterns, and evaluation criteria used by top tech giants.
             </p>
           </div>
 
@@ -993,7 +814,7 @@ export default function Landing() {
 
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">Google</h3>
                 <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                  Master the art of "Googleyness", dynamic programming, and scalable system design.
+                  Master the art of &quot;Googleyness&quot;, dynamic programming, and scalable system design.
                 </p>
 
                 <div className="flex flex-col gap-1 mb-8">
@@ -1041,7 +862,7 @@ export default function Landing() {
                 {/* Logo Area */}
                 <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 relative shadow-lg shadow-orange-500/20">
                   <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <svg viewBox="0 0 24 24" fill="white" className="w-8 h-8 relative z-10"><path d="M13.6 15.6c-.9.5-2.5.9-4.1.4-1.9-.6-3.1-2.6-2.8-4.6.2-1.3 1-2.4 2.2-2.9 1.6-.6 3.4-.1 4.5 1.1.2.2.2.6 0 .8-.2.2-.5.2-.7 0-.9-1-2.3-1.4-3.6-.9-1 .4-1.6 1.3-1.8 2.4-.2 1.6.8 3.2 2.4 3.7 1.3.4 2.6.1 3.4-.4.2-.1.5-.1.7.1.1.3.1.6-.2.7zm5.5-5.4h-1.6v4.6c0 .6-.4 1.1-1 1.1s-1-.5-1-1.1v-4.6h-1.6v4.7c0 1.4 1.1 2.6 2.5 2.6s2.6-1.1 2.6-2.6v-4.7z" /></svg>
+                  <Image src="/amazon-icon.png" alt="Amazon" width={64} height={64} />
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-300 transition-colors">Amazon</h3>
@@ -1175,7 +996,7 @@ export default function Landing() {
               </h2>
 
               <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Join a community of developers, product managers, and designers who are acing their interviews with Aura. Real stories, real results.
+                Join thousands of developers, product managers, and designers who are acing their interviews with Arjuna AI. Real stories, real results.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-8 pt-6">
@@ -1198,7 +1019,7 @@ export default function Landing() {
                       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
                     ].map((src, i) => (
                       <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0A0B] overflow-hidden">
-                        <img src={src} alt="User" className="w-full h-full object-cover" />
+                        <Image src={src} alt="User" width={100} height={100} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
@@ -1288,11 +1109,13 @@ export default function Landing() {
                       className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:-rotate-1 hover:scale-[1.02]"
                     >
 
-                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">"{testimonial.text}"</p>
+                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <img
+                        <Image
                           src={testimonial.image}
                           alt={testimonial.name}
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
                         />
                         <div>
@@ -1354,11 +1177,13 @@ export default function Landing() {
                       key={`col2-${i}`}
                       className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:scale-[1.02] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:rotate-1"
                     >
-                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">"{testimonial.text}"</p>
+                      <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <img
+                        <Image
                           src={testimonial.image}
                           alt={testimonial.name}
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
                         />
                         <div>

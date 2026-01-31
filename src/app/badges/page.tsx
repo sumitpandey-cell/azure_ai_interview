@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Medal, Lock, Trophy, Award, Zap, Target, Star, TrendingUp, Info, Share2 } from "lucide-react";
+import { Medal, Lock, Award, Zap, Target, Star, TrendingUp } from "lucide-react";
 import { badgeService } from "@/services/badge.service";
-import type { Badge as BadgeType } from "@/services/badge.service";
 import { useAuth } from "@/contexts/AuthContext";
-import { BADGE_DEFINITIONS, getRarityColor, getRarityBorderColor, getRarityGlowColor } from "@/config/badges";
+import { BADGE_DEFINITIONS } from "@/config/badges";
 import { UserBadgeData } from "@/types/badge-types";
 import type { BadgeCategory } from "@/types/badge-types";
 import { toast } from "sonner";
@@ -42,9 +40,9 @@ const CATEGORY_LABELS: Record<BadgeCategory, string> = {
 
 export default function Badges() {
   const { user } = useAuth();
-  const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
+
   const [earnedBadges, setEarnedBadges] = useState<Set<string>>(new Set());
-  const [userBadgesData, setUserBadgesData] = useState<any[]>([]);
+  const [userBadgesData, setUserBadgesData] = useState<{ badge: { slug: string } }[]>([]);
   const [userData, setUserData] = useState<UserBadgeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<BadgeCategory | "all">("all");
@@ -57,13 +55,13 @@ export default function Badges() {
         setLoading(true);
 
         // Load all available badges from DB
-        const badges = await badgeService.getBadges();
-        setAllBadges(badges);
+        // const badges = await badgeService.getBadges();
+        // setAllBadges(badges);
 
         // Load user's earned badges (using slugs for easier lookup)
         const userBadges = await badgeService.getUserBadges(user.id);
         setUserBadgesData(userBadges);
-        const earnedSlugs = new Set(userBadges.map((ub: any) => ub.badge.slug));
+        const earnedSlugs = new Set(userBadges.map((ub: { badge: { slug: string } }) => ub.badge.slug));
         setEarnedBadges(earnedSlugs);
 
         // Load real user stats for progress
@@ -96,28 +94,13 @@ export default function Badges() {
     loadBadges();
   }, [user]);
 
-  const getBadgeIcon = (iconName: string) => {
-    return iconName;
-  };
+
 
   const getBadgeProgress = (badgeId: string) => {
     const definition = BADGE_DEFINITIONS.find((b) => b.id === badgeId);
     if (!definition?.getProgress || !userData) return null;
 
     return definition.getProgress(userData);
-  };
-
-  const handleShareBadge = (badgeName: string) => {
-    if (navigator.share) {
-      navigator.share({
-        title: "Achievement Unlocked!",
-        text: `I just earned the ${badgeName} badge on Arjuna AI! Check it out!`,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(`I just earned the ${badgeName} badge on Arjuna AI!`);
-      toast.success("Link copied to clipboard!");
-    }
   };
 
   const earnedCount = earnedBadges.size;
@@ -177,49 +160,49 @@ export default function Badges() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-10 sm:pt-0">
+      <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 sm:pt-0">
 
         {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Achievements</h1>
-          <p className="text-muted-foreground text-lg">Track your progress and milestones as you master technical interviews.</p>
+        <div className="space-y-2 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Achievements</h1>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">Track your progress and milestones as you master technical interviews.</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: "Badges Earned", value: earnedCount, total: totalCount, icon: Medal },
-            { label: "Total Score", value: badgeScore, icon: Star },
-            { label: "Latest Badge", value: latestBadge?.name || "-", icon: Zap },
-            { label: "Completion", value: `${progressPercentage}%`, icon: Target }
+            { label: "Badges Earned", value: earnedCount, total: totalCount, unit: "", icon: Medal, color: "text-blue-500", bg: "bg-blue-500/10" },
+            { label: "Total Score", value: badgeScore, unit: "", icon: Star, color: "text-primary", bg: "bg-primary/10" },
+            { label: "Latest Badge", value: latestBadge?.name || "-", unit: "", icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+            { label: "Completion", value: `${progressPercentage}%`, unit: "", icon: Target, color: "text-orange-500", bg: "bg-orange-500/10" }
           ].map((stat, i) => (
-            <Card key={i} className="bg-card border-border shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-2xl font-bold text-foreground">{stat.value}</span>
-                    {stat.total && <span className="text-sm text-muted-foreground">/ {stat.total}</span>}
-                  </div>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-secondary/50 flex items-center justify-center text-primary">
-                  <stat.icon className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20 sm:h-24">
+              <div className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 opacity-[0.08] group-hover:opacity-15 transition-opacity pointer-events-none">
+                <stat.icon className={cn("h-16 w-16 sm:h-20 sm:w-20", stat.color)} />
+              </div>
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10 truncate">{stat.label}</span>
+              <div className="flex items-baseline gap-0.5 relative z-10">
+                <span className="text-xl sm:text-2xl font-black text-foreground tabular-nums tracking-tighter">
+                  {typeof stat.value === 'number' ? stat.value : stat.value}
+                </span>
+                {stat.total && <span className="text-[10px] sm:text-xs font-bold text-muted-foreground/60">/{stat.total}</span>}
+              </div>
+            </div>
           ))}
         </div>
 
+
         {/* Global Progress */}
-        <Card className="p-6 border-border shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        <Card className="p-4 sm:p-5 border border-border/80 dark:border-border/50 shadow-md sm:shadow-sm bg-card/80 dark:bg-card/60 backdrop-blur-xl">
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
             <div>
-              <h3 className="font-semibold text-foreground">Overall Progress</h3>
-              <p className="text-sm text-muted-foreground">You have unlocked {earnedCount} out of {totalCount} available badges.</p>
+              <h3 className="font-bold text-sm sm:text-base text-foreground">Overall Progress</h3>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">You have unlocked {earnedCount} out of {totalCount} available badges.</p>
             </div>
-            <span className="text-xl font-bold text-primary">{progressPercentage}%</span>
+            <span className="text-lg sm:text-xl font-black text-primary tabular-nums">{progressPercentage}%</span>
           </div>
-          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 sm:h-2 w-full bg-muted rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-primary"
               initial={{ width: 0 }}
@@ -230,28 +213,29 @@ export default function Badges() {
         </Card>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors border",
+                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all border whitespace-nowrap shrink-0 shadow-sm",
                 selectedCategory === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-background text-muted-foreground border-border/80 hover:bg-muted"
               )}
             >
-              <span className="mr-2">{cat === "all" ? "🌐" : CATEGORY_ICONS[cat]}</span>
+              <span className="mr-1.5">{cat === "all" ? "🌐" : CATEGORY_ICONS[cat]}</span>
               {cat === "all" ? "All Badges" : CATEGORY_LABELS[cat]}
             </button>
           ))}
         </div>
 
+
         {/* Badge Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           <AnimatePresence mode="popLayout">
-            {filteredBadges.map((badge, index) => {
+            {filteredBadges.map((badge) => {
               const isEarned = earnedBadges.has(badge.id);
               const progress = getBadgeProgress(badge.id);
               const progressPercent = progress ? Math.round((progress.current / progress.max) * 100) : 0;
@@ -268,9 +252,10 @@ export default function Badges() {
                   <Card className={cn(
                     "h-full overflow-hidden transition-all duration-300 border",
                     isEarned
-                      ? "border-primary/20 bg-primary/5 shadow-sm hover:border-primary/40"
-                      : "border-border bg-card/50 opacity-80"
+                      ? "border-primary/30 dark:border-primary/20 bg-primary/[0.03] dark:bg-primary/5 shadow-md dark:shadow-sm hover:border-primary/50"
+                      : "border-border/80 dark:border-border bg-card/50 opacity-80"
                   )}>
+
                     <CardContent className="p-5 flex flex-col items-center text-center h-full relative">
                       {isEarned && (
                         <div className="absolute top-3 right-3 text-primary">

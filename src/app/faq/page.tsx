@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Search, ArrowRight, MessageCircle, HelpCircle } from "lucide-react";
+import { Plus, Search, MessageCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { GlobalBackground } from "@/components/GlobalBackground";
 import { useState } from "react";
@@ -33,6 +33,8 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
         </div>
     );
 };
+
+import { PublicHeader } from "@/components/PublicHeader";
 
 export default function FAQPage() {
     const [activeCategory, setActiveCategory] = useState("All");
@@ -92,27 +94,7 @@ export default function FAQPage() {
     return (
         <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
             <GlobalBackground />
-
-            {/* Navigation */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
-                            <img src="/arjuna-icon.png" alt="Arjuna AI" className="h-8 w-8 object-contain relative z-10" />
-                        </div>
-                        <span className="bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent group-hover:to-indigo-300 transition-all">
-                            Arjuna AI
-                        </span>
-                    </Link>
-                    <div className="flex items-center gap-6">
-                        <Link href="/auth" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
-                        <Button size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full font-medium px-6" asChild>
-                            <Link href="/auth">Get Started</Link>
-                        </Button>
-                    </div>
-                </div>
-            </header>
+            <PublicHeader />
 
             <main className="pt-32 pb-20 relative z-10">
                 <div className="container mx-auto px-4">
@@ -151,8 +133,8 @@ export default function FAQPage() {
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
                                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeCategory === cat
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 scale-105'
-                                            : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 scale-105'
+                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
                                         }`}
                                 >
                                     {cat}
@@ -181,7 +163,7 @@ export default function FAQPage() {
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
                                 <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                                    Can't find the answer you're looking for? Please chat to our friendly team.
+                                    Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly team.
                                 </p>
                                 <Button size="lg" className="h-12 px-8 bg-white text-black hover:bg-slate-200 rounded-full font-bold" asChild>
                                     <Link href="/contact">Contact Support</Link>

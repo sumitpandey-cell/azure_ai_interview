@@ -1,6 +1,5 @@
 import { supabase, publicSupabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import { badgeService } from "./badge.service";
 
 export type Profile = Tables<"profiles">;
 export type ProfileInsert = TablesInsert<"profiles">;
@@ -49,20 +48,23 @@ export const profileService = {
         }
     },
 
-    /**
-     * Update specified fields of a profile
-     */
     async updateProfile(userId: string, updates: ProfileUpdate): Promise<Profile | null> {
         try {
+            // Use update instead of upsert to avoid RLS insert issues.
+            // Direct inserts into profiles are usually handled by database triggers.
             const { data, error } = await supabase
                 .from("profiles")
-                .update(updates)
+                .update({
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                })
                 .eq("id", userId)
-                .select()
-                .single();
+                .select(); // Remove .single() to avoid 406 error if row doesn't exist
 
             if (error) throw error;
-            return data;
+
+            // Return first item or null if no row was updated
+            return data && data.length > 0 ? data[0] : null;
         } catch (error) {
             console.error("Error updating profile:", error);
             return null;
@@ -152,7 +154,6 @@ export const profileService = {
                 .eq("id", userId);
 
             if (error) throw error;
-            console.log("✓ Profile deleted:", userId);
             return true;
         } catch (error) {
             console.error("Error deleting profile:", error);
@@ -164,7 +165,7 @@ export const profileService = {
      * Get a public profile by ID or slug
      * Only returns a subset of safe, non-sensitive fields
      */
-    async getPublicProfile(idOrSlug: string): Promise<any | null> {
+    async getPublicProfile(idOrSlug: string): Promise<Pick<Profile, "id" | "full_name" | "avatar_url" | "streak_count" | "is_public" | "profile_slug" | "created_at"> | null> {
         try {
             // Check if it's an ID (UUID) or a slug
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
@@ -188,7 +189,8 @@ export const profileService = {
             if (!data || !data.is_public) return null;
 
             return data;
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as { message?: string; cause?: unknown };
             console.error("Critical error in getPublicProfile:", error.message || error);
             if (error.cause) {
                 console.error("Detailed Fetch Cause:", error.cause);
@@ -208,11 +210,95 @@ export const profileService = {
                 .eq("id", userId);
 
             if (error) throw error;
-            console.log(`✓ Profile visibility for ${userId} set to: ${isPublic}`);
             return true;
         } catch (error) {
             console.error("Error setting profile visibility:", error);
             return false;
+        }
+    },
+
+    /**
+     * Deactivate user account
+     * Sets is_active to false and records deactivation timestamp
+     */
+    async deactivateAccount(userId: string, reason?: string): Promise<boolean> {
+        try {
+            const updateData = {
+                is_active: false,
+                deactivated_at: new Date().toISOString(),
+                deactivation_reason: reason || null,
+                updated_at: new Date().toISOString()
+            };
+
+            // Don't use .select() because RLS will block reading deactivated profiles
+            const { error } = await supabase
+                .from("profiles")
+                .update(updateData)
+                .eq("id", userId);
+
+            if (error) {
+                console.error('❌ Supabase error:', error);
+                throw error;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Error deactivating account:", error);
+            return false;
+        }
+    },
+
+    /**
+     * Reactivate user account
+     * Sets is_active to true and clears deactivation data
+     */
+    async reactivateAccount(userId: string): Promise<boolean> {
+        try {
+            const { error } = await supabase
+                .from("profiles")
+                .update({
+                    is_active: true,
+                    deactivated_at: null,
+                    deactivation_reason: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", userId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error("Error reactivating account:", error);
+            return false;
+        }
+    },
+
+    /**
+     * Check account status
+     * Returns whether account is active and deactivation details if applicable
+     */
+    async checkAccountStatus(userId: string): Promise<{
+        isActive: boolean;
+        deactivatedAt: string | null;
+        deactivationReason: string | null;
+    } | null> {
+        try {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("is_active, deactivated_at, deactivation_reason")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (error) throw error;
+            if (!data) return null;
+
+            return {
+                isActive: data.is_active,
+                deactivatedAt: data.deactivated_at,
+                deactivationReason: data.deactivation_reason
+            };
+        } catch (error) {
+            console.error("Error checking account status:", error);
+            return null;
         }
     }
 };

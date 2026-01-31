@@ -18,12 +18,12 @@ export const notificationService = {
             const { data, error } = await supabase
                 .from("notifications")
                 .insert(notification)
-                .select()
-                .single();
+                .select();
 
             if (error) throw error;
-            console.log("✓ Notification created:", data.id);
-            return data;
+
+            const result = data && data.length > 0 ? data[0] : null;
+            return result;
         } catch (error) {
             console.error("Error creating notification:", error);
             return null;
@@ -105,7 +105,6 @@ export const notificationService = {
                 .eq("is_read", false);
 
             if (error) throw error;
-            console.log("✓ All notifications marked as read for user:", userId);
             return true;
         } catch (error) {
             console.error("Error marking all notifications as read:", error);
@@ -142,7 +141,6 @@ export const notificationService = {
                 .eq("user_id", userId);
 
             if (error) throw error;
-            console.log("✓ All notifications deleted for user:", userId);
             return true;
         } catch (error) {
             console.error("Error deleting all notifications:", error);

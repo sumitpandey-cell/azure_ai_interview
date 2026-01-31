@@ -125,10 +125,9 @@ export function saveLanguagePreference(languageCode: string): void {
 /**
  * Check if Web Speech API supports the given language
  */
-export function isSpeechRecognitionSupported(languageCode: string): boolean {
-  // This is a basic check - you might want to enhance this
-  // by actually testing speech recognition capabilities
-  const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+export function isSpeechRecognitionSupported(): boolean {
+  // Check if speech recognition is supported in the browser
+  const SpeechRecognition = (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
   return !!SpeechRecognition;
 }
 

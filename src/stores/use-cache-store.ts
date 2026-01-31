@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillData, WeeklyActivityData, PerformanceData, StreakData } from '@/services/analytics.service';
+import type { Json } from '@/integrations/supabase/types';
 
 interface InterviewSession {
   id: string;
@@ -12,9 +13,9 @@ interface InterviewSession {
   duration_seconds: number | null;
   completed_at: string | null;
   user_id: string;
-  config?: any; // JSONB field for storing interview configuration
-  feedback?: any;
-  transcript?: any;
+  config?: Json; // JSONB field for storing interview configuration
+  feedback?: Json;
+  transcript?: Json;
 }
 
 interface LeaderboardUser {
@@ -89,7 +90,7 @@ interface CacheState {
   // Cache actions
   setSessions: (sessions: InterviewSession[]) => void;
   invalidateSessions: () => void;
-  setStats: (stats: any) => void;
+  setStats: (stats: { totalInterviews: number; averageScore: number; timePracticed: number; rank: number }) => void;
   invalidateStats: () => void;
   setProfile: (profile: { full_name: string | null; avatar_url: string | null; streak_count: number; last_activity_date: string | null }) => void;
   invalidateProfile: () => void;
@@ -406,7 +407,6 @@ export const useCacheStore = create<CacheState>()(
 
       // Event handlers for cache invalidation
       onInterviewCreated: () => {
-        const state = get();
         // Invalidate sessions, stats, and leaderboard when new interview is created
         set({
           sessionsCacheValid: false,

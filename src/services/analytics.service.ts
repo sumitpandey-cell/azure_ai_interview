@@ -5,8 +5,19 @@ import type { Database } from '@/integrations/supabase/types';
 // Interface for feedback structure
 interface FeedbackData {
     technicalSkills?: Array<{ name: string; score: number }>;
+    overallSkills?: Array<{ name: string; score: number }>;
     skills?: Array<{ name: string; score: number }>;
-    [key: string]: any;
+    overall?: Record<string, unknown> & {
+        technicalSkills?: Array<{ name: string; score: number }>;
+        overallSkills?: Array<{ name: string; score: number }>;
+        skills?: Array<{ name: string; score: number }>;
+    };
+    resumptions?: Array<Record<string, unknown> & {
+        technicalSkills?: Array<{ name: string; score: number }>;
+        overallSkills?: Array<{ name: string; score: number }>;
+        skills?: Array<{ name: string; score: number }>;
+    }>;
+    [key: string]: unknown;
 }
 
 export interface SkillData {
@@ -50,17 +61,39 @@ export const analyticsService = {
             const skillMap = new Map<string, { totalScore: number; count: number }>();
 
             sessions?.forEach(session => {
-                const feedback = session.feedback as FeedbackData | null;
+                let feedback = session.feedback as FeedbackData | null;
 
-                // Check for technicalSkills (new format)
-                const skills = feedback?.technicalSkills || feedback?.skills || [];
+                // Handle nested structure (v2.0): { overall: { ... }, resumptions: [ ... ] }
+                if (feedback && typeof feedback === 'object') {
+                    // If we have the new standardized structure, use 'overall'
+                    if (feedback.overall && typeof feedback.overall === 'object') {
+                        feedback = feedback.overall as unknown as FeedbackData;
+                    }
+                    // If we have the old nested structure for multi-resumption (backward compatibility)
+                    else if (Array.isArray(feedback.resumptions) && feedback.resumptions.length > 0) {
+                        if (!feedback.overall || (typeof feedback.overall === 'object' && Object.keys(feedback.overall as object).length === 0)) {
+                            feedback = feedback.resumptions[0] as unknown as FeedbackData;
+                        }
+                    }
+                }
 
-                skills.forEach((skill: any) => {
-                    const existing = skillMap.get(skill.name) || { totalScore: 0, count: 0 };
-                    skillMap.set(skill.name, {
-                        totalScore: existing.totalScore + skill.score,
-                        count: existing.count + 1
-                    });
+                if (!feedback) return;
+
+                // Check for technicalSkills (new format) and overallSkills
+                const technicalSkills = feedback.technicalSkills || [];
+                const overallSkills = (feedback.overallSkills as Array<{ name: string; score: number }>) || feedback.skills || [];
+
+                // Combine both technical and overall skills
+                const allSkills = [...technicalSkills, ...overallSkills];
+
+                allSkills.forEach((skill: { name?: string; score?: number }) => {
+                    if (skill && skill.name && typeof skill.score === 'number') {
+                        const existing = skillMap.get(skill.name) || { totalScore: 0, count: 0 };
+                        skillMap.set(skill.name, {
+                            totalScore: existing.totalScore + skill.score,
+                            count: existing.count + 1
+                        });
+                    }
                 });
             });
 
@@ -99,7 +132,6 @@ export const analyticsService = {
                 throw error;
             }
 
-            console.log(`[WeeklyActivity] Sessions found for last 7 days: ${sessions?.length || 0}`);
 
             // Initialize all 7 days with 0 count
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -142,9 +174,8 @@ export const analyticsService = {
     /**
      * Calculate current and longest streak
      */
-    async calculateStreak(userId: string): Promise<StreakData> {
+    async calculateStreak(userId: string, client = supabase): Promise<StreakData> {
         try {
-            console.log(`[StreakDebug] Starting calculation for user: ${userId}`);
 
             // UTILITIES
             const parseSafeDate = (dateStr: string | null) => {
@@ -164,23 +195,21 @@ export const analyticsService = {
             };
 
             // 1. Fetch official profile data
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await client
                 .from('profiles')
                 .select('streak_count, last_activity_date')
                 .eq('id', userId)
                 .maybeSingle(); // Changed to maybeSingle as per instruction
 
             if (profileError) console.error('[StreakDebug] Profile fetch error:', profileError);
-            console.log(`[StreakDebug] Raw Profile Data:`, profile);
 
             // 2. Fetch session history
-            const { data: sessions, error: sessionError } = await supabase
+            const { data: sessions, error: sessionError } = await client
                 .from('interview_sessions')
                 .select('created_at')
                 .eq('user_id', userId); // Removed order as uniqueDates will handle sorting
 
             if (sessionError) console.error('[StreakDebug] Sessions fetch error:', sessionError);
-            console.log(`[StreakDebug] Sessions found: ${sessions?.length || 0}`);
 
             const now = new Date();
             const todayStr = getLocalDateString(now);
@@ -188,7 +217,6 @@ export const analyticsService = {
             yesterdayDate.setDate(now.getDate() - 1);
             const yesterdayStr = getLocalDateString(yesterdayDate);
 
-            console.log(`[StreakDebug] Reference - Today: ${todayStr}, Yesterday: ${yesterdayStr}`);
 
             let currentStreak = 0;
             let longestFromHistory = 0;
@@ -197,13 +225,10 @@ export const analyticsService = {
             if (profile) {
                 const profileLastActivityDate = profile.last_activity_date ? parseSafeDate(profile.last_activity_date) : null;
                 const profileLastDay = profileLastActivityDate ? getLocalDateString(profileLastActivityDate) : null;
-                console.log(`[StreakDebug] Profile Last Activity Date (Raw): ${profile?.last_activity_date}, Parsed Day: ${profileLastDay}`);
 
                 if (profileLastDay === todayStr || profileLastDay === yesterdayStr) {
                     currentStreak = profile.streak_count || 0;
-                    console.log(`[StreakDebug] Current Streak validated from Profile: ${currentStreak}`);
                 } else {
-                    console.log(`[StreakDebug] Profile streak not active for today/yesterday. Profile last day: ${profileLastDay}`);
                 }
             }
 
@@ -213,7 +238,6 @@ export const analyticsService = {
                     sessions.map(s => getLocalDateString(parseSafeDate(s.created_at)))
                 )).sort((a, b) => b.localeCompare(a)); // Sort descending for current streak calculation
 
-                console.log(`[StreakDebug] Unique Session Dates (most recent 5):`, uniqueDates.slice(0, 5));
 
                 const mostRecentSessionDate = uniqueDates[0];
 
@@ -231,9 +255,7 @@ export const analyticsService = {
                             checkDate = expected;
                         } else break;
                     }
-                    console.log(`[StreakDebug] Current Streak recalculated from Sessions: ${currentStreak}`);
                 } else if (currentStreak === 0) {
-                    console.log(`[StreakDebug] No active streak found from sessions (most recent: ${mostRecentSessionDate}).`);
                 }
 
                 // 5. Calculate Longest Streak from full history
@@ -256,11 +278,9 @@ export const analyticsService = {
                         temp = 1;
                     }
                 }
-                console.log(`[StreakDebug] Longest streak calculated from sessions: ${longestFromHistory}`);
             }
 
             const finalLongest = Math.max(profile?.streak_count || 0, longestFromHistory, currentStreak);
-            console.log(`[StreakDebug] Final Values -> Current: ${currentStreak}, Longest: ${finalLongest}`);
 
             return { currentStreak, longestStreak: finalLongest };
         } catch (error) {
@@ -369,7 +389,13 @@ export const analyticsService = {
 
             // Calculate average score
             const averageScore = sessions && sessions.length > 0
-                ? sessions.reduce((sum, s) => sum + (s.score || 0), 0) / sessions.length
+                ? sessions.reduce((sum, s) => {
+                    const feedbackObj = s.feedback as unknown as { overallSkills?: Array<{ score: number }> };
+                    if (feedbackObj?.overallSkills && feedbackObj.overallSkills.length > 0) {
+                        return sum + (feedbackObj.overallSkills.reduce((skillSum, skill) => skillSum + skill.score, 0) / feedbackObj.overallSkills.length);
+                    }
+                    return sum + (s.score || 0);
+                }, 0) / sessions.length
                 : 0;
 
             // Calculate completion rate
@@ -382,7 +408,7 @@ export const analyticsService = {
             const strongAreas = new Set<string>();
 
             sessions?.forEach(session => {
-                const feedback = session.feedback as any;
+                const feedback = session.feedback as Record<string, unknown> & { weaknesses?: string[]; strengths?: string[] };
                 if (feedback?.weaknesses) {
                     feedback.weaknesses.forEach((w: string) => weakAreas.add(w));
                 }
