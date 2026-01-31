@@ -1,12 +1,10 @@
 'use client'
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Search, Award, ArrowRight, Star } from "lucide-react";
+import { Trophy, Search, Award, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -15,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar-utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
-import { Button } from "@/components/ui/button";
 import { LeaderboardPageSkeleton } from "@/components/LeaderboardPageSkeleton";
 
 interface LeaderboardUser {
@@ -80,15 +77,6 @@ const Leaderboard = () => {
     const isFirst = rank === 1;
     const isSecond = rank === 2;
     const isMe = player.userId === user?.id;
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-      const checkMobile = () => setIsMobile(window.innerWidth < 640);
-      checkMobile();
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
     const displayName = isMe
       ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || player.fullName || "Unknown Candidate")
       : (player.fullName || "Unknown Candidate");
@@ -120,15 +108,14 @@ const Leaderboard = () => {
     const styles = getRankStyles();
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: rank * 0.1, duration: 0.5 }}
+      <div
         className={cn(
-          "relative flex flex-col items-center transition-all duration-500 group",
+          "relative flex flex-col items-center group transition-all duration-700 ease-out",
+          "opacity-0 translate-y-4 animate-in fill-mode-forwards",
           isFirst ? "z-30 scale-100 lg:scale-110" : "z-10 scale-90 lg:scale-95",
           className
         )}
+        style={{ animationDelay: `${rank * 100}ms` }}
       >
         {/* Animated Background Glow */}
         <div className={cn(
@@ -212,7 +199,7 @@ const Leaderboard = () => {
 
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     );
   };
   return (
@@ -368,92 +355,86 @@ const Leaderboard = () => {
                 </TableHeader>
 
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {filteredUsers.map((leaderboardUser, index) => {
-                      const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
-                      const isTop3 = actualRank <= 3;
-                      const isCurrentUser = leaderboardUser.userId === user?.id;
-                      const displayName = isCurrentUser
-                        ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || leaderboardUser.fullName || "Unknown Candidate")
-                        : (leaderboardUser.fullName || "Unknown Candidate");
+                  {filteredUsers.map((leaderboardUser, index) => {
+                    const actualRank = users.findIndex(u => u.userId === leaderboardUser.userId) + 1;
+                    const isTop3 = actualRank <= 3;
+                    const isCurrentUser = leaderboardUser.userId === user?.id;
+                    const displayName = isCurrentUser
+                      ? (profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || leaderboardUser.fullName || "Unknown Candidate")
+                      : (leaderboardUser.fullName || "Unknown Candidate");
 
-                      return (
-                        <motion.tr
-                          layout
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ delay: index * 0.05, duration: 0.3 }}
-                          key={leaderboardUser.userId}
-                          className={cn(
-                            "transition-colors border-b border-border/10 last:border-0 group",
-                            isCurrentUser ? "bg-primary/[0.05] dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20" : "hover:bg-muted/30"
+                    return (
+                      <TableRow
+                        key={leaderboardUser.userId}
+                        className={cn(
+                          "transition-colors border-b border-border/10 last:border-0 group",
+                          "opacity-0 translate-x-[-10px] animate-in fill-mode-forwards",
+                          isCurrentUser ? "bg-primary/[0.05] dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20" : "hover:bg-muted/30"
+                        )}
+                        style={{ animationDelay: `${index * 30}ms` }}
+                      >
+                        <TableCell className="text-center py-5">
+                          <div className={cn(
+                            "inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black shadow-inner transition-transform group-hover:scale-110",
+                            actualRank === 1 ? "bg-yellow-500 text-yellow-950 shadow-yellow-500/20" :
+                              actualRank === 2 ? "bg-slate-300 text-slate-900 shadow-slate-300/20" :
+                                actualRank === 3 ? "bg-amber-600 text-amber-50 shadow-amber-600/20" :
+                                  "text-muted-foreground bg-muted/20"
+                          )}>
+                            {actualRank}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+                                <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
+                                <AvatarFallback className="font-bold">{displayName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              {isCurrentUser && (
+                                <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={cn("text-sm font-black tracking-tight truncate", isCurrentUser ? "text-primary" : "text-foreground")}>
+                                {displayName}
+                              </p>
+                              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
+                                {leaderboardUser.userId.slice(0, 8)} • Verified
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center py-5">
+                          <div className="flex flex-col items-center">
+                            <span className="font-black text-foreground text-sm">{leaderboardUser.bayesianScore.toFixed(0)} pts</span>
+                            <div className="h-1 w-12 bg-muted/30 rounded-full mt-1 overflow-hidden">
+                              <div
+                                className="h-full bg-primary"
+                                style={{ width: `${leaderboardUser.bayesianScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center py-5">
+                          <span className="text-sm font-bold text-foreground/80 bg-muted/20 px-3 py-1 rounded-lg">
+                            {leaderboardUser.interviewCount}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center py-5">
+                          {isTop3 ? (
+                            <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 border-none text-[9px] font-black tracking-widest uppercase px-2 py-0.5 shadow-lg shadow-indigo-500/20">
+                              Legends
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-border/50">
+                              Candidate
+                            </Badge>
                           )}
-                        >
-                          <TableCell className="text-center py-5">
-                            <div className={cn(
-                              "inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black shadow-inner transition-transform group-hover:scale-110",
-                              actualRank === 1 ? "bg-yellow-500 text-yellow-950 shadow-yellow-500/20" :
-                                actualRank === 2 ? "bg-slate-300 text-slate-900 shadow-slate-300/20" :
-                                  actualRank === 3 ? "bg-amber-600 text-amber-50 shadow-amber-600/20" :
-                                    "text-muted-foreground bg-muted/20"
-                            )}>
-                              {actualRank}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
-                                  <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
-                                  <AvatarFallback className="font-bold">{displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                {isCurrentUser && (
-                                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className={cn("text-sm font-black tracking-tight truncate", isCurrentUser ? "text-primary" : "text-foreground")}>
-                                  {displayName}
-                                </p>
-                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
-                                  {leaderboardUser.userId.slice(0, 8)} • Verified
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center py-5">
-                            <div className="flex flex-col items-center">
-                              <span className="font-black text-foreground text-sm">{leaderboardUser.bayesianScore.toFixed(0)} pts</span>
-                              <div className="h-1 w-12 bg-muted/30 rounded-full mt-1 overflow-hidden">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{ width: `${leaderboardUser.bayesianScore}%` }}
-                                />
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center py-5">
-                            <span className="text-sm font-bold text-foreground/80 bg-muted/20 px-3 py-1 rounded-lg">
-                              {leaderboardUser.interviewCount}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center py-5">
-                            {isTop3 ? (
-                              <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 border-none text-[9px] font-black tracking-widest uppercase px-2 py-0.5 shadow-lg shadow-indigo-500/20">
-                                Legends
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-border/50">
-                                Candidate
-                              </Badge>
-                            )}
-                          </TableCell>
-
-                        </motion.tr>
-                      );
-                    })}
-                  </AnimatePresence>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {filteredUsers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">

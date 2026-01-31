@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2, AlertTriangle, XCircle } from "lucide-react";
+import { FileText, MessageSquare, Calendar, Clock, CheckCircle2, Target, ArrowRight, Trash2, XCircle } from "lucide-react";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useFeedback } from "@/context/FeedbackContext";
 import { type Json } from "@/integrations/supabase/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const { isGenerating, currentSessionId: generatingSessionId } = useFeedback();
 
   // Filtering and sorting state
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -386,7 +388,8 @@ export default function Reports() {
                     <div
                       key={session.id}
                       onClick={() => {
-                        if (session.status === 'completed') {
+                        const isGeneratingFeedback = isGenerating && generatingSessionId === session.id;
+                        if (session.status === 'completed' || isGeneratingFeedback) {
                           router.push(`/interview/${session.id}/report`);
                         } else {
                           const toast = import('sonner').then(m => m.toast);
@@ -438,16 +441,12 @@ export default function Reports() {
                             const feedback = session.feedback as Record<string, unknown> | null;
                             const isGenerationFailed = feedback?.status === 'failed' ||
                               (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'));
-                            const isInsufficientData = feedback?.note === 'Insufficient data for report generation';
-
-                            if (isInsufficientData) {
-                              return (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
-                                  <AlertTriangle className="h-3 w-3" />
-                                  Requirements Not Met
-                                </div>
-                              );
-                            }
+                            return (
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Completed
+                              </div>
+                            );
 
                             if (isGenerationFailed) {
                               return (
@@ -497,7 +496,7 @@ export default function Reports() {
                           <span className="text-[10px] font-bold text-muted-foreground/60">
                             {(() => {
                               const feedback = session.feedback as Record<string, unknown> | null;
-                              if (feedback?.note === 'Insufficient data for report generation') return "Insufficient Data";
+                              if (feedback?.note === 'Insufficient data for report generation') return "Brief Session (0%)";
                               if (feedback?.status === 'failed' || (typeof feedback?.executiveSummary === 'string' && (feedback.executiveSummary as string).includes('Feedback generation failed'))) return "Generation Error";
                               return "Report Pending";
                             })()}

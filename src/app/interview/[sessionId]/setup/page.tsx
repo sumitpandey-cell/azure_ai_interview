@@ -15,6 +15,7 @@ import { useInterviewStore } from "@/stores/use-interview-store";
 import { AvatarSelection } from "@/components/AvatarSelection";
 import { getDefaultAvatar, getAvatarById, type InterviewerAvatar } from "@/config/interviewer-avatars";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import { type SessionConfig } from "@/types/interview";
 
 import {
     AlertDialog,
@@ -27,20 +28,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface SessionConfig {
-    skills?: string[];
-    jobDescription?: string;
-    duration?: number;
-    difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
-    selectedAvatar?: string; // ID of the selected interviewer avatar
-    companyInterviewConfig?: {
-        companyTemplateId: string;
-        companyName: string;
-        role: string;
-        experienceLevel: string;
-    };
-    useResume?: boolean;
-}
 
 interface SessionData {
     id: string;
@@ -349,8 +336,9 @@ export default function InterviewSetup() {
                 await interviewService.completeSession(sessionId, {
                     durationSeconds: 0,
                     feedback: {
-                        note: "Insufficient data for report generation",
-                        reason: "session_started_but_not_finished"
+                        executiveSummary: "This session was initialized but not completed. No evaluative data was captured.",
+                        note: "Session abandoned during setup or initialization",
+                        status: "abandoned"
                     }
                 });
 

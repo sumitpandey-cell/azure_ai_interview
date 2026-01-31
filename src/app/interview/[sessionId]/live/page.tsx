@@ -16,6 +16,7 @@ import { useFeedback } from "@/context/FeedbackContext";
 import type { InterviewSession } from "@/services/interview.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
 import { TranscriptEntry } from "@/contexts/TranscriptContext";
+import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 
 export default function LiveInterview() {
     const { sessionId } = useParams();
@@ -52,6 +53,7 @@ export default function LiveInterview() {
     const [reconnectCountdown, setReconnectCountdown] = useState(60);
     const countdownInterval = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttempts = useRef(0);
+    const { updateInterviewSession, completeInterviewSession } = useOptimizedQueries();
 
     // Shared sync function to avoid duplication
     const syncDuration = useCallback(async (reason: string) => {
@@ -64,7 +66,7 @@ export default function LiveInterview() {
 
             if (deltaSeconds >= 1) {
                 lastSyncTimeRef.current = now;
-                await interviewService.updateSession(currentSessionId, {
+                await updateInterviewSession(currentSessionId, {
                     durationSeconds: deltaSeconds
                 });
             }
@@ -73,7 +75,7 @@ export default function LiveInterview() {
         } finally {
             isSyncingRef.current = false;
         }
-    }, [currentSessionId]);
+    }, [currentSessionId, updateInterviewSession]);
 
     // Handle Session End
     const { generateFeedbackInBackground } = useFeedback();
@@ -101,28 +103,21 @@ export default function LiveInterview() {
             const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
                 userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
 
-            if (metThreshold) {
-                const completedSession = await interviewService.completeSession(currentSessionId, {
-                    totalHintsUsed: hintsToUse,
-                    durationSeconds: deltaSeconds
-                });
+            const completedSession = await completeInterviewSession(currentSessionId, {
+                totalHintsUsed: hintsToUse,
+                durationSeconds: deltaSeconds
+            });
 
-                if (completedSession) {
-                    generateFeedbackInBackground(currentSessionId);
+            if (completedSession) {
+                generateFeedbackInBackground(currentSessionId);
+                if (metThreshold) {
                     toast.success("Interview complete. Generating report...");
                 } else {
-                    console.error("❌ Failed to complete session - Feedback cannot be generated.");
-                    toast.error("Failed to save results. You can try manually from your dashboard.");
+                    toast.warning("Session brief. Summary will be generated with score 0.");
                 }
             } else {
-                await interviewService.completeSession(currentSessionId, {
-                    durationSeconds: deltaSeconds,
-                    feedback: {
-                        note: "Insufficient data for report generation",
-                        reason: totalDuration < INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS ? "duration_too_short" : "too_few_responses"
-                    }
-                });
-                toast.warning("Session too short for a full report.");
+                console.error("❌ Failed to complete session - Feedback cannot be generated.");
+                toast.error("Failed to save results. You can try manually from your dashboard.");
             }
 
             if (!skipRedirect) router.replace(`/dashboard`);
@@ -130,7 +125,7 @@ export default function LiveInterview() {
             console.error("Error ending session:", err);
             if (!skipRedirect) router.replace(`/dashboard`);
         }
-    }, [currentSessionId, router, generateFeedbackInBackground]);
+    }, [currentSessionId, router, generateFeedbackInBackground, completeInterviewSession]);
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({

@@ -343,7 +343,9 @@ export const interviewService = {
                     status: INTERVIEW_CONFIG.STATUS.COMPLETED,
                     completed_at: new Date().toISOString(),
                     feedback: {
-                        note: "Session abandoned - User started a new interview"
+                        executiveSummary: "This session was abandoned because a newer interview was started. No analysis is available for this attempt.",
+                        note: "Session abandoned - User started a new interview",
+                        status: "abandoned"
                     }
                 })
                 .eq("id", sessionId)
@@ -526,7 +528,9 @@ export const interviewService = {
                         await this.completeSession(session.id, {
                             durationSeconds: 60,
                             feedback: {
-                                note: "No conversation recorded - session completed automatically"
+                                executiveSummary: "No conversation was recorded for this session. The interview may have been closed prematurely or no microphone activity was detected.",
+                                note: "No conversation recorded - session completed automatically",
+                                status: "auto_completed"
                             }
                         });
                         result.fixed++;

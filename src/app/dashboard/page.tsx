@@ -48,6 +48,7 @@ import { PerformanceAnalysisChart } from "@/components/PerformanceAnalysisChart"
 import { useAnalytics } from "@/hooks/use-analytics";
 import { LowTimeWarningBanner } from "@/components/LowTimeWarningBanner";
 import { formatDurationShort } from "@/lib/format-duration";
+import { type SessionConfig } from "@/types/interview";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
@@ -59,6 +60,25 @@ interface UserMetadata {
   avatar_url?: string;
   gender?: string;
 }
+
+const calculateGrade = (score: number) => {
+  if (score >= 95) return "A+";
+  if (score >= 90) return "A";
+  if (score >= 85) return "A-";
+  if (score >= 80) return "B+";
+  if (score >= 75) return "B";
+  if (score >= 70) return "B-";
+  if (score >= 60) return "C";
+  if (score >= 50) return "D";
+  return score > 0 ? "E" : "F";
+};
+
+const getPerformanceLabel = (score: number) => {
+  if (score >= 80) return "Elite";
+  if (score >= 60) return "Strong";
+  if (score >= 40) return "Growing";
+  return "Initial";
+};
 
 function DashboardContent() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -577,7 +597,20 @@ function DashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sessions.slice(0, 6).map((session) => {
                 const isGeneratingFeedback = isSessionGenerating(session.id);
-                const score = session.score;
+                // Derive actual score from session column or nested feedback JSON
+                let score = session.score;
+                if (score === null && session.feedback) {
+                  const fb = session.feedback as Record<string, unknown>;
+                  // Handle different possible feedback structures
+                  const overall = fb.overall as { score?: number } | undefined;
+                  if (overall?.score !== undefined) {
+                    score = overall.score;
+                  } else if (typeof fb.score === 'number') {
+                    score = fb.score;
+                  } else if (fb.status === 'abandoned' || fb.note === 'Insufficient data for report generation') {
+                    score = 0;
+                  }
+                }
 
                 // Check if the interview was too short by examining the feedback
                 const feedback = session.feedback as { executiveSummary?: string, note?: string } | null;
@@ -593,21 +626,7 @@ function DashboardContent() {
 
                 // Extract the reason from executiveSummary or note if available
                 let feedbackReason = '';
-                if (isTooShort) {
-                  if (feedback?.note === 'Insufficient data for report generation') {
-                    feedbackReason = 'Requirements not met';
-                  } else if (summaryText) {
-                    if (summaryText.includes('too brief')) {
-                      feedbackReason = 'Interview too short';
-                    } else if (summaryText.includes('too short')) {
-                      feedbackReason = 'Session too brief';
-                    } else {
-                      feedbackReason = 'Insufficient duration';
-                    }
-                  } else {
-                    feedbackReason = 'Requirements not met';
-                  }
-                } else if (isFailed) {
+                if (isFailed) {
                   feedbackReason = 'Analysis failed';
                 }
 
@@ -615,9 +634,11 @@ function DashboardContent() {
                   <div
                     key={session.id}
                     onClick={() => {
+                      const isGeneratingFeedback = isSessionGenerating(session.id);
                       setNavigatingSessionId(session.id);
-                      if (session.status === 'completed') {
-                        if (isTooShort) {
+
+                      if (session.status === 'completed' || isGeneratingFeedback) {
+                        if (isTooShort && !isGeneratingFeedback) {
                           toast.info("Interview was too brief", {
                             description: "You can view the feedback, but a longer session is needed for a comprehensive assessment.",
                             duration: 4000
@@ -639,7 +660,7 @@ function DashboardContent() {
                       {/* Header: Type Badge & Status */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          {session.config && (session.config as { companyInterviewConfig?: unknown }).companyInterviewConfig ? (
+                          {session.config && (session.config as SessionConfig).companyInterviewConfig ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 uppercase tracking-wide">
                               <Building2 className="h-3 w-3" />
                               Company Specific
@@ -682,42 +703,42 @@ function DashboardContent() {
                                   <span className="text-[10px] font-medium text-muted-foreground">Please wait</span>
                                 </div>
                               </div>
-                            ) : (isTooShort || isFailed) ? (
+                            ) : isFailed ? (
                               <div className="flex items-center gap-2">
-                                <div className={cn(
-                                  "h-10 w-10 rounded-2xl flex items-center justify-center border",
-                                  isFailed ? "bg-red-500/10 border-red-500/20" : "bg-amber-500/10 border-amber-500/20"
-                                )}>
-                                  {isFailed ? (
-                                    <XCircle className="h-5 w-5 text-red-500" />
-                                  ) : (
-                                    <Clock className="h-5 w-5 text-amber-500" />
-                                  )}
+                                <div className="h-10 w-10 rounded-2xl flex items-center justify-center border bg-red-500/10 border-red-500/20">
+                                  <XCircle className="h-5 w-5 text-red-500" />
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className={cn(
-                                    "text-xs font-bold",
-                                    isFailed ? "text-red-500" : "text-foreground"
-                                  )}>
+                                  <span className="text-xs font-bold text-red-500">
                                     {feedbackReason}
                                   </span>
                                   <span className="text-[10px] font-medium text-muted-foreground">
-                                    {isFailed ? "Please try again" : "Complete longer session"}
+                                    Please try again
                                   </span>
                                 </div>
                               </div>
                             ) : score !== null ? (
                               <div className="flex flex-col">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground/50 mb-0.5 tracking-wider">Score</span>
-                                <div className="flex items-baseline gap-1">
-                                  <span className={cn(
-                                    "text-3xl font-black tracking-tighter tabular-nums",
-                                    score >= 70 ? "text-emerald-500" : score >= 40 ? "text-primary" : "text-rose-500"
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-baseline gap-1">
+                                    <span className={cn(
+                                      "text-3xl font-black tracking-tighter tabular-nums",
+                                      score >= 70 ? "text-emerald-500" : score >= 40 ? "text-primary" : "text-rose-500"
+                                    )}>
+                                      {score}
+                                    </span>
+                                    <span className="text-sm font-bold text-muted-foreground/50">%</span>
+                                  </div>
+                                  <div className={cn(
+                                    "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest",
+                                    score >= 70 ? "bg-emerald-500/10 text-emerald-500" : score >= 40 ? "bg-primary/10 text-primary" : "bg-rose-500/10 text-rose-500"
                                   )}>
-                                    {score}
-                                  </span>
-                                  <span className="text-sm font-bold text-muted-foreground/50">%</span>
+                                    {calculateGrade(score)}
+                                  </div>
                                 </div>
+                                <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
+                                  {isTooShort ? "Short Session" : getPerformanceLabel(score)} Assessment
+                                </span>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">

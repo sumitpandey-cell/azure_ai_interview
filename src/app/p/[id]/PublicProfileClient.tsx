@@ -14,14 +14,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getAvatarUrl, getInitials } from "@/lib/avatar-utils"
 import {
     Check, Trophy, Target, ArrowRight, ShieldCheck,
-    Globe, Share2, Sparkles, TrendingUp, Award,
-    Diamond, Flame, History, ChevronDown, Calendar,
+    Globe, Sparkles, TrendingUp, Award,
+    Flame, History, ChevronDown, Calendar,
     Lock,
     Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
@@ -158,10 +157,8 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
     if (!profile) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card p-12 rounded-2xl border shadow-xl backdrop-blur-2xl max-w-lg"
+                <div
+                    className="bg-card p-12 rounded-2xl border shadow-xl backdrop-blur-2xl max-w-lg opacity-0 animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards"
                 >
                     <Lock className="h-20 w-20 text-muted-foreground mx-auto mb-6 opacity-20" />
                     <h1 className="text-3xl font-bold text-foreground mb-3">Profile Protected</h1>
@@ -171,7 +168,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                             Go Home
                         </Button>
                     </Link>
-                </motion.div>
+                </div>
             </div>
         )
     }
@@ -216,7 +213,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                     {/* LEFT COLUMN - Profile Summary */}
                     <div className="md:col-span-2 lg:col-span-3">
                         {/* Profile Info Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 fill-mode-forwards">
                             <Card className="h-full bg-card border border-border rounded-2xl overflow-hidden p-5 sm:p-6 md:p-8 flex flex-col items-center text-center shadow-xl relative">
                                 <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
                                     <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full border border-border">
@@ -259,13 +256,13 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     </div>
                                 </div>
                             </Card>
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* MIDDLE COLUMN - Main Content */}
                     <div className="md:col-span-2 lg:col-span-6 flex flex-col gap-4 sm:gap-6">
                         {/* Candidate Overview Card (Top Dashboard) */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 delay-100 fill-mode-forwards">
                             <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xl">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4">
                                     <OverviewItem
@@ -285,10 +282,10 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     />
                                 </div>
                             </Card>
-                        </motion.div>
+                        </div>
 
                         {/* Interview Performance History Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex-1">
+                        <div className="opacity-0 animate-in fade-in slide-in-from-bottom-5 duration-500 delay-200 fill-mode-forwards flex-1">
                             <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 lg:p-10 shadow-xl min-h-[450px] sm:min-h-[500px] flex flex-col h-full">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-2">
                                     <div className="flex items-center gap-3 sm:gap-4">
@@ -380,19 +377,14 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     )}
                                 </div>
 
-                                {/* Session Ledger Grid */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-10 pb-2">
                                     {sortedInterviews.length > 0 ? (
-                                        <AnimatePresence mode="popLayout">
+                                        <>
                                             {sortedInterviews.slice(0, 3).map((session, i) => (
-                                                <motion.div
+                                                <div
                                                     key={session.position + session.completed_at || i}
-                                                    layout
-                                                    initial={{ opacity: 0, scale: 0.9 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    exit={{ opacity: 0, scale: 0.9 }}
-                                                    transition={{ delay: i * 0.1 }}
-                                                    className="bg-muted/30 border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm"
+                                                    className="bg-muted/30 border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm opacity-0 animate-in fade-in zoom-in-95 fill-mode-forwards"
+                                                    style={{ animationDelay: `${i * 100}ms` }}
                                                 >
                                                     <div className="flex items-center justify-between mb-3 text-foreground">
                                                         <div className="text-[10px] sm:text-xs font-black group-hover:text-primary transition-colors truncate flex-1 uppercase">{session.position}</div>
@@ -421,9 +413,9 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                                             {(session.score || 0) >= 70 && <TrendingUp className="h-3 w-3 text-primary" />}
                                                         </div>
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             ))}
-                                        </AnimatePresence>
+                                        </>
                                     ) : (
                                         <div className="col-span-full text-center py-8 sm:py-12">
                                             <History className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
@@ -432,13 +424,13 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     )}
                                 </div>
                             </Card>
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* RIGHT COLUMN - Stats & Actions */}
                     <div className="md:col-span-2 lg:col-span-3 flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6">
                         {/* System Credentials Card */}
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                        <div className="opacity-0 animate-in fade-in slide-in-from-right-5 duration-500 fill-mode-forwards">
                             <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl">
                                 <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 sm:mb-8">Credentials</h3>
                                 <div className="space-y-4 sm:space-y-6">
@@ -452,10 +444,10 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     />
                                 </div>
                             </Card>
-                        </motion.div>
+                        </div>
 
                         {/* Expertise Matrix Card */}
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex-1">
+                        <div className="opacity-0 animate-in fade-in slide-in-from-right-5 duration-500 delay-100 fill-mode-forwards flex-1">
                             <Card className="bg-card border border-border rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl h-full">
                                 <div className="flex items-center justify-between mb-6 sm:mb-8">
                                     <div>
@@ -482,7 +474,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     )}
                                 </div>
                             </Card>
-                        </motion.div>
+                        </div>
                     </div>
 
                 </div>
@@ -542,11 +534,9 @@ function SkillProgress({ label, value, count }: { label: string, value: number, 
                 </div>
             </div>
             <div className="w-full h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ duration: 1.2, delay: 0.2, ease: "circOut" }}
-                    className="h-full bg-gradient-to-r from-primary to-primary shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)]"
+                <div
+                    className="h-full bg-gradient-to-r from-primary to-primary shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out fill-mode-forwards"
+                    style={{ width: `${value}%` }}
                 />
             </div>
         </div>

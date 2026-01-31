@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
+import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 
 interface FeedbackContextType {
     isGenerating: boolean;
@@ -32,6 +33,7 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
     const [feedbackReady, setFeedbackReady] = useState(false);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [shouldRefreshDashboard, setShouldRefreshDashboard] = useState(false);
+    const { fetchSessionDetail } = useOptimizedQueries();
 
     const generateFeedbackInBackground = useCallback(async (sessionId: string) => {
         setIsGenerating(true);
@@ -59,6 +61,9 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
                     setFeedbackReady(true);
                     setShouldRefreshDashboard(true);
 
+                    // Force refresh the session detail cache for this specific session
+                    await fetchSessionDetail(sessionId, true);
+
                     // Show success toast with action
                     toast.success("Interview feedback is ready!", {
                         action: {
@@ -83,7 +88,7 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
         // Start the process and await it
         await processFeedback();
 
-    }, []);
+    }, [fetchSessionDetail]);
 
     const resetFeedbackState = useCallback(() => {
         setFeedbackReady(false);

@@ -3,6 +3,7 @@ import { AccessToken, RoomServiceClient, AgentDispatchClient } from "livekit-ser
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { limiters } from "@/lib/rate-limit";
+import { type SessionConfig } from "@/types/interview";
 
 export async function GET(request: Request) {
   try {
@@ -31,25 +32,6 @@ export async function GET(request: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let sessionContext: any = null;
 
-    interface SessionConfig {
-      selectedVoice?: string;
-      selectedAvatar?: string;
-      skills?: string[];
-      difficulty?: string;
-      duration?: number;
-      companyName?: string;
-      role?: string;
-      experienceLevel?: string;
-      useResume?: boolean;
-      company?: { name: string };
-      companyInterviewConfig?: {
-        companyName: string;
-        role: string;
-        experienceLevel: string;
-        companyId?: string;
-        companyTemplateId?: string;
-      };
-    }
 
     if (sessionId) {
       // Initialize Supabase Client with cookies to authenticate as user

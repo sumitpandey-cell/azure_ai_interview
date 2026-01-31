@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FeedbackData } from '@/lib/gemini-feedback';
 import { CompanyQuestion } from '@/types/company-types';
+import { SessionConfig } from '@/types/interview';
 import { CodingChallenge } from '@/types/coding-challenge-types';
 import type { Json } from '@/integrations/supabase/types';
 
@@ -20,24 +21,7 @@ interface InterviewSessionData {
     interview_type: string;
     position: string;
     status: string;
-    config: {
-        interviewMode?: 'general' | 'company';
-        companyId?: string;
-        companyName?: string;
-        role?: string;
-        experienceLevel?: string;
-        skills?: string[];
-        jobDescription?: string;
-        difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
-        selectedAvatar?: string;
-        selectedVoice?: string;
-        companyInterviewConfig?: {
-            companyTemplateId: string;
-            companyName: string;
-            role: string;
-            experienceLevel: string;
-        };
-    };
+    config: SessionConfig;
     created_at: string;
     duration_seconds?: number;
     transcript?: Json;

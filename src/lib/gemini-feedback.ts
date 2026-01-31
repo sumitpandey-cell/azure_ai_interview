@@ -124,37 +124,39 @@ function analyzeInterviewLength(transcript: Message[]): InterviewLengthAnalysis 
  */
 function getTooShortInterviewFeedback(position: string, analysis: InterviewLengthAnalysis): FeedbackData {
     const minTurns = INTERVIEW_CONFIG.LENGTH_CATEGORIES.TOO_SHORT;
+    const reason = analysis.totalTurns < minTurns ? "insufficient conversation depth" : "brief session duration";
+
     return {
-        executiveSummary: `This interview session was too brief (${analysis.totalTurns} exchanges) to provide a comprehensive assessment for the ${position} position. A meaningful technical interview typically requires at least ${minTurns} substantial exchanges to evaluate candidate capabilities effectively. We recommend scheduling a longer session to get valuable insights into your technical skills and problem-solving approach.`,
+        executiveSummary: `This interview session for the ${position} position was too brief (${analysis.totalTurns} exchanges) to provide a meaningful technical assessment. Reports require a minimum level of engagement to evaluate skills accurately. Consequently, this session has been recorded with a score of 0. We recommend a longer, more detailed discussion in your next attempt to unlock full AI insights.`,
         strengths: [
-            "Showed up and engaged with the interview process",
-            "Demonstrated willingness to participate in technical assessment"
+            "Attempted the interview process",
+            "Engaged with the initial setup"
         ],
         improvements: [
-            "Complete a full-length interview session for comprehensive evaluation",
-            "Prepare for longer technical discussions to showcase your abilities",
-            "Consider practicing with mock interviews to build confidence"
+            "Aim for a session length of at least 10-15 minutes",
+            "Provide more detailed, technical answers to questions",
+            "Ensure you address the core technical competencies of the role"
         ],
         overallSkills: [
             {
                 name: "Technical Knowledge",
                 score: 0,
-                feedback: "Insufficient interview duration to assess technical capabilities. Please complete a longer session for evaluation."
+                feedback: `Score of 0 due to ${reason}. Not enough technical data was captured to evaluate knowledge.`
             },
             {
                 name: "Communication",
                 score: 0,
-                feedback: "Limited interaction time prevents meaningful assessment of communication skills."
+                feedback: "Communication skills couldn't be evaluated due to the extremely short nature of the exchange."
             },
             {
                 name: "Problem Solving",
                 score: 0,
-                feedback: "No significant problem-solving scenarios were completed during this brief session."
+                feedback: "No complex problem-solving scenarios were reached during this session."
             },
             {
                 name: "Cultural Fit",
                 score: 0,
-                feedback: "Unable to evaluate cultural fit due to insufficient interview content."
+                feedback: "Insufficient interaction to determine alignment with professional standards."
             }
         ],
         technicalSkills: [],

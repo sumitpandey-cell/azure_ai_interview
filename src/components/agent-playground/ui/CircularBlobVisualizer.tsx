@@ -95,14 +95,14 @@ export function CircularBlobVisualizer({
         // Initialize particles if not already done
         if (particlesRef.current.length === 0) {
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-            const count = isMobile ? 150 : 350; // Reduced density for mobile
+            const count = isMobile ? 80 : 200; // Significantly reduced density
             for (let i = 0; i < count; i++) {
                 const phi = Math.acos(-1 + (2 * i) / count);
                 const theta = Math.sqrt(count * Math.PI) * phi;
                 particlesRef.current.push({
                     phi,
                     theta,
-                    size: Math.random() * 1.0 + 0.5,
+                    size: Math.random() * 0.8 + 0.4,
                 });
             }
         }
@@ -119,6 +119,9 @@ export function CircularBlobVisualizer({
             const deltaTime = now - lastFrameTime;
             lastFrameTime = now;
 
+            // Cap deltaTime to prevent jumps
+            const effectiveDelta = Math.min(deltaTime, 33);
+
             const isDark = document.documentElement.classList.contains('dark');
             ctx.clearRect(0, 0, size, size);
 
@@ -126,33 +129,23 @@ export function CircularBlobVisualizer({
             let localVolume = 0;
 
             if (agentAnalyserRef.current && agentDataRef.current) {
-                if (agentAnalyserRef.current.context.state === 'suspended') {
-                    (agentAnalyserRef.current.context as AudioContext).resume();
-                }
-                if (agentAnalyserRef.current && agentDataRef.current) {
-                    // @ts-expect-error - frequency data buffer mismatch
-                    agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
-                    let sum = 0;
-                    for (let i = 0; i < agentDataRef.current.length; i++) sum += agentDataRef.current[i];
-                    agentVolume = sum / agentDataRef.current.length;
-                }
+                // @ts-expect-error - frequency data buffer mismatch
+                agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current);
+                let sum = 0;
+                for (let i = 0; i < agentDataRef.current.length; i++) sum += agentDataRef.current[i];
+                agentVolume = sum / agentDataRef.current.length;
             }
 
             if (localAnalyserRef.current && localDataRef.current) {
-                if (localAnalyserRef.current.context.state === 'suspended') {
-                    (localAnalyserRef.current.context as AudioContext).resume();
-                }
-                if (localAnalyserRef.current && localDataRef.current) {
-                    // @ts-expect-error - frequency data buffer mismatch
-                    localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
-                    let sum = 0;
-                    for (let i = 0; i < localDataRef.current.length; i++) sum += localDataRef.current[i];
-                    localVolume = sum / localDataRef.current.length;
-                }
+                // @ts-expect-error - frequency data buffer mismatch
+                localAnalyserRef.current.getByteFrequencyData(localDataRef.current);
+                let sum = 0;
+                for (let i = 0; i < localDataRef.current.length; i++) sum += localDataRef.current[i];
+                localVolume = sum / localDataRef.current.length;
             }
 
-            // Smoothing - use deltaTime for consistent speed
-            const lerpFactor = Math.min(deltaTime / 50, 0.5);
+            // Smoothing
+            const lerpFactor = Math.min(effectiveDelta / 50, 0.5);
             smoothedAgentVolume = smoothedAgentVolume * (1 - lerpFactor) + agentVolume * lerpFactor;
             smoothedLocalVolume = smoothedLocalVolume * (1 - lerpFactor) + localVolume * lerpFactor;
 
@@ -164,74 +157,64 @@ export function CircularBlobVisualizer({
             const AGENT_ACTIVE = state === "speaking" || smoothedAgentVolume > 10;
             const LOCAL_ACTIVE = smoothedLocalVolume > 12;
 
-            // Base Colors & Opacities based on theme
-            let primaryColor = { r: 168, g: 85, b: 247 }; // Purple (Agent)
-            let glowOpacity = isDark ? 0.12 : 0.2;
+            // Base Colors
+            let primaryColor = { r: 168, g: 85, b: 247 };
+            let glowOpacity = isDark ? 0.08 : 0.15;
 
             if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
-                primaryColor = { r: 245, g: 158, b: 11 }; // Amber-500 (Local)
+                primaryColor = { r: 245, g: 158, b: 11 };
             } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
                 primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 };
-                glowOpacity = isDark ? 0.05 : 0.15;
+                glowOpacity = isDark ? 0.03 : 0.1;
             }
 
-            // Background Ambient Glow
-            const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size / 2);
-            const dynamicGlow = glowOpacity + (normalizedVolume * (isDark ? 0.35 : 0.25));
-            glowGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`);
-            glowGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
-            ctx.fillStyle = glowGradient;
-            ctx.fillRect(0, 0, size, size);
+            // Background Ambient Glow - Simplified
+            const dynamicGlow = glowOpacity + (normalizedVolume * (isDark ? 0.25 : 0.15));
+            ctx.fillStyle = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size / 3, 0, Math.PI * 2);
+            ctx.fill();
 
             // Update Rotations
-            const rotationSpeed = deltaTime / 1000;
+            const rotationSpeed = effectiveDelta / 1000;
             rotationY += (0.2 + normalizedVolume * 1.5) * rotationSpeed;
             rotationX += (0.1 + normalizedVolume * 0.8) * rotationSpeed;
 
             const time = now / 1000;
+            const cosY = Math.cos(rotationY);
+            const sinY = Math.sin(rotationY);
+            const cosX = Math.cos(rotationX);
+            const sinX = Math.sin(rotationX);
 
-            // Projected Particles
-            const projectedParticles = particlesRef.current.map(p => {
+            // Render Particles without pre-sorting for performance
+            particlesRef.current.forEach(p => {
                 let x = Math.sin(p.phi) * Math.cos(p.theta);
                 let y = Math.sin(p.phi) * Math.sin(p.theta);
                 let z = Math.cos(p.phi);
 
-                // Rotate around Y
-                const cosY = Math.cos(rotationY);
-                const sinY = Math.sin(rotationY);
+                // Rotate Y
                 const x1 = x * cosY - z * sinY;
                 const z1 = x * sinY + z * cosY;
                 x = x1; z = z1;
 
-                // Rotate around X
-                const cosX = Math.cos(rotationX);
-                const sinX = Math.sin(rotationX);
+                // Rotate X
                 const y2 = y * cosX - z * sinX;
                 const z2 = y * sinX + z * cosX;
                 y = y2; z = z2;
 
-                const noise = Math.sin(p.phi * 5 + time * 2) * Math.cos(p.theta * 5 + time * 3) * 0.05;
-                const volumeOffset = normalizedVolume * 0.4;
+                const noise = Math.sin(p.phi * 5 + time * 2) * 0.03;
+                const volumeOffset = normalizedVolume * 0.3;
                 const radius = baseRadius * (1 + noise + volumeOffset);
 
-                return {
-                    x: centerX + x * radius,
-                    y: centerY + y * radius,
-                    z,
-                    size: p.size * (z + 2) / 2
-                };
-            });
+                const px = centerX + x * radius;
+                const py = centerY + y * radius;
+                const psize = p.size * (z + 2) / 2;
 
-            // Only sort if we have enough performance overhead or limit sorting
-            projectedParticles.sort((a, b) => a.z - b.z);
-
-            // Render Particles
-            projectedParticles.forEach(p => {
-                const depthFactor = (p.z + 1.5) / 2.5;
+                const depthFactor = (z + 1.5) / 2.5;
                 const opacity = isDark ? depthFactor : Math.min(depthFactor * 1.2 + 0.3, 1.0);
 
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.arc(px, py, psize, 0, Math.PI * 2);
 
                 if (AGENT_ACTIVE) {
                     ctx.fillStyle = isDark ? `rgba(192, 132, 252, ${opacity})` : `rgba(126, 34, 206, ${opacity})`;
@@ -241,10 +224,7 @@ export function CircularBlobVisualizer({
                     const idleColor = isDark ? '148, 163, 184' : '30, 41, 59';
                     ctx.fillStyle = `rgba(${idleColor}, ${opacity})`;
                 }
-
                 ctx.fill();
-
-                // NO shadowBlur here - it's too expensive
             });
 
             animationFrameRef.current = requestAnimationFrame(animate);

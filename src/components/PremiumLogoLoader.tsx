@@ -2,7 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface PremiumLogoLoaderProps {
@@ -51,12 +50,10 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                     />
                 </div>
 
-                {/* Primary Circular Ring - Rotating */}
-                <motion.div
-                    className="absolute"
-                    style={{ width: size, height: size }}
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                {/* Primary Circular Ring - Rotating (Simplified) */}
+                <div
+                    className="absolute animate-spin"
+                    style={{ width: size, height: size, animationDuration: '3s' }}
                 >
                     <svg
                         viewBox="0 0 100 100"
@@ -85,25 +82,17 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                             className="text-primary opacity-80"
                         />
                     </svg>
-                </motion.div>
+                </div>
 
-                {/* Pulse Ring - Behind Logo */}
-                <motion.div
-                    className="absolute rounded-full bg-primary/10 dark:bg-primary/5"
+                {/* Pulse Ring - Simplified to static or very slow opacity transition */}
+                <div
+                    className="absolute rounded-full bg-primary/5 dark:bg-primary/5"
                     style={{ width: logoSize + 20, height: logoSize + 20 }}
-                    animate={{
-                        opacity: [0.15, 0.05, 0.15]
-                    }}
-                    transition={{
-                        duration: 5,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
                 />
 
                 {/* Logo Container */}
                 <div
-                    className="relative z-10 p-5 rounded-[2rem] bg-background/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center justify-center text-primary"
+                    className="relative z-10 p-5 rounded-[2rem] bg-background/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-xl flex items-center justify-center text-primary"
                 >
                     {/* Subtle Inner Glow */}
                     <div className="absolute inset-0 rounded-[2rem] bg-current opacity-[0.03]" />
@@ -114,7 +103,7 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                             alt="Arjuna AI Logo"
                             width={logoSize}
                             height={logoSize}
-                            className="object-contain drop-shadow-sm"
+                            className="object-contain"
                             priority
                         />
                     </div>
@@ -124,12 +113,7 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
 
             {/* Loading Information */}
             {text && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
-                    className="flex flex-col items-center gap-3"
-                >
+                <div className="flex flex-col items-center gap-3 transition-opacity duration-500">
                     <div className="flex flex-col items-center space-y-1">
                         <h3 className="text-xl font-semibold tracking-tight text-foreground/90 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
                             {text}
@@ -139,25 +123,17 @@ export const PremiumLogoLoader: React.FC<PremiumLogoLoaderProps> = ({
                         </p>
                     </div>
 
-                    {/* Animated Progress Dots */}
+                    {/* Animated Progress Dots - Simple CSS */}
                     <div className="flex gap-2">
                         {[0, 1, 2].map((i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                className="w-1.5 h-1.5 rounded-full bg-primary"
-                                animate={{
-                                    opacity: [0.2, 1, 0.2],
-                                }}
-                                transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    delay: i * 0.2,
-                                    ease: "linear"
-                                }}
+                                className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"
+                                style={{ animationDelay: `${i * 0.2}s` }}
                             />
                         ))}
                     </div>
-                </motion.div>
+                </div>
             )}
         </div>
     );

@@ -5,7 +5,6 @@ import { Trophy, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BADGE_DEFINITIONS, getRarityColor } from "@/config/badges";
 import { UserBadgeData } from "@/types/badge-types";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface BadgeProgressWidgetProps {
     earnedBadges: string[];
@@ -114,21 +113,19 @@ export function BadgeProgressWidget({
                 {/* Recently Earned - Compact */}
                 {recentlyEarned.length > 0 ? (
                     <div className="flex gap-1.5">
-                        <AnimatePresence>
+                        <>
                             {recentlyEarned.slice(0, 2).map((badge, idx) => (
-                                <motion.div
+                                <div
                                     key={badge.id}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className={`bg-gradient-to-br ${getRarityColor(badge.rarity)} rounded-lg p-1.5 text-center shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-pointer`}
+                                    className={`bg-gradient-to-br ${getRarityColor(badge.rarity)} rounded-lg p-1.5 text-center shadow-sm relative overflow-hidden group hover:scale-105 transition-transform cursor-pointer opacity-0 animate-in fade-in zoom-in-75 duration-300 fill-mode-forwards`}
+                                    style={{ animationDelay: `${idx * 100}ms` }}
                                     onClick={() => router.push('/badges')}
                                     title={badge.name}
                                 >
                                     <div className="text-lg group-hover:scale-110 transition-transform">{badge.icon}</div>
-                                </motion.div>
+                                </div>
                             ))}
-                        </AnimatePresence>
+                        </>
                     </div>
                 ) : null}
 
