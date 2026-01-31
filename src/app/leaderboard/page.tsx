@@ -111,7 +111,7 @@ const Leaderboard = () => {
       <div
         className={cn(
           "relative flex flex-col items-center group transition-all duration-700 ease-out",
-          "opacity-0 translate-y-4 animate-in fill-mode-forwards",
+          "opacity-0 translate-y-4 animate-out fill-mode-forwards",
           isFirst ? "z-30 scale-100 lg:scale-110" : "z-10 scale-90 lg:scale-95",
           className
         )}
@@ -368,7 +368,7 @@ const Leaderboard = () => {
                         key={leaderboardUser.userId}
                         className={cn(
                           "transition-colors border-b border-border/10 last:border-0 group",
-                          "opacity-0 translate-x-[-10px] animate-in fill-mode-forwards",
+                          "opacity-0 translate-x-[-10px] animate-out fill-mode-forwards",
                           isCurrentUser ? "bg-primary/[0.05] dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20" : "hover:bg-muted/30"
                         )}
                         style={{ animationDelay: `${index * 30}ms` }}
