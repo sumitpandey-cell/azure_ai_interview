@@ -351,7 +351,7 @@ export function LiveInterviewSession({
                                     <Video className="h-3 w-3 text-primary" />
                                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">Viewfinder</span>
                                 </div>
-                                <VideoViewfinder videoRef={desktopVideoRef} isEnabled={isMicrophoneEnabled && (isCameraEnabled ?? false)} />
+                                <VideoViewfinder videoRef={desktopVideoRef} isEnabled={isCameraEnabled ?? false} />
                             </div>
 
                             <div className="pt-4 border-t border-white/5">
