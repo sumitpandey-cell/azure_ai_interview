@@ -53,8 +53,8 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
         >
             <div
                 className={`transition-all duration-500 ease-in-out flex items-center justify-between ${scrolled
-                    ? "bg-[#0f1117]/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-5xl ring-1 ring-white/5"
-                    : `w-full container mx-auto px-4 sm:px-6 ${transparent ? "bg-transparent border-transparent" : "bg-[#0A0A0B]/80 backdrop-blur-xl border-b border-white/5"} border ring-0`
+                    ? "bg-[#0f1117]/80 backdrop-blur-md border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-5xl ring-1 ring-white/5"
+                    : `w-full container mx-auto px-4 sm:px-6 ${transparent ? "bg-transparent border-transparent" : "bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5"} border ring-0`
                     }`}
             >
                 <Link href="/" className="flex items-center gap-2 text-xl font-bold group">

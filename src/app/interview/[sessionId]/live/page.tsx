@@ -307,9 +307,17 @@ export default function LiveInterview() {
     useEffect(() => {
         const onBeforeUnload = () => {
             if (!isEndingSession.current && isTimerActive) {
-                // Best effort for tab close - standard fetch might not finish
-                // but we can try to trigger the end session logic
-                handleEndSession(hintsUsedRef.current, true);
+                // Trigger terminal feedback generation via server-side API
+                // uses keepalive: true to ensure the request completes even if the tab closes
+                fetch('/api/generate-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId }),
+                    keepalive: true
+                });
+
+                // Periodic usage sync fallback
+                syncDuration("Session interrupted (Unload)");
             }
         };
 
@@ -322,7 +330,7 @@ export default function LiveInterview() {
                 handleEndSession(hintsUsedRef.current, true);
             }
         };
-    }, [isTimerActive, handleEndSession]);
+    }, [isTimerActive, handleEndSession, currentSessionId, syncDuration]);
 
 
     // Error State

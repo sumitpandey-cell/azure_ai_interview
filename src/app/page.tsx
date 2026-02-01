@@ -7,41 +7,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+// No motion import needed
 import { TransitionButton } from "@/components/TransitionButton";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  }
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
-};
+// Animations removed for performance
 
 // Section Wrapper - Animations Disabled for Performance
 const SectionWrapper = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => {
   return (
-    <section
-      id={id}
-      className={className}
-    >
+    <section id={id} className={className}>
       {children}
     </section>
   );
@@ -80,35 +58,9 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
       {/* JSON-LD Structured Data for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            "name": "Arjuna AI",
-            "alternateName": ["ArjunaAI", "AI Interviewer", "Arjuna Interview Coach"],
-            "operatingSystem": "Web",
-            "applicationCategory": "EducationalApplication",
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "USD"
-            },
-            "description": "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills.",
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.9",
-              "ratingCount": "20000"
-            }
-          })
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Arjuna AI", "alternateName": ["ArjunaAI", "AI Interviewer", "Arjuna Interview Coach"], "operatingSystem": "Web", "applicationCategory": "EducationalApplication", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }, "description": "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills.", "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "20000" } }) }} />
       {/* Scroll Progress Bar - Disabled */}
-      {/* <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]"
-        style={{ scaleX }}
-      /> */}
+      {/*  <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]" style={{ scaleX }} /> */}
       <PublicHeader />
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
@@ -120,38 +72,33 @@ export default function Landing() {
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-            className="max-w-5xl mx-auto text-center"
-          >
+          <div className="max-w-5xl mx-auto text-center">
             {/* Badge */}
-            <motion.div variants={fadeInUp} className="flex flex-col items-center gap-2 mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg">
+            <div className="flex flex-col items-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 shadow-lg">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <span className="text-sm font-medium text-slate-300">
                   New: AI Voice Intelligence 2.0
                 </span>
               </div>
-            </motion.div>
+            </div>
 
             {/* Heading */}
-            <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-wide text-white mb-6">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-wide text-white mb-6">
               Ace Any Interview.
               <br />
               <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Powered by AI.
               </span>
-            </motion.h1>
+            </h1>
 
             {/* Subheading */}
-            <motion.p variants={fadeInUp} className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-6">
+            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-6">
               Practice real interviews with AI scoring and feedback — built to train you like a real hiring manager.
-            </motion.p>
+            </p>
 
             {/* Mini Text Line with Avatars */}
-            <motion.div variants={fadeInUp} className="flex items-center justify-center gap-4 mb-8">
+            <div className="flex items-center justify-center gap-4 mb-8">
               <div className="flex items-center -space-x-3">
                 {[
                   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&q=80&fit=crop&crop=faces",
@@ -159,60 +106,36 @@ export default function Landing() {
                   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&q=80&fit=crop&crop=faces",
                   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&fit=crop&crop=faces"
                 ].map((src, i) => (
-                  <Image
-                    key={i}
-                    src={src}
-                    alt="User"
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 rounded-full border-2 border-[#0A0A0B] object-cover"
-                  />
+                  <Image key={i} src={src} alt="User" width={32} height={32} className="h-8 w-8 rounded-full border-2 border-[#0A0A0B] object-cover" />
                 ))}
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-400/80">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
                 Trusted by 20,000+ candidates
               </div>
-            </motion.div>
+            </div>
 
             {/* CTA Buttons */}
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <TransitionButton
-                  size="lg"
-                  href="/auth"
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-[0_0_20px_rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all transform hover:-translate-y-1"
-                >
+            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
+              <div>
+                <TransitionButton size="lg" href="/auth" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-[0_0_20px_rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all transform hover:-translate-y-1">
                   Start My Interview
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </TransitionButton>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5 hover:border-indigo-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent"
-                  asChild
-                >
+              </div>
+              <div>
+                <Button size="lg" variant="outline" className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5 hover:border-indigo-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent" asChild>
                   <Link href="#demo">
                     <PlayCircle className="mr-2 h-5 w-5" />
                     Watch Demo
                   </Link>
                 </Button>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
             {/* Dashboard Mockup */}
-            <motion.div
-              variants={scaleIn}
-              className="relative mx-auto max-w-5xl will-change-transform"
-            >
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-30 blur-3xl pointer-events-none"
-                style={{
-                  background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)"
-                }}
-              ></div>
+            <div className="relative mx-auto max-w-5xl will-change-transform">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)" }}></div>
 
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-1000"></div>
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
@@ -236,19 +159,12 @@ export default function Landing() {
                 </div>
 
                 <div className="relative z-0 bg-[#0f1117]">
-                  <Image
-                    src="/dashboard-preview.png"
-                    alt="Dashboard Preview"
-                    width={1920}
-                    height={1080}
-                    className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500"
-                    priority
-                  />
+                  <Image src="/dashboard-preview.png" alt="Dashboard Preview" width={1920} height={1080} className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500" priority />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -257,29 +173,17 @@ export default function Landing() {
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="text-center mb-16">
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
-            >
+            <h3 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
               Everything you need to ace the interview
-            </motion.h2>
-            <motion.p
-              variants={fadeInUp}
-              className="text-slate-600 text-lg max-w-2xl mx-auto"
-            >
+            </h3>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
               Our AI-powered platform provides a comprehensive suite of tools to help you prepare, practice, and perform.
-            </motion.p>
+            </p>
           </div>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1: Voice-based AI Interviews (Large Card - Spans 2 cols on desktop) */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl group bg-white">
+            <div className="md:col-span-2 relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl group bg-white">
               {/* Main Background Gradient - Light Theme */}
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
 
@@ -322,12 +226,12 @@ export default function Landing() {
                 </div>
 
                 {/* Right Visual Content - Phone & Avatar */}
-                <div className="relative w-full md:w-1/2 flex justify-center items-center perspective-1000">
+                <div className="relative w-full md:w-1/2 flex justify-center items-center">
 
 
 
                   {/* Glassmorphism Phone Mockup */}
-                  <div className="relative w-[280px] h-[540px] rounded-[3rem] border-[6px] border-white/20 bg-white/5 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 transform rotate-[-6deg] group-hover:rotate-0 transition-transform duration-700">
+                  <div className="relative w-[280px] h-[540px] rounded-[3rem] border-[6px] border-white/20 bg-white/5 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 transform rotate-[-6deg] group-hover:rotate-0 transition-transform duration-700">
                     {/* Reflection */}
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/40 to-transparent pointer-events-none z-20"></div>
 
@@ -349,7 +253,7 @@ export default function Landing() {
 
                           {/* Rotating Gradient Border */}
                           <div className="absolute inset-4 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 via-purple-500 to-pink-500">
-                            <div className="w-full h-full rounded-full bg-white/10 backdrop-blur-sm"></div>
+                            <div className="w-full h-full rounded-full bg-white/10 backdrop-blur-md"></div>
                           </div>
 
                           {/* Static Dashed Ring */}
@@ -382,24 +286,17 @@ export default function Landing() {
                       {/* Bottom Waveform */}
                       <div className="h-24 w-full flex items-center justify-center gap-1.5 px-8 pb-8 relative z-10">
                         {[...Array(12)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-1.5 rounded-full bg-gradient-to-t from-indigo-500 to-purple-500 shadow-sm"
-                            style={{
-                              height: `${20 + Math.random() * 60}%`,
-                              animation: `pulse 0.8s infinite ${i * 0.1}s alternate`
-                            }}
-                          ></div>
+                          <div key={i} className="w-1.5 rounded-full bg-gradient-to-t from-indigo-500 to-purple-500 shadow-sm" style={{ height: `${20 + Math.random() * 60}%`, animation: `pulse 0.8s infinite ${i * 0.1}s alternate` }}></div>
                         ))}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature 2: Instant Score + Feedback */}
-            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Instant Score + Feedback.</h3>
               <p className="text-slate-600 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
@@ -493,10 +390,10 @@ export default function Landing() {
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature 3: Skill Templates */}
-            <motion.div variants={fadeInUp} className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Skill Templates.</h3>
@@ -529,10 +426,10 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature 4: Leaderboard Gamification */}
-            <motion.div variants={fadeInUp} className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <h3 className="text-xl font-bold text-slate-900 mb-2">Leaderboard Gamification.</h3>
               <p className="text-slate-600 text-sm mb-6">Compete with others and climb the rankings.</p>
 
@@ -573,10 +470,10 @@ export default function Landing() {
                   <span className="text-xs font-bold text-green-400">#1</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature 5: Smart Analytics Reports */}
-            <motion.div variants={fadeInUp} className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
               <div className="flex flex-col md:flex-row items-center gap-8 h-full">
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Analytics Reports.</h3>
@@ -621,16 +518,7 @@ export default function Landing() {
                       </defs>
                       {/* Bars */}
                       {[30, 45, 35, 60, 55, 75, 85].map((h, i) => (
-                        <rect
-                          key={`bar-${i}`}
-                          x={i * 14.28 + 3.14}
-                          y={100 - h}
-                          width="8"
-                          height={h}
-                          rx="2"
-                          fill="url(#barGradient)"
-                          className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-                        />
+                        <rect key={`bar-${i}`} x={i * 14.28 + 3.14} y={100 - h} width="8" height={h} rx="2" fill="url(#barGradient)" className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer" />
                       ))}
                     </svg>
                   </div>
@@ -647,13 +535,10 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature 6: AI-Powered Learning Roadmaps - High Quality UI Redesign */}
-            <motion.div
-              variants={fadeInUp}
-              className="md:col-span-3 relative rounded-[2.5rem] overflow-hidden bg-[#0B0F19] border border-slate-800 shadow-2xl group"
-            >
+            <div className="md:col-span-3 relative rounded-[2.5rem] overflow-hidden bg-[#0B0F19] border border-slate-800 shadow-2xl group">
               {/* Cinematic Background Effects */}
               <div className="absolute inset-0">
                 {/* Grid Pattern */}
@@ -696,12 +581,7 @@ export default function Landing() {
                   <div className="relative space-y-6 before:absolute before:left-8 before:top-8 before:bottom-8 before:w-0.5 before:bg-gradient-to-b before:from-indigo-500 before:via-purple-500 before:to-transparent before:opacity-30">
 
                     {/* Step 1 */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="relative pl-20 group/step"
-                    >
+                    <div className="relative pl-20 group/step">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0B0F19] border-2 border-indigo-500 rounded-full flex items-center justify-center z-10 shadow-[0_0_15px_-3px_rgba(99,102,241,0.5)]">
                         <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full"></div>
                       </div>
@@ -713,15 +593,10 @@ export default function Landing() {
                         <h4 className="text-white font-bold text-lg mb-1">Skill Baseline Analysis</h4>
                         <p className="text-slate-400 text-sm">Deep scan of your technical & behavioral strengths.</p>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Step 2 (Active) */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="relative pl-20"
-                    >
+                    <div className="relative pl-20">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center z-10 shadow-[0_0_20px_0px_rgba(139,92,246,0.6)]">
                         <Zap className="h-4 w-4 text-white fill-white" />
                       </div>
@@ -736,15 +611,10 @@ export default function Landing() {
                           <p className="text-indigo-200 text-sm">Prioritized micro-learning modules for rapid improvement.</p>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Step 3 */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="relative pl-20 group/step"
-                    >
+                    <div className="relative pl-20 group/step">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#0B0F19] border-2 border-slate-700 group-hover/step:border-purple-500 transition-colors rounded-full flex items-center justify-center z-10">
                         <Trophy className="h-4 w-4 text-slate-500 group-hover/step:text-purple-400 transition-colors" />
                       </div>
@@ -756,14 +626,14 @@ export default function Landing() {
                         <h4 className="text-slate-300 font-bold text-lg mb-1 group-hover/step:text-white transition-colors">Mastery & Placement</h4>
                         <p className="text-slate-500 text-sm group-hover/step:text-slate-400 transition-colors">Interview-ready status with top percentile ranking.</p>
                       </div>
-                    </motion.div>
+                    </div>
 
                   </div>
                 </div>
 
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </SectionWrapper>
 
@@ -789,15 +659,9 @@ export default function Landing() {
             </p>
           </div>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
-          >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Google Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20">
+            <div className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/20">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
@@ -852,10 +716,10 @@ export default function Landing() {
                 </Button>
                 <p className="text-xs text-center text-slate-500 mt-3">~45 mins guided practice</p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Amazon Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-orange-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20">
+            <div className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-orange-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/20">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
@@ -905,10 +769,10 @@ export default function Landing() {
                 </Button>
                 <p className="text-xs text-center text-slate-500 mt-3">~45 mins guided practice</p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Microsoft Card */}
-            <motion.div variants={fadeInUp} className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
+            <div className="group relative rounded-2xl bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-white/10 p-1 hover:border-blue-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
 
               <div className="relative h-full bg-[#0f1117] rounded-[1.9rem] p-8 overflow-hidden">
@@ -958,8 +822,8 @@ export default function Landing() {
                 </Button>
                 <p className="text-xs text-center text-slate-500 mt-3">~45 mins guided practice</p>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           <div className="mt-12 text-center">
             <Link href="/templates" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors border-b border-transparent hover:border-white pb-0.5 group">
@@ -1040,13 +904,7 @@ export default function Landing() {
             </div>
 
             {/* Right Scrolling Cards */}
-            <div
-              className="lg:col-span-7 relative h-[700px] overflow-hidden p-6"
-              style={{
-                maskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-                WebkitMaskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)"
-              }}
-            >
+            <div className="lg:col-span-7 relative h-[700px] overflow-hidden p-6" style={{ maskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)" }}>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                 {/* Column 1 - Scroll Up */}
@@ -1104,20 +962,11 @@ export default function Landing() {
                       rating: 5,
                     },
                   ].map((testimonial, i) => (
-                    <Card
-                      key={`col1-${i}`}
-                      className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:-rotate-1 hover:scale-[1.02]"
-                    >
+                    <Card key={`col1-${i}`} className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:-rotate-1 hover:scale-[1.02]">
 
                       <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <Image
-                          src={testimonial.image}
-                          alt={testimonial.name}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
-                        />
+                        <Image src={testimonial.image} alt={testimonial.name} width={40} height={40} className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors" />
                         <div>
                           <div className="font-bold text-white text-sm">{testimonial.name}</div>
                           <div className="text-xs text-slate-500">{testimonial.role}</div>
@@ -1173,19 +1022,10 @@ export default function Landing() {
                       rating: 5,
                     },
                   ].map((testimonial, i) => (
-                    <Card
-                      key={`col2-${i}`}
-                      className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:scale-[1.02] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:rotate-1"
-                    >
+                    <Card key={`col2-${i}`} className="p-6 border border-white/10 shadow-lg bg-[#141821] hover:scale-[1.02] hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.3)] hover:border-indigo-500/50 transition-all duration-300 group hover:rotate-1">
                       <p className="text-slate-300 mb-6 leading-relaxed text-sm">&quot;{testimonial.text}&quot;</p>
                       <div className="flex items-center gap-3">
-                        <Image
-                          src={testimonial.image}
-                          alt={testimonial.name}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors"
-                        />
+                        <Image src={testimonial.image} alt={testimonial.name} width={40} height={40} className="h-10 w-10 rounded-full object-cover border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors" />
                         <div>
                           <div className="font-bold text-white text-sm">{testimonial.name}</div>
                           <div className="text-xs text-slate-500">{testimonial.role}</div>
@@ -1232,23 +1072,14 @@ export default function Landing() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6">
-                  <Button
-                    size="lg"
-                    className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 hover:scale-105 transition-all duration-300 rounded-full font-bold shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-                    asChild
-                  >
+                  <Button size="lg" className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 hover:scale-105 transition-all duration-300 rounded-full font-bold shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]" asChild>
                     <Link href="/auth">
                       Start Interviewing Now
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-16 px-10 text-lg border-white/10 text-white bg-transparent hover:bg-white/5 hover:text-white hover:border-indigo-500/50 hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] rounded-full font-medium backdrop-blur-sm transition-all duration-300"
-                    asChild
-                  >
+                  <Button variant="outline" size="lg" className="h-16 px-10 text-lg border-white/10 text-white bg-transparent hover:bg-white/5 hover:text-white hover:border-indigo-500/50 hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] rounded-full font-medium backdrop-blur-sm transition-all duration-300" asChild>
                     <Link href="/sample-report">
                       View Sample Report
                     </Link>
@@ -1296,7 +1127,7 @@ export default function Landing() {
       </SectionWrapper>
 
       {/* Footer */}
-      <Footer />
-    </div >
+      < Footer />
+    </div>
   );
 }

@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence } from "framer-motion"
 import dynamic from "next/dynamic";
 
 const ProfilePerformanceChart = dynamic(() => import("@/components/ProfilePerformanceChart"), {
@@ -62,10 +62,8 @@ const SkillProgress = React.memo(({ label, value, count }: { label: string, valu
             <div className="text-[10px] font-black text-primary shrink-0">{value}% {count && count > 1 && <span className="text-slate-500 ml-1">({count})</span>}</div>
         </div>
         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${value}%` }}
-                transition={{ duration: 1.2, delay: 0.2, ease: "circOut" }}
+            <div
+                style={{ width: `${value}%` }}
                 className="h-full bg-primary shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)]"
             />
         </div>
@@ -224,11 +222,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
     if (!profile) {
         return (
             <div className="min-h-screen bg-[#050814] flex flex-col items-center justify-center p-6 text-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-slate-900/50 p-12 rounded-2xl border border-white/5 backdrop-blur-2xl max-w-lg"
-                >
+                <div className="bg-slate-900/50 p-12 rounded-2xl border border-white/5 backdrop-blur-xl max-w-lg">
                     <Lock className="h-20 w-20 text-slate-500 mx-auto mb-6 opacity-20" />
                     <h1 className="text-3xl font-bold text-white mb-3">Profile Protected</h1>
                     <p className="text-slate-400 mb-8">This interview profile is either private or does not exist on our platform.</p>
@@ -237,14 +231,14 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                             Go Home
                         </Button>
                     </Link>
-                </motion.div>
+                </div>
             </div>
         )
     }
 
     return (
         <div className="dark">
-            <div className="min-h-screen bg-[#050814] text-white selection:bg-primary/30 p-4 sm:p-8 lg:p-12 overflow-x-hidden">
+            <div className="min-h-screen bg-[#050814] text-white selection:bg-primary/30 p-4 sm:p-4 lg:p-6 overflow-x-hidden">
                 {/* Branding Header */}
                 <div className="max-w-[1400px] mx-auto mb-10 flex items-center justify-between gap-4">
                     <Link href="/" className="flex items-center gap-3 group shrink-0">
@@ -254,7 +248,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                         </div>
                         <div>
                             <div className="text-xl font-black tracking-tighter text-white">ARJUNA AI</div>
-                            <div className="text-[10px] font-bold text-primary/70 tracking-[0.2em] uppercase">The Global Interview Standard</div>
+                            <div className="text-[10px] font-bold text-primary/70 tracking-[0.2em] uppercase hidden sm:block">The Global Interview Standard</div>
                         </div>
                     </Link>
 
@@ -266,15 +260,16 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                     <Link href="/auth">
                         <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 rounded-xl h-10 font-bold text-xs gap-2 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">
-                            Claim My Rank <ArrowRight className="h-3 w-3" />
+                            <span className='hidden sm:block '>Claim My Rank</span>
+                            <ArrowRight className="h-3 w-3" />
                         </Button>
                     </Link>
                 </div>
 
                 {/* Background Texture */}
                 <div className="fixed inset-0 pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[150px]" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/3 rounded-full blur-[150px]" />
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[80px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/3 rounded-full blur-[80px]" />
                 </div>
 
                 <main className="relative z-10 max-w-[1400px] mx-auto">
@@ -282,7 +277,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
 
                         {/* LEFT COLUMN */}
                         <div className="lg:col-span-3 flex flex-col gap-6">
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
+                            <div className="flex-1">
                                 <Card className="h-full bg-[#0c1221] border border-white/5 rounded-2xl overflow-hidden p-8 flex flex-col items-center text-center shadow-2xl relative">
                                     <div className="absolute top-6 right-6">
                                         <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
@@ -325,160 +320,146 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                         </div>
                                     </div>
                                 </Card>
-                            </motion.div>
+                            </div>
 
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
-                                    <div className="grid grid-cols-1 gap-8">
-                                        <OverviewItem icon={<Trophy className="text-amber-500 h-6 w-6" />} value={rank ? `#${rank}` : "---"} label="World Rank" />
-                                        <OverviewItem icon={<Target className="text-primary h-6 w-6" />} value={stats?.averageScore ? `${stats.averageScore}%` : "---"} label="Precision" />
-                                        <OverviewItem icon={<Clock className="text-sky-500 h-6 w-6" />} value={stats?.completedCount || 0} label="Verified Sessions" />
-                                    </div>
-                                </Card>
-                            </motion.div>
+                            <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
+                                <div className="grid grid-cols-1 gap-8">
+                                    <OverviewItem icon={<Trophy className="text-amber-500 h-6 w-6" />} value={rank ? `#${rank}` : "---"} label="World Rank" />
+                                    <OverviewItem icon={<Target className="text-primary h-6 w-6" />} value={stats?.averageScore ? `${stats.averageScore}%` : "---"} label="Precision" />
+                                    <OverviewItem icon={<Clock className="text-sky-500 h-6 w-6" />} value={stats?.completedCount || 0} label="Verified Sessions" />
+                                </div>
+                            </Card>
                         </div>
 
                         {/* MIDDLE COLUMN */}
                         <div className="lg:col-span-6 flex flex-col gap-6">
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-6 sm:p-10 shadow-2xl min-h-[500px] flex flex-col h-full">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
-                                        <div className="flex items-center gap-4">
-                                            <StatsCircle icon={<TrendingUp className="h-5 w-5" />} />
-                                            <div>
-                                                <h3 className="text-2xl font-black tracking-tight text-white">Global Performance</h3>
-                                                <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-1">Live Intelligence Verification</p>
-                                            </div>
-                                        </div>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" className="w-full sm:w-auto bg-white/5 border-white/10 rounded-2xl h-11 px-6 gap-2 text-xs font-black uppercase tracking-widest hover:bg-white/10">
-                                                    {performanceView} <ChevronDown className="h-4 w-4 text-slate-500" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent className="bg-[#0c1221] border-white/10 rounded-xl min-w-[140px] p-2" align="end">
-                                                <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetRecent}>
-                                                    Show Recent
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetTop}>
-                                                    Show Top Scores
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-
-                                    <div className="flex-1 w-full mt-10 relative">
-                                        <ProfilePerformanceChart data={chartData} />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 pb-2">
-                                        <AnimatePresence mode="popLayout">
-                                            {sortedInterviews.length > 0 ? (
-                                                sortedInterviews.slice(0, 3).map((session, i) => (
-                                                    <motion.div
-                                                        key={session.id || i}
-                                                        layout
-                                                        initial={{ opacity: 0, scale: 0.9 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        transition={{ delay: i * 0.1 }}
-                                                        className="bg-white/5 border border-white/5 rounded-3xl p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm"
-                                                    >
-                                                        <div className="flex items-center justify-between mb-3 text-white">
-                                                            <div className="text-xs font-black group-hover:text-primary transition-colors truncate w-28 uppercase">{session.position}</div>
-                                                            <div className="text-sm font-black text-primary">{session.score || 0}%</div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <Badge variant="outline" className="text-[9px] font-bold border-white/10 bg-white/5 text-slate-400">
-                                                                {session.interview_type || 'Tech'}
-                                                            </Badge>
-                                                            {session.difficulty && (
-                                                                <Badge variant="outline" className="text-[9px] font-bold border-primary/20 bg-primary/5 text-primary">
-                                                                    {session.difficulty}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-[10px] text-slate-500 mb-4 font-bold uppercase tracking-wider">
-                                                            {new Date(session.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </div>
-                                                        <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                                                            <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
-                                                                <Check className="h-3 w-3 text-emerald-500 stroke-[3px]" />
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Verified</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <Flame className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />
-                                                                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                ))
-                                            ) : (
-                                                <div className="col-span-full text-center py-12">
-                                                    <History className="h-10 w-10 text-slate-500 mx-auto mb-4 opacity-20" />
-                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">No completed interviews</p>
-                                                </div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                </Card>
-                            </motion.div>
-
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-10 shadow-2xl flex-1">
-                                    <div className="flex items-center justify-between mb-8">
+                            <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-6 sm:p-10 shadow-2xl min-h-[500px] flex flex-col h-full">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
+                                    <div className="flex items-center gap-4">
+                                        <StatsCircle icon={<TrendingUp className="h-5 w-5" />} />
                                         <div>
-                                            <h3 className="text-xl font-black tracking-tight text-white">Expertise Matrix</h3>
-                                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Weighted assessment matrix</p>
+                                            <h3 className="text-2xl font-black tracking-tight text-white">Global Performance</h3>
+                                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mt-1">Live Intelligence Verification</p>
                                         </div>
-                                        <Sparkles className="h-6 w-6 text-primary opacity-20" />
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
-                                        {skills.length > 0 ? (
-                                            skills.map(skill => (
-                                                <SkillProgress key={skill.name} label={skill.name} value={skill.averageScore} count={skill.count} />
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="w-full sm:w-auto bg-white/5 border-white/10 rounded-2xl h-11 px-6 gap-2 text-xs font-black uppercase tracking-widest hover:bg-white/10">
+                                                {performanceView} <ChevronDown className="h-4 w-4 text-slate-500" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="bg-[#0c1221] border-white/10 rounded-xl min-w-[140px] p-2" align="end">
+                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetRecent}>
+                                                Show Recent
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="rounded-lg h-10 text-xs font-bold focus:bg-white/5 cursor-pointer" onClick={handleSetTop}>
+                                                Show Top Scores
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                <div className="flex-1 w-full mt-10 relative">
+                                    <ProfilePerformanceChart data={chartData} />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12 pb-2">
+                                    <AnimatePresence mode="popLayout">
+                                        {sortedInterviews.length > 0 ? (
+                                            sortedInterviews.slice(0, 3).map((session, i) => (
+                                                <div
+                                                    key={session.id || i}
+                                                    className="bg-white/5 border border-white/5 rounded-3xl p-5 hover:border-primary/30 transition-all group cursor-default shadow-sm"
+                                                >
+                                                    <div className="flex items-center justify-between mb-3 text-white">
+                                                        <div className="text-xs font-black group-hover:text-primary transition-colors truncate w-28 uppercase">{session.position}</div>
+                                                        <div className="text-sm font-black text-primary">{session.score || 0}%</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <Badge variant="outline" className="text-[9px] font-bold border-white/10 bg-white/5 text-slate-400">
+                                                            {session.interview_type || 'Tech'}
+                                                        </Badge>
+                                                        {session.difficulty && (
+                                                            <Badge variant="outline" className="text-[9px] font-bold border-primary/20 bg-primary/5 text-primary">
+                                                                {session.difficulty}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-500 mb-4 font-bold uppercase tracking-wider">
+                                                        {new Date(session.completed_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </div>
+                                                    <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                                                        <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
+                                                            <Check className="h-3 w-3 text-emerald-500 stroke-[3px]" />
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Verified</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Flame className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />
+                                                            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             ))
                                         ) : (
-                                            <div className="col-span-full py-4 text-center">
-                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No verified expertise found</p>
+                                            <div className="col-span-full text-center py-12">
+                                                <History className="h-10 w-10 text-slate-500 mx-auto mb-4 opacity-20" />
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">No completed interviews</p>
                                             </div>
                                         )}
+                                    </AnimatePresence>
+                                </div>
+                            </Card>
+
+                            <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-10 shadow-2xl flex-1">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-xl font-black tracking-tight text-white">Expertise Matrix</h3>
+                                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mt-1">Weighted assessment matrix</p>
                                     </div>
-                                </Card>
-                            </motion.div>
+                                    <Sparkles className="h-6 w-6 text-primary opacity-20" />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
+                                    {skills.length > 0 ? (
+                                        skills.map(skill => (
+                                            <SkillProgress key={skill.name} label={skill.name} value={skill.averageScore} count={skill.count} />
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full py-4 text-center">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No verified expertise found</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
                         </div>
 
                         {/* RIGHT COLUMN */}
                         <div className="lg:col-span-3 flex flex-col gap-6">
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                                <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
-                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">System Credentials</h3>
-                                    <div className="space-y-6">
-                                        <CredentialItem icon={<History className="text-primary h-4 w-4" />} label="Engine" value="v3.1 Elite" />
-                                        <CredentialItem icon={<ShieldCheck className="text-primary h-4 w-4" />} label="Proof" value="Verified" />
-                                        <CredentialItem icon={<Trophy className="text-primary h-4 w-4" />} label="Global Tier" value="Professional" />
-                                        <CredentialItem icon={<Calendar className="text-primary h-4 w-4" />} label="Joined" value={new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} />
-                                    </div>
-                                </Card>
-                            </motion.div>
+                            <Card className="bg-[#0c1221] border border-white/5 rounded-2xl p-8 shadow-2xl">
+                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-8">System Credentials</h3>
+                                <div className="space-y-6">
+                                    <CredentialItem icon={<History className="text-primary h-4 w-4" />} label="Engine" value="v3.1 Elite" />
+                                    <CredentialItem icon={<ShieldCheck className="text-primary h-4 w-4" />} label="Proof" value="Verified" />
+                                    <CredentialItem icon={<Trophy className="text-primary h-4 w-4" />} label="Global Tier" value="Professional" />
+                                    <CredentialItem icon={<Calendar className="text-primary h-4 w-4" />} label="Joined" value={new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })} />
+                                </div>
+                            </Card>
 
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex-1">
-                                <Card className="h-full bg-gradient-to-br from-primary/10 via-blue-600/5 to-purple-500/10 border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500 text-center flex flex-col items-center justify-center">
-                                    <Sparkles className="h-10 w-10 text-primary mb-6 animate-pulse" />
-                                    <h3 className="text-xl font-black leading-[1.3] mb-8 text-white">
-                                        Ready to build your <br /> <span className="text-primary">verified track record?</span>
-                                    </h3>
-                                    <Link href="/auth" className="w-full">
-                                        <Button className="w-full bg-primary hover:bg-primary/90 rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95">
-                                            Start Interview
-                                        </Button>
-                                    </Link>
-                                    <p className="text-[10px] font-bold text-slate-500 mt-6 uppercase tracking-widest leading-relaxed">
-                                        Join 10,000+ elite engineers on the Arjuna engine.
-                                    </p>
-                                </Card>
-                            </motion.div>
+                            <Card className="h-full bg-gradient-to-br from-primary/10 via-blue-600/5 to-purple-500/10 border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group hover:border-primary/40 transition-all duration-500 text-center flex flex-col items-center justify-center">
+                                <Sparkles className="h-10 w-10 text-primary mb-6 animate-pulse" />
+                                <h3 className="text-xl font-black leading-[1.3] mb-8 text-white">
+                                    Ready to build your <br /> <span className="text-primary">verified track record?</span>
+                                </h3>
+                                <Link href="/auth" className="w-full">
+                                    <Button className="w-full bg-primary hover:bg-primary/90 rounded-2xl h-14 font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95">
+                                        Start Interview
+                                    </Button>
+                                </Link>
+                                <p className="text-[10px] font-bold text-slate-500 mt-6 uppercase tracking-widest leading-relaxed">
+                                    Join 10,000+ elite engineers on the Arjuna engine.
+                                </p>
+                            </Card>
                         </div>
 
                     </div>
@@ -501,4 +482,3 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
         </div>
     )
 }
-

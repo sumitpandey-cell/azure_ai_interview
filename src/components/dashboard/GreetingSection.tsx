@@ -75,7 +75,7 @@ export const GreetingSection = memo(({
             </div>
 
             {/* Desktop Header Controls */}
-            <div className="hidden lg:flex items-center gap-2 p-1.5 bg-background/60 backdrop-blur-xl border border-border/40 rounded-full shadow-sm">
+            <div className="hidden lg:flex items-center gap-2 p-1.5 bg-background/60 backdrop-blur-md border border-border/40 rounded-full shadow-sm">
                 <div className="flex items-center gap-1 px-2 border-r border-border/40 h-8">
                     <NotificationBell />
                     <ThemeToggle />
@@ -109,7 +109,7 @@ export const GreetingSection = memo(({
                             </div>
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                    <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="px-3 py-2 mb-1 border-b border-border/40">
                             <p className="text-sm font-bold truncate text-foreground">{userMetadata?.full_name || "User"}</p>
                             <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>

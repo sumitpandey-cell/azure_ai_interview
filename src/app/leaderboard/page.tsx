@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Search, Award, Star } from "lucide-react";
@@ -137,9 +136,9 @@ const Leaderboard = () => {
         )}
         style={style}
       >
-        <div className="flex-[0.5] min-w-[80px] flex items-center justify-center">
+        <div className="flex-[0.6] min-w-[50px] sm:min-w-[80px] shrink-0 flex items-center justify-center">
           <div className={cn(
-            "inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black shadow-inner transition-transform group-hover:scale-110",
+            "inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black shadow-inner transition-transform group-hover:scale-110",
             leaderboardUser.rank === 1 ? "bg-yellow-500 text-yellow-950 shadow-yellow-500/20" :
               leaderboardUser.rank === 2 ? "bg-slate-300 text-slate-900 shadow-slate-300/20" :
                 leaderboardUser.rank === 3 ? "bg-amber-600 text-amber-50 shadow-amber-600/20" :
@@ -149,29 +148,29 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <div className="flex-[2] min-w-0 px-4 flex items-center gap-4">
+        <div className="flex-[2.5] min-w-[150px] sm:min-w-[240px] px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
           <div className="relative flex-shrink-0">
-            <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-background shadow-xl">
               <AvatarImage src={getAvatarUrl(leaderboardUser.avatarUrl, leaderboardUser.userId, 'avataaars', leaderboardUser.oauthPicture, leaderboardUser.gender)} />
-              <AvatarFallback className="font-bold">{displayName.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="font-bold text-xs">{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             {isCurrentUser && (
-              <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
+              <div className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-primary rounded-full border-2 border-background animate-pulse" />
             )}
           </div>
           <div className="min-w-0">
-            <p className={cn("text-sm font-black tracking-tight truncate", isCurrentUser ? "text-primary" : "text-foreground")}>
+            <p className={cn("text-xs sm:text-sm font-black tracking-tight truncate", isCurrentUser ? "text-primary" : "text-foreground")}>
               {displayName}
             </p>
-            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
-              {leaderboardUser.userId.slice(0, 8)} • Verified
+            <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
+              {leaderboardUser.userId.slice(0, 8)}
             </p>
           </div>
         </div>
 
-        <div className="flex-1 text-center flex flex-col items-center justify-center">
-          <span className="font-black text-foreground text-sm">{leaderboardUser.bayesianScore.toFixed(0)} pts</span>
-          <div className="h-1 w-12 bg-muted/30 rounded-full mt-1 overflow-hidden">
+        <div className="flex-1 min-w-[80px] sm:min-w-[120px] shrink-0 text-center flex flex-col items-center justify-center px-1">
+          <span className="font-black text-foreground text-xs sm:text-sm tabular-nums">{leaderboardUser.bayesianScore.toFixed(0)} pts</span>
+          <div className="h-1 w-8 sm:w-16 bg-muted/30 rounded-full mt-1 overflow-hidden">
             <div
               className="h-full bg-primary"
               style={{ width: `${Math.min(100, (leaderboardUser.bayesianScore / 100) * 100)}%` }}
@@ -179,19 +178,19 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <div className="flex-1 text-center flex items-center justify-center">
-          <span className="text-sm font-bold text-foreground/80 bg-muted/20 px-3 py-1 rounded-lg">
+        <div className="flex-1 min-w-[80px] sm:min-w-[120px] shrink-0 text-center flex items-center justify-center">
+          <span className="text-xs sm:text-sm font-bold text-foreground/80 bg-muted/20 px-2 sm:px-4 py-0.5 sm:py-1 rounded-md sm:rounded-lg tabular-nums">
             {leaderboardUser.interviewCount}
           </span>
         </div>
 
-        <div className="flex-1 text-center flex items-center justify-center pr-4">
+        <div className="flex-1 min-w-[100px] sm:min-w-[140px] shrink-0 text-center flex items-center justify-center pr-2 sm:pr-4">
           {isTop3 ? (
-            <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 border-none text-[9px] font-black tracking-widest uppercase px-2 py-0.5 shadow-lg shadow-indigo-500/20">
+            <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 border-none text-[8px] sm:text-[9px] font-black tracking-widest uppercase px-1.5 sm:px-3 py-0.5 shadow-lg shadow-indigo-500/20">
               Legends
             </Badge>
           ) : (
-            <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-widest border-border/50">
+            <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest border-border/50">
               Candidate
             </Badge>
           )}
@@ -335,7 +334,7 @@ const Leaderboard = () => {
   };
   return (
     <DashboardLayout>
-      <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="space-y-8 pb-12">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <div className="space-y-2">
@@ -470,55 +469,57 @@ const Leaderboard = () => {
               </div>
             </div>
 
-            {/* Rankings Table */}
-            <Card className="border border-border/80 dark:border-border shadow-md dark:shadow-sm overflow-hidden bg-card dark:bg-card">
-              <Table>
-                <TableHeader className="sticky top-0 z-20 bg-card">
-                  <TableRow className="bg-muted/30 dark:bg-muted/40 hover:bg-muted/30 border-b border-border">
-                    <TableHead className="w-[80px] text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Rank</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Candidate</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Score</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Interviews</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] uppercase text-muted-foreground tracking-widest px-4">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-              </Table>
+            {/* Rankings Table - Responsive Horizontal Scroll */}
+            <Card className="border border-border/80 dark:border-border shadow-lg dark:shadow-sm overflow-hidden bg-card dark:bg-card">
+              <div className="overflow-x-auto no-scrollbar sm:no-scrollbar relative">
+                {/* Responsive Viewport */}
+                <div className="min-w-full lg:min-w-0">
+                  {/* Proportional Flex Header */}
+                  <div className="flex items-center bg-muted/30 dark:bg-muted/40 border-b border-border h-12 sticky top-0 z-20 min-w-[550px] w-full">
+                    <div className="flex-[0.6] min-w-[50px] sm:min-w-[80px] shrink-0 text-center font-black text-[9px] sm:text-[10px] uppercase text-muted-foreground tracking-widest px-2 sm:px-4">Rank</div>
+                    <div className="flex-[2.5] min-w-[150px] sm:min-w-[240px] font-black text-[9px] sm:text-[10px] uppercase text-muted-foreground tracking-widest px-4">Candidate</div>
+                    <div className="flex-1 min-w-[80px] sm:min-w-[120px] shrink-0 text-center font-black text-[9px] sm:text-[10px] uppercase text-muted-foreground tracking-widest px-2 sm:px-4">Score</div>
+                    <div className="flex-1 min-w-[80px] sm:min-w-[120px] shrink-0 text-center font-black text-[9px] sm:text-[10px] uppercase text-muted-foreground tracking-widest px-2 sm:px-4">Sessions</div>
+                    <div className="flex-1 min-w-[100px] sm:min-w-[140px] shrink-0 text-center font-black text-[9px] sm:text-[10px] uppercase text-muted-foreground tracking-widest px-2 sm:px-4">Status</div>
+                  </div>
 
-              <div
-                ref={parentRef}
-                className="max-h-[600px] overflow-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
-              >
-                <div
-                  style={{
-                    height: `${rowVirtualizer.getTotalSize()}px`,
-                    width: '100%',
-                    position: 'relative',
-                  }}
-                >
-                  <div className="w-full">
-                    {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-                      <LeaderboardRow
-                        key={filteredUsersWithRank[virtualRow.index].userId}
-                        leaderboardUser={filteredUsersWithRank[virtualRow.index]}
-                        index={virtualRow.index}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: `${virtualRow.size}px`,
-                          transform: `translateY(${virtualRow.start}px)`,
-                        }}
-                      />
-                    ))}
+                  <div
+                    ref={parentRef}
+                    className="max-h-[600px] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent min-w-[550px] w-full"
+                  >
+                    <div
+                      style={{
+                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        width: '100%',
+                        position: 'relative',
+                      }}
+                    >
+                      <div className="w-full">
+                        {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                          <LeaderboardRow
+                            key={filteredUsersWithRank[virtualRow.index].userId}
+                            leaderboardUser={filteredUsersWithRank[virtualRow.index]}
+                            index={virtualRow.index}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: `${virtualRow.size}px`,
+                              transform: `translateY(${virtualRow.start}px)`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {!loading && filteredUsersWithRank.length === 0 && (
+                      <div className="py-20 text-center text-muted-foreground">
+                        No matches for &quot;{searchQuery}&quot;
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {!loading && filteredUsersWithRank.length === 0 && (
-                  <div className="py-20 text-center text-muted-foreground">
-                    No matches for &quot;{searchQuery}&quot;
-                  </div>
-                )}
               </div>
             </Card>
 

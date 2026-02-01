@@ -220,10 +220,7 @@ function AuthContent() {
     return (
         <div className="relative min-h-screen flex flex-col lg:flex-row lg:grid lg:grid-cols-2">
             {/* Left Panel - Form */}
-            <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+            <div
                 className="relative min-h-screen lg:h-screen flex-col bg-[#0A0F1E] p-4 sm:p-6 md:p-8 lg:p-10 text-white flex overflow-y-auto"
             >
                 {/* Subtle Background Pattern */}
@@ -252,232 +249,219 @@ function AuthContent() {
                     </div>
 
                     <div className="space-y-4">
-                        <AnimatePresence mode="wait">
-                            {isSignUp ? (
-                                <motion.div
-                                    key="signup"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.4 }}
-                                >
-                                    <Form {...signUpForm}>
-                                        <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
-                                            {/* Avatar Upload */}
-                                            <div className="flex flex-col items-center space-y-2 sm:space-y-3 pb-1 sm:pb-2">
-                                                <Label htmlFor="avatar-upload" className="cursor-pointer group relative">
-                                                    <Avatar className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 border-2 border-white/20 group-hover:border-primary transition-all duration-300 shadow-lg">
-                                                        <AvatarImage src={avatarPreview || ""} />
-                                                        <AvatarFallback className="bg-white/10 text-white/60">
-                                                            <Upload className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10" />
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1.5 sm:p-2 text-white shadow-lg group-hover:scale-110 transition-transform">
-                                                        <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                    </div>
-                                                </Label>
-                                                <Input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                                                <p className="text-[10px] sm:text-xs text-white/50">Upload profile picture (optional)</p>
-                                            </div>
+                        {/* Removed AnimatePresence for performance */}
+                        {isSignUp ? (
+                            <div>
+                                <Form {...signUpForm}>
+                                    <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
+                                        {/* Avatar Upload */}
+                                        <div className="flex flex-col items-center space-y-2 sm:space-y-3 pb-1 sm:pb-2">
+                                            <Label htmlFor="avatar-upload" className="cursor-pointer group relative">
+                                                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 border-2 border-white/20 group-hover:border-primary transition-all duration-300 shadow-lg">
+                                                    <AvatarImage src={avatarPreview || ""} />
+                                                    <AvatarFallback className="bg-white/10 text-white/60">
+                                                        <Upload className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1.5 sm:p-2 text-white shadow-lg group-hover:scale-110 transition-transform">
+                                                    <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                </div>
+                                            </Label>
+                                            <Input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                                            <p className="text-[10px] sm:text-xs text-white/50">Upload profile picture (optional)</p>
+                                        </div>
 
-                                            {/* Name Field */}
-                                            <FormField
-                                                control={signUpForm.control}
-                                                name="fullName"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Full Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="John Doe" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                        {/* Name Field */}
+                                        <FormField
+                                            control={signUpForm.control}
+                                            name="fullName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Full Name</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="John Doe" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            {/* Email Field */}
-                                            <FormField
-                                                control={signUpForm.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Email</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="johndoe@gmail.com" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                        {/* Email Field */}
+                                        <FormField
+                                            control={signUpForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Email</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="johndoe@gmail.com" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            {/* Password Field */}
-                                            <FormField
-                                                control={signUpForm.control}
-                                                name="password"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Password</FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Input
-                                                                    placeholder="••••••••"
-                                                                    type={showPassword ? "text" : "password"}
-                                                                    className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 pr-10"
-                                                                    {...field}
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setShowPassword(!showPassword)}
-                                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                                                >
-                                                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                                                </button>
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            {/* Gender Field */}
-                                            <FormField
-                                                control={signUpForm.control}
-                                                name="gender"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Gender (Optional)</FormLabel>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900">
-                                                                    <SelectValue placeholder="Select Gender" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent className="rounded-xl border-0 shadow-2xl">
-                                                                <SelectItem value="male">Male</SelectItem>
-                                                                <SelectItem value="female">Female</SelectItem>
-                                                                <SelectItem value="other">Other</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            {/* Terms and Conditions Field */}
-                                            <FormField
-                                                control={signUpForm.control}
-                                                name="acceptTerms"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                                className="mt-1 border-white/30 bg-white/10 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        {/* Password Field */}
+                                        <FormField
+                                            control={signUpForm.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Password</FormLabel>
+                                                    <FormControl>
+                                                        <div className="relative">
+                                                            <Input
+                                                                placeholder="••••••••"
+                                                                type={showPassword ? "text" : "password"}
+                                                                className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 pr-10"
+                                                                {...field}
                                                             />
-                                                        </FormControl>
-                                                        <div className="space-y-1 leading-none">
-                                                            <FormLabel className="text-xs text-white/80 font-normal leading-relaxed">
-                                                                I accept the <Link href="/terms" className="text-primary hover:text-primary/80 underline">Terms & Conditions</Link>
-                                                            </FormLabel>
-                                                            <FormMessage className="text-xs" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                            >
+                                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                            </button>
                                                         </div>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            <Button type="submit" className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all mt-4" disabled={signUpForm.formState.isSubmitting}>
-                                                {signUpForm.formState.isSubmitting ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                                                        Creating Account...
-                                                    </div>
-                                                ) : (
-                                                    "Sign up"
-                                                )}
-                                            </Button>
-                                        </form>
-                                    </Form>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="signin"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ duration: 0.4 }}
-                                >
-                                    <Form {...signInForm}>
-                                        <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
-                                            {/* Email Field */}
-                                            <FormField
-                                                control={signInForm.control}
-                                                name="email"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Email</FormLabel>
+                                        {/* Gender Field */}
+                                        <FormField
+                                            control={signUpForm.control}
+                                            name="gender"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Gender (Optional)</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
-                                                            <Input placeholder="johndoe@gmail.com" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
+                                                            <SelectTrigger className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900">
+                                                                <SelectValue placeholder="Select Gender" />
+                                                            </SelectTrigger>
                                                         </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                        <SelectContent className="rounded-xl border-0 shadow-2xl">
+                                                            <SelectItem value="male">Male</SelectItem>
+                                                            <SelectItem value="female">Female</SelectItem>
+                                                            <SelectItem value="other">Other</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            {/* Password Field */}
-                                            <FormField
-                                                control={signInForm.control}
-                                                name="password"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white text-sm">Password</FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Input
-                                                                    type={showPassword ? "text" : "password"}
-                                                                    placeholder="••••••••"
-                                                                    className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 pr-10"
-                                                                    {...field}
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setShowPassword(!showPassword)}
-                                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                                                >
-                                                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                                                </button>
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <div className="text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowForgotPassword(true)}
-                                                    className="text-xs text-white/60 hover:text-white transition-colors"
-                                                >
-                                                    Forgot Password?
-                                                </button>
-                                            </div>
-
-                                            <Button type="submit" className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all" disabled={signInForm.formState.isSubmitting}>
-                                                {signInForm.formState.isSubmitting ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                                                        Signing in...
+                                        {/* Terms and Conditions Field */}
+                                        <FormField
+                                            control={signUpForm.control}
+                                            name="acceptTerms"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                            className="mt-1 border-white/30 bg-white/10 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                                        />
+                                                    </FormControl>
+                                                    <div className="space-y-1 leading-none">
+                                                        <FormLabel className="text-xs text-white/80 font-normal leading-relaxed">
+                                                            I accept the <Link href="/terms" className="text-primary hover:text-primary/80 underline">Terms & Conditions</Link>
+                                                        </FormLabel>
+                                                        <FormMessage className="text-xs" />
                                                     </div>
-                                                ) : (
-                                                    "Sign in"
-                                                )}
-                                            </Button>
-                                        </form>
-                                    </Form>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <Button type="submit" className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all mt-4" disabled={signUpForm.formState.isSubmitting}>
+                                            {signUpForm.formState.isSubmitting ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                                    Creating Account...
+                                                </div>
+                                            ) : (
+                                                "Sign up"
+                                            )}
+                                        </Button>
+                                    </form>
+                                </Form>
+                            </div>
+                        ) : (
+                            <div>
+                                <Form {...signInForm}>
+                                    <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+                                        {/* Email Field */}
+                                        <FormField
+                                            control={signInForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Email</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="johndoe@gmail.com" className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {/* Password Field */}
+                                        <FormField
+                                            control={signInForm.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-white text-sm">Password</FormLabel>
+                                                    <FormControl>
+                                                        <div className="relative">
+                                                            <Input
+                                                                type={showPassword ? "text" : "password"}
+                                                                placeholder="••••••••"
+                                                                className="h-11 sm:h-12 bg-white/95 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 pr-10"
+                                                                {...field}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                            >
+                                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                                            </button>
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowForgotPassword(true)}
+                                                className="text-xs text-white/60 hover:text-white transition-colors"
+                                            >
+                                                Forgot Password?
+                                            </button>
+                                        </div>
+
+                                        <Button type="submit" className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl shadow-lg transition-all" disabled={signInForm.formState.isSubmitting}>
+                                            {signInForm.formState.isSubmitting ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                                    Signing in...
+                                                </div>
+                                            ) : (
+                                                "Sign in"
+                                            )}
+                                        </Button>
+                                    </form>
+                                </Form>
+                            </div>
+                        )}
 
                         {/* Social Login */}
                         <div className="relative my-4 sm:my-6">
@@ -517,13 +501,10 @@ function AuthContent() {
                         </p>
                     </div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Right Panel - Testimonials */}
-            <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+            <div
                 className="relative hidden lg:flex h-full flex-col bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 p-10 text-white overflow-hidden"
             >
                 {/* Decorative Elements */}
@@ -605,7 +586,7 @@ function AuthContent() {
                         ))}
                     </div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Forgot Password Dialog */}
             <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>

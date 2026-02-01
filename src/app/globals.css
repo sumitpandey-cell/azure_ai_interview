@@ -163,19 +163,21 @@
 
   html {
     @apply overflow-x-hidden bg-background;
+    background-color: #050814;
+    /* Fail-safe dark background to prevent white flash */
     max-width: 100vw;
+    /* Only smooth scroll if not in low-power or if needed, but for performance we can make it faster */
     scroll-behavior: smooth;
   }
 
-  w body {
+  body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary overflow-x-hidden;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     letter-spacing: 0;
     max-width: 100vw;
     position: relative;
-    /* More intense background and color transition */
-    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Removed background-color transition to prevent page-load flashes */
+    transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .container {
@@ -320,8 +322,9 @@
 
   /* Premium Glassmorphism */
   .glass-card {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+    @apply backdrop-blur-md bg-white/10 border border-white/10;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    will-change: backdrop-filter, transform;
   }
 
   .dark .glass-card {
@@ -466,22 +469,13 @@
     animation: progress-indeterminate 1.5s infinite linear;
   }
 
-  /* Optimized Theme Transition */
+  /* Removed heavy global transitions for better performance */
+  /* If theme transition is needed, it should be applied more selectively or via a specific class */
+
   .card,
-  header,
-  footer,
-  aside,
-  main,
-  section,
-  nav,
-  .bg-card,
-  .bg-background,
-  .bg-muted,
-  .bg-secondary,
-  .bg-accent {
-    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  .bg-card {
+    /* Only apply transition to specific elements where it's noticeable and needed */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   /* Intense View Transitions API - Cross-fade with subtle scale */

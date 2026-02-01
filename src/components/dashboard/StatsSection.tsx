@@ -58,7 +58,7 @@ export const StatsSection = memo(({
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
                 {/* Interviews Completed */}
-                <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="bg-card/85 dark:bg-card/75 backdrop-blur-md rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                         <Play className="h-20 w-20 fill-primary/20 text-primary" />
                     </div>
@@ -69,7 +69,7 @@ export const StatsSection = memo(({
                 </div>
 
                 {/* Time Practiced */}
-                <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="bg-card/85 dark:bg-card/75 backdrop-blur-md rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                         <Clock className="h-20 w-20 text-accent fill-accent/20" />
                     </div>
@@ -80,7 +80,7 @@ export const StatsSection = memo(({
                 </div>
 
                 {/* Global Rank */}
-                <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="bg-card/85 dark:bg-card/75 backdrop-blur-md rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                         <Award className="h-20 w-20 text-blue-500 fill-blue-500/20" />
                     </div>
@@ -91,7 +91,7 @@ export const StatsSection = memo(({
                 </div>
 
                 {/* Average Score */}
-                <div className="bg-card/80 dark:bg-card/60 backdrop-blur-xl rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                <div className="bg-card/85 dark:bg-card/75 backdrop-blur-md rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none">
                         <Target className="h-20 w-20 text-primary fill-primary/20" />
                     </div>

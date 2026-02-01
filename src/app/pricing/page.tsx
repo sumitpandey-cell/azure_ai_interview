@@ -169,7 +169,7 @@ function PricingContent() {
             <PublicHeader />
 
             <main className="pt-32 pb-20 relative z-10">
-                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 container mx-auto px-4">
+                <div className="space-y-12 container mx-auto px-4">
                     {/* Header Section */}
                     <div className="text-center space-y-4 max-w-3xl mx-auto">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest shadow-sm">

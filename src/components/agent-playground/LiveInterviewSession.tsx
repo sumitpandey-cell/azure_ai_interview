@@ -11,6 +11,8 @@ import {
     PhoneOff,
     Video,
     VideoOff,
+    Mic,
+    MicOff,
     MessageSquare,
     X,
     User,
@@ -18,8 +20,6 @@ import {
     Zap,
     ChevronUp,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
 } from "lucide-react";
 import { useEffect, useState, useRef, useMemo, memo } from "react";
 import { TranscriptionTile } from "./transcriptions/TranscriptionTile";
@@ -119,7 +119,7 @@ export function LiveInterviewSession({
     const [showTranscript, setShowTranscript] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
     const [showDetails, setShowDetails] = useState(false);
     const [isEndCallDialogOpen, setIsEndCallDialogOpen] = useState(false);
-    const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+
 
     // Reset signal on disconnection to allow re-signaling on reconnection
     useEffect(() => {
@@ -281,16 +281,10 @@ export function LiveInterviewSession({
 
             <div className="fixed inset-0 bg-background text-muted-foreground flex flex-col overflow-hidden font-sans select-none">
 
-                {/* Background Ambient Glows */}
+                {/* Background Ambient Glows - Made Static */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className={cn(
-                        "absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full transition-all duration-1000 blur-[120px]",
-                        isAISpeaking ? "bg-primary/20 scale-125 opacity-100" : "bg-primary/5 scale-100 opacity-50"
-                    )} />
-                    <div className={cn(
-                        "absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full transition-all duration-1000 blur-[120px]",
-                        isAISpeaking ? "bg-accent/20 scale-125 opacity-100" : "bg-accent/5 scale-100 opacity-50"
-                    )} />
+                    <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full blur-[120px] bg-primary/5 opacity-50" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full blur-[120px] bg-accent/5 opacity-50" />
 
                     {/* Animated Grid overlay */}
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
@@ -377,7 +371,7 @@ export function LiveInterviewSession({
                     </aside>
 
                     {/* Middle Column (Main Core) */}
-                    <div className="flex-1 lg:flex-[3] lg:min-w-[400px] flex flex-col relative min-h-0 bg-transparent group">
+                    <div className="flex-1 lg:flex-[3] lg:min-w-[400px] flex flex-col gap-3 lg:gap-4 relative min-h-0 bg-transparent group">
                         <div className="flex-1 bg-card dark:bg-card/20 backdrop-blur-md border border-border dark:border-white/5 lg:rounded-[32px] overflow-hidden relative shadow-2xl flex flex-col items-center justify-center">
 
                             {/* Floating Timer & Status */}
@@ -426,10 +420,7 @@ export function LiveInterviewSession({
 
                             {/* Center AI Visualization */}
                             <div className="relative flex items-center justify-center w-full h-[60%] lg:h-full">
-                                <div className={cn(
-                                    "absolute w-[70vw] h-[70vw] lg:w-[400px] lg:h-[400px] rounded-full blur-[100px] transition-all duration-1000",
-                                    isAISpeaking ? 'bg-primary/15 scale-110' : 'bg-primary/5 dark:bg-white/5 scale-100'
-                                )} />
+                                <div className="absolute w-[70vw] h-[70vw] lg:w-[400px] lg:h-[400px] rounded-full blur-[100px] bg-primary/5 dark:bg-white/5 opacity-50" />
 
                                 <div className="relative z-10 w-[240px] h-[240px] lg:w-[380px] lg:h-[380px] flex items-center justify-center">
                                     <svg viewBox="0 0 100 100" className="w-full h-full absolute inset-0 opacity-20">
@@ -481,6 +472,106 @@ export function LiveInterviewSession({
                                 <span className="text-[8px] text-muted-foreground uppercase tracking-[0.5em] font-medium">Quantum Logic Processor</span>
                             </div>
                         </div>
+
+                        {/* --- INTEGRATED CONTROLS --- */}
+                        <div className="z-20 transition-all duration-500">
+                            <div
+                                className="bg-card dark:bg-card/20 backdrop-blur-xl border border-border dark:border-white/5 rounded-[24px] lg:rounded-[32px] p-2 lg:p-3 flex items-center justify-center shadow-xl ring-1 ring-black/5 dark:ring-white/5 overflow-hidden"
+                            >
+                                <div
+                                    className="flex items-center justify-center gap-2 xs:gap-4 sm:gap-6 lg:gap-10 px-2 xs:px-4 lg:px-8 w-full"
+                                >
+                                    {/* Audio Toggle */}
+                                    <button
+                                        onClick={toggleMute}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1 xs:gap-1.5 group transition-all outline-none shrink",
+                                            !isMicrophoneEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border transition-all duration-300",
+                                            !isMicrophoneEnabled
+                                                ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
+                                                : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
+                                        )}>
+                                            {!isMicrophoneEnabled ? <MicOff className="h-4 w-4 lg:h-5 lg:w-5" /> : <Mic className="h-4 w-4 lg:h-5 lg:w-5" />}
+                                        </div>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">{!isMicrophoneEnabled ? 'Unmute' : 'Mute'}</span>
+                                    </button>
+
+                                    {/* Camera Toggle */}
+                                    <button
+                                        onClick={toggleCamera}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1 xs:gap-1.5 group transition-all outline-none shrink",
+                                            !isCameraEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border transition-all duration-300",
+                                            !isCameraEnabled
+                                                ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
+                                                : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
+                                        )}>
+                                            {isCameraEnabled ? <Video className="h-4 w-4 lg:h-5 lg:w-5" /> : <VideoOff className="h-4 w-4 lg:h-5 lg:w-5" />}
+                                        </div>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">{isCameraEnabled ? 'Video' : 'No Video'}</span>
+                                    </button>
+
+                                    {/* Hint Button */}
+                                    <button
+                                        onClick={requestHint}
+                                        disabled={isHintLoading || hintCooldown}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1 xs:gap-1.5 transition-all outline-none group shrink",
+                                            hintCooldown ? "opacity-30 cursor-not-allowed" : "text-amber-500 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-lg",
+                                            isHintLoading
+                                                ? "bg-amber-500/20 animate-pulse border-amber-500/40"
+                                                : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/40"
+                                        )}>
+                                            <Zap className={cn("h-4 w-4 lg:h-5 lg:w-5", isHintLoading && "animate-bounce")} />
+                                        </div>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">
+                                            {hintCooldown ? `${cooldownSeconds}s` : 'Insight'}
+                                        </span>
+                                    </button>
+
+                                    {/* Transcript Toggle */}
+                                    <button
+                                        onClick={() => setShowTranscript(!showTranscript)}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1 xs:gap-1.5 group transition-all outline-none shrink",
+                                            showTranscript ? "text-primary" : "text-muted-foreground dark:text-white/60 hover:text-primary"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border transition-all duration-300",
+                                            showTranscript
+                                                ? "bg-primary/20 border-primary/40 shadow-[0_0_15px_rgba(168_85,247,0.3)]"
+                                                : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
+                                        )}>
+                                            <MessageSquare className="h-4 w-4 lg:h-5 lg:w-5" />
+                                        </div>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">Chat</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleEndCall}
+                                        className="flex flex-col items-center gap-1 xs:gap-1.5 transition-all text-red-500 hover:text-red-400 group outline-none shrink"
+                                    >
+                                        <div className="w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border border-red-500/30 bg-red-500/10 group-hover:bg-red-500 group-hover:text-white transition-all duration-300 shadow-lg shadow-red-500/10 group-hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                                            <PhoneOff className="h-4 w-4 lg:h-5 lg:w-5" />
+                                        </div>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em] text-red-500">Leave</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Panel (Transcript) */}
@@ -511,159 +602,42 @@ export function LiveInterviewSession({
                     </aside>
                 </main>
 
-                {/* --- FLOATING CONTROLS --- */}
-                <div className={cn(
-                    "fixed z-[100] transition-all duration-700 cubic-bezier(0.19, 1, 0.22, 1) will-change-transform",
-                    isControlsCollapsed
-                        ? "bottom-8 left-8 translate-x-0"
-                        : "bottom-8 lg:bottom-10 left-1/2 -translate-x-1/2"
-                )}>
-                    <div
-                        className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-3xl border border-border/20 dark:border-white/5 rounded-[32px] p-2 flex items-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/5 overflow-hidden transition-all duration-500"
-                    >
-                        {/* Collapse/Expand Toggle */}
-                        <button
-                            onClick={() => setIsControlsCollapsed(!isControlsCollapsed)}
-                            className="w-12 h-12 rounded-2xl flex items-center justify-center bg-muted/80 dark:bg-zinc-800/80 border border-border/20 dark:border-white/5 text-muted-foreground dark:text-white/50 hover:text-primary hover:bg-primary/10 transition-all shrink-0 z-20 group"
-                            title={isControlsCollapsed ? "Expand Controls" : "Collapse Controls"}
-                        >
-                            {isControlsCollapsed ? <ChevronRight className="h-5 w-5 animate-pulse" /> : <ChevronLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" />}
-                        </button>
-
-                        <div
-                            className={cn(
-                                "flex items-center justify-center whitespace-nowrap overflow-hidden transition-all duration-500 ease-in-out will-change-[max-width,opacity,gap]",
-                                isControlsCollapsed ? "max-w-0 opacity-0 gap-0 px-0 invisible" : "max-w-[600px] opacity-100 gap-4 lg:gap-6 px-4 visible"
-                            )}
-                        >
-                            {/* Audio Toggle */}
-                            <button
-                                onClick={toggleMute}
-                                className={cn(
-                                    "flex flex-col items-center gap-1.5 group transition-all outline-none shrink-0",
-                                    !isMicrophoneEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
-                                )}
+                <AlertDialog open={isEndCallDialogOpen} onOpenChange={setIsEndCallDialogOpen}>
+                    <AlertDialogContent className="rounded-[24px] p-6 lg:p-8 border border-border dark:border-white/10 shadow-3xl bg-card/95 dark:bg-card/90 backdrop-blur-2xl max-w-sm mx-auto">
+                        <AlertDialogHeader className="space-y-4">
+                            <div className="h-14 w-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
+                                <AlertTriangle className="h-7 w-7 text-red-500" />
+                            </div>
+                            <AlertDialogTitle className="text-xl lg:text-2xl font-bold text-foreground text-center">End Session?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium text-muted-foreground text-center leading-relaxed">
+                                Are you sure you want to end this interview session? Your progress will be saved.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
+                            <AlertDialogCancel className="flex-1 h-12 rounded-xl font-semibold text-xs border border-border dark:border-white/10 text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all outline-none">
+                                Continue
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={confirmEndCall}
+                                className="flex-1 h-12 rounded-xl font-bold text-xs bg-red-500 text-white hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all"
                             >
-                                <div className={cn(
-                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300",
-                                    !isMicrophoneEnabled
-                                        ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
-                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
-                                )}>
-                                    {!isMicrophoneEnabled ? <MessageSquare className="h-5 w-5 rotate-180" /> : <MessageSquare className="h-5 w-5" />}
-                                </div>
-                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">{!isMicrophoneEnabled ? 'Unmute' : 'Mute'}</span>
-                            </button>
+                                End Interview
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
-                            {/* Camera Toggle */}
-                            <button
-                                onClick={toggleCamera}
-                                className={cn(
-                                    "flex flex-col items-center gap-1.5 group transition-all outline-none shrink-0",
-                                    !isCameraEnabled ? "text-red-500 dark:text-red-400" : "text-muted-foreground dark:text-white/60 hover:text-primary"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300",
-                                    !isCameraEnabled
-                                        ? "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
-                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-primary/10 group-hover:border-primary/20"
-                                )}>
-                                    {isCameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
-                                </div>
-                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">{isCameraEnabled ? 'Video' : 'No Video'}</span>
-                            </button>
-
-                            {/* Hint Button */}
-                            <button
-                                onClick={requestHint}
-                                disabled={isHintLoading || hintCooldown}
-                                className={cn(
-                                    "flex flex-col items-center gap-1.5 transition-all outline-none group shrink-0",
-                                    hintCooldown ? "opacity-30 cursor-not-allowed" : "text-amber-500 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-lg",
-                                    isHintLoading
-                                        ? "bg-amber-500/20 animate-pulse border-amber-500/40"
-                                        : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/40"
-                                )}>
-                                    <Zap className={cn("h-5 w-5", isHintLoading && "animate-bounce")} />
-                                </div>
-                                <span className="text-[8px] uppercase font-black tracking-[0.2em]">
-                                    {hintCooldown ? `${cooldownSeconds}s` : 'Insight'}
-                                </span>
-                            </button>
-
-                            {/* Transcript Toggle */}
-                            <button
-                                onClick={() => setShowTranscript(!showTranscript)}
-                                className={cn(
-                                    "flex flex-col items-center gap-1 group transition-all outline-none shrink-0",
-                                    showTranscript ? "text-primary" : "text-muted-foreground dark:text-white/60 hover:text-primary"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-10 h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border transition-all",
-                                    showTranscript
-                                        ? "bg-primary/20 border-primary/40 shadow-[0_0_15px_rgba(168_85,247,0.3)]"
-                                        : "bg-white/50 dark:bg-white/5 border-border dark:border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 hover:shadow-md"
-                                )}>
-                                    <MessageSquare className="h-4 w-4" />
-                                </div>
-                                <span className="text-[7px] lg:text-[8px] uppercase font-bold tracking-[0.2em]">Chat</span>
-                            </button>
-
-                            <button
-                                onClick={handleEndCall}
-                                className="flex flex-col items-center gap-1.5 transition-all text-red-500 hover:text-red-400 group outline-none shrink-0"
-                            >
-                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center border border-red-500/30 bg-red-500/10 group-hover:bg-red-500 group-hover:text-white transition-all duration-300 shadow-lg shadow-red-500/10 group-hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]">
-                                    <PhoneOff className="h-5 w-5" />
-                                </div>
-                                <span className="text-[8px] uppercase font-black tracking-[0.2em] text-red-500">Leave</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                {
+                    currentHint && (
+                        <HintDialog
+                            open={showHintDialog}
+                            onOpenChange={setShowHintDialog}
+                            hintText={currentHint}
+                            hintsUsed={hintsUsed}
+                        />
+                    )
+                }
             </div>
-
-            <AlertDialog open={isEndCallDialogOpen} onOpenChange={setIsEndCallDialogOpen}>
-                <AlertDialogContent className="rounded-[24px] p-6 lg:p-8 border border-border dark:border-white/10 shadow-3xl bg-card/95 dark:bg-card/90 backdrop-blur-2xl max-w-sm mx-auto">
-                    <AlertDialogHeader className="space-y-4">
-                        <div className="h-14 w-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
-                            <AlertTriangle className="h-7 w-7 text-red-500" />
-                        </div>
-                        <AlertDialogTitle className="text-xl lg:text-2xl font-bold text-foreground text-center">End Session?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground text-center leading-relaxed">
-                            Are you sure you want to end this interview session? Your progress will be saved.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
-                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-semibold text-xs border border-border dark:border-white/10 text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all outline-none">
-                            Continue
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmEndCall}
-                            className="flex-1 h-12 rounded-xl font-bold text-xs bg-red-500 text-white hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all"
-                        >
-                            End Interview
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            {
-                currentHint && (
-                    <HintDialog
-                        open={showHintDialog}
-                        onOpenChange={setShowHintDialog}
-                        hintText={currentHint}
-                        hintsUsed={hintsUsed}
-                    />
-                )
-            }
         </TranscriptProvider >
     );
 }

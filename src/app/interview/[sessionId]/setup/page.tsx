@@ -333,12 +333,15 @@ export default function InterviewSetup() {
                 const currentConfig = (session?.config as Record<string, unknown>) || {};
 
                 // 1. Mark as completed with a placeholder feedback
+                // 1. Mark as completed immediately with an "Interview Started" placeholder.
+                // This ensures the session is always in a terminal state for feedback generation
+                // even if the browser closes or the user refreshes.
                 await interviewService.completeSession(sessionId, {
                     durationSeconds: 0,
                     feedback: {
-                        executiveSummary: "This session was initialized but not completed. No evaluative data was captured.",
-                        note: "Session abandoned during setup or initialization",
-                        status: "abandoned"
+                        executiveSummary: "This interview has been started and is currently being processed. Full analysis will be available once the session concludes.",
+                        note: "Interview Started",
+                        status: "started"
                     }
                 });
 

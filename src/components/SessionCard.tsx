@@ -74,7 +74,7 @@ export const SessionCard = React.memo(function SessionCard({ session, isGenerati
         <div
             onClick={handleClick}
             className={cn(
-                "group relative overflow-hidden rounded-3xl border border-border/80 dark:border-border/60 bg-card/80 dark:bg-card/60 backdrop-blur-xl hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full",
+                "group relative overflow-hidden rounded-3xl border border-border/80 dark:border-border/60 bg-card/85 dark:bg-card/75 backdrop-blur-md hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full",
                 isGeneratingFeedback ? "cursor-wait opacity-90" : "cursor-pointer"
             )}
         >

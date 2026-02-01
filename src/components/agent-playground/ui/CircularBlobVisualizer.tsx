@@ -100,14 +100,14 @@ export function CircularBlobVisualizer({
         // Initialize particles with adaptive count
         if (particlesRef.current.length === 0) {
             const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-            const count = isMobile ? 60 : 150; // Optimized count
+            const count = isMobile ? 80 : 200; // Increased for better detail
             for (let i = 0; i < count; i++) {
                 const phi = Math.acos(-1 + (2 * i) / count);
                 const theta = Math.sqrt(count * Math.PI) * phi;
                 particlesRef.current.push({
                     phi,
                     theta,
-                    size: Math.random() * 0.8 + 0.5,
+                    size: Math.random() * 1.2 + 0.6,
                 });
             }
         }
@@ -123,17 +123,13 @@ export function CircularBlobVisualizer({
             const deltaTime = currentTime - lastFrameTime;
             lastFrameTime = currentTime;
 
-            // Cap deltaTime
             const effectiveDelta = Math.min(deltaTime, 33);
             frameCountRef.current++;
-
-            // Adaptive frame skipping on heavy loads if needed
-            // For now just optimized rendering
 
             const isDark = document.documentElement.classList.contains('dark');
             ctx.clearRect(0, 0, size, size);
 
-            // Throttle volume sampling (every 2 frames)
+            // Throttle volume sampling
             if (frameCountRef.current % 2 === 0) {
                 let agentVolume = 0;
                 let localVolume = 0;
@@ -142,7 +138,6 @@ export function CircularBlobVisualizer({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     agentAnalyserRef.current.getByteFrequencyData(agentDataRef.current as any);
                     let sum = 0;
-                    // Only sample relevant frequency range for performance
                     const len = Math.floor(agentDataRef.current.length * 0.8);
                     for (let i = 0; i < len; i++) sum += agentDataRef.current[i];
                     agentVolume = sum / len;
@@ -169,28 +164,46 @@ export function CircularBlobVisualizer({
             const AGENT_ACTIVE = state === "speaking" || smoothedAgentVolume > 8;
             const LOCAL_ACTIVE = smoothedLocalVolume > 10;
 
-            // Base Colors
-            let primaryColor = { r: 168, g: 85, b: 247 };
-            let glowOpacity = isDark ? 0.08 : 0.12;
+            // Base Colors & Styles
+            let primaryColor = { r: 168, g: 85, b: 247 }; // Purple
+            let secondaryColor = { r: 236, g: 72, b: 153 }; // Pink
 
             if (!AGENT_ACTIVE && LOCAL_ACTIVE) {
-                primaryColor = { r: 245, g: 158, b: 11 };
+                primaryColor = { r: 245, g: 158, b: 11 }; // Amber
+                secondaryColor = { r: 251, g: 191, b: 36 };
             } else if (!AGENT_ACTIVE && !LOCAL_ACTIVE) {
                 primaryColor = isDark ? { r: 71, g: 85, b: 105 } : { r: 15, g: 23, b: 42 };
-                glowOpacity = isDark ? 0.02 : 0.08;
+                secondaryColor = primaryColor;
             }
 
-            // Draw Background Glow
-            const dynamicGlow = glowOpacity + (normalizedVolume * (isDark ? 0.2 : 0.1));
-            ctx.fillStyle = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${dynamicGlow})`;
+            // 1. Draw Inner Glow (Nucleus)
+            const nucleusRadius = baseRadius * (0.4 + normalizedVolume * 0.3);
+            const nucleusGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, nucleusRadius);
+            nucleusGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${isDark ? 0.35 : 0.25})`);
+            nucleusGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
+
+            ctx.fillStyle = nucleusGradient;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, size * 0.3, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, nucleusRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. Draw Outer Atmosphere
+            const atmosphereRadius = baseRadius * (1.2 + normalizedVolume * 0.5);
+            const atmosphereGradient = ctx.createRadialGradient(centerX, centerY, baseRadius * 0.8, centerX, centerY, atmosphereRadius);
+            atmosphereGradient.addColorStop(0, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
+            atmosphereGradient.addColorStop(0.5, `rgba(${secondaryColor.r}, ${secondaryColor.g}, ${secondaryColor.b}, ${isDark ? 0.05 : 0.08})`);
+            atmosphereGradient.addColorStop(1, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, 0)`);
+
+            ctx.fillStyle = atmosphereGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, atmosphereRadius, 0, Math.PI * 2);
             ctx.fill();
 
             // Update Rotations
             const rotationSpeed = effectiveDelta / 1000;
-            rotationY += (0.15 + normalizedVolume * 1.2) * rotationSpeed;
-            rotationX += (0.08 + normalizedVolume * 0.6) * rotationSpeed;
+            const targetRotationSpeed = (0.2 + normalizedVolume * 1.5);
+            rotationY += targetRotationSpeed * rotationSpeed;
+            rotationX += (targetRotationSpeed * 0.5) * rotationSpeed;
 
             const time = currentTime / 1000;
             const cosY = Math.cos(rotationY);
@@ -198,49 +211,66 @@ export function CircularBlobVisualizer({
             const cosX = Math.cos(rotationX);
             const sinX = Math.sin(rotationX);
 
-            // Batched Particle Rendering
-            // Group particles by opacity regions to potentially reduce state changes if using complex paths,
-            // but for arc() + fill(), we just minimize stroke/fill changes.
+            // 3. Render Particles with 3D sorting simulation (Back to Front)
+            const sortedParticles = particlesRef.current.map(p => {
+                const x = Math.sin(p.phi) * Math.cos(p.theta);
+                const y = Math.sin(p.phi) * Math.sin(p.theta);
+                const z = Math.cos(p.phi);
 
-            const idleColor = isDark ? '148, 163, 184' : '30, 41, 59';
-            const agentFill = isDark ? '192, 132, 252' : '126, 34, 206';
-            const localFill = isDark ? '252, 211, 77' : '217, 119, 6';
-
-            particlesRef.current.forEach(p => {
-                let x = Math.sin(p.phi) * Math.cos(p.theta);
-                let y = Math.sin(p.phi) * Math.sin(p.theta);
-                let z = Math.cos(p.phi);
-
-                // Inline math for speed
+                // Rotation transforms
                 const x1 = x * cosY - z * sinY;
                 const z1 = x * sinY + z * cosY;
                 const y2 = y * cosX - z1 * sinX;
                 const z2 = y * sinX + z1 * cosX;
 
-                x = x1; y = y2; z = z2;
+                return { ...p, rx: x1, ry: y2, rz: z2 };
+            });
 
-                const noise = Math.sin(p.phi * 5 + time * 1.5) * 0.02;
-                const volumeOffset = normalizedVolume * 0.25;
+            // Sort by depth (Z)
+            sortedParticles.sort((a, b) => a.rz - b.rz);
+
+            sortedParticles.forEach(p => {
+                const noise = Math.sin(p.phi * 8 + time * 1.2) * 0.03;
+                const volumeOffset = normalizedVolume * 0.35 * (1 + Math.random() * 0.1);
                 const radius = baseRadius * (1 + noise + volumeOffset);
 
-                const px = centerX + x * radius;
-                const py = centerY + y * radius;
-                const psize = p.size * (z + 2) * 0.45;
+                const px = centerX + p.rx * radius;
+                const py = centerY + p.ry * radius;
 
-                const depthFactor = (z + 1.5) / 2.5;
-                const opacity = isDark ? depthFactor : Math.min(depthFactor * 1.1 + 0.2, 1.0);
+                // Enhanced perspective scaling
+                const perspective = (p.rz + 1.5) / 2.5;
+                const psize = p.size * perspective * 0.8;
+
+                // Color depth awareness
+                const opacity = isDark ? Math.max(0.2, perspective) : Math.min(perspective * 1.2 + 0.1, 1.0);
+
+                // Light source simulation (top-left)
+                const lightEffect = Math.max(0, (-p.rx - p.ry + p.rz) / 3);
 
                 ctx.beginPath();
-                ctx.arc(px, py, Math.max(0.1, psize), 0, Math.PI * 2);
+                ctx.arc(px, py, Math.max(0.5, psize), 0, Math.PI * 2);
 
                 if (AGENT_ACTIVE) {
-                    ctx.fillStyle = `rgba(${agentFill}, ${opacity})`;
+                    const r = primaryColor.r + (secondaryColor.r - primaryColor.r) * lightEffect;
+                    const g = primaryColor.g + (secondaryColor.g - primaryColor.g) * lightEffect;
+                    const b = primaryColor.b + (secondaryColor.b - primaryColor.b) * lightEffect;
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
                 } else if (LOCAL_ACTIVE) {
-                    ctx.fillStyle = `rgba(${localFill}, ${opacity})`;
+                    ctx.fillStyle = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${opacity})`;
                 } else {
-                    ctx.fillStyle = `rgba(${idleColor}, ${opacity})`;
+                    const idleColor = isDark ? 140 : 20;
+                    ctx.fillStyle = `rgba(${idleColor}, ${idleColor}, ${idleColor}, ${opacity * 0.6})`;
                 }
+
                 ctx.fill();
+
+                // Add small flare for front particles
+                if (p.rz > 0.8 && activeVolume > 20) {
+                    ctx.beginPath();
+                    ctx.arc(px, py, psize * 1.5, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${opacity * 0.3})`;
+                    ctx.fill();
+                }
             });
 
             animationFrameRef.current = requestAnimationFrame(animate);

@@ -124,7 +124,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-md"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -379,7 +379,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       </aside>
 
       {/* Fixed Top Header Bar - Mobile Only */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-2xl border-b border-border/50 shadow-lg">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-lg">
         <div className="h-full px-4 flex items-center justify-between">
           {/* Hamburger Menu */}
           <div className="flex items-center gap-2">
