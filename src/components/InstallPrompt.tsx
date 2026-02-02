@@ -12,11 +12,18 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstalled, setIsInstalled] = useState(false);
+    const [isDismissed, setIsDismissed] = useState(false);
 
     useEffect(() => {
         // Check if app is already installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
             setIsInstalled(true);
+        }
+
+        // Check if user has dismissed the prompt
+        const dismissed = localStorage.getItem('install-prompt-dismissed');
+        if (dismissed === 'true') {
+            setIsDismissed(true);
         }
 
         const handleBeforeInstallPrompt = (e: Event) => {
@@ -49,11 +56,21 @@ export function InstallPrompt() {
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`User response to the install prompt: ${outcome}`);
 
+        // Mark as dismissed so it doesn't show again
+        localStorage.setItem('install-prompt-dismissed', 'true');
+        setIsDismissed(true);
+
         // We've used the prompt, and can't use it again
         setDeferredPrompt(null);
     };
 
-    if (isInstalled || !deferredPrompt) return null;
+    const handleClose = () => {
+        setDeferredPrompt(null);
+        localStorage.setItem('install-prompt-dismissed', 'true');
+        setIsDismissed(true);
+    };
+
+    if (isInstalled || !deferredPrompt || isDismissed) return null;
 
     return (
         <div className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-5 duration-500">
@@ -69,7 +86,7 @@ export function InstallPrompt() {
                     Install
                 </Button>
                 <button
-                    onClick={() => setDeferredPrompt(null)}
+                    onClick={handleClose}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <span className="sr-only">Close</span>

@@ -177,7 +177,6 @@ export function TranscriptTracker({
 
                     if (data.text) {
                         const isSelf = data.role === 'user';
-                        const name = isSelf ? "You" : "Agent";
 
                         // Use the ID provided by the server
                         const targetId = data.id || `data-${Date.now()}`;

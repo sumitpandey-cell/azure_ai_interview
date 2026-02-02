@@ -17,7 +17,6 @@ import {
     X,
     User,
     AlertTriangle,
-    Zap,
     ChevronUp,
     ChevronDown,
 } from "lucide-react";
@@ -27,7 +26,6 @@ import { TranscriptTracker } from "./transcriptions/TranscriptTracker";
 import { CircularBlobVisualizer } from "./ui/CircularBlobVisualizer";
 import { type InterviewSession } from "@/services/interview.service";
 import { TranscriptProvider, TranscriptEntry } from "@/contexts/TranscriptContext";
-import { HintDialog } from "./HintDialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -43,7 +41,7 @@ import "@/styles/arjuna-animations.css";
 interface LiveInterviewSessionProps {
     sessionId: string;
     userId: string;
-    onEndSession: (hintsToUse?: number, skipRedirect?: boolean) => void;
+    onEndSession: (skipRedirect?: boolean) => void;
     remainingMinutes: number;
     remainingSeconds: number;
     isLowTime: boolean;
@@ -54,7 +52,6 @@ interface LiveInterviewSessionProps {
     initialTranscripts?: TranscriptEntry[];
     sessionData?: InterviewSession | null;
     onAgentReady?: () => void;
-    onHintsUpdate?: (count: number) => void;
     isEnding?: boolean;
 }
 
@@ -105,7 +102,6 @@ export function LiveInterviewSession({
     initialTranscripts = [],
     sessionData = null,
     onAgentReady,
-    onHintsUpdate,
     isEnding = false,
 }: LiveInterviewSessionProps) {
     const roomState = useConnectionState();
@@ -156,84 +152,14 @@ export function LiveInterviewSession({
     };
 
     const confirmEndCall = () => {
-        onEndSession(hintsUsed);
+        onEndSession();
         setTimeout(() => {
             room.disconnect();
         }, 100);
         setIsEndCallDialogOpen(false);
     };
 
-    const [isHintLoading, setIsHintLoading] = useState(false);
-    const [hintsUsed, setHintsUsed] = useState(0);
-    const [currentHint, setCurrentHint] = useState<string | null>(null);
-    const [showHintDialog, setShowHintDialog] = useState(false);
-    const [hintCooldown, setHintCooldown] = useState(false);
-    const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
-    // Listen for hint responses from the agent
-    useEffect(() => {
-        if (!room) return;
-
-        const handleDataReceived = (payload: Uint8Array, _participant: unknown, _kind: unknown, topic?: string) => {
-            if (topic === "hint_response") {
-                try {
-                    const decoder = new TextDecoder();
-                    const message = decoder.decode(payload);
-                    const data = JSON.parse(message);
-
-                    if (data.type === "hint_response" && data.hint) {
-                        setCurrentHint(data.hint);
-                        setShowHintDialog(true);
-                        setIsHintLoading(false);
-                    }
-                } catch {
-                    setIsHintLoading(false);
-                }
-            }
-        };
-
-        room.on("dataReceived", handleDataReceived);
-        return () => {
-            room.off("dataReceived", handleDataReceived);
-        };
-    }, [room]);
-
-    useEffect(() => {
-        if (hintCooldown && cooldownSeconds > 0) {
-            const timer = setTimeout(() => {
-                setCooldownSeconds(prev => prev - 1);
-            }, 1000);
-            return () => clearTimeout(timer);
-        } else if (cooldownSeconds === 0 && hintCooldown) {
-            setHintCooldown(false);
-        }
-    }, [hintCooldown, cooldownSeconds]);
-
-    const requestHint = async () => {
-        if (isHintLoading || hintCooldown) return;
-
-        setIsHintLoading(true);
-        const newCount = hintsUsed + 1;
-        setHintsUsed(newCount);
-        onHintsUpdate?.(newCount);
-
-        try {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(JSON.stringify({ type: "hint_request" }));
-            await localParticipant.publishData(data, {
-                reliable: true,
-                topic: "hint_request"
-            });
-            setHintCooldown(true);
-            setCooldownSeconds(30);
-            setTimeout(() => {
-                setIsHintLoading(false);
-            }, 10000);
-        } catch (error) {
-            console.error("Failed to request hint:", error);
-            setIsHintLoading(false);
-        }
-    };
 
     const desktopVideoRef = useRef<HTMLVideoElement>(null);
     const mobileVideoRef = useRef<HTMLVideoElement>(null);
@@ -519,27 +445,7 @@ export function LiveInterviewSession({
                                         <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">{isCameraEnabled ? 'Video' : 'No Video'}</span>
                                     </button>
 
-                                    {/* Hint Button */}
-                                    <button
-                                        onClick={requestHint}
-                                        disabled={isHintLoading || hintCooldown}
-                                        className={cn(
-                                            "flex flex-col items-center gap-1 xs:gap-1.5 transition-all outline-none group shrink",
-                                            hintCooldown ? "opacity-30 cursor-not-allowed" : "text-amber-500 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
-                                        )}
-                                    >
-                                        <div className={cn(
-                                            "w-9 h-9 xs:w-10 xs:h-10 lg:w-12 lg:h-12 rounded-lg xs:rounded-xl lg:rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-lg",
-                                            isHintLoading
-                                                ? "bg-amber-500/20 animate-pulse border-amber-500/40"
-                                                : "bg-white/50 dark:bg-zinc-800/80 border-border/20 dark:border-white/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/40"
-                                        )}>
-                                            <Zap className={cn("h-4 w-4 lg:h-5 lg:w-5", isHintLoading && "animate-bounce")} />
-                                        </div>
-                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">
-                                            {hintCooldown ? `${cooldownSeconds}s` : 'Insight'}
-                                        </span>
-                                    </button>
+
 
                                     {/* Transcript Toggle */}
                                     <button
@@ -627,16 +533,7 @@ export function LiveInterviewSession({
                     </AlertDialogContent>
                 </AlertDialog>
 
-                {
-                    currentHint && (
-                        <HintDialog
-                            open={showHintDialog}
-                            onOpenChange={setShowHintDialog}
-                            hintText={currentHint}
-                            hintsUsed={hintsUsed}
-                        />
-                    )
-                }
+
             </div>
         </TranscriptProvider >
     );

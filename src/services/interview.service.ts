@@ -13,7 +13,6 @@ export interface InterviewSessionFrontendUpdate {
     status?: string;
     score?: number;
     durationSeconds?: number;
-    totalHintsUsed?: number;
     averagePerformanceScore?: number;
     feedback?: Json;
     transcript?: Json;
@@ -34,7 +33,6 @@ export interface CompleteSessionData {
     feedback?: Json;
     transcript?: Json;
     durationSeconds?: number;
-    totalHintsUsed?: number;
     averagePerformanceScore?: number;
 }
 
@@ -143,7 +141,7 @@ export const interviewService = {
                     }
                 }
             }
-            if (updates.totalHintsUsed !== undefined) mappedUpdates.total_hints_used = updates.totalHintsUsed;
+
             if (updates.averagePerformanceScore !== undefined) mappedUpdates.average_performance_score = updates.averagePerformanceScore;
             if (updates.feedback !== undefined) mappedUpdates.feedback = updates.feedback;
             if (updates.transcript !== undefined) mappedUpdates.transcript = updates.transcript;
@@ -183,7 +181,6 @@ export const interviewService = {
 
             const {
                 durationSeconds,
-                totalHintsUsed,
                 averagePerformanceScore,
                 ...otherData
             } = completionData;
@@ -216,7 +213,7 @@ export const interviewService = {
             if (durationSeconds !== undefined) {
                 updateData.duration_seconds = (session.duration_seconds || 0) + durationSeconds;
             }
-            if (totalHintsUsed !== undefined) updateData.total_hints_used = totalHintsUsed;
+
             if (averagePerformanceScore !== undefined) updateData.average_performance_score = averagePerformanceScore;
 
             // Map other common fields if present in otherData

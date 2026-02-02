@@ -35,6 +35,7 @@ import { ErrorSeverity, FeedbackError } from "@/lib/feedback-error";
 import { useFeedback } from "@/context/FeedbackContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
+import { SessionFeedback } from "@/components/SessionFeedback";
 
 interface InterviewSession {
     id: string;
@@ -724,6 +725,8 @@ export default function InterviewReport() {
                                 </Card>
                             </TabsContent>
                         </Tabs>
+
+                        <SessionFeedback sessionId={sessionId!} />
                     </div>
                 );
             })()}

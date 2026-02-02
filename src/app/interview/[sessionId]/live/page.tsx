@@ -33,7 +33,6 @@ export default function LiveInterview() {
     const [isTimerActive, setIsTimerActive] = useState(false);
     const lastSyncTimeRef = useRef(Date.now());
     const [session, setSession] = useState<InterviewSession | null>(null);
-    const [hintsUsed, setHintsUsed] = useState(0);
     const isSyncingRef = useRef(false);
 
     const { setCurrentSessionId } = useInterviewStore();
@@ -80,7 +79,7 @@ export default function LiveInterview() {
     // Handle Session End
     const { generateFeedbackInBackground } = useFeedback();
 
-    const handleEndSession = useCallback(async (hintsToUse: number = 0, skipRedirect: boolean = false) => {
+    const handleEndSession = useCallback(async (skipRedirect: boolean = false) => {
         if (!currentSessionId) {
             console.warn("⚠️ [handleEndSession] No sessionId provided, ignoring end call.");
             return;
@@ -104,7 +103,6 @@ export default function LiveInterview() {
                 userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
 
             const completedSession = await completeInterviewSession(currentSessionId, {
-                totalHintsUsed: hintsToUse,
                 durationSeconds: deltaSeconds
             });
 
@@ -130,15 +128,10 @@ export default function LiveInterview() {
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
         userId: user?.id,
-        onTimeExpired: () => handleEndSession(hintsUsed),
+        onTimeExpired: () => handleEndSession(),
         warnAt: [5, 2, 1],
         isActive: isTimerActive,
     });
-
-    const hintsUsedRef = useRef(hintsUsed);
-    useEffect(() => {
-        hintsUsedRef.current = hintsUsed;
-    }, [hintsUsed]);
 
     // Load Session & Token
     useEffect(() => {
@@ -210,9 +203,26 @@ export default function LiveInterview() {
                     }
                 }
 
-                // If no token was found in sessionStorage, it means the user refreshed 
-                // or tried to enter the live room directly without setup.
                 if (!authToken) {
+                    // This is a re-entry or refresh. Ensure the session is marked as completed in DB if it's still in_progress.
+                    // This is the "pre-completion" step that ensures the session doesn't get stuck in 'in_progress'.
+                    if (fetchedSession && fetchedSession.status === 'in_progress') {
+                        try {
+                            // 1. "Pre-complete" the session with temporary metadata
+                            // This ensures it shows up on dashboard as 'auto_completed' rather than 'in_progress'
+                            await completeInterviewSession(currentSessionId, {
+                                feedback: {
+                                    executiveSummary: "Session terminated due to page refresh. No analysis was generated.",
+                                    note: "Session terminated due to page refresh",
+                                    status: "auto_completed"
+                                },
+                                score: 0
+                            });
+                        } catch (e) {
+                            console.error("Failed to auto-complete session on re-entry:", e);
+                        }
+                    }
+
                     toast.error("Session terminated. Re-entry is not allowed.");
                     router.replace("/dashboard");
                     return;
@@ -236,7 +246,7 @@ export default function LiveInterview() {
         };
 
         initSession();
-    }, [authLoading, user, currentSessionId, router, setCurrentSessionId]);
+    }, [authLoading, user, currentSessionId, router, setCurrentSessionId, completeInterviewSession]);
 
     const handleReconnect = useCallback(async () => {
         reconnectAttempts.current += 1;
@@ -307,16 +317,9 @@ export default function LiveInterview() {
     useEffect(() => {
         const onBeforeUnload = () => {
             if (!isEndingSession.current && isTimerActive) {
-                // Trigger terminal feedback generation via server-side API
-                // uses keepalive: true to ensure the request completes even if the tab closes
-                fetch('/api/generate-feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId: currentSessionId }),
-                    keepalive: true
-                });
-
-                // Periodic usage sync fallback
+                // Final duration sync fallback
+                // We use keepalive if we could, but updateInterviewSession uses supabase client
+                // which doesn't natively support keepalive. Still, we trigger it.
                 syncDuration("Session interrupted (Unload)");
             }
         };
@@ -327,7 +330,7 @@ export default function LiveInterview() {
             window.removeEventListener("beforeunload", onBeforeUnload);
             // This captures SPA navigation (like back button)
             if (!isEndingSession.current && isTimerActive) {
-                handleEndSession(hintsUsedRef.current, true);
+                handleEndSession(true);
             }
         };
     }, [isTimerActive, handleEndSession, currentSessionId, syncDuration]);
@@ -439,7 +442,6 @@ export default function LiveInterview() {
                         formatTime={subscriptionTimer.formatTime}
                         initialMicEnabled={initialMicEnabled}
                         initialCameraEnabled={initialCameraEnabled}
-                        onHintsUpdate={setHintsUsed}
                         isEnding={isEndingSession.current}
                     />
 

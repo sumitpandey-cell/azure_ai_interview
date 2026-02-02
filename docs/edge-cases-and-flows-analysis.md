@@ -474,7 +474,7 @@ const userTurns = await interviewService.getUserTurnCount(currentSessionId);
 const metThreshold = totalDuration >= 120 && userTurns >= 2;
 
 if (metThreshold) {
-    await interviewService.completeSession(currentSessionId, { totalHintsUsed: hintsUsed });
+    await interviewService.completeSession(currentSessionId, {});
     generateFeedbackInBackground(currentSessionId);
 } else {
     await interviewService.completeSession(currentSessionId, {

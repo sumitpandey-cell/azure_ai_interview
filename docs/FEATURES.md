@@ -31,15 +31,6 @@ This document tracks all features of the application, ranging from core capabili
 - **Report Integration**: Elite answers are highlighted in the post-interview report with detailed analysis of what made them exceptional.
 - **Learning Tool**: Helps candidates understand what constitutes a high-quality response by showcasing their best moments.
 
-#### 4. Hint System (Lifeline)
-- **On-Demand Assistance**: Candidates can request hints during challenging questions without penalty.
-- **Smart Hint Generation**: 
-    - **Contextual Clues**: AI generates subtle hints based on the current question and conversation context.
-    - **Non-Revealing**: Hints guide thinking without giving away the answer directly.
-- **Usage Tracking**: 
-    - **Limited Uses**: Each interview session has a limited number of hints available.
-    - **Visual Counter**: Remaining hints displayed in the live interview interface.
-- **Report Transparency**: Hint usage is noted in the final report to provide honest feedback on areas needing improvement.
 
 #### 5. Smart Session Management
 - **Pending Interview Detection**:

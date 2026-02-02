@@ -29,6 +29,8 @@ export const SessionCard = React.memo(function SessionCard({ session, isGenerati
 
     // Derive actual score from session column or nested feedback JSON
     let score = session.score;
+
+    // If completed but score column is null, try to derive from feedback JSON
     if (score === null && session.feedback) {
         const fb = session.feedback as Record<string, unknown>;
         const overall = fb.overall as { score?: number } | undefined;
@@ -36,9 +38,19 @@ export const SessionCard = React.memo(function SessionCard({ session, isGenerati
             score = overall.score;
         } else if (typeof fb.score === 'number') {
             score = fb.score;
-        } else if (fb.status === 'abandoned' || fb.note === 'Insufficient data for report generation') {
+        } else if (
+            fb.status === 'abandoned' ||
+            fb.status === 'auto_completed' ||
+            fb.note === 'Insufficient data for report generation' ||
+            fb.note === 'Session terminated due to page refresh'
+        ) {
             score = 0;
         }
+    }
+
+    // Final fallback: if completed, at least show 0% instead of 'In Progress'
+    if (score === null && session.status === 'completed') {
+        score = 0;
     }
 
     const feedback = session.feedback as { executiveSummary?: string, note?: string } | null;

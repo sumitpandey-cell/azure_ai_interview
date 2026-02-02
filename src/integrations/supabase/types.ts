@@ -250,7 +250,7 @@ export type Database = {
           feedback: Json | null
           transcript: Json | null
           difficulty_progression: Json
-          total_hints_used: number
+
           average_performance_score: number | null
           difficulty: string | null
         }
@@ -268,7 +268,7 @@ export type Database = {
           feedback?: Json | null
           transcript?: Json | null
           difficulty_progression?: Json
-          total_hints_used?: number
+
           average_performance_score?: number | null
           difficulty?: string | null
         }
@@ -286,7 +286,7 @@ export type Database = {
           feedback?: Json | null
           transcript?: Json | null
           difficulty_progression?: Json
-          total_hints_used?: number
+
           average_performance_score?: number | null
           difficulty?: string | null
         }
