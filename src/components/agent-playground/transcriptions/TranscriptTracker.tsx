@@ -34,8 +34,19 @@ export function TranscriptTracker({
         participant: localParticipant,
     });
 
-    // Keep track of when we last updated an interim transcript to throttle UI refreshes
-    const lastInterimUpdateRef = useRef<Record<string, number>>({});
+    // --- Stitching Logic State ---
+    const turnsRef = useRef<Record<string, {
+        id: string,
+        lastUpdate: number,
+        segments: Record<string, string>
+    }>>({});
+
+    // Map to track which turn a segment belongs to
+    const segmentToTurnId = useRef<Map<string, string>>(new Map());
+    // Tracks the current active turn ID for each participant
+    const currentTurnForParticipant = useRef<Record<string, string>>({});
+    const lastSpeakerRef = useRef<string | null>(null);
+    // --- End Stitching Logic State ---
 
     // Helper to process and save
     const processSegment = useCallback((s: TranscriptionSegment, participant: Participant | undefined) => {
@@ -43,35 +54,70 @@ export function TranscriptTracker({
 
         const isSelf = participant instanceof LocalParticipant;
         const name = isSelf ? "You" : "Agent";
+        const participantId = participant.identity;
 
         const now = Date.now();
-        const lastUpdate = lastInterimUpdateRef.current[s.id] || 0;
 
-        // Throttling: Update UI Context if it's final OR if enough time has passed for interim
-        if (s.final || (now - lastUpdate > 150)) {
-            addOrUpdateTranscript(s.id, {
+        // 1. Determine which turn this segment belongs to
+        let turnId = segmentToTurnId.current.get(s.id);
+        const speakerChanged = lastSpeakerRef.current !== participantId;
+
+        if (!turnId) {
+            // New segment! Decide which turn it joins.
+            const activeTurnId = currentTurnForParticipant.current[participantId];
+            const activeTurn = activeTurnId ? turnsRef.current[activeTurnId] : null;
+
+            // If speaker changed or timeout, start a new turn
+            if (!activeTurn || speakerChanged || (now - activeTurn.lastUpdate > 3000)) {
+                turnId = `turn-${participantId}-${now}`;
+                turnsRef.current[turnId] = {
+                    id: turnId,
+                    lastUpdate: now,
+                    segments: {}
+                };
+                currentTurnForParticipant.current[participantId] = turnId;
+                lastSpeakerRef.current = participantId;
+            } else {
+                turnId = activeTurnId;
+            }
+            // Lock this segment to this turn forever
+            segmentToTurnId.current.set(s.id, turnId);
+        }
+
+        // 2. Update the turn data
+        const turn = turnsRef.current[turnId];
+        if (!turn) return;
+
+        turn.segments[s.id] = s.text;
+        turn.lastUpdate = now;
+
+        // 3. Construct the full display text for this specific turn
+        const fullText = Object.values(turn.segments)
+            .filter(t => t.trim().length > 0)
+            .join(" ")
+            .trim();
+
+        if (fullText) {
+            addOrUpdateTranscript(turn.id, {
                 name,
-                message: s.final ? s.text : `${s.text} ...`,
+                message: s.final ? fullText : `${fullText} ...`,
                 isSelf,
                 timestamp: s.firstReceivedTime || now,
             });
-            lastInterimUpdateRef.current[s.id] = now;
         }
 
-        // Save to DB (only final and new, and not if ending)
-        if (s.final && !processedSegments.current.has(s.id) && !isEnding) {
+        // 4. Save to DB (only final and new, and not if ending)
+        if (s.final && !isEnding && !processedSegments.current.has(s.id)) {
             processedSegments.current.add(s.id);
 
-            // Fire and forget save
+            console.log(`📝 [Tracker] Local segment finalized: "${s.text.substring(0, 30)}..."`);
+
             interviewService.addTranscriptEntry(sessionId, userId, {
                 role: isSelf ? 'user' : 'assistant',
                 speaker: isSelf ? 'user' : 'ai',
                 text: s.text,
-                timestamp: s.firstReceivedTime || now,
+                timestamp: now,
             }).catch(err => console.error("Failed to save transcript:", err));
-
-            // Cleanup throttle ref for this ID since it's final
-            delete lastInterimUpdateRef.current[s.id];
         }
     }, [addOrUpdateTranscript, isEnding, sessionId, userId]);
 
@@ -87,11 +133,10 @@ export function TranscriptTracker({
         localMessages.segments.forEach(s => processSegment(s, localParticipant));
     }, [localMessages.segments, localParticipant, processSegment]);
 
-    // Chat Persistance Effect
+    // Chat Persistance Effect (Keep as is for typed messages)
     useEffect(() => {
         if (isEnding) return;
 
-        // Initialize length on first run to current length to only catch NEW messages
         if (lastChatLength.current === -1) {
             lastChatLength.current = chatMessages.length;
             return;
@@ -101,11 +146,7 @@ export function TranscriptTracker({
             const newMessages = chatMessages.slice(lastChatLength.current);
             newMessages.forEach(msg => {
                 const isSelf = msg.from?.identity === localParticipant.identity;
-
-                // Determine if this is a message from the agent
-                // Note: agent identity might not be localParticipant
                 const role = isSelf ? 'user' : 'assistant';
-
 
                 interviewService.addTranscriptEntry(sessionId, userId, {
                     role,
@@ -120,7 +161,7 @@ export function TranscriptTracker({
 
     // ------------------------------------------------------------------------
     // FALLBACK: Listen for explicit "transcription" data messages from Server
-    // (In case standard SFU transcription events are not firing for local user)
+    // This is the "Gold Standard" as the server now stitches fragmented speech.
     // ------------------------------------------------------------------------
     const room = useRoomContext();
 
@@ -128,40 +169,49 @@ export function TranscriptTracker({
         if (!room) return;
 
         const handleDataReceived = (payload: Uint8Array, participant: Participant | undefined, _kind: unknown, topic?: string) => {
-            // Check for transcription topic
             if (topic === "transcription" || topic === "user_transcription") {
                 try {
                     const decoder = new TextDecoder();
                     const msg = decoder.decode(payload);
                     const data = JSON.parse(msg);
 
+                    if (data.text) {
+                        const isSelf = data.role === 'user';
+                        const name = isSelf ? "You" : "Agent";
 
-                    // Expecting format: { type: 'transcription', text: '...', isFinal: true, role: 'user' }
-                    if ((data.type === 'transcription' || data.role === 'user') && data.text) {
+                        // Use the ID provided by the server
+                        const targetId = data.id || `data-${Date.now()}`;
 
-                        // Create a synthetic segment to reuse processing logic
-                        const isSelf = data.role === 'user' || participant === localParticipant;
+                        // Prevent the server from overwriting a more complete local buffer
+                        // unless it's a FINAL message (which we always trust)
+                        if (data.isFinal) {
+                            addOrUpdateTranscript(targetId, {
+                                name: data.name || (isSelf ? "You" : "Agent"),
+                                message: data.text,
+                                isSelf: typeof data.isSelf === 'boolean' ? data.isSelf : isSelf,
+                                timestamp: Date.now(),
+                            });
+                        } else {
+                            // For interims, only update if the text is longer (to avoid flickering back to old versions)
+                            // or if we don't have this ID yet.
+                            addOrUpdateTranscript(targetId, {
+                                name: data.name || (isSelf ? "You" : "Agent"),
+                                message: data.text + " ...",
+                                isSelf: typeof data.isSelf === 'boolean' ? data.isSelf : isSelf,
+                                timestamp: Date.now(),
+                            });
+                            // If it's final, we also want to mark it as processed if it's new
+                            if (data.isFinal && !isEnding && !processedSegments.current.has(targetId)) {
+                                processedSegments.current.add(targetId);
 
-                        // Uniquely identify this segment
-                        const segmentId = data.id || `data-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-                        // Only process final segments from data channel to avoid jitter
-                        if (data.isFinal !== false) {
-                            const syntheticSegment: TranscriptionSegment = {
-                                id: segmentId,
-                                text: data.text,
-                                final: true,
-                                firstReceivedTime: Date.now(),
-                                lastReceivedTime: Date.now(),
-                                startTime: Date.now(),
-                                endTime: Date.now(),
-                                language: "en",
-                            };
-
-                            // Determine participant for logic (if user role, use localParticipant)
-                            const targetParticipant = isSelf ? localParticipant : participant;
-
-                            processSegment(syntheticSegment, targetParticipant);
+                                // Save to DB
+                                interviewService.addTranscriptEntry(sessionId, userId, {
+                                    role: isSelf ? 'user' : 'assistant',
+                                    speaker: isSelf ? 'user' : 'ai',
+                                    text: data.text,
+                                    timestamp: Date.now(),
+                                }).catch(err => console.error("Failed to save stitched transcript:", err));
+                            }
                         }
                     }
                 } catch (err) {
@@ -174,7 +224,7 @@ export function TranscriptTracker({
         return () => {
             room.off('dataReceived', handleDataReceived);
         };
-    }, [room, localParticipant, processSegment]);
+    }, [room, sessionId, userId, isEnding, addOrUpdateTranscript]);
 
     return null; // Invisible component
 }
