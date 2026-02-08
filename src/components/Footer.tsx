@@ -54,6 +54,13 @@ export function Footer() {
                             <Link href="/blog" className="text-slate-400 hover:text-white transition-colors w-fit">Blog</Link>
                             <Link href="/contact" className="text-slate-400 hover:text-white transition-colors w-fit">Contact</Link>
                         </div>
+
+                        {/* Column 3 */}
+                        <div className="flex flex-col gap-4">
+                            <h4 className="text-white font-semibold mb-2">Employers</h4>
+                            <Link href="/recruiter/auth" className="text-slate-400 hover:text-white transition-colors w-fit">Recruiter Portal</Link>
+                            <Link href="/pricing" className="text-slate-400 hover:text-white transition-colors w-fit">Enterprise Pricing</Link>
+                        </div>
                     </div>
                 </div>
 

@@ -17,6 +17,8 @@ import {
   BellRing,
   Medal,
   Map,
+  Building2,
+  Users,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +29,7 @@ import { useInterviewStore } from "@/stores/use-interview-store";
 import { useFeedback } from "@/context/FeedbackContext";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import ReferralModal from "@/components/ReferralModal";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -68,12 +71,17 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     }
   }, [sidebarCollapsed]);
 
+  // Determine if we're in recruiter mode based on the path
+  const isRecruiterPath = pathname.startsWith('/recruiter');
+  const userType = (user?.user_metadata as any)?.user_type;
+  const isActuallyRecruiter = userType === 'recruiter';
+
   // Auth Guard: Redirect unauthenticated users
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/');
+      router.push(isRecruiterPath ? '/recruiter/auth' : '/');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, isRecruiterPath]);
 
   // Force refresh subscription data when returning to dashboard
   useEffect(() => {
@@ -88,7 +96,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   }, [user?.id, refetchAnalytics]);
 
   // Early return after all hooks
-  if (authLoading || (!user && pathname !== '/')) {
+  if (authLoading || (!user && pathname !== '/' && !isRecruiterPath)) {
     return (
       <div className="flex h-screen items-center justify-center bg-sidebar">
         <PremiumLogoLoader text="Authenticating" />
@@ -100,13 +108,13 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const hasFeedback = !!currentSession?.feedback || !!currentSession?.score;
   const isCompleted = currentSession?.status === 'completed';
   const isActive = (path: string) => pathname === path;
-  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live');
+  const showReportAction = isCompleted && !isActive('/start-interview') && !isActive('/live') && !isRecruiterPath;
 
   // Check if user is admin
   const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || [];
   const isAdmin = adminEmails.includes(user?.email || '');
 
-  const navigation = [
+  const studentNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Roadmap", href: "/roadmap", icon: Map },
     { name: "Reports", href: "/reports", icon: BarChart3 },
@@ -116,6 +124,18 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     ...(isAdmin ? [{ name: "Admin Notifications", href: "/admin/notifications", icon: BellRing }] : []),
     { name: "Settings", href: "/settings", icon: Settings },
   ];
+
+  const recruiterNavigation = [
+    { name: "Dashboard", href: "/recruiter/dashboard", icon: LayoutDashboard },
+    { name: "Campaigns", href: "/recruiter/campaigns", icon: Building2 },
+    { name: "Candidates", href: "/recruiter/candidates", icon: Users },
+    { name: "Analytics", href: "/recruiter/analytics", icon: BarChart3 },
+    { name: "Settings", href: "/recruiter/settings", icon: Settings },
+  ];
+
+  const navigation = isRecruiterPath ? recruiterNavigation : studentNavigation;
+  const brandName = isRecruiterPath ? "RECRUIT" : "AI";
+  const upgradePath = isRecruiterPath ? "/pricing?role=recruiter" : "/pricing";
 
 
 
@@ -157,7 +177,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-foreground tracking-tight leading-tight">
-                  ARJUNA<span className="text-primary italic">AI</span>
+                  ARJUNA<span className="text-primary italic">{brandName}</span>
                 </span>
                 <span className="text-[11px] font-medium text-muted-foreground -mt-0.5">Interview Platform</span>
               </div>
@@ -324,7 +344,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <Button
                 className="relative z-10 w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold text-xs rounded-xl mb-2 h-9 shadow-md"
-                onClick={() => router.push("/pricing")}
+                onClick={() => router.push(upgradePath)}
                 disabled={subscriptionLoading}
               >
                 Upgrade Plan
@@ -369,7 +389,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
               <Button
                 size="icon"
                 className="bg-primary hover:opacity-90 text-primary-foreground rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.4)]"
-                onClick={() => router.push("/pricing")}
+                onClick={() => router.push(upgradePath)}
               >
                 <Sparkles className="h-5 w-5" />
               </Button>
@@ -399,7 +419,17 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden bg-background pt-20 lg:pt-6 relative z-10 w-full">
+        <main className={cn(
+          "flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden pt-20 lg:pt-6 relative z-10 w-full",
+          isRecruiterPath ? "bg-slate-50/30" : "bg-background"
+        )}>
+          {isRecruiterPath && (
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+              <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] rounded-full" />
+              <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-purple-500/5 blur-[100px] rounded-full" />
+              <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+            </div>
+          )}
           <div
             className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-in-out"
           >

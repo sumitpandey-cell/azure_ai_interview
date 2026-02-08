@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 interface UseSubscriptionTimerOptions {
     userId: string | undefined;
+    sessionId?: string | string[];
     onTimeExpired?: () => void;
     warnAt?: number[]; // Minutes to show warnings at [5, 2, 1]
     isActive?: boolean;
@@ -26,23 +27,74 @@ interface UseSubscriptionTimerReturn {
  */
 export function useSubscriptionTimer({
     userId,
+    sessionId,
     onTimeExpired,
     warnAt = [5, 2, 1],
     isActive = true,
 }: UseSubscriptionTimerOptions): UseSubscriptionTimerReturn {
-    const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(0);
+    const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(3600); // Default to 1 hour to prevent 00:00 flash
     const [loading, setLoading] = useState(true);
+    const [billingId, setBillingId] = useState<string | undefined>(userId);
+
+    // Resolve billing ID (Delegate pattern)
+    useEffect(() => {
+        const resolveId = async () => {
+            if (sessionId) {
+                const sid = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+                try {
+                    const { interviewService } = await import('@/services/interview.service');
+                    const session = await interviewService.getSessionById(sid);
+                    if (session && (session as any).campaign_id) {
+                        const eligibility = await subscriptionService.checkSessionEligibility(sid);
+                        if (eligibility.billingUserId) {
+                            setBillingId(eligibility.billingUserId);
+                            return; // Recruiter priority
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error resolving billing ID in timer:", err);
+                }
+            }
+
+            if (userId) {
+                setBillingId(userId);
+            } else {
+                setBillingId(undefined);
+            }
+        };
+
+        resolveId();
+    }, [userId, sessionId]);
 
     // Fetch initial remaining time
     useEffect(() => {
         const fetchRemainingTime = async () => {
-            if (!userId) {
+            if (!billingId) {
                 setLoading(false);
                 return;
             }
 
             try {
-                const remainingSeconds = await subscriptionService.getRemainingSeconds(userId);
+                let remainingSeconds = await subscriptionService.getRemainingSeconds(billingId);
+
+                // If this is a campaign session, check if there's a custom duration set
+                if (sessionId) {
+                    const sid = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+                    const { interviewService } = await import('@/services/interview.service');
+                    const session = await interviewService.getSessionById(sid);
+
+                    if (session && (session as any).campaign_id) {
+                        const { campaignService } = await import('@/services/recruiter/campaign.service');
+                        const campaign = await campaignService.getCampaignById((session as any).campaign_id) as any;
+
+                        if (campaign && (campaign as any).max_duration) {
+                            const campaignDurationSeconds = (campaign as any).max_duration * 60;
+                            // Use the minimum of campaign limit and recruiter balance
+                            remainingSeconds = Math.min(remainingSeconds, campaignDurationSeconds);
+                        }
+                    }
+                }
+
                 setTotalRemainingSeconds(remainingSeconds);
             } catch (error) {
                 console.error('Error fetching remaining time:', error);
@@ -54,7 +106,7 @@ export function useSubscriptionTimer({
         };
 
         fetchRemainingTime();
-    }, [userId]);
+    }, [billingId, sessionId]);
 
     const onTimeExpiredRef = useRef(onTimeExpired);
     const warnAtRef = useRef(warnAt);

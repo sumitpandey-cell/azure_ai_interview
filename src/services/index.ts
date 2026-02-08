@@ -9,3 +9,7 @@ export * from './notification.service';
 export * from './company.service';
 export * from './leaderboard.service';
 export * from './template.service';
+export * from './recruiter/campaign.service'
+export * from './recruiter/recruiter.service'
+export * from './analytics.service'
+export * from './roadmap.service'

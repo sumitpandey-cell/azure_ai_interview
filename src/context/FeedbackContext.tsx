@@ -62,16 +62,19 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
                     setShouldRefreshDashboard(true);
 
                     // Force refresh the session detail cache for this specific session
-                    await fetchSessionDetail(sessionId, true);
+                    const sessionDetail = await fetchSessionDetail(sessionId, true);
+                    const isCampaign = sessionDetail && (sessionDetail as any).campaign_id;
 
-                    // Show success toast with action
-                    toast.success("Interview feedback is ready!", {
-                        action: {
-                            label: "View Report",
-                            onClick: () => window.location.href = `/interview/${sessionId}/report`
-                        },
-                        duration: 5000,
-                    });
+                    // Show success toast with action (only for students/practice sessions)
+                    if (!isCampaign) {
+                        toast.success("Interview feedback is ready!", {
+                            action: {
+                                label: "View Report",
+                                onClick: () => window.location.href = `/interview/${sessionId}/report`
+                            },
+                            duration: 5000,
+                        });
+                    }
                 } else {
                     console.error("❌ [Background] Feedback generation returned false");
                     toast.error("Feedback generation failed. Please try again from the report page.");

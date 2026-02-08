@@ -1,7 +1,6 @@
-import { ChatTile } from "../chat/ChatTile";
+import { TranscriptList } from "./TranscriptList";
 import {
     TrackReferenceOrPlaceholder,
-    useChat,
     useLocalParticipant,
 } from "@livekit/components-react";
 import { useMemo } from "react";
@@ -18,47 +17,20 @@ export function TranscriptionTile({
     // This component only displays the transcripts from context + chat messages
 
     const { transcripts } = useTranscriptContext();
-    const { chatMessages, send: sendChat } = useChat();
     const { localParticipant } = useLocalParticipant();
 
 
-    // Derive messages from transcripts and chat messages using useMemo
+    // Derive messages from transcripts using useMemo
     const messages = useMemo(() => {
         const allMessages = Array.from(transcripts.values());
-        for (const msg of chatMessages) {
-            const isAgent = agentAudioTrack
-                ? msg.from?.identity === agentAudioTrack.participant?.identity
-                : msg.from?.identity !== localParticipant.identity;
-            const isSelf =
-                msg.from?.identity === localParticipant.identity;
-            let name = msg.from?.name;
-            if (!name) {
-                if (isAgent) {
-                    name = "Agent";
-                } else if (isSelf) {
-                    name = "You";
-                } else {
-                    name = "Unknown";
-                }
-            }
-            allMessages.push({
-                name,
-                message: msg.message,
-                timestamp: msg.timestamp,
-                isSelf: isSelf,
-            });
-        }
         return allMessages.sort((a, b) => a.timestamp - b.timestamp);
     }, [
         transcripts,
-        chatMessages,
-        localParticipant.identity,
-        agentAudioTrack,
     ]);
 
 
     return (
-        <ChatTile messages={messages} accentColor={accentColor} onSend={sendChat} />
+        <TranscriptList messages={messages} accentColor={accentColor} />
     );
 }
 

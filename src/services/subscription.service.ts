@@ -15,11 +15,17 @@ export const subscriptionService = {
     /**
      * Get all available plans
      */
-    async getPlans(): Promise<Plan[]> {
+    async getPlans(userType?: 'student' | 'recruiter'): Promise<Plan[]> {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from("plans")
-                .select("*")
+                .select("*");
+
+            if (userType) {
+                query = query.eq('user_type', userType);
+            }
+
+            const { data, error } = await query
                 .order("price", { ascending: true });
 
             if (error) throw error;
@@ -37,7 +43,7 @@ export const subscriptionService = {
         try {
             const { data, error } = await client
                 .from("subscriptions")
-                .select("*")
+                .select("*, plans(name)")
                 .eq("user_id", userId)
                 .order("created_at", { ascending: false })
                 .limit(1)
@@ -79,7 +85,7 @@ export const subscriptionService = {
                 .insert({
                     user_id: userId,
                     plan_id: planId,
-                    plan_seconds: plan.plan_seconds,
+                    plan_seconds: plan?.plan_seconds || 0,
                 })
                 .select()
                 .single();
@@ -104,7 +110,7 @@ export const subscriptionService = {
      * Track usage for a user
      * Updates the balance_seconds in profiles and records a transaction
      */
-    async trackUsage(userId: string, seconds: number, client = supabase): Promise<boolean> {
+    async trackUsage(userId: string, seconds: number, metadata: Record<string, any> = {}, client = supabase): Promise<boolean> {
         try {
 
             if (seconds <= 0) return true;
@@ -117,7 +123,8 @@ export const subscriptionService = {
                 user_uuid: userId,
                 seconds_to_add: -Math.round(seconds), // Use negative for usage
                 transaction_type: 'usage',
-                transaction_description: `Interview session usage: ${Math.round(seconds)} seconds`
+                transaction_description: metadata.description || `Interview session usage: ${Math.round(seconds)} seconds`,
+                p_metadata: metadata
             });
 
             if (error) {
@@ -131,7 +138,7 @@ export const subscriptionService = {
                     .single();
 
                 if (profile) {
-                    const newBalance = (profile.balance_seconds || 0) - seconds;
+                    const newBalance = ((profile as any).balance_seconds || 0) - seconds;
                     const { error: updateError } = await client
                         .from("profiles")
                         .update({
@@ -142,7 +149,6 @@ export const subscriptionService = {
 
                     if (updateError) {
                         console.error("❌ Fallback profile update failed:", updateError);
-                    } else {
                     }
                 }
                 return !error;
@@ -181,16 +187,16 @@ export const subscriptionService = {
             if (error || !profile) {
                 return {
                     hasLimit: false,
-                    remainingSeconds: 6000, // 100 minutes default
-                    remainingMinutes: 100,
+                    remainingSeconds: 3600, // Default to 1 hour (60 minutes)
+                    remainingMinutes: 60,
                     percentageUsed: 0,
                 };
             }
 
-            const remainingSeconds = profile.balance_seconds;
+            const remainingSeconds = (profile as any).balance_seconds ?? 3600; // Default to 1 hour
             // For percentage, we'll calculate based on the current subscription plan's last purchase
             const subscription = await this.getSubscription(userId);
-            const totalAllowance = subscription?.plan_seconds || 6000;
+            const totalAllowance = (subscription as any)?.plan_seconds || 3600; // Default to 1 hour
             const percentageUsed = Math.min(100, Math.max(0, Math.round(((totalAllowance - remainingSeconds) / totalAllowance) * 100)));
 
 
@@ -204,10 +210,42 @@ export const subscriptionService = {
             console.error("Error checking usage limit:", error);
             return {
                 hasLimit: false,
-                remainingSeconds: 6000,
-                remainingMinutes: 100,
+                remainingSeconds: 3600, // Default to 1 hour
+                remainingMinutes: 60,
                 percentageUsed: 0,
             };
+        }
+    },
+
+    /**
+     * Check session eligibility for guests (B2B)
+     * Queries the recruiter's balance via a secure RPC
+     */
+    async checkSessionEligibility(sessionId: string, client = supabase): Promise<{
+        isAllowed: boolean;
+        remainingSeconds: number;
+        billingUserId?: string;
+    }> {
+        try {
+            // Use the new secure billing info RPC
+            const { data, error } = await (client as any).rpc('get_session_billing_info', {
+                p_session_id: sessionId
+            });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                return {
+                    isAllowed: data[0].is_allowed,
+                    remainingSeconds: data[0].remaining_balance,
+                    billingUserId: data[0].billing_user_id
+                };
+            }
+
+            return { isAllowed: true, remainingSeconds: 3600 }; // Default to 1 hour
+        } catch (error) {
+            console.error("❌ Error checking session eligibility:", error);
+            return { isAllowed: true, remainingSeconds: 3600 }; // Default to 1 hour
         }
     },
 
@@ -242,6 +280,25 @@ export const subscriptionService = {
             return data || [];
         } catch (error) {
             console.error("Error fetching purchase history:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Get credit transactions for a user (usage, bonus, etc.)
+     */
+    async getCreditTransactions(userId: string): Promise<any[]> {
+        try {
+            const { data, error } = await supabase
+                .from("credit_transactions")
+                .select("*")
+                .eq("user_id", userId)
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Error fetching credit transactions:", error);
             return [];
         }
     },

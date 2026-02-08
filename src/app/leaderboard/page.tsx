@@ -163,7 +163,7 @@ const Leaderboard = () => {
               {displayName}
             </p>
             <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest truncate">
-              {leaderboardUser.userId.slice(0, 8)}
+              {leaderboardUser.userId?.slice(0, 8) || "unknown"}
             </p>
           </div>
         </div>

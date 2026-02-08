@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Bot, Zap, Clock } from "lucide-react";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -16,6 +18,7 @@ import { PaymentStatusModal, type PaymentStatus } from "@/components/PaymentStat
 import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, { description: string, features: string[], popular: boolean }> = {
+    // Student Plans
     "Free Trial": {
         description: "Great for basic practice",
         features: [
@@ -58,6 +61,37 @@ const PLAN_DETAILS: Record<string, { description: string, features: string[], po
             "API Access"
         ],
         popular: false
+    },
+    // Recruiter Plans
+    "Standard Credits": {
+        description: "Perfect for small teams",
+        features: [
+            "Active hiring campaigns",
+            "Automated screening",
+            "Detailed candidate logs",
+            "Public invite links"
+        ],
+        popular: false
+    },
+    "B2B Premium": {
+        description: "Scale your recruitment",
+        features: [
+            "Bulk interview processing",
+            "Premium candidate insights",
+            "Custom evaluation criteria",
+            "Priority support"
+        ],
+        popular: true
+    },
+    "Enterprise Recruiter": {
+        description: "Maximum hiring power",
+        features: [
+            "Unlimited campaigns",
+            "Full interview transcripts",
+            "ATS integration ready",
+            "Dedicated manager"
+        ],
+        popular: false
     }
 };
 
@@ -72,6 +106,22 @@ function PricingContent() {
         details?: string;
     }>({ isOpen: false, status: "success" });
     const searchParams = useSearchParams();
+    const [role, setRole] = useState<'student' | 'recruiter'>('student');
+
+    // Sync role from query parameter
+    useEffect(() => {
+        const roleParam = searchParams.get('role');
+        if (roleParam === 'recruiter') {
+            setRole('recruiter');
+        } else if (roleParam === 'student') {
+            setRole('student');
+        } else {
+            // Check user metadata if logged in
+            const userType = (user?.user_metadata as any)?.user_type;
+            if (userType === 'recruiter') setRole('recruiter');
+            else setRole('student');
+        }
+    }, [searchParams, user]);
 
     // Handle payment feedback
     useEffect(() => {
@@ -93,7 +143,8 @@ function PricingContent() {
     useEffect(() => {
         const loadPlans = async () => {
             try {
-                const data = await subscriptionService.getPlans();
+                setLoading(true);
+                const data = await subscriptionService.getPlans(role);
                 setFetchedPlans(data);
             } catch (error) {
                 console.error("Error loading plans:", error);
@@ -103,7 +154,7 @@ function PricingContent() {
         };
 
         loadPlans();
-    }, []);
+    }, [role]);
 
     const handleSubscribe = async (plan: Plan) => {
         if (plan.name === "Free" || plan.name === "Free Trial" || plan.price === 0) {
@@ -180,8 +231,26 @@ function PricingContent() {
                             Simple, Transparent <span className="text-indigo-400">Pricing</span>
                         </h1>
                         <p className="text-slate-400 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
-                            Get the credits you need to master your next interview. All plan credits are permanent and never expire.
+                            {role === 'recruiter'
+                                ? "Scale your recruitment with AI-driven screening and deep candidate insights. Purchase credit packs for your hiring campaigns."
+                                : "Get the credits you need to master your next interview. All plan credits are permanent and never expire."}
                         </p>
+                    </div>
+
+                    {/* Tabs Section */}
+                    <div className="flex justify-center">
+                        <Tabs value={role} onValueChange={(v) => setRole(v as any)} className="w-[400px]">
+                            <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 rounded-2xl h-14 p-1.5 backdrop-blur-md">
+                                <TabsTrigger value="student" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-500 data-[state=active]:text-white transition-all">
+                                    <Trophy className="mr-2 h-4 w-4" />
+                                    Student
+                                </TabsTrigger>
+                                <TabsTrigger value="recruiter" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-500 data-[state=active]:text-white transition-all">
+                                    <Users className="mr-2 h-4 w-4" />
+                                    Recruiter
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
                     </div>
 
                     {loading ? (
@@ -228,7 +297,7 @@ function PricingContent() {
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-baseline gap-1">
                                                     <span className="text-5xl font-bold tracking-tighter text-white">₹{plan.price}</span>
-                                                    {plan.price > 0 && <span className="text-sm font-bold text-slate-600">one-time</span>}
+                                                    {plan.price > 0 && <span className="text-sm font-bold text-slate-600">/{role === 'recruiter' ? 'mo' : 'once'}</span>}
                                                 </div>
                                                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10 w-fit mt-2">
                                                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
@@ -241,7 +310,7 @@ function PricingContent() {
                                             <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What&apos;s included</p>
                                                 <ul className="space-y-4">
-                                                    {details.features.map((feature: string) => (
+                                                    {(plan.features || details.features).map((feature: string) => (
                                                         <li key={feature} className="flex items-start gap-3 group/item">
                                                             <div className="h-5 w-5 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover/item:bg-indigo-500 transition-colors">
                                                                 <Check className="h-3 w-3 text-indigo-400 group-hover/item:text-white" />

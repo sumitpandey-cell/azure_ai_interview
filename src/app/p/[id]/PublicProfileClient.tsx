@@ -316,7 +316,7 @@ export default function PublicProfileClient({ initialProfile }: PublicProfileCli
                                     <div className="mt-auto w-full pt-8 border-t border-white/5">
                                         <div className="flex items-center justify-center gap-2 text-primary">
                                             <Globe className="h-4 w-4 shrink-0" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate">arjunaai.in/p/{profile.profile_slug || profile.id.slice(0, 8)}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] truncate">arjunaai.in/p/{profile.profile_slug || profile.id?.slice(0, 8) || "unknown"}</span>
                                         </div>
                                     </div>
                                 </Card>

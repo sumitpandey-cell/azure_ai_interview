@@ -17,7 +17,7 @@ interface Message {
 // Complete interview session data structure
 interface InterviewSessionData {
     id: string;
-    user_id: string;
+    user_id: string | null;
     interview_type: string;
     position: string;
     status: string;

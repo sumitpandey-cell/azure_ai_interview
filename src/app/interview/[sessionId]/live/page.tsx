@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { interviewService, subscriptionService } from "@/services";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useInterviewStore } from "@/stores/interviewStore";
 import { LiveInterviewSession } from "@/components/agent-playground/LiveInterviewSession";
@@ -108,26 +109,42 @@ export default function LiveInterview() {
 
             if (completedSession) {
                 generateFeedbackInBackground(currentSessionId);
-                if (metThreshold) {
-                    toast.success("Interview complete. Generating report...");
+                // Don't show "generating report" toast to invited candidates
+                if (session?.campaign_id) {
+                    toast.success("Interview submitted successfully!");
                 } else {
-                    toast.warning("Session brief. Summary will be generated with score 0.");
+                    if (metThreshold) {
+                        toast.success("Interview complete. Generating report...");
+                    } else {
+                        toast.warning("Session brief. Summary will be generated with score 0.");
+                    }
                 }
             } else {
                 console.error("❌ Failed to complete session - Feedback cannot be generated.");
                 toast.error("Failed to save results. You can try manually from your dashboard.");
             }
 
-            if (!skipRedirect) router.replace(`/dashboard`);
+            if (!skipRedirect) {
+                if (session?.campaign_id) {
+                    // Campaign/Invited flow
+                    router.replace(`/interview/${currentSessionId}/complete?type=campaign`);
+                } else {
+                    // Student/Practice flow
+                    router.replace(`/interview/${currentSessionId}/complete?type=student`);
+                }
+            }
         } catch (err) {
             console.error("Error ending session:", err);
-            if (!skipRedirect) router.replace(`/dashboard`);
+            if (!skipRedirect) {
+                router.replace("/dashboard");
+            }
         }
     }, [currentSessionId, router, generateFeedbackInBackground, completeInterviewSession]);
 
     // Subscription countdown timer
     const subscriptionTimer = useSubscriptionTimer({
         userId: user?.id,
+        sessionId: currentSessionId,
         onTimeExpired: () => handleEndSession(),
         warnAt: [5, 2, 1],
         isActive: isTimerActive,
@@ -142,26 +159,54 @@ export default function LiveInterview() {
         hasInitialized.current = true;
 
         const initSession = async () => {
-            if (!user?.id || !currentSessionId) {
-                toast.error("Invalid session.");
-                router.replace("/dashboard");
+            const guestData = sessionStorage.getItem('arjuna_guest_session');
+            const isGuest = guestData ? JSON.parse(guestData).sessionId === currentSessionId : false;
+
+            if (!user?.id && !isGuest) {
+                toast.error("Invalid session access.");
+                router.replace("/");
+                return;
+            }
+
+            if (!currentSessionId) {
+                toast.error("Session ID missing.");
+                router.replace(user ? "/dashboard" : "/");
                 return;
             }
 
             try {
                 // 1. Check Usage
-                const usageCheck = await subscriptionService.checkUsageLimit(user.id);
-                if (usageCheck.hasLimit) {
-                    toast.error("Monthly usage limit reached.");
-                    router.replace("/pricing");
-                    return;
+                // Prioritize recruiter's balance for campaign-linked sessions
+                let billingUserId = user?.id;
+                const sessionPreFetch = await interviewService.getSessionById(currentSessionId);
+
+                if (sessionPreFetch && (sessionPreFetch as any).campaign_id) {
+                    const { data: campaign } = await supabase
+                        .from('hiring_campaigns' as any)
+                        .select('created_by')
+                        .eq('id', (sessionPreFetch as any).campaign_id)
+                        .single();
+                    if (campaign && (campaign as any).created_by) {
+                        billingUserId = (campaign as any).created_by;
+                    }
+                }
+
+
+                if (billingUserId) {
+                    const usageCheck = await subscriptionService.checkUsageLimit(billingUserId);
+                    if (usageCheck.hasLimit) {
+                        toast.error("Usage limit reached.");
+                        router.replace(user ? "/pricing" : "/");
+                        return;
+                    }
                 }
 
                 // 2. Fetch Session
                 const fetchedSession = await interviewService.getSessionById(currentSessionId);
                 if (!fetchedSession) {
                     toast.warning("Session not found.");
-                    router.replace("/dashboard");
+                    const guestData = sessionStorage.getItem('arjuna_guest_session');
+                    router.replace(guestData ? "/" : "/dashboard");
                     return;
                 }
 
@@ -170,7 +215,7 @@ export default function LiveInterview() {
 
                 setCurrentSessionId(currentSessionId);
 
-                // 3. Fetch Token (Strictly from SessionStorage)
+                // 3. Fetch Token
                 let url = "";
                 let authToken = "";
 
@@ -188,11 +233,6 @@ export default function LiveInterview() {
                         if (isValid) {
                             url = cachedUrl;
                             authToken = cachedToken;
-
-                            // BURN the cached token immediately after pulling it
-                            // This ensures that if the user hits REFRESH, the token is gone
-                            // and they won't be able to reconnect.
-                            sessionStorage.removeItem('livekit_prefetched_token');
                         } else {
                             // If token expired, clear it
                             sessionStorage.removeItem('livekit_prefetched_token');
@@ -204,30 +244,35 @@ export default function LiveInterview() {
                 }
 
                 if (!authToken) {
-                    // This is a re-entry or refresh. Ensure the session is marked as completed in DB if it's still in_progress.
-                    // This is the "pre-completion" step that ensures the session doesn't get stuck in 'in_progress'.
-                    if (fetchedSession && fetchedSession.status === 'in_progress') {
-                        try {
-                            // 1. "Pre-complete" the session with temporary metadata
-                            // This ensures it shows up on dashboard as 'auto_completed' rather than 'in_progress'
-                            await completeInterviewSession(currentSessionId, {
-                                feedback: {
-                                    executiveSummary: "Session terminated due to page refresh. No analysis was generated.",
-                                    note: "Session terminated due to page refresh",
-                                    status: "auto_completed"
-                                },
-                                score: 0
-                            });
-                        } catch (e) {
-                            console.error("Failed to auto-complete session on re-entry:", e);
+                    console.info("⚠️ Token not found in sessionStorage, attempting to fetch from API...");
+                    const tokenResponse = await fetch(`/api/livekit_token?sessionId=${currentSessionId}`);
+                    if (tokenResponse.ok) {
+                        const data = await tokenResponse.json();
+                        url = data.url;
+                        authToken = data.token;
+                    } else {
+                        // This is a re-entry or refresh. Ensure the session is marked as completed in DB if it's still in_progress.
+                        if (fetchedSession && fetchedSession.status === 'in_progress') {
+                            try {
+                                await completeInterviewSession(currentSessionId, {
+                                    feedback: {
+                                        executiveSummary: "Session terminated due to connection failure. No analysis was generated.",
+                                        note: "Session terminated - Token fetch failed",
+                                        status: "auto_completed"
+                                    },
+                                    score: 0
+                                });
+                            } catch (e) {
+                                console.error("Failed to auto-complete session on re-entry:", e);
+                            }
                         }
+
+                        toast.error("Session terminated. Re-entry is not allowed.");
+                        const guestData = sessionStorage.getItem('arjuna_guest_session');
+                        router.push(guestData ? "/" : "/dashboard");
+                        return;
                     }
-
-                    toast.error("Session terminated. Re-entry is not allowed.");
-                    router.replace("/dashboard");
-                    return;
                 }
-
 
                 if (fetchedSession) {
                     setSession(fetchedSession);
@@ -425,7 +470,7 @@ export default function LiveInterview() {
                 <>
                     <LiveInterviewSession
                         sessionId={currentSessionId}
-                        userId={user?.id || ""}
+                        userId={user?.id || null}
                         sessionData={session}
                         initialTranscripts={(session?.transcript as unknown as TranscriptEntry[]) || []}
                         onEndSession={handleEndSession}

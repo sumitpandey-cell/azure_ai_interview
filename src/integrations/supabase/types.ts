@@ -9,29 +9,152 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      organizations: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          logo_url: string | null
+          brand_color: string
+          website_url: string | null
+          metadata: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          logo_url?: string | null
+          brand_color?: string
+          website_url?: string | null
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          logo_url?: string | null
+          brand_color?: string
+          website_url?: string | null
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hiring_campaigns: {
+        Row: {
+          id: string
+          org_id: string
+          created_by: string
+          title: string
+          position: string
+          description: string | null
+          difficulty: string | null
+          access_token: string
+          is_active: boolean
+          expiry_date: string | null
+          config: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          created_by: string
+          title: string
+          position: string
+          description?: string | null
+          difficulty?: string | null
+          access_token: string
+          is_active?: boolean
+          expiry_date?: string | null
+          config?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          created_by?: string
+          title?: string
+          position?: string
+          description?: string | null
+          difficulty?: string | null
+          access_token?: string
+          is_active?: boolean
+          expiry_date?: string | null
+          config?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount_seconds: number
+          type: string
+          description: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount_seconds: number
+          type: string
+          description?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount_seconds?: number
+          type?: string
+          description?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           id: string
           slug: string
           name: string
-          description: string
-          icon_name: string
+          description: string | null
+          category: string
+          rarity: string
+          icon: string | null
+          requirement: string | null
           created_at: string
         }
         Insert: {
           id?: string
           slug: string
           name: string
-          description: string
-          icon_name: string
+          description?: string | null
+          category: string
+          rarity: string
+          icon?: string | null
+          requirement?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           slug?: string
           name?: string
-          description?: string
-          icon_name?: string
+          description?: string | null
+          category?: string
+          rarity?: string
+          icon?: string | null
+          requirement?: string | null
           created_at?: string
         }
         Relationships: []
@@ -251,7 +374,6 @@ export type Database = {
           transcript: Json | null
           difficulty_progression: Json
 
-          average_performance_score: number | null
           difficulty: string | null
         }
         Insert: {
@@ -269,7 +391,6 @@ export type Database = {
           transcript?: Json | null
           difficulty_progression?: Json
 
-          average_performance_score?: number | null
           difficulty?: string | null
         }
         Update: {
@@ -287,7 +408,6 @@ export type Database = {
           transcript?: Json | null
           difficulty_progression?: Json
 
-          average_performance_score?: number | null
           difficulty?: string | null
         }
         Relationships: []
@@ -329,22 +449,31 @@ export type Database = {
         Row: {
           id: string
           name: string
-          plan_seconds: number
+          description: string | null
           price: number
+          plan_seconds: number
+          user_type: string
+          features: Json
           created_at: string
         }
         Insert: {
           id?: string
           name: string
-          plan_seconds: number
+          description?: string | null
           price: number
+          plan_seconds: number
+          user_type: string
+          features?: Json
           created_at?: string
         }
         Update: {
           id?: string
           name?: string
-          plan_seconds?: number
+          description?: string | null
           price?: number
+          plan_seconds?: number
+          user_type?: string
+          features?: Json
           created_at?: string
         }
         Relationships: []
@@ -361,6 +490,8 @@ export type Database = {
           last_activity_date: string | null
           is_public: boolean
           profile_slug: string | null
+          user_type: string | null
+          org_id: string | null
           balance_seconds: number
           is_active: boolean
           deactivated_at: string | null
@@ -380,6 +511,8 @@ export type Database = {
           last_activity_date?: string | null
           is_public?: boolean
           profile_slug?: string | null
+          user_type?: string | null
+          org_id?: string | null
           balance_seconds?: number
           resume_url?: string | null
           resume_content?: string | null
@@ -396,6 +529,8 @@ export type Database = {
           last_activity_date?: string | null
           is_public?: boolean
           profile_slug?: string | null
+          user_type?: string | null
+          org_id?: string | null
           balance_seconds?: number
           resume_url?: string | null
           resume_content?: string | null
@@ -472,6 +607,10 @@ export type Database = {
           user_id: string
           plan_id: string | null
           plan_seconds: number
+          status: string
+          current_period_start: string
+          current_period_end: string
+          cancel_at_period_end: boolean
           created_at: string
           updated_at: string
         }
@@ -480,6 +619,10 @@ export type Database = {
           user_id: string
           plan_id?: string | null
           plan_seconds: number
+          status?: string
+          current_period_start?: string
+          current_period_end?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -488,6 +631,10 @@ export type Database = {
           user_id?: string
           plan_id?: string | null
           plan_seconds?: number
+          status?: string
+          current_period_start?: string
+          current_period_end?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           updated_at?: string
         }

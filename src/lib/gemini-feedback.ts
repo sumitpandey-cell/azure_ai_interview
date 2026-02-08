@@ -232,7 +232,8 @@ export { analyzeInterviewLength, INTERVIEW_CONFIG };
 
 export async function generateFeedback(
     transcript: Message[],
-    sessionData: InterviewSessionData
+    sessionData: InterviewSessionData,
+    isForRecruiter: boolean = false
 ): Promise<FeedbackData> {
 
     // Extract session context
@@ -285,10 +286,16 @@ export async function generateFeedback(
         ? `\n\nEXPECTED SKILLS TO ASSESS:\nThis interview was designed to evaluate the following skills: ${skills.join(', ')}.\nFocus your assessment on these specific areas when evaluating the candidate's performance.`
         : '';
 
-    // difficultyContext was defined but never used
+    const recruiterContext = isForRecruiter ? `
+    RECRUITER-SPECIFIC INSTRUCTIONS:
+    - This report is for the hiring manager/recruiter.
+    - Be extremely objective and critical.
+    - Highlight potential red flags or areas of concern for the role.
+    - Evaluate technical depth against industry standards for a ${difficulty} ${position}.
+    - Provide a "Final Recommendation" sentiment in the executive summary (e.g., Strongly Recommend, Proceed with Caution, Does Not Meet Requirements).` : '';
 
     const prompt = `You are an expert technical interviewer. Analyze this ${position} interview (${interviewType}, ${difficulty} level).
-${skillsContext}${companyContext}${jdContext}${resumeContext}
+${skillsContext}${companyContext}${jdContext}${resumeContext}${recruiterContext}
 
 TRANSCRIPT:
 ${transcriptText}

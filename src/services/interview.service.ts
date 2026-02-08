@@ -13,7 +13,6 @@ export interface InterviewSessionFrontendUpdate {
     status?: string;
     score?: number;
     durationSeconds?: number;
-    averagePerformanceScore?: number;
     feedback?: Json;
     transcript?: Json;
     config?: Json;
@@ -33,7 +32,6 @@ export interface CompleteSessionData {
     feedback?: Json;
     transcript?: Json;
     durationSeconds?: number;
-    averagePerformanceScore?: number;
 }
 
 /**
@@ -67,8 +65,8 @@ export const interviewService = {
                 created_at: new Date().toISOString(),
             };
 
-            const { data, error } = await supabase
-                .from("interview_sessions")
+            const { data, error } = await (supabase
+                .from("interview_sessions") as any)
                 .insert(sessionData)
                 .select()
                 .single();
@@ -85,6 +83,47 @@ export const interviewService = {
             return data;
         } catch (error) {
             console.error("Error creating interview session:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Create a guest interview session linked to a campaign
+     */
+    async createGuestSession(config: any): Promise<InterviewSession | null> {
+        try {
+            // Guest sessions use publicSupabase to bypass regular auth requirements
+            // but the campaign_id and access_token ensure access control
+            const sessionData = {
+                user_id: null, // Critical: Null for guest
+                campaign_id: config.campaign_id,
+                interview_type: config.interview_type,
+                position: config.position,
+                status: "in_progress",
+                candidate_metadata: config.candidate_metadata || {},
+                candidate_name: config.candidate_name || config.candidate_metadata?.full_name || null,
+                candidate_email: config.candidate_email || config.candidate_metadata?.email || null,
+                config: config.config || {},
+                created_at: new Date().toISOString(),
+                difficulty: config.difficulty || "Intermediate"
+            };
+
+            const { data, error } = await (publicSupabase
+                .from("interview_sessions") as any)
+                .insert(sessionData)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        } catch (error: any) {
+            console.error("Error creating guest interview session:", {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code,
+                error
+            });
             return null;
         }
     },
@@ -132,25 +171,47 @@ export const interviewService = {
                 // Increment duration instead of overwriting
                 mappedUpdates.duration_seconds = (session.duration_seconds || 0) + updates.durationSeconds;
 
-                // Track usage in user subscription
+                // 1. Track Usage BEFORE completion
+                // For guest sessions, we track usage against the recruiter (campaign creator)
                 if (updates.durationSeconds > 0) {
                     try {
-                        await subscriptionService.trackUsage(session.user_id, updates.durationSeconds);
+                        let billingUserId = (session as any).user_id;
+
+                        // Case: Search for recruiter if this is a campaign-linked session
+                        if ((session as any).campaign_id) {
+                            try {
+                                const eligibility = await subscriptionService.checkSessionEligibility(sessionId);
+                                if (eligibility.billingUserId) {
+                                    billingUserId = eligibility.billingUserId;
+                                }
+                            } catch (e) {
+                                console.error("Error resolving billing ID via RPC:", e);
+                            }
+                        }
+
+                        if (billingUserId) {
+                            const metadata = {
+                                sessionId: sessionId,
+                                campaignId: (session as any).campaign_id,
+                                candidateName: (session as any).candidate_name || (session as any).profiles?.full_name,
+                                description: `Interview session: ${(session as any).candidate_name || 'Candidate'}`
+                            };
+                            await subscriptionService.trackUsage(billingUserId, updates.durationSeconds, metadata);
+                        }
                     } catch (usageError) {
                         console.error("❌ Error tracking usage in updateSession:", usageError);
                     }
                 }
             }
 
-            if (updates.averagePerformanceScore !== undefined) mappedUpdates.average_performance_score = updates.averagePerformanceScore;
             if (updates.feedback !== undefined) mappedUpdates.feedback = updates.feedback;
             if (updates.transcript !== undefined) mappedUpdates.transcript = updates.transcript;
             if (updates.config !== undefined) mappedUpdates.config = updates.config;
 
             // Logic for existing in_progress session auto-abandon relies on user_id
             // providing it here ensures any triggers that check ownership during update pass
-            const { data, error } = await supabase
-                .from("interview_sessions")
+            const { data, error } = await (supabase
+                .from("interview_sessions") as any)
                 .update(mappedUpdates)
                 .eq("id", sessionId)
                 .select();
@@ -181,7 +242,6 @@ export const interviewService = {
 
             const {
                 durationSeconds,
-                averagePerformanceScore,
                 ...otherData
             } = completionData;
 
@@ -189,11 +249,33 @@ export const interviewService = {
             // This prevents revenue leak where session is completed but user isn't charged
             if (durationSeconds !== undefined && durationSeconds > 0) {
                 try {
-                    const usageTracked = await subscriptionService.trackUsage(session.user_id, durationSeconds, client);
+                    let billingUserId = session.user_id;
 
-                    if (!usageTracked) {
-                        console.error("❌ [completeSession] Failed to track usage - ABORTING session completion to prevent revenue leak");
-                        throw new Error("Usage tracking failed - cannot complete session");
+                    // Case: Search for recruiter if this is a campaign-linked session
+                    if ((session as any).campaign_id) {
+                        try {
+                            const eligibility = await subscriptionService.checkSessionEligibility(sessionId, client);
+                            if (eligibility.billingUserId) {
+                                billingUserId = eligibility.billingUserId;
+                            }
+                        } catch (e) {
+                            console.error("Error resolving billing ID via RPC:", e);
+                        }
+                    }
+
+                    if (billingUserId) {
+                        const metadata = {
+                            sessionId: sessionId,
+                            campaignId: (session as any).campaign_id,
+                            candidateName: (session as any).candidate_name || (session as any).profiles?.full_name,
+                            description: `Interview completion: ${(session as any).candidate_name || 'Candidate'}`
+                        };
+                        const usageTracked = await subscriptionService.trackUsage(billingUserId, durationSeconds, metadata, client);
+
+                        if (!usageTracked) {
+                            console.error("❌ [completeSession] Failed to track usage - ABORTING session completion to prevent revenue leak");
+                            throw new Error("Usage tracking failed - cannot complete session");
+                        }
                     }
                 } catch (usageError) {
                     console.error("❌ [completeSession] CRITICAL: Usage tracking failed:", usageError);
@@ -214,16 +296,14 @@ export const interviewService = {
                 updateData.duration_seconds = (session.duration_seconds || 0) + durationSeconds;
             }
 
-            if (averagePerformanceScore !== undefined) updateData.average_performance_score = averagePerformanceScore;
-
             // Map other common fields if present in otherData
             if (otherData.score !== undefined) updateData.score = otherData.score;
             if (otherData.feedback !== undefined) updateData.feedback = otherData.feedback;
             if (otherData.transcript !== undefined) updateData.transcript = otherData.transcript;
 
             // 4. Now mark session as completed (usage already tracked)
-            const { data, error } = await client
-                .from("interview_sessions")
+            const { data, error } = await (client
+                .from("interview_sessions") as any)
                 .update(updateData)
                 .eq("id", sessionId)
                 .select();
@@ -242,7 +322,9 @@ export const interviewService = {
 
             // 5. Check and award badges after completion (non-critical, can fail)
             try {
-                await badgeService.checkAndAwardBadges(updatedSession.user_id, client);
+                if (updatedSession.user_id) {
+                    await badgeService.checkAndAwardBadges(updatedSession.user_id, client);
+                }
             } catch (badgeError) {
                 console.error("Error checking badges after completion:", badgeError);
                 // Don't fail the whole operation if badge awarding fails
@@ -333,8 +415,8 @@ export const interviewService = {
             const allowed = await this.canTransitionTo(sessionId, INTERVIEW_CONFIG.STATUS.COMPLETED);
             if (!allowed) return null;
 
-            const { data, error } = await supabase
-                .from("interview_sessions")
+            const { data, error } = await (supabase
+                .from("interview_sessions") as any)
                 .update({
                     user_id: session.user_id,
                     status: INTERVIEW_CONFIG.STATUS.COMPLETED,
@@ -367,30 +449,39 @@ export const interviewService = {
         totalDuration: number;
     }> {
         try {
-            const { data, error } = await supabase
-                .from("interview_sessions")
+            const { data, error } = await (supabase
+                .from("interview_sessions") as any)
                 .select("status, score, duration_seconds")
                 .eq("user_id", userId);
 
             if (error) throw error;
+            if (!data) {
+                return {
+                    total: 0,
+                    completed: 0,
+                    inProgress: 0,
+                    averageScore: 0,
+                    totalDuration: 0,
+                };
+            }
 
             const stats = {
                 total: data.length,
-                completed: data.filter(s => s.status === "completed").length,
-                inProgress: data.filter(s => s.status === "in_progress").length,
+                completed: data.filter((s: any) => s.status === "completed").length,
+                inProgress: data.filter((s: any) => s.status === "in_progress").length,
                 averageScore: 0,
                 totalDuration: 0,
             };
 
             // Calculate averageScore (only from completed sessions with scores)
-            const scoredSessions = data.filter(s => s.status === "completed" && s.score !== null);
+            const scoredSessions = data.filter((s: any) => s.status === "completed" && s.score !== null);
             if (scoredSessions.length > 0) {
-                const totalScore = scoredSessions.reduce((sum, s) => sum + (s.score || 0), 0);
+                const totalScore = scoredSessions.reduce((sum: number, s: any) => sum + (s.score || 0), 0);
                 stats.averageScore = Math.round(totalScore / scoredSessions.length);
             }
 
             // Calculate total duration
-            stats.totalDuration = data.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+            stats.totalDuration = data.reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0);
 
             return stats;
         } catch (error) {
@@ -410,7 +501,7 @@ export const interviewService = {
      */
     async addTranscriptEntry(
         sessionId: string,
-        userId: string,
+        userId: string | null,
         entry: {
             role: "user" | "assistant";
             speaker?: string; // Legacy support
@@ -433,7 +524,11 @@ export const interviewService = {
             if (error && typeof error === 'object' && ('name' in error && error.name === 'AbortError' || 'message' in error && (error.message === 'Fetch is aborted' || (error.message as string).includes('aborted')))) {
                 return false;
             }
-            console.error("Error adding transcript entry:", error instanceof Error ? error.message : error);
+            console.error("❌ [addTranscriptEntry] Error details:", {
+                sessionId,
+                userId,
+                error: error instanceof Error ? error.message : error
+            });
             return false;
         }
     },
@@ -493,8 +588,8 @@ export const interviewService = {
      */
     async fixStuckSessions(userId: string): Promise<{ fixed: number; errors: string[] }> {
         try {
-            const { data: sessions, error } = await supabase
-                .from("interview_sessions")
+            const { data: sessions, error } = await (supabase
+                .from("interview_sessions") as any)
                 .select("*")
                 .eq("user_id", userId)
                 .eq("status", "in_progress");
@@ -506,7 +601,7 @@ export const interviewService = {
             for (const session of sessions || []) {
                 try {
                     // Check if session has transcripts
-                    const transcripts = (session.transcript as unknown[]) || [];
+                    const transcripts = (session.transcript as any[]) || [];
 
                     if (transcripts.length > 0) {
                         // Complete the session and generate feedback
@@ -514,7 +609,7 @@ export const interviewService = {
 
                         await this.completeSession(session.id, {
                             durationSeconds,
-                            transcript: transcripts as unknown as Json
+                            transcript: transcripts as any
                         });
 
                         // Try to generate feedback
@@ -587,8 +682,8 @@ export const interviewService = {
     async calculateUserRank(userId: string): Promise<number> {
         try {
             // Fetch all completed interview sessions with scores
-            const { data: allSessions, error } = await supabase
-                .from("interview_sessions")
+            const { data: allSessions, error } = await (supabase
+                .from("interview_sessions") as any)
                 .select("user_id, score")
                 .not("score", "is", null)
                 .eq("status", "completed");
@@ -601,7 +696,7 @@ export const interviewService = {
             // Aggregate scores by user
             const userStats: Record<string, { totalScore: number; count: number }> = {};
 
-            allSessions.forEach((session) => {
+            (allSessions as any[]).forEach((session: any) => {
                 if (!userStats[session.user_id]) {
                     userStats[session.user_id] = { totalScore: 0, count: 0 };
                 }
@@ -642,8 +737,8 @@ export const interviewService = {
         feedback: Json;
     }[]> {
         try {
-            const { data, error } = await supabase
-                .from('interview_sessions')
+            const { data, error } = await (supabase
+                .from('interview_sessions') as any)
                 .select('id, position, interview_type, completed_at, score, feedback')
                 .eq('user_id', userId)
                 .eq('status', 'completed')
@@ -665,8 +760,8 @@ export const interviewService = {
      */
     async getSessionConfig(sessionId: string): Promise<Record<string, unknown> | null> {
         try {
-            const { data, error } = await supabase
-                .from('interview_sessions')
+            const { data, error } = await (supabase
+                .from('interview_sessions') as any)
                 .select('config')
                 .eq('id', sessionId)
                 .single();
@@ -720,7 +815,10 @@ export const interviewService = {
         try {
             if (onProgress) onProgress(10, "Fetching session data...");
             const session = await this.getSessionById(sessionId, client);
-            if (!session || session.status !== 'completed') {
+            if (!session) return false;
+
+            const isGuest = !session.user_id && (session as any).campaign_id;
+            if (session.status !== 'completed' || (!session.user_id && !isGuest)) {
                 return false;
             }
 
@@ -733,11 +831,15 @@ export const interviewService = {
             if (onProgress) onProgress(30, "Analyzing interview content...");
             const { generateFeedback } = await import('@/lib/gemini-feedback');
 
-            const { data: profile } = await client
-                .from('profiles')
-                .select('resume_content')
-                .eq('id', session.user_id)
-                .single();
+            let resumeContent = null;
+            if (session.user_id) {
+                const { data: profile } = await client
+                    .from('profiles')
+                    .select('resume_content')
+                    .eq('id', session.user_id)
+                    .single();
+                resumeContent = (profile as any)?.resume_content || null;
+            }
 
             const sessionData: {
                 id: string;
@@ -750,10 +852,11 @@ export const interviewService = {
                 interview_type: session.interview_type,
                 position: session.position,
                 config: (session.config as unknown as Record<string, unknown>) || {},
-                resumeContent: (profile?.resume_content as string) || null
+                resumeContent: resumeContent
             };
 
-            const feedback = await generateFeedback(transcripts, sessionData);
+            const isCampaign = !!(session as any).campaign_id;
+            const feedback = await generateFeedback(transcripts, sessionData, isCampaign);
             if (onProgress) onProgress(80, "Finalizing report...");
 
             const score = Math.round(
@@ -791,8 +894,8 @@ export const interviewService = {
         totalDurationMinutes: number;
     }> {
         try {
-            const { data, error } = await publicSupabase!
-                .from("interview_sessions")
+            const { data, error } = await (publicSupabase!
+                .from("interview_sessions") as any)
                 .select("score, duration_seconds")
                 .eq("user_id", userId)
                 .eq("status", "completed");
@@ -804,9 +907,9 @@ export const interviewService = {
             let totalDurationSeconds = 0;
 
             if (completedCount > 0) {
-                const totalScore = data.reduce((sum, s) => sum + (s.score || 0), 0);
+                const totalScore = (data as any[]).reduce((sum: number, s: any) => sum + (s.score || 0), 0);
                 averageScore = Math.round(totalScore / completedCount);
-                totalDurationSeconds = data.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+                totalDurationSeconds = (data as any[]).reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0);
             }
 
             return {
@@ -825,8 +928,8 @@ export const interviewService = {
      */
     async getPublicRecentInterviews(userId: string, limit: number = 5): Promise<unknown[]> {
         try {
-            const { data, error } = await publicSupabase!
-                .from("interview_sessions")
+            const { data, error } = await (publicSupabase!
+                .from("interview_sessions") as any)
                 .select("position, interview_type, score, completed_at, difficulty")
                 .eq("user_id", userId)
                 .eq("status", "completed")

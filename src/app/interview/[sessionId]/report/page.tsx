@@ -336,17 +336,7 @@ export default function InterviewReport() {
                 }
 
                 if ((isFeedbackGenerating || isSessionGenerating) && !feedbackTimeout && !errorState) {
-                    return (
-                        <>
-                            <ReportPageSkeleton />
-                            <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg animate-pulse z-50">
-                                <div className="flex items-center gap-2">
-                                    <Bot className="h-4 w-4" />
-                                    <span className="text-sm font-medium">Analyzing interview...</span>
-                                </div>
-                            </div>
-                        </>
-                    );
+                    return <ReportPageSkeleton />;
                 }
 
                 if (isInProgress) {

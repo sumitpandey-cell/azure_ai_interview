@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-export type ChatMessageType = {
+export type TranscriptMessageType = {
     name: string;
     message: string;
     isSelf: boolean;
@@ -10,8 +10,8 @@ export type ChatMessageType = {
 };
 
 interface TranscriptContextType {
-    transcripts: Map<string, ChatMessageType>;
-    addOrUpdateTranscript: (id: string, message: ChatMessageType) => void;
+    transcripts: Map<string, TranscriptMessageType>;
+    addOrUpdateTranscript: (id: string, message: TranscriptMessageType) => void;
     clearTranscripts: () => void;
 }
 
@@ -30,8 +30,8 @@ export function TranscriptProvider({
     children: ReactNode;
     initialTranscripts?: TranscriptEntry[];
 }) {
-    const [transcripts, setTranscripts] = useState<Map<string, ChatMessageType>>(() => {
-        const map = new Map<string, ChatMessageType>();
+    const [transcripts, setTranscripts] = useState<Map<string, TranscriptMessageType>>(() => {
+        const map = new Map<string, TranscriptMessageType>();
         initialTranscripts.forEach((t, i) => {
             const id = `initial-${i}`;
             map.set(id, {
@@ -44,7 +44,7 @@ export function TranscriptProvider({
         return map;
     });
 
-    const addOrUpdateTranscript = useCallback((id: string, message: ChatMessageType) => {
+    const addOrUpdateTranscript = useCallback((id: string, message: TranscriptMessageType) => {
         setTranscripts((prev) => {
             const updated = new Map(prev);
             updated.set(id, message);

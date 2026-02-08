@@ -1,24 +1,19 @@
-import { ChatMessage } from "./ChatMessage";
-import { ChatMessageInput } from "./ChatMessageInput";
-import { ChatMessage as ComponentsChatMessage } from "@livekit/components-react";
+import { TranscriptMessage } from "./TranscriptMessage";
 import { useEffect, useRef } from "react";
 
-const inputHeight = 48;
-
-export type ChatMessageType = {
+export type TranscriptMessageType = {
     name: string;
     message: string;
     isSelf: boolean;
     timestamp: number;
 };
 
-type ChatTileProps = {
-    messages: ChatMessageType[];
+type TranscriptListProps = {
+    messages: TranscriptMessageType[];
     accentColor: string;
-    onSend?: (message: string) => Promise<ComponentsChatMessage>;
 };
 
-export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
+export const TranscriptList = ({ messages, accentColor }: TranscriptListProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (containerRef.current) {
@@ -30,18 +25,15 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
         <div className="flex flex-col gap-4 w-full h-full">
             <div
                 ref={containerRef}
-                className="overflow-y-auto"
-                style={{
-                    height: `calc(100% - ${inputHeight}px)`,
-                }}
+                className="overflow-y-auto h-full"
             >
-                <div className="flex flex-col gap-2 min-h-full justify-end">
+                <div className="flex flex-col gap-4 min-h-full justify-end">
                     {messages.map((message, index, allMsg) => {
                         const hideName =
                             index >= 1 && allMsg[index - 1].name === message.name;
 
                         return (
-                            <ChatMessage
+                            <TranscriptMessage
                                 key={index}
                                 hideName={hideName}
                                 name={message.name}
@@ -53,12 +45,6 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
                     })}
                 </div>
             </div>
-            <ChatMessageInput
-                height={inputHeight}
-                placeholder="Type a message"
-                accentColor={accentColor}
-                onSend={onSend}
-            />
         </div>
     );
 };

@@ -40,7 +40,7 @@ import "@/styles/arjuna-animations.css";
 
 interface LiveInterviewSessionProps {
     sessionId: string;
-    userId: string;
+    userId: string | null;
     onEndSession: (skipRedirect?: boolean) => void;
     remainingMinutes: number;
     remainingSeconds: number;
@@ -463,7 +463,7 @@ export function LiveInterviewSession({
                                         )}>
                                             <MessageSquare className="h-4 w-4 lg:h-5 lg:w-5" />
                                         </div>
-                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">Chat</span>
+                                        <span className="text-[6px] xs:text-[7px] lg:text-[8px] uppercase font-black tracking-[0.1em] xs:tracking-[0.2em]">Transcript</span>
                                     </button>
 
                                     <button
@@ -501,7 +501,7 @@ export function LiveInterviewSession({
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center p-10 text-center space-y-4">
                                     <div className="w-6 h-6 rounded-full border border-white/10 border-t-primary animate-spin" />
-                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Initalizing Link</span>
+                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Initializing Link</span>
                                 </div>
                             )}
                         </div>

@@ -41,6 +41,7 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
     const navLinks = [
         { href: "/about", label: "About" },
         { href: "/pricing", label: "Pricing" },
+        { href: "/recruiter/auth", label: "Hire with AI" },
         { href: "/blog", label: "Blog" },
         { href: "/contact", label: "Contact" },
         { href: "/faq", label: "FAQ" },

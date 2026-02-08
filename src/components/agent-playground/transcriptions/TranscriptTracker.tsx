@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
-import { useTrackTranscription, useLocalParticipant, TrackReferenceOrPlaceholder, useRoomContext, useChat } from "@livekit/components-react";
+import { useTrackTranscription, useLocalParticipant, TrackReferenceOrPlaceholder, useRoomContext } from "@livekit/components-react";
 import { Track, LocalParticipant, Participant, TranscriptionSegment } from "livekit-client";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
 import { interviewService } from "@/services/interview.service";
@@ -11,18 +11,13 @@ export function TranscriptTracker({
     isEnding = false,
 }: {
     sessionId: string;
-    userId: string;
+    userId: string | null;
     agentAudioTrack?: TrackReferenceOrPlaceholder;
     isEnding?: boolean;
 }) {
     const { addOrUpdateTranscript } = useTranscriptContext();
     // Keep track of processed FINAL segments to avoid double-saving to DB
     const processedSegments = useRef(new Set<string>());
-    const lastChatLength = useRef(-1); // Initialize to -1 to detect first run
-
-    // Chat Tracker (for typed messages)
-    const { chatMessages } = useChat();
-
     // Agent Tracker
     const agentMessages = useTrackTranscription(agentAudioTrack || undefined);
 
@@ -132,32 +127,6 @@ export function TranscriptTracker({
     useEffect(() => {
         localMessages.segments.forEach(s => processSegment(s, localParticipant));
     }, [localMessages.segments, localParticipant, processSegment]);
-
-    // Chat Persistance Effect (Keep as is for typed messages)
-    useEffect(() => {
-        if (isEnding) return;
-
-        if (lastChatLength.current === -1) {
-            lastChatLength.current = chatMessages.length;
-            return;
-        }
-
-        if (chatMessages.length > lastChatLength.current) {
-            const newMessages = chatMessages.slice(lastChatLength.current);
-            newMessages.forEach(msg => {
-                const isSelf = msg.from?.identity === localParticipant.identity;
-                const role = isSelf ? 'user' : 'assistant';
-
-                interviewService.addTranscriptEntry(sessionId, userId, {
-                    role,
-                    speaker: isSelf ? 'user' : 'ai',
-                    text: msg.message,
-                    timestamp: msg.timestamp || Date.now(),
-                }).catch(err => console.error("Failed to save chat transcript:", err));
-            });
-            lastChatLength.current = chatMessages.length;
-        }
-    }, [chatMessages, localParticipant, sessionId, userId, isEnding]);
 
     // ------------------------------------------------------------------------
     // FALLBACK: Listen for explicit "transcription" data messages from Server

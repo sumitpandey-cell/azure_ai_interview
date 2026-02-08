@@ -20,6 +20,9 @@ const PUBLIC_ROUTES = [
     '/terms',
     '/privacy',
     '/blog',
+    '/invite',
+    '/interview',
+    '/recruiter/auth',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated
@@ -93,48 +96,70 @@ export async function middleware(req: NextRequest) {
     // Check if the current route is public
     const isPublicRoute = PUBLIC_ROUTES.some(route =>
         pathname === route || pathname.startsWith(`${route}/`)
-    );
+    ) || pathname === '/recruiter/auth'; // Explicitly add recruiter auth as public
 
-    // Check if the current route is an auth route (excluding callback)
-    const isAuthRoute = pathname === '/auth';
+    // Check if the current route is an auth route
+    const isStandardAuthRoute = pathname === '/auth';
+    const isRecruiterAuthRoute = pathname === '/recruiter/auth';
+    const isAnyAuthRoute = isStandardAuthRoute || isRecruiterAuthRoute;
 
     // Check if user is trying to access reactivate page
     const isReactivateRoute = pathname === '/reactivate';
 
     // If user is authenticated, check if account is deactivated
-    // Don't redirect if it's already the reactivate route OR an API route
     const isApiRoute = pathname.startsWith('/api/');
-    if (user && !isReactivateRoute && !isApiRoute) {
+    let userType: string | null = null;
+
+    if (user && !isApiRoute) {
         try {
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('is_active')
+                .select('is_active, user_type')
                 .eq('id', user.id)
-                .maybeSingle() as { data: { is_active: boolean } | null };
+                .maybeSingle() as { data: { is_active: boolean; user_type: string } | null };
 
-            // If account is deactivated, redirect to reactivate page
-            if (profile && profile.is_active === false) {
-                const reactivateUrl = new URL('/reactivate', req.url);
-                return NextResponse.redirect(reactivateUrl);
+            if (profile) {
+                userType = profile.user_type;
+                // If account is deactivated, redirect to reactivate page
+                if (profile.is_active === false && !isReactivateRoute) {
+                    const reactivateUrl = new URL('/reactivate', req.url);
+                    return NextResponse.redirect(reactivateUrl);
+                }
             }
         } catch (err: unknown) {
             console.error('Error checking account status in middleware:', err);
-            // Continue on error to avoid blocking legitimate users
         }
     }
 
-    // If user is authenticated and trying to access auth page, redirect to dashboard
-    if (user && isAuthRoute) {
-        const dashboardUrl = new URL('/dashboard', req.url);
+    // REDIRECTION LOGIC
+
+    // 1. If user is authenticated and trying to access an auth page
+    if (user && isAnyAuthRoute) {
+        // If recruiter, go to recruiter dashboard, else standard dashboard
+        const dashboardPath = userType === 'recruiter' ? '/recruiter/dashboard' : '/dashboard';
+        const dashboardUrl = new URL(dashboardPath, req.url);
         return NextResponse.redirect(dashboardUrl);
     }
 
-    // If user is not authenticated and trying to access protected routes, redirect to auth
-    if (!user && !isPublicRoute && !isReactivateRoute) {
-        const authUrl = new URL('/auth', req.url);
-        // Store the original URL to redirect back after login
+    // 2. If user is NOT authenticated and trying to access PROTECTED routes
+    if (!user && !isPublicRoute && !isReactivateRoute && !isApiRoute) {
+        // Decide which auth page to show based on the requested URL
+        const authPath = pathname.startsWith('/recruiter') ? '/recruiter/auth' : '/auth';
+        const authUrl = new URL(authPath, req.url);
         authUrl.searchParams.set('redirectTo', pathname);
         return NextResponse.redirect(authUrl);
+    }
+
+    // 3. Prevent non-recruiters from accessing recruiter routes (Optional but good)
+    if (user && pathname.startsWith('/recruiter') && userType !== 'recruiter' && !isRecruiterAuthRoute) {
+        // Student trying to access recruiter dashboard? Redirect to student dashboard
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // 4. Prevent recruiters from accessing student routes
+    if (user && !pathname.startsWith('/recruiter') && !isPublicRoute && userType === 'recruiter' && !isReactivateRoute) {
+        // Recruiter trying to access student dashboard/pages? Redirect to recruiter dashboard
+        return NextResponse.redirect(new URL('/recruiter/dashboard', req.url));
     }
 
     // Allow the request to proceed with updated cookies

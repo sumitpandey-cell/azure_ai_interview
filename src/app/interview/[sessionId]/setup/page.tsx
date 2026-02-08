@@ -53,7 +53,7 @@ export default function InterviewSetup() {
     const [selectedAvatar, setSelectedAvatar] = useState<InterviewerAvatar>(getDefaultAvatar());
 
     const [showTimeWarning, setShowTimeWarning] = useState(false);
-    const { allowed, remaining_seconds, loading: subscriptionLoading } = useSubscription();
+    const { allowed, remaining_seconds, loading: subscriptionLoading } = useSubscription(sessionId as string);
     const { currentSession, setCurrentSession } = useInterviewStore();
     const [hasResume, setHasResume] = useState(false);
 
@@ -104,10 +104,21 @@ export default function InterviewSetup() {
                 });
             }
 
+            // Security check: If authenticated, ensure user is not a recruiter
+            if (user?.id) {
+                const { data: profile } = await (supabase.from('profiles') as any).select('user_type').eq('id', user.id).single();
+                if (profile?.user_type === 'recruiter') {
+                    toast.error("Recruiters cannot participate in interview sessions.");
+                    router.replace('/recruiter/dashboard');
+                    return;
+                }
+            }
+
             // 3. Security check: Redirect if session is already completed
             if (sessionData.status === 'completed') {
-                toast.info("This interview session has already been completed. Redirecting to dashboard.");
-                router.replace('/dashboard');
+                toast.info("This interview session has already been completed.");
+                const isGuest = sessionStorage.getItem('arjuna_guest_session');
+                router.replace(isGuest ? '/' : '/dashboard');
                 return;
             }
 
@@ -115,8 +126,9 @@ export default function InterviewSetup() {
         } catch (err: unknown) {
             const error = err as Error;
             console.error("Stream error:", error);
-            toast.error("Session not found. Redirecting to start interview.");
-            router.replace("/start-interview");
+            toast.error("Session not found. Redirecting...");
+            const isGuest = sessionStorage.getItem('arjuna_guest_session');
+            router.replace(isGuest ? "/" : "/start-interview");
         } finally {
             setFetchingSession(false);
         }
@@ -124,8 +136,8 @@ export default function InterviewSetup() {
 
     const checkResume = async () => {
         if (!user?.id) return;
-        const { data: profile } = await supabase.from('profiles').select('resume_url').eq('id', user.id).single();
-        if (profile?.resume_url) {
+        const { data: profile } = await (supabase.from('profiles') as any).select('resume_url').eq('id', user.id).single();
+        if (profile && profile.resume_url) {
             setHasResume(true);
         }
     };
@@ -459,7 +471,7 @@ export default function InterviewSetup() {
                                     {authLoading ? (
                                         <Skeleton className="h-2 w-12 inline-block bg-white/20" />
                                     ) : (
-                                        user?.user_metadata?.full_name?.split(' ')[0] || "Candidate"
+                                        user?.user_metadata?.full_name?.split(' ')[0] || (session as any)?.candidate_name?.split(' ')[0] || "Candidate"
                                     )}
                                 </span>
                             </div>
@@ -590,7 +602,7 @@ export default function InterviewSetup() {
                             size="lg"
                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 text-sm font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden"
                             onClick={handleStart}
-                            disabled={isLoading || subscriptionLoading || !allowed}
+                            disabled={isLoading || subscriptionLoading || !allowed || remaining_seconds <= 0}
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:animate-shimmer" />
                             {isLoading ? (
@@ -598,8 +610,10 @@ export default function InterviewSetup() {
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                                     <span>Initiating Sequence...</span>
                                 </div>
-                            ) : !allowed ? (
-                                "Limit Reached"
+                            ) : (!allowed || remaining_seconds <= 0) && !subscriptionLoading ? (
+                                <div className="flex items-center gap-2">
+                                    <span>Insufficient Credits</span>
+                                </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
                                     <Zap className="h-4 w-4 fill-white animate-pulse" />
@@ -608,7 +622,15 @@ export default function InterviewSetup() {
                             )}
                         </Button>
 
-                        {!isMicOn && (
+                        {(!allowed || remaining_seconds <= 0) && !subscriptionLoading && (
+                            <p className="text-center text-[10px] text-rose-500 font-bold mt-3 animate-pulse">
+                                {(session as any)?.campaign_id
+                                    ? "This campaign has run out of credits. Please contact the recruiter."
+                                    : "You have reached your interview limit. Please upgrade your plan."}
+                            </p>
+                        )}
+
+                        {!isMicOn && allowed && remaining_seconds > 0 && (
                             <p className="text-center text-[10px] text-rose-500 font-bold mt-3 animate-pulse">
                                 * Microphone access required to proceed
                             </p>

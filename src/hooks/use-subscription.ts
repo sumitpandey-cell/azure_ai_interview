@@ -18,13 +18,47 @@ export interface SubscriptionStatus {
 const subscriptionCache = new Map<string, { data: SubscriptionStatus; timestamp: number }>();
 const CACHE_DURATION = 300 * 1000; // 5 minutes
 
-export function useSubscription() {
+export function useSubscription(sessionId?: string) {
     const { user } = useAuth();
+    const [billingId, setBillingId] = useState<string | undefined>(user?.id);
+
+    // Resolve billing ID (Delegate pattern)
+    useEffect(() => {
+        const resolveId = async () => {
+            // Case A: Session-based resolution (Campaigns/B2B)
+            if (sessionId) {
+                try {
+                    // Import inside useEffect to avoid circular dependency if any
+                    const { interviewService } = await import('@/services/interview.service');
+                    const session = await interviewService.getSessionById(sessionId);
+
+                    if (session && (session as any).campaign_id) {
+                        const eligibility = await subscriptionService.checkSessionEligibility(sessionId);
+                        if (eligibility.billingUserId) {
+                            setBillingId(eligibility.billingUserId);
+                            return; // Priority: Campaign owner
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error resolving billing ID from session:", err);
+                }
+            }
+
+            // Case B: User-based resolution (B2C/Self-practice)
+            if (user?.id) {
+                setBillingId(user.id);
+            } else {
+                setBillingId(undefined);
+            }
+        };
+
+        resolveId();
+    }, [user?.id, sessionId]);
 
     // Initialize with cached data if available to prevent flash
     const getInitialState = (): SubscriptionStatus => {
-        if (user?.id) {
-            const cached = subscriptionCache.get(user.id);
+        if (billingId) {
+            const cached = subscriptionCache.get(billingId);
             if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
                 return cached.data;
             }
@@ -40,14 +74,43 @@ export function useSubscription() {
 
     const [status, setStatus] = useState<SubscriptionStatus>(getInitialState);
 
-    // Track if we've already fetched for this user in this session
-    const hasFetchedRef = useRef(false);
+    // Track if we've already fetched for this billing ID
+    const hasFetchedRef = useRef<string | null>(null);
 
     const checkEligibility = useCallback(async () => {
-        if (!user?.id) return;
+        // CASE 1: Guest Session (B2B)
+        if (sessionId && !user?.id) {
+            try {
+                const { isAllowed, remainingSeconds, billingUserId } = await subscriptionService.checkSessionEligibility(sessionId as string);
+
+                if (billingUserId) {
+                    setBillingId(billingUserId);
+                }
+
+                setStatus({
+                    type: 'paid', // Treat as paid since it's recruiter-sponsored
+                    plan_name: 'Recruiter Sponsored',
+                    allowed: isAllowed,
+                    remaining_seconds: remainingSeconds,
+                    plan_seconds: 6000,
+                    loading: false
+                });
+                return;
+            } catch (error) {
+                console.error('Error checking eligibility for guest:', error);
+                setStatus(prev => ({ ...prev, loading: false, allowed: true }));
+                return;
+            }
+        }
+
+        // CASE 2: Logged-in User
+        if (!billingId) {
+            if (!sessionId) setStatus(prev => ({ ...prev, loading: false }));
+            return;
+        }
 
         // Check cache first
-        const cached = subscriptionCache.get(user.id);
+        const cached = subscriptionCache.get(billingId);
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
             setStatus(cached.data);
             return;
@@ -55,10 +118,10 @@ export function useSubscription() {
 
         try {
             // Fetch usage limit from service which now uses balance_seconds
-            const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(user.id);
+            const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(billingId);
 
-            const subscription = await subscriptionService.getSubscription(user.id);
-            const planResponse = subscription?.plan_id ? await (supabase as unknown as { from: (t: string) => { select: (p: string) => { eq: (f: string, v: string) => { single: () => Promise<{ data: { name: string } | null }> } } } })
+            const subscription = await subscriptionService.getSubscription(billingId);
+            const planResponse = subscription?.plan_id ? await (supabase as any)
                 .from('plans')
                 .select('name')
                 .eq('id', subscription.plan_id)
@@ -70,15 +133,15 @@ export function useSubscription() {
                 plan_name: planName,
                 allowed: !hasLimit,
                 remaining_seconds: remainingSeconds,
-                plan_seconds: subscription?.plan_seconds || 6000,
-                plan_id: subscription?.plan_id || undefined,
+                plan_seconds: (subscription as any)?.plan_seconds || 6000,
+                plan_id: (subscription as any)?.plan_id || undefined,
                 loading: false
             };
 
             setStatus(newStatus);
 
             // Cache the result
-            subscriptionCache.set(user.id, {
+            subscriptionCache.set(billingId, {
                 data: newStatus,
                 timestamp: Date.now()
             });
@@ -87,54 +150,59 @@ export function useSubscription() {
         } finally {
             setStatus(prev => ({ ...prev, loading: false }));
         }
-    }, [user?.id]);
+    }, [billingId, sessionId, user?.id]);
 
     const recordUsage = useCallback(async (secondsToAdd: number) => {
-        if (!user?.id) return;
+        if (!billingId) return;
 
         try {
-            const success = await subscriptionService.trackUsage(user.id, secondsToAdd);
+            const success = await subscriptionService.trackUsage(billingId, secondsToAdd);
 
             if (!success) {
                 console.error('Error recording usage with credit system');
             } else {
                 // Invalidate cache and refresh
-                subscriptionCache.delete(user.id);
+                subscriptionCache.delete(billingId);
                 checkEligibility();
             }
         } catch (error) {
             console.error('Error in recordUsage:', error);
         }
-    }, [user?.id, checkEligibility]);
+    }, [billingId, checkEligibility]);
 
-    // Only fetch once per user session
+    // Fetch when billingId or sessionId changes
     useEffect(() => {
-        if (user?.id && !hasFetchedRef.current) {
-            hasFetchedRef.current = true;
+        const idToTrack = billingId || sessionId;
+        if (idToTrack && hasFetchedRef.current !== idToTrack) {
+            hasFetchedRef.current = idToTrack as string;
             checkEligibility();
+        } else if (!idToTrack) {
+            // No ID to track, stop loading
+            setStatus(prev => ({ ...prev, loading: false }));
         }
-    }, [user?.id, checkEligibility]);
+    }, [billingId, sessionId, checkEligibility]);
 
     // Function to manually invalidate cache
     const invalidateCache = useCallback(() => {
-        if (user?.id) {
-            subscriptionCache.delete(user.id);
+        const idToTrack = billingId || sessionId;
+        if (idToTrack) {
+            if (billingId) subscriptionCache.delete(billingId);
             checkEligibility();
         }
-    }, [user?.id, checkEligibility]);
+    }, [billingId, sessionId, checkEligibility]);
 
     // Listen for global updates to refresh data immediately
     useEffect(() => {
         const handleGlobalUpdate = () => {
-            if (user?.id) {
-                subscriptionCache.delete(user.id);
+            if (billingId) {
+                subscriptionCache.delete(billingId);
                 checkEligibility();
             }
         };
 
         window.addEventListener('subscription-updated', handleGlobalUpdate);
         return () => window.removeEventListener('subscription-updated', handleGlobalUpdate);
-    }, [user?.id, checkEligibility]);
+    }, [billingId, checkEligibility]);
 
     return {
         ...status,

@@ -7,7 +7,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FeedbackProvider } from "@/context/FeedbackContext";
-import { FeedbackGenerationOverlay } from "@/components/FeedbackGenerationOverlay";
 import { useState } from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -33,7 +32,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <AuthProvider>
                         <FeedbackProvider>
                             {children}
-                            <FeedbackGenerationOverlay />
                             <Toaster />
                             <Sonner />
                         </FeedbackProvider>

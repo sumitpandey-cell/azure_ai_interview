@@ -299,7 +299,6 @@ export function useOptimizedQueries() {
       feedback?: Json;
       transcript?: Json;
       durationSeconds?: number;
-      averagePerformanceScore?: number;
     }
   ) => {
     try {
