@@ -60,9 +60,10 @@ export const useRecruiterStore = create<RecruiterState>()(
                     } else {
                         set({ loading: false });
                     }
-                } catch (error: any) {
+                } catch (error: unknown) {
+                    const err = error as { message?: string };
                     set({
-                        error: error?.message || 'Failed to fetch recruiter dashboard data',
+                        error: err.message || 'Failed to fetch recruiter dashboard data',
                         loading: false
                     });
                 }

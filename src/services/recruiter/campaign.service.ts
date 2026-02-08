@@ -1,23 +1,9 @@
 import { supabase, publicSupabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
 
-export interface Campaign {
-    id: string;
-    org_id: string;
-    created_by: string;
-    title: string;
-    position: string;
-    description: string | null;
-    difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | null;
-    access_token: string;
-    is_active: boolean;
-    expiry_date: string | null;
-    max_duration: number;
-    candidate_email: string | null;
-    config: Json;
-    created_at: string;
-    updated_at: string;
-}
+export type Campaign = Tables<"hiring_campaigns">;
+export type CampaignInsert = TablesInsert<"hiring_campaigns">;
+export type CampaignUpdate = TablesUpdate<"hiring_campaigns">;
 
 export interface CreateCampaignData {
     title: string;
@@ -38,7 +24,7 @@ export const campaignService = {
     async getCampaigns() {
         try {
             const { data, error } = await supabase
-                .from("hiring_campaigns" as any)
+                .from("hiring_campaigns")
                 .select(`
                     id,
                     org_id,
@@ -65,8 +51,9 @@ export const campaignService = {
 
             if (error) throw error;
             return data;
-        } catch (error: any) {
-            console.error("Error fetching campaigns:", error?.message || error);
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            console.error("Error fetching campaigns:", err.message || error);
             return [];
         }
     },
@@ -92,7 +79,7 @@ export const campaignService = {
             console.log("DEBUG: Fetching profile for campaign creation:", {
                 profile,
                 error: profileError,
-                org_id: (profile as any)?.org_id
+                org_id: profile?.org_id
             });
 
             if (profileError) {
@@ -100,7 +87,7 @@ export const campaignService = {
                 throw new Error(`Failed to fetch profile: ${profileError.message}`);
             }
 
-            if (!(profile as any)?.org_id) {
+            if (!profile?.org_id) {
                 console.error("DEBUG: No org_id found on profile:", profile);
                 throw new Error("User organization not found (org_id is null)");
             }
@@ -110,24 +97,26 @@ export const campaignService = {
                 Math.random().toString(36).substring(2, 15);
 
             // 3. Insert campaign
+            const campaignData: CampaignInsert = {
+                org_id: profile.org_id,
+                created_by: user.id,
+                title: data.title,
+                position: data.position,
+                description: data.description || "",
+                difficulty: data.difficulty || "Intermediate",
+                access_token: accessToken,
+                expiry_date: data.expiryDate || null,
+                max_duration: data.maxDuration || 60,
+                candidate_email: data.candidateEmail || null,
+                config: {
+                    ...(data.config as Record<string, unknown> || {}),
+                    skills: data.skills || [],
+                },
+            };
+
             const { data: campaign, error } = await supabase
-                .from("hiring_campaigns" as any)
-                .insert({
-                    org_id: (profile as any).org_id,
-                    created_by: (await supabase.auth.getUser()).data.user?.id,
-                    title: data.title,
-                    position: data.position,
-                    description: data.description || "",
-                    difficulty: data.difficulty || "Intermediate",
-                    access_token: accessToken,
-                    expiry_date: data.expiryDate || null,
-                    max_duration: data.maxDuration || 60,
-                    candidate_email: data.candidateEmail || null,
-                    config: {
-                        ...(data.config as Record<string, any> || {}),
-                        skills: data.skills || [],
-                    },
-                } as unknown as never)
+                .from("hiring_campaigns")
+                .insert(campaignData)
                 .select()
                 .single();
 
@@ -145,7 +134,7 @@ export const campaignService = {
     async getCampaignByToken(token: string) {
         try {
             const { data, error } = await publicSupabase
-                .from("hiring_campaigns" as any)
+                .from("hiring_campaigns")
                 .select(`
                     id,
                     org_id,
@@ -172,7 +161,7 @@ export const campaignService = {
 
             if (error) throw error;
             return data;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("❌ [CAMPAIGN_SERVICE] Detailed Error fetching campaign by token:");
             console.error(JSON.stringify(error, null, 2));
             return null;
@@ -185,7 +174,7 @@ export const campaignService = {
     async getCampaignById(id: string) {
         try {
             const { data, error } = await supabase
-                .from("hiring_campaigns" as any)
+                .from("hiring_campaigns")
                 .select(`
                     id,
                     org_id,
@@ -218,8 +207,9 @@ export const campaignService = {
 
             if (error) throw error;
             return data;
-        } catch (error: any) {
-            console.error("Error fetching campaign by ID:", error?.message || error, error?.details);
+        } catch (error: unknown) {
+            const err = error as { message?: string, details?: string };
+            console.error("Error fetching campaign by ID:", err.message || error, err.details);
             return null;
         }
     },
@@ -250,7 +240,7 @@ export const campaignService = {
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
-            return data as any[];
+            return data;
         } catch (error) {
             console.error("Error fetching candidates:", error);
             return [];
@@ -262,8 +252,8 @@ export const campaignService = {
     async markCampaignConsumed(id: string) {
         try {
             const { error } = await supabase
-                .from("hiring_campaigns" as any)
-                .update({ is_active: false } as never)
+                .from("hiring_campaigns")
+                .update({ is_active: false })
                 .eq("id", id);
 
             if (error) throw error;
@@ -280,7 +270,7 @@ export const campaignService = {
     async claimCampaign(id: string) {
         try {
             // Using RPC to bypass RLS for guests claiming one-time links
-            const { data, error } = await (supabase.rpc as any)('claim_campaign', {
+            const { data, error } = await supabase.rpc('claim_campaign', {
                 p_campaign_id: id
             });
 

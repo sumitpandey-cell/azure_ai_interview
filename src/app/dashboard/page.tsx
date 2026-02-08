@@ -161,7 +161,7 @@ function DashboardContent() {
         newlyAwarded.forEach(b => {
           toast.success(`Achievement Unlocked!`, {
             description: `You've earned the ${b.name} badge!`,
-            icon: b.icon_name,
+            icon: b.icon || undefined,
           });
         });
       }
@@ -284,19 +284,19 @@ function DashboardContent() {
     if (!sessions || sessions.length === 0) return null;
     return sessions.slice(0, 6).map((session) => (
       < SessionCard
-        key = { session.id }
-        session = { session }
-        isGeneratingFeedback = { isSessionGenerating(session.id)
-  }
-        onClick = {() => handleSessionClick(session)
-}
+        key={session.id}
+        session={session}
+        isGeneratingFeedback={isSessionGenerating(session.id)
+        }
+        onClick={() => handleSessionClick(session)
+        }
       />
     ));
   }, [sessions, isSessionGenerating, handleSessionClick]);
 
-return (
-  <>
-    <style jsx>{`
+  return (
+    <>
+      <style jsx>{`
         @keyframes shimmer {
           0% {
             transform: translateX(-100%);
@@ -326,179 +326,179 @@ return (
       `}</style>
 
 
-    <DashboardLayout
-      headerControls={(
-        <div className="flex items-center gap-2">
-          <NotificationBell />
-          <ThemeToggle />
-          <StreakIndicator streak={currentStreak} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center justify-center h-9 w-9 rounded-full border border-border/40 hover:bg-accent transition-colors active:scale-95 overflow-hidden">
-                <Avatar className="h-full w-full">
-                  {authLoading ? (
-                    <Skeleton className="h-full w-full" />
-                  ) : (
-                    <>
-                      <AvatarImage src={getAvatarUrl(
-                        userMetadata?.avatar_url,
-                        user?.id || 'user',
-                        'avataaars',
-                        null,
-                        userMetadata?.gender
-                      )} />
-                      <AvatarFallback className="text-xs font-bold">{getInitials(userMetadata?.full_name)}</AvatarFallback>
-                    </>
-                  )}
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
-              <div className="px-3 py-2 mb-1 border-b border-border/40">
-                <p className="text-sm font-bold truncate text-foreground">{userMetadata?.full_name || "User"}</p>
-                <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>
-              </div>
-              <DropdownMenuItem onClick={() => router.push('/settings')} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleOpenReferralModal} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
-                <Share2 className="h-4 w-4" />
-                <span>Share App</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="my-1 border-border/40" />
-              <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive text-destructive">
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-    >
-      <div className="space-y-4 pb-12">
-        {/* Header Section - Greeting and Desktop Controls */}
-        <GreetingSection
-          user={user}
-          userMetadata={userMetadata}
-          authLoading={authLoading}
-          currentStreak={currentStreak}
-          onSignOut={handleSignOut}
-          onOpenReferralModal={handleOpenReferralModal}
-        />
-
-        {/* Low Time Warning Banner */}
-        {!subscriptionLoading && !loading && remaining_seconds < 300 && remaining_seconds >= 0 && (
-          <LowTimeWarningBanner
-            remainingMinutes={Math.floor(remaining_seconds / 60)}
-            variant="dashboard"
-          />
+      <DashboardLayout
+        headerControls={(
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <ThemeToggle />
+            <StreakIndicator streak={currentStreak} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center h-9 w-9 rounded-full border border-border/40 hover:bg-accent transition-colors active:scale-95 overflow-hidden">
+                  <Avatar className="h-full w-full">
+                    {authLoading ? (
+                      <Skeleton className="h-full w-full" />
+                    ) : (
+                      <>
+                        <AvatarImage src={getAvatarUrl(
+                          userMetadata?.avatar_url,
+                          user?.id || 'user',
+                          'avataaars',
+                          null,
+                          userMetadata?.gender
+                        )} />
+                        <AvatarFallback className="text-xs font-bold">{getInitials(userMetadata?.full_name)}</AvatarFallback>
+                      </>
+                    )}
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="px-3 py-2 mb-1 border-b border-border/40">
+                  <p className="text-sm font-bold truncate text-foreground">{userMetadata?.full_name || "User"}</p>
+                  <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>
+                </div>
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleOpenReferralModal} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                  <Share2 className="h-4 w-4" />
+                  <span>Share App</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1 border-border/40" />
+                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
-        {/* Stats Section */}
-        <StatsSection
-          loading={loading}
-          stats={stats}
-          scoreHistory={scoreHistory}
-          subscriptionLoading={subscriptionLoading}
-          allowed={allowed}
-          onStartInterview={startInterview}
-        />
-      </div>
+      >
+        <div className="space-y-4 pb-12">
+          {/* Header Section - Greeting and Desktop Controls */}
+          <GreetingSection
+            user={user}
+            userMetadata={userMetadata}
+            authLoading={authLoading}
+            currentStreak={currentStreak}
+            onSignOut={handleSignOut}
+            onOpenReferralModal={handleOpenReferralModal}
+          />
 
-      {/* Analytics Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-        <div className="w-full aspect-square">
-          <SkillProgressChart data={skillProgress} loading={loading} />
+          {/* Low Time Warning Banner */}
+          {!subscriptionLoading && !loading && remaining_seconds < 300 && remaining_seconds >= 0 && (
+            <LowTimeWarningBanner
+              remainingMinutes={Math.floor(remaining_seconds / 60)}
+              variant="dashboard"
+            />
+          )}
+          {/* Stats Section */}
+          <StatsSection
+            loading={loading}
+            stats={stats}
+            scoreHistory={scoreHistory}
+            subscriptionLoading={subscriptionLoading}
+            allowed={allowed}
+            onStartInterview={startInterview}
+          />
         </div>
-        <div className="w-full aspect-square">
-          <WeeklyActivityChart data={weeklyActivity} currentStreak={currentStreak} loading={loading} />
-        </div>
-        <div className="w-full aspect-square">
-          <PerformanceAnalysisChart data={performanceData} loading={loading} />
-        </div>
-      </div>
 
-      {/* Interview List Section */}
-      <div className="space-y-4">
-        <div className="flex items-end justify-between px-1 pb-2 border-b border-border/40">
-          <div className="space-y-1">
-            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              Recent Sessions
-            </h3>
+        {/* Analytics Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+          <div className="w-full aspect-square">
+            <SkillProgressChart data={skillProgress} loading={loading} />
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/reports')}
-            className="h-8 px-3 text-muted-foreground hover:text-primary hover:bg-primary/5 font-medium text-xs gap-1"
-          >
-            View History
-            <ArrowRight className="h-3 w-3" />
-          </Button>
+          <div className="w-full aspect-square">
+            <WeeklyActivityChart data={weeklyActivity} currentStreak={currentStreak} loading={loading} />
+          </div>
+          <div className="w-full aspect-square">
+            <PerformanceAnalysisChart data={performanceData} loading={loading} />
+          </div>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="h-48 rounded-[2rem] bg-card/60 border border-border/50 p-6 flex flex-col justify-between overflow-hidden relative">
-                <div className="shimmer-overlay" />
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-6 w-20 bg-muted/50 rounded-full" />
-                  <Skeleton className="h-4 w-12 bg-muted/50 rounded-md" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-3/4 bg-muted/50 rounded-md" />
-                  <Skeleton className="h-4 w-1/2 bg-muted/50 rounded-md" />
-                </div>
-                <div className="flex justify-between items-end">
-                  <div className="space-y-1">
-                    <Skeleton className="h-3 w-10 bg-muted/50 rounded-md" />
-                    <Skeleton className="h-8 w-16 bg-muted/50 rounded-md" />
-                  </div>
-                  <Skeleton className="h-10 w-10 bg-muted/50 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : sessions?.length === 0 ? (
-          <div className="bg-card border-2 border-dashed border-border rounded-2xl py-16 text-center space-y-4">
-            <div className="h-16 w-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
-              <FileText className="h-8 w-8 text-muted-foreground/30" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold">No interviews yet</h3>
-              <p className="text-sm text-muted-foreground font-medium">Start your first session to begin generating reports.</p>
+        {/* Interview List Section */}
+        <div className="space-y-4">
+          <div className="flex items-end justify-between px-1 pb-2 border-b border-border/40">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                Recent Sessions
+              </h3>
             </div>
             <Button
-              onClick={startInterview}
-              className="rounded-xl h-12 px-8 font-semibold text-sm"
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/reports')}
+              className="h-8 px-3 text-muted-foreground hover:text-primary hover:bg-primary/5 font-medium text-xs gap-1"
             >
-              Start Interview
+              View History
+              <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {memoizedSessionList}
-          </div>
-        )}
-      </div>
-    </DashboardLayout>
 
-    <PaymentStatusModal
-      isOpen={paymentModal.isOpen}
-      onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}
-      status={paymentModal.status}
-      details={paymentModal.details}
-    />
-    <ReferralModal
-      isOpen={isReferralModalOpen}
-      onClose={() => setIsReferralModalOpen(false)}
-      userId={user?.id}
-      userName={userMetadata?.full_name}
-    />
-  </>
-);
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="h-48 rounded-[2rem] bg-card/60 border border-border/50 p-6 flex flex-col justify-between overflow-hidden relative">
+                  <div className="shimmer-overlay" />
+                  <div className="flex justify-between items-start">
+                    <Skeleton className="h-6 w-20 bg-muted/50 rounded-full" />
+                    <Skeleton className="h-4 w-12 bg-muted/50 rounded-md" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-3/4 bg-muted/50 rounded-md" />
+                    <Skeleton className="h-4 w-1/2 bg-muted/50 rounded-md" />
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-10 bg-muted/50 rounded-md" />
+                      <Skeleton className="h-8 w-16 bg-muted/50 rounded-md" />
+                    </div>
+                    <Skeleton className="h-10 w-10 bg-muted/50 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : sessions?.length === 0 ? (
+            <div className="bg-card border-2 border-dashed border-border rounded-2xl py-16 text-center space-y-4">
+              <div className="h-16 w-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
+                <FileText className="h-8 w-8 text-muted-foreground/30" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold">No interviews yet</h3>
+                <p className="text-sm text-muted-foreground font-medium">Start your first session to begin generating reports.</p>
+              </div>
+              <Button
+                onClick={startInterview}
+                className="rounded-xl h-12 px-8 font-semibold text-sm"
+              >
+                Start Interview
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {memoizedSessionList}
+            </div>
+          )}
+        </div>
+      </DashboardLayout>
+
+      <PaymentStatusModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}
+        status={paymentModal.status}
+        details={paymentModal.details}
+      />
+      <ReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+        userId={user?.id}
+        userName={userMetadata?.full_name}
+      />
+    </>
+  );
 }
 
 // Wrap in Suspense to handle useSearchParams properly

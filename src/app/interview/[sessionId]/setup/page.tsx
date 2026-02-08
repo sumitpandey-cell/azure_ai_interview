@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
 import { supabase } from "@/integrations/supabase/client";
+import { type Json } from "@/integrations/supabase/types";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
@@ -36,6 +37,9 @@ interface SessionData {
     status: string;
     duration_seconds?: number | null;
     config?: SessionConfig | null;
+    candidate_name?: string | null;
+    campaign_id?: string | null;
+    user_id?: string | null;
 }
 
 export default function InterviewSetup() {
@@ -106,7 +110,7 @@ export default function InterviewSetup() {
 
             // Security check: If authenticated, ensure user is not a recruiter
             if (user?.id) {
-                const { data: profile } = await (supabase.from('profiles') as any).select('user_type').eq('id', user.id).single();
+                const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single();
                 if (profile?.user_type === 'recruiter') {
                     toast.error("Recruiters cannot participate in interview sessions.");
                     router.replace('/recruiter/dashboard');
@@ -136,7 +140,7 @@ export default function InterviewSetup() {
 
     const checkResume = async () => {
         if (!user?.id) return;
-        const { data: profile } = await (supabase.from('profiles') as any).select('resume_url').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('resume_url').eq('id', user.id).single();
         if (profile && profile.resume_url) {
             setHasResume(true);
         }
@@ -342,7 +346,7 @@ export default function InterviewSetup() {
             // THE PRE-COMPLETE STRATEGY
             // Mark session as completed immediately to prevent "stuck" sessions
             if (sessionId && typeof sessionId === 'string') {
-                const currentConfig = (session?.config as Record<string, unknown>) || {};
+                const currentConfig = (session?.config as unknown as SessionConfig) || {};
 
                 // 1. Mark as completed with a placeholder feedback
                 // 1. Mark as completed immediately with an "Interview Started" placeholder.
@@ -364,7 +368,7 @@ export default function InterviewSetup() {
                         selectedAvatar: selectedAvatar.id,
                         selectedVoice: selectedAvatar.voice,
                         currentStage: 'live',
-                    }
+                    } as unknown as Json
                 });
             }
 
@@ -471,7 +475,7 @@ export default function InterviewSetup() {
                                     {authLoading ? (
                                         <Skeleton className="h-2 w-12 inline-block bg-white/20" />
                                     ) : (
-                                        user?.user_metadata?.full_name?.split(' ')[0] || (session as any)?.candidate_name?.split(' ')[0] || "Candidate"
+                                        user?.user_metadata?.full_name?.split(' ')[0] || session?.candidate_name?.split(' ')[0] || "Candidate"
                                     )}
                                 </span>
                             </div>
@@ -624,7 +628,7 @@ export default function InterviewSetup() {
 
                         {(!allowed || remaining_seconds <= 0) && !subscriptionLoading && (
                             <p className="text-center text-[10px] text-rose-500 font-bold mt-3 animate-pulse">
-                                {(session as any)?.campaign_id
+                                {session?.campaign_id
                                     ? "This campaign has run out of credits. Please contact the recruiter."
                                     : "You have reached your interview limit. Please upgrade your plan."}
                             </p>

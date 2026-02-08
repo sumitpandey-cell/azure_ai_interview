@@ -6,7 +6,7 @@ import { formatDuration } from "@/lib/format-duration";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Bot, ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, RefreshCw, Target, Shield, Award, Activity, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
+import { ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, RefreshCw, Target, Shield, Award, Activity, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 

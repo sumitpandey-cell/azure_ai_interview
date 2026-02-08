@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/integrations/supabase/client";
 import {
     User,
     Building2,
     Shield,
     Bell,
-    CreditCard,
     Save,
     Camera,
-    Mail,
-    Phone,
-    Globe,
-    MapPin,
-    Lock,
-    ExternalLink
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -26,41 +18,44 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Profile = Tables<"profiles">;
+type Organization = Tables<"organizations">;
 
 export default function RecruiterSettings() {
     const { user } = useAuth();
-    const router = useRouter();
-    const [profile, setProfile] = useState<any>(null);
-    const [org, setOrg] = useState<any>(null);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [org, setOrg] = useState<Organization | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('profile');
 
-    useEffect(() => {
-        if (user) fetchSettings();
-    }, [user]);
-
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
             const { data: profileData } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user?.id as string)
                 .single();
-            setProfile(profileData);
+            setProfile(profileData as Profile);
 
-            if (profileData && (profileData as any).org_id) {
+            if (profileData && (profileData as Profile).org_id) {
                 const { data: orgData } = await supabase
-                    .from('organizations' as any)
+                    .from('organizations')
                     .select('*')
-                    .eq('id', (profileData as any).org_id)
+                    .eq('id', (profileData as Profile).org_id as string)
                     .single();
-                setOrg(orgData);
+                setOrg(orgData as unknown as Organization);
             }
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (user) fetchSettings();
+    }, [user, fetchSettings]);
 
     const handleSave = async () => {
         setSubmitting(true);
@@ -138,7 +133,7 @@ export default function RecruiterSettings() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</Label>
-                                    <Input defaultValue={profile?.full_name} className="h-12 rounded-xl bg-slate-50 border-0 focus-visible:ring-indigo-500/20 font-bold" />
+                                    <Input defaultValue={profile?.full_name ?? undefined} className="h-12 rounded-xl bg-slate-50 border-0 focus-visible:ring-indigo-500/20 font-bold" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</Label>

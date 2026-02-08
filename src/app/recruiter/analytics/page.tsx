@@ -3,21 +3,16 @@
 import { useEffect, useState } from "react";
 import {
     BarChart3,
-    PieChart,
-    TrendingUp,
-    TrendingDown,
     Calendar,
-    Users,
     Target,
     Zap,
     Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { useRecruiterStore } from "@/stores";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
 import {
     AreaChart,
     Area,
@@ -76,7 +71,7 @@ export default function AnalyticsPage() {
                         </div>
                         <h1 className="text-3xl font-black text-foreground tracking-tight">Hiring Analytics</h1>
                     </div>
-                    <p className="text-muted-foreground font-medium">Deep dive into your organization's screening performance.</p>
+                    <p className="text-muted-foreground font-medium">Deep dive into your organization&apos;s screening performance.</p>
                 </div>
 
                 <Button className="rounded-2xl gap-2 font-bold h-12">

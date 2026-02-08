@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Bot, Zap, Clock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users} from "lucide-react";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -117,7 +117,7 @@ function PricingContent() {
             setRole('student');
         } else {
             // Check user metadata if logged in
-            const userType = (user?.user_metadata as any)?.user_type;
+            const userType = (user?.user_metadata as { user_type?: string })?.user_type;
             if (userType === 'recruiter') setRole('recruiter');
             else setRole('student');
         }
@@ -239,7 +239,7 @@ function PricingContent() {
 
                     {/* Tabs Section */}
                     <div className="flex justify-center">
-                        <Tabs value={role} onValueChange={(v) => setRole(v as any)} className="w-[400px]">
+                        <Tabs value={role} onValueChange={(v) => setRole(v as 'student' | 'recruiter')} className="w-[400px]">
                             <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 rounded-2xl h-14 p-1.5 backdrop-blur-md">
                                 <TabsTrigger value="student" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-500 data-[state=active]:text-white transition-all">
                                     <Trophy className="mr-2 h-4 w-4" />
@@ -310,7 +310,7 @@ function PricingContent() {
                                             <div className="space-y-4">
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What&apos;s included</p>
                                                 <ul className="space-y-4">
-                                                    {(plan.features || details.features).map((feature: string) => (
+                                                    {(plan.features as string[] || details.features).map((feature: string) => (
                                                         <li key={feature} className="flex items-start gap-3 group/item">
                                                             <div className="h-5 w-5 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover/item:bg-indigo-500 transition-colors">
                                                                 <Check className="h-3 w-3 text-indigo-400 group-hover/item:text-white" />

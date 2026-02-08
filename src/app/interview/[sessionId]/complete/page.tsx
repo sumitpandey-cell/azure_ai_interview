@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, MessageCircle, ArrowRight, Home, LayoutDashboard, Mail } from "lucide-react";
+import { CheckCircle2, ArrowRight, Home, LayoutDashboard, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { toast } from "sonner";
-import { interviewService } from "@/services/interview.service";
+import { interviewService, InterviewSession } from "@/services/interview.service";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
 
 interface FeedbackContextType {
@@ -63,7 +63,7 @@ export const FeedbackProvider = ({ children }: { children: ReactNode }) => {
 
                     // Force refresh the session detail cache for this specific session
                     const sessionDetail = await fetchSessionDetail(sessionId, true);
-                    const isCampaign = sessionDetail && (sessionDetail as any).campaign_id;
+                    const isCampaign = sessionDetail && (sessionDetail as InterviewSession).campaign_id;
 
                     // Show success toast with action (only for students/practice sessions)
                     if (!isCampaign) {

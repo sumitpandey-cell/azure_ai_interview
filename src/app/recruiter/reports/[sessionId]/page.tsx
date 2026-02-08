@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/format-duration";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Bot, ChevronLeft, MessageSquare, Clock, Target, Award, Activity, Star, Timer, CheckCircle2, User, Mail, Briefcase, Shield, XCircle, Zap } from "lucide-react";
+import { Bot, ChevronLeft, MessageSquare, Clock, Target, Activity, Timer, CheckCircle2, User, Mail, Briefcase, Shield, XCircle, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { interviewService } from "@/services/interview.service";
@@ -13,6 +13,28 @@ import { toast } from "sonner";
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { InterviewSession } from "@/services/interview.service";
+
+interface TranscriptEntry {
+    speaker: "user" | "ai";
+    text: string;
+    timestamp: number;
+}
+
+interface Feedback {
+    overall?: {
+        executiveSummary?: string;
+        strengths?: string[];
+        improvements?: string[];
+        actionPlan?: string[];
+        overallSkills?: { name: string; score: number }[];
+    };
+    executiveSummary?: string;
+    strengths?: string[];
+    improvements?: string[];
+    actionPlan?: string[];
+    overallSkills?: { name: string; score: number }[];
+}
 
 const ReportRadarChart = dynamic(() => import("@/components/ReportRadarChart").then(mod => mod.ReportRadarChart), {
     loading: () => <div className="h-[300px] w-full animate-pulse bg-muted/20 rounded-xl" />,
@@ -25,7 +47,7 @@ export default function RecruiterInterviewReport() {
     const sessionId = typeof params.sessionId === 'string' ? params.sessionId : params.sessionId?.[0];
     const { user, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [session, setSession] = useState<any>(null);
+    const [session, setSession] = useState<InterviewSession | null>(null);
 
     const fetchSession = useCallback(async () => {
         try {
@@ -33,7 +55,7 @@ export default function RecruiterInterviewReport() {
             if (sessionId) {
                 const data = await interviewService.getSessionById(sessionId);
                 if (data) {
-                    setSession(data);
+                    setSession(data as unknown as InterviewSession);
                 } else {
                     toast.error("Session not found or access denied.");
                     router.push('/recruiter/dashboard');
@@ -59,9 +81,10 @@ export default function RecruiterInterviewReport() {
 
     if (!session) return null;
 
-    const feedback = (session.feedback as any)?.overall || session.feedback;
-    const score = session.score || 0;
-    const transcripts = (session.transcript as any[]) || [];
+    const sessionData = session as InterviewSession;
+    const feedback = (sessionData.feedback as unknown as Feedback)?.overall || (sessionData.feedback as unknown as Feedback);
+    const score = sessionData.score || 0;
+    const transcripts = (sessionData.transcript as unknown[] as TranscriptEntry[]) || [];
 
     return (
         <div className="min-h-screen bg-slate-50/50 pb-20">
@@ -93,27 +116,27 @@ export default function RecruiterInterviewReport() {
                     <CardContent className="p-8">
                         <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
                             <div className="w-24 h-24 rounded-3xl bg-indigo-500 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-200">
-                                {session.candidate_name?.charAt(0) || <User className="h-10 w-10" />}
+                                {sessionData.candidate_name?.charAt(0) || <User className="h-10 w-10" />}
                             </div>
                             <div className="flex-1 space-y-4">
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">{session.candidate_name || "Guest Candidate"}</h2>
+                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">{sessionData.candidate_name || "Guest Candidate"}</h2>
                                     <div className="flex flex-wrap gap-4 mt-2">
                                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
                                             <Mail className="h-4 w-4" />
-                                            {session.candidate_email || "N/A"}
+                                            {sessionData.candidate_email || "N/A"}
                                         </div>
                                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
                                             <Briefcase className="h-4 w-4" />
-                                            {session.position} ({session.interview_type})
+                                            {sessionData.position} ({sessionData.interview_type})
                                         </div>
                                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
                                             <Clock className="h-4 w-4" />
-                                            {format(new Date(session.created_at), "MMM d, yyyy HH:mm")}
+                                            {format(new Date(sessionData.created_at), "MMM d, yyyy HH:mm")}
                                         </div>
                                         <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
                                             <Timer className="h-4 w-4" />
-                                            {formatDuration(session.duration_seconds || 0)}
+                                            {formatDuration(sessionData.duration_seconds || 0)}
                                         </div>
                                     </div>
                                 </div>
@@ -221,7 +244,7 @@ export default function RecruiterInterviewReport() {
                                     </CardHeader>
                                     <CardContent className="p-4 pt-0">
                                         <ReportRadarChart
-                                            data={feedback?.overallSkills?.map((s: any) => ({
+                                            data={feedback?.overallSkills?.map((s: { name: string; score: number }) => ({
                                                 name: s.name,
                                                 score: s.score
                                             })) || []}
@@ -253,8 +276,8 @@ export default function RecruiterInterviewReport() {
                                                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Responses / Min</span>
                                             </div>
                                             <span className="text-lg font-black text-slate-900">
-                                                {session.duration_seconds && session.duration_seconds > 0
-                                                    ? (transcripts.length / (session.duration_seconds / 60)).toFixed(1)
+                                                {sessionData.duration_seconds && sessionData.duration_seconds > 0
+                                                    ? (transcripts.length / (sessionData.duration_seconds / 60)).toFixed(1)
                                                     : "N/A"}
                                             </span>
                                         </div>
@@ -281,7 +304,7 @@ export default function RecruiterInterviewReport() {
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    {msg.speaker === 'ai' ? 'Arjuna AI' : session.candidate_name || 'Candidate'}
+                                                    {msg.speaker === 'ai' ? 'Arjuna AI' : sessionData.candidate_name || 'Candidate'}
                                                 </div>
                                                 <p className="text-slate-700 leading-relaxed font-medium">
                                                     {msg.text}

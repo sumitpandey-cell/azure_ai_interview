@@ -73,10 +73,8 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
 
   // Determine if we're in recruiter mode based on the path
   const isRecruiterPath = pathname.startsWith('/recruiter');
-  const userType = (user?.user_metadata as any)?.user_type;
-  const isActuallyRecruiter = userType === 'recruiter';
 
-  // Auth Guard: Redirect unauthenticated users
+  // Auth Guard: Redirect unauthenticated ers
   useEffect(() => {
     if (!authLoading && !user) {
       router.push(isRecruiterPath ? '/recruiter/auth' : '/');

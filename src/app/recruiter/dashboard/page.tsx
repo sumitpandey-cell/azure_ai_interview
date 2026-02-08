@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
     Activity,
@@ -10,11 +10,8 @@ import {
     Plus,
     Trophy,
     TrendingUp,
-    Briefcase,
     ChevronRight,
     Zap,
-    Search,
-    Bell,
     Settings,
     LogOut
 } from "lucide-react";

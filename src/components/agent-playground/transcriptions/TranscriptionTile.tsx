@@ -1,13 +1,11 @@
 import { TranscriptList } from "./TranscriptList";
 import {
     TrackReferenceOrPlaceholder,
-    useLocalParticipant,
 } from "@livekit/components-react";
 import { useMemo } from "react";
 import { useTranscriptContext } from "@/contexts/TranscriptContext";
 
 export function TranscriptionTile({
-    agentAudioTrack,
     accentColor,
 }: {
     agentAudioTrack?: TrackReferenceOrPlaceholder;
@@ -17,7 +15,6 @@ export function TranscriptionTile({
     // This component only displays the transcripts from context + chat messages
 
     const { transcripts } = useTranscriptContext();
-    const { localParticipant } = useLocalParticipant();
 
 
     // Derive messages from transcripts using useMemo

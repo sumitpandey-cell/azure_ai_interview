@@ -109,8 +109,8 @@ function RecruiterAuthContent() {
                         data: { avatar_url: publicUrl }
                     });
 
-                    await (supabase
-                        .from('profiles') as any)
+                    await supabase
+                        .from('profiles')
                         .update({ avatar_url: publicUrl })
                         .eq('id', session.user.id);
                 }
@@ -224,7 +224,7 @@ function RecruiterAuthContent() {
 
                         <div className="pt-8 border-t border-white/10">
                             <p className="text-sm text-slate-500 italic">
-                                "Reduced our time-to-hire by 60% while improving candidate quality."
+                                &quot;Reduced our time-to-hire by 60% while improving candidate quality.&quot;
                             </p>
                             <p className="text-sm text-slate-400 mt-2 font-semibold">— Sarah Chen, VP of Engineering</p>
                         </div>

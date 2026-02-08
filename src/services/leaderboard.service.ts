@@ -48,7 +48,8 @@ export const leaderboardService = {
           created_at
         `)
                 .eq('status', 'completed')
-                .not('score', 'is', null);
+                .not('score', 'is', null)
+                .not('user_id', 'is', null);
 
             if (startDate) {
                 query = query.gte('created_at', startDate.toISOString());
@@ -69,6 +70,8 @@ export const leaderboardService = {
 
             data?.forEach((session) => {
                 const userId = session.user_id;
+                if (!userId) return;
+
                 if (!userStats.has(userId)) {
                     userStats.set(userId, {
                         userId,

@@ -180,14 +180,14 @@ export default function LiveInterview() {
                 let billingUserId = user?.id;
                 const sessionPreFetch = await interviewService.getSessionById(currentSessionId);
 
-                if (sessionPreFetch && (sessionPreFetch as any).campaign_id) {
+                if (sessionPreFetch && sessionPreFetch.campaign_id) {
                     const { data: campaign } = await supabase
-                        .from('hiring_campaigns' as any)
+                        .from('hiring_campaigns')
                         .select('created_by')
-                        .eq('id', (sessionPreFetch as any).campaign_id)
+                        .eq('id', sessionPreFetch.campaign_id)
                         .single();
-                    if (campaign && (campaign as any).created_by) {
-                        billingUserId = (campaign as any).created_by;
+                    if (campaign && campaign.created_by) {
+                        billingUserId = campaign.created_by;
                     }
                 }
 

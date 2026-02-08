@@ -6,13 +6,7 @@ import {
     Users,
     Search,
     Filter,
-    ArrowUpDown,
-    MoreHorizontal,
-    FileText,
-    ExternalLink,
     Mail,
-    CheckCircle2,
-    XCircle,
     Calendar,
     ArrowUpRight
 } from "lucide-react";
@@ -30,9 +24,13 @@ import { cn } from "@/lib/utils";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import type { InterviewSession } from "@/services/interview.service";
+import type { Campaign } from "@/services/recruiter/campaign.service";
+
+type Candidate = InterviewSession & { campaign: Campaign | null };
 
 export default function CandidatesPage() {
-    const [candidates, setCandidates] = useState<any[]>([]);
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -46,7 +44,7 @@ export default function CandidatesPage() {
         setLoading(true);
         try {
             const data = await campaignService.getCandidates();
-            setCandidates(data);
+            setCandidates(data as unknown as Candidate[]);
         } catch (error) {
             console.error("Error fetching candidates:", error);
         } finally {
@@ -146,7 +144,7 @@ export default function CandidatesPage() {
                                 {/* Left Side: Candidate Info */}
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <div className="h-12 w-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 font-black text-base shrink-0 group-hover:scale-105 transition-transform">
-                                        {candidate.candidate_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                                        {candidate.candidate_name?.split(' ').map((n) => n[0]).join('') || '?'}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">

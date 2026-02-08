@@ -29,7 +29,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, Rocket, AlertCircle, Clock, Calendar } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
-import Link from "next/link";
 
 const campaignSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters").max(100),
@@ -47,7 +46,7 @@ export default function CreateCampaign() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [skills, setSkills] = useState<string[]>([]);
-    const { allowed, remaining_seconds, loading: subLoading } = useSubscription();
+    const { remaining_seconds, loading: subLoading } = useSubscription();
 
     const form = useForm<CampaignFormValues>({
         resolver: zodResolver(campaignSchema),

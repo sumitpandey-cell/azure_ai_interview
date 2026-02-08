@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { subscriptionService } from '@/services/subscription.service';
+import type { InterviewSession } from '@/services/interview.service';
 
 export interface SubscriptionStatus {
     type: 'free' | 'paid';
@@ -32,7 +33,7 @@ export function useSubscription(sessionId?: string) {
                     const { interviewService } = await import('@/services/interview.service');
                     const session = await interviewService.getSessionById(sessionId);
 
-                    if (session && (session as any).campaign_id) {
+                    if (session && (session as InterviewSession).campaign_id) {
                         const eligibility = await subscriptionService.checkSessionEligibility(sessionId);
                         if (eligibility.billingUserId) {
                             setBillingId(eligibility.billingUserId);
@@ -121,7 +122,7 @@ export function useSubscription(sessionId?: string) {
             const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(billingId);
 
             const subscription = await subscriptionService.getSubscription(billingId);
-            const planResponse = subscription?.plan_id ? await (supabase as any)
+            const planResponse = subscription?.plan_id ? await supabase
                 .from('plans')
                 .select('name')
                 .eq('id', subscription.plan_id)
@@ -133,8 +134,8 @@ export function useSubscription(sessionId?: string) {
                 plan_name: planName,
                 allowed: !hasLimit,
                 remaining_seconds: remainingSeconds,
-                plan_seconds: (subscription as any)?.plan_seconds || 6000,
-                plan_id: (subscription as any)?.plan_id || undefined,
+                plan_seconds: (subscription as { plan_seconds: number } | null)?.plan_seconds || 6000,
+                plan_id: (subscription as { plan_id: string } | null)?.plan_id || undefined,
                 loading: false
             };
 

@@ -79,7 +79,7 @@ export default function Badges() {
             earnedSlugs.add(b.slug);
             toast.success(`Achievement Unlocked!`, {
               description: `You've earned the ${b.name} badge!`,
-              icon: b.icon_name,
+              icon: b.icon || undefined,
             });
           });
           setEarnedBadges(new Set(earnedSlugs));

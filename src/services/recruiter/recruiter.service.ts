@@ -25,7 +25,7 @@ export const recruiterService = {
 
         // 1. Fetch campaigns
         const { data: campaignsData, error: campaignsError } = await supabase
-            .from('hiring_campaigns' as any)
+            .from('hiring_campaigns')
             .select('*')
             .eq('org_id', orgId)
             .order('created_at', { ascending: false });
@@ -34,14 +34,14 @@ export const recruiterService = {
 
         // 2. Fetch sessions for stats
         const campaignsWithStats = await Promise.all(
-            (campaignsData || []).map(async (campaign: any) => {
+            (campaignsData || []).map(async (campaign) => {
                 const { data: sessions } = await supabase
                     .from('interview_sessions')
                     .select('id, score, created_at')
                     .eq('campaign_id', campaign.id);
 
                 const applicantCount = sessions?.length || 0;
-                const scores = (sessions as any[])?.filter(s => s.score !== null).map(s => s.score) || [];
+                const scores = sessions?.filter(s => s.score !== null).map(s => s.score as number) || [];
                 const avgScore = scores.length > 0
                     ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
                     : 0;
@@ -50,7 +50,7 @@ export const recruiterService = {
                     ...campaign,
                     applicant_count: applicantCount,
                     avg_score: avgScore
-                };
+                } as Campaign;
             })
         );
 
@@ -87,13 +87,13 @@ export const recruiterService = {
         const { data: topSessionsData } = await supabase
             .from('interview_sessions')
             .select('id, score, created_at, user_id, campaign_id, candidate_name, candidate_email')
-            .in('campaign_id', (campaignsWithStats as any[]).map(c => c.id))
+            .in('campaign_id', campaignsWithStats.map(c => c.id))
             .not('score', 'is', null)
             .order('score', { ascending: false })
             .limit(4);
 
         const formattedCandidates: TopCandidate[] = await Promise.all(
-            (topSessionsData || []).map(async (session: any) => {
+            (topSessionsData || []).map(async (session) => {
                 let profile = null;
                 if (session.user_id) {
                     const { data } = await supabase

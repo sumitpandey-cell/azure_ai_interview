@@ -60,6 +60,8 @@ export type Database = {
           config: Json
           created_at: string
           updated_at: string
+          max_duration: number
+          candidate_email: string | null
         }
         Insert: {
           id?: string
@@ -75,6 +77,8 @@ export type Database = {
           config?: Json
           created_at?: string
           updated_at?: string
+          max_duration?: number
+          candidate_email?: string | null
         }
         Update: {
           id?: string
@@ -90,6 +94,8 @@ export type Database = {
           config?: Json
           created_at?: string
           updated_at?: string
+          max_duration?: number
+          candidate_email?: string | null
         }
         Relationships: []
       }
@@ -361,7 +367,7 @@ export type Database = {
       interview_sessions: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
           interview_type: string
           position: string
           score: number | null
@@ -373,12 +379,15 @@ export type Database = {
           feedback: Json | null
           transcript: Json | null
           difficulty_progression: Json
-
           difficulty: string | null
+          campaign_id: string | null
+          candidate_name: string | null
+          candidate_email: string | null
+          candidate_metadata: Json
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id?: string | null
           interview_type: string
           position: string
           score?: number | null
@@ -390,12 +399,15 @@ export type Database = {
           feedback?: Json | null
           transcript?: Json | null
           difficulty_progression?: Json
-
           difficulty?: string | null
+          campaign_id?: string | null
+          candidate_name?: string | null
+          candidate_email?: string | null
+          candidate_metadata?: Json
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
           interview_type?: string
           position?: string
           score?: number | null
@@ -407,8 +419,11 @@ export type Database = {
           feedback?: Json | null
           transcript?: Json | null
           difficulty_progression?: Json
-
           difficulty?: string | null
+          campaign_id?: string | null
+          candidate_name?: string | null
+          candidate_email?: string | null
+          candidate_metadata?: Json
         }
         Relationships: []
       }
@@ -891,7 +906,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_campaign: {
+        Args: {
+          p_campaign_id: string
+        }
+        Returns: boolean
+      }
+      check_session_eligibility: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: {
+          is_eligible: boolean
+          billing_user_id: string
+        }[]
+      }
+      update_user_credits: {
+        Args: {
+          user_uuid: string
+          seconds_to_add: number
+          transaction_type?: string
+          transaction_description?: string
+          p_metadata?: Json
+        }
+        Returns: void
+      }
+      get_session_billing_info: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: {
+          is_allowed: boolean
+          remaining_balance: number
+          billing_user_id: string
+        }[]
+      }
+      append_transcript_entry: {
+        Args: {
+          p_session_id: string
+          p_user_id: string | null
+          p_entry: Json
+        }
+        Returns: void
+      }
     }
     Enums: {
       [_ in never]: never

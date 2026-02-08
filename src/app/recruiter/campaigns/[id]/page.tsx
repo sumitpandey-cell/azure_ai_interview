@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { campaignService } from "@/services/recruiter/campaign.service";
 import {
     ChevronLeft,
@@ -11,7 +11,6 @@ import {
     Settings,
     Copy,
     CheckCircle2,
-    Clock,
     User,
     Mail,
     ArrowUpRight,
@@ -21,37 +20,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
+import type { Campaign } from "@/services/recruiter/campaign.service";
+import type { InterviewSession } from "@/services/interview.service";
+
+type CampaignWithSessions = Campaign & { interview_sessions: InterviewSession[] };
 
 export default function CampaignDetails() {
     const { id } = useParams();
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [campaign, setCampaign] = useState<any>(null);
+    const [campaign, setCampaign] = useState<CampaignWithSessions | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const fetchCampaignDetails = useCallback(async () => {
+        try {
+            const data = await campaignService.getCampaignById(id as string);
+            if (data) {
+                setCampaign(data as unknown as CampaignWithSessions);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
 
     useEffect(() => {
         if (id) {
             fetchCampaignDetails();
         }
-    }, [id]);
-
-    const fetchCampaignDetails = async () => {
-        try {
-            const data = await campaignService.getCampaignById(id as string);
-            setCampaign(data);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [id, fetchCampaignDetails]);
 
     const copyInviteLink = () => {
         if (!campaign) return;
@@ -88,9 +84,9 @@ export default function CampaignDetails() {
     }
 
     const sessions = campaign.interview_sessions || [];
-    const completedSessions = sessions.filter((s: any) => s.status === 'completed');
+    const completedSessions = sessions.filter((s) => s.status === 'completed');
     const averageScore = completedSessions.length > 0
-        ? Math.round(completedSessions.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / completedSessions.length)
+        ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
         : 0;
 
     return (
@@ -186,7 +182,7 @@ export default function CampaignDetails() {
                             </div>
                         </div>
                     ) : (
-                        sessions.map((session: any) => (
+                        sessions.map((session) => (
                             <div
                                 key={session.id}
                                 className="group bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/5 transition-all p-4 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer relative overflow-hidden"
@@ -263,6 +259,4 @@ export default function CampaignDetails() {
     );
 }
 
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ");
-}
+

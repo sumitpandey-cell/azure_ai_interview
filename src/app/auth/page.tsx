@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Eye, EyeOff, Upload, ChevronLeft, ChevronRight, Plus, Sparkles, CheckCircle2, User as UserIcon } from "lucide-react";
+import { Eye, EyeOff, Upload, Plus, Sparkles, CheckCircle2, User as UserIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,12 +13,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import imageCompression from 'browser-image-compression';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
@@ -131,7 +130,7 @@ function AuthContent() {
             setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
         }, 8000);
         return () => clearInterval(interval);
-    }, []);
+    }, [testimonials.length]);
 
     const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];

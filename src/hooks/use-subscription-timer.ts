@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { subscriptionService } from '@/services/subscription.service';
 import { toast } from 'sonner';
+import type { InterviewSession } from '@/services/interview.service';
+import type { Campaign } from '@/services/recruiter/campaign.service';
 
 interface UseSubscriptionTimerOptions {
     userId: string | undefined;
@@ -44,7 +46,7 @@ export function useSubscriptionTimer({
                 try {
                     const { interviewService } = await import('@/services/interview.service');
                     const session = await interviewService.getSessionById(sid);
-                    if (session && (session as any).campaign_id) {
+                    if (session && (session as InterviewSession).campaign_id) {
                         const eligibility = await subscriptionService.checkSessionEligibility(sid);
                         if (eligibility.billingUserId) {
                             setBillingId(eligibility.billingUserId);
@@ -83,12 +85,12 @@ export function useSubscriptionTimer({
                     const { interviewService } = await import('@/services/interview.service');
                     const session = await interviewService.getSessionById(sid);
 
-                    if (session && (session as any).campaign_id) {
+                    if (session && (session as InterviewSession).campaign_id) {
                         const { campaignService } = await import('@/services/recruiter/campaign.service');
-                        const campaign = await campaignService.getCampaignById((session as any).campaign_id) as any;
+                        const campaign = await campaignService.getCampaignById((session as InterviewSession).campaign_id!) as Campaign | null;
 
-                        if (campaign && (campaign as any).max_duration) {
-                            const campaignDurationSeconds = (campaign as any).max_duration * 60;
+                        if (campaign && campaign.max_duration) {
+                            const campaignDurationSeconds = campaign.max_duration * 60;
                             // Use the minimum of campaign limit and recruiter balance
                             remainingSeconds = Math.min(remainingSeconds, campaignDurationSeconds);
                         }

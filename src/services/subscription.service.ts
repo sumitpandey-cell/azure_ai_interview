@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
 
 export type Subscription = Tables<"subscriptions">;
 export type SubscriptionInsert = TablesInsert<"subscriptions">;
@@ -110,21 +110,18 @@ export const subscriptionService = {
      * Track usage for a user
      * Updates the balance_seconds in profiles and records a transaction
      */
-    async trackUsage(userId: string, seconds: number, metadata: Record<string, any> = {}, client = supabase): Promise<boolean> {
+    async trackUsage(userId: string, seconds: number, metadata: Record<string, unknown> = {}, client = supabase): Promise<boolean> {
         try {
 
             if (seconds <= 0) return true;
 
             // Use the update_user_credits RPC from migration 0008
-            // Cast to bypass typed RPC checks for dynamically added functions while avoiding 'any'
-            const { error } = await (client as unknown as {
-                rpc: (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>
-            }).rpc('update_user_credits', {
+            const { error } = await client.rpc('update_user_credits', {
                 user_uuid: userId,
                 seconds_to_add: -Math.round(seconds), // Use negative for usage
                 transaction_type: 'usage',
-                transaction_description: metadata.description || `Interview session usage: ${Math.round(seconds)} seconds`,
-                p_metadata: metadata
+                transaction_description: (metadata as Record<string, string>)?.description || `Interview session usage: ${Math.round(seconds)} seconds`,
+                p_metadata: metadata as Json
             });
 
             if (error) {
@@ -138,7 +135,7 @@ export const subscriptionService = {
                     .single();
 
                 if (profile) {
-                    const newBalance = ((profile as any).balance_seconds || 0) - seconds;
+                    const newBalance = (profile.balance_seconds || 0) - seconds;
                     const { error: updateError } = await client
                         .from("profiles")
                         .update({
@@ -151,7 +148,7 @@ export const subscriptionService = {
                         console.error("❌ Fallback profile update failed:", updateError);
                     }
                 }
-                return !error;
+                return false;
             }
 
 
@@ -193,10 +190,10 @@ export const subscriptionService = {
                 };
             }
 
-            const remainingSeconds = (profile as any).balance_seconds ?? 3600; // Default to 1 hour
+            const remainingSeconds = profile.balance_seconds ?? 3600; // Default to 1 hour
             // For percentage, we'll calculate based on the current subscription plan's last purchase
             const subscription = await this.getSubscription(userId);
-            const totalAllowance = (subscription as any)?.plan_seconds || 3600; // Default to 1 hour
+            const totalAllowance = (subscription as { plan_seconds: number } | null)?.plan_seconds || 3600; // Default to 1 hour
             const percentageUsed = Math.min(100, Math.max(0, Math.round(((totalAllowance - remainingSeconds) / totalAllowance) * 100)));
 
 
@@ -228,7 +225,7 @@ export const subscriptionService = {
     }> {
         try {
             // Use the new secure billing info RPC
-            const { data, error } = await (client as any).rpc('get_session_billing_info', {
+            const { data, error } = await client.rpc('get_session_billing_info', {
                 p_session_id: sessionId
             });
 
@@ -287,7 +284,7 @@ export const subscriptionService = {
     /**
      * Get credit transactions for a user (usage, bonus, etc.)
      */
-    async getCreditTransactions(userId: string): Promise<any[]> {
+    async getCreditTransactions(userId: string): Promise<Tables<"credit_transactions">[]> {
         try {
             const { data, error } = await supabase
                 .from("credit_transactions")

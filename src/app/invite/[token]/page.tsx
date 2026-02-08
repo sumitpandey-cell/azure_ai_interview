@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { campaignService } from "@/services/recruiter/campaign.service";
+import { campaignService, type Campaign } from "@/services/recruiter/campaign.service";
 import { interviewService } from "@/services/interview.service";
 import {
     Clock,
@@ -14,16 +14,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { toast } from "sonner";
 import Image from "next/image";
 
+interface CampaignWithSessions extends Campaign {
+    interview_sessions: { candidate_email: string | null }[];
+}
+
 export default function PublicInvitePage() {
     const { token } = useParams();
     const router = useRouter();
-    const [campaign, setCampaign] = useState<any>(null);
+    const [campaign, setCampaign] = useState<CampaignWithSessions | null>(null);
     const [loading, setLoading] = useState(true);
     const [isStarting, setIsStarting] = useState(false);
 
@@ -36,6 +39,7 @@ export default function PublicInvitePage() {
         if (token) {
             fetchCampaign();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     const fetchCampaign = async () => {
@@ -46,7 +50,7 @@ export default function PublicInvitePage() {
             return;
         }
 
-        const campaignData = data as any;
+        const campaignData = data as unknown as CampaignWithSessions;
 
         // 1. Check if campaign is active
         if (!campaignData.is_active) {
@@ -71,6 +75,8 @@ export default function PublicInvitePage() {
 
     const handleStartInterview = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!campaign) return;
+
         if (!formData.fullName || !formData.email) {
             toast.error("Please provide your name and email.");
             return;
@@ -79,8 +85,8 @@ export default function PublicInvitePage() {
         setIsStarting(true);
         try {
             // 3. Check if candidate already used the link (One use per candidate)
-            const hasUsed = (campaign.interview_sessions as any[])?.some(
-                (s: any) => s.candidate_email?.toLowerCase() === formData.email.toLowerCase()
+            const hasUsed = campaign.interview_sessions?.some(
+                (s) => s.candidate_email?.toLowerCase() === formData.email.toLowerCase()
             );
 
             if (hasUsed) {
@@ -101,9 +107,9 @@ export default function PublicInvitePage() {
                 },
                 candidate_name: formData.fullName,
                 candidate_email: formData.email,
-                status: 'in_progress',
+                status: 'in_progress' as const,
                 config: {
-                    ...(campaign.config as Record<string, any>),
+                    ...(campaign.config as Record<string, unknown>),
                     difficulty: campaign.difficulty,
                     jobDescription: campaign.description
                 }
@@ -138,6 +144,8 @@ export default function PublicInvitePage() {
             <PremiumLogoLoader text="Loading invitation details..." />
         </div>
     );
+
+    if (!campaign) return null;
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-slate-900">
@@ -185,18 +193,22 @@ export default function PublicInvitePage() {
                         </div>
                     </div>
 
-                    {(campaign.config as any)?.skills?.length > 0 && (
-                        <div className="space-y-3">
-                            <h3 className="text-lg font-bold">Targeted Skills</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {(campaign.config as any).skills.map((skill: string, i: number) => (
-                                    <div key={i} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-100 uppercase tracking-tight">
-                                        {skill}
-                                    </div>
-                                ))}
+                    {(() => {
+                        const skills = (campaign.config as Record<string, unknown>)?.skills;
+                        if (!Array.isArray(skills) || skills.length === 0) return null;
+                        return (
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-bold">Targeted Skills</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {(skills as string[]).map((skill, i) => (
+                                        <div key={i} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-100 uppercase tracking-tight">
+                                            {skill}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     <div className="space-y-4">
                         <h3 className="text-lg font-bold">Job Context</h3>

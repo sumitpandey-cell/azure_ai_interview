@@ -3,23 +3,18 @@
 import { useEffect, useState } from "react";
 import { campaignService } from "@/services/recruiter/campaign.service";
 import {
-    Plus,
     Link as LinkIcon,
     Copy,
-    ExternalLink,
     MoreVertical,
     PlusCircle,
     Target,
     Users,
-    Clock,
     Calendar,
     Search,
-    ChevronRight,
     Zap,
     ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,9 +29,12 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import type { Campaign } from "@/services/recruiter/campaign.service";
+
+type CampaignWithSessionCount = Campaign & { interview_sessions: { id: string }[] };
 
 export default function CampaignsPage() {
-    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [campaigns, setCampaigns] = useState<CampaignWithSessionCount[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const router = useRouter();
@@ -49,7 +47,7 @@ export default function CampaignsPage() {
         setLoading(true);
         try {
             const data = await campaignService.getCampaigns();
-            setCampaigns(data);
+            setCampaigns(data as unknown as CampaignWithSessionCount[]);
         } catch (error) {
             console.error("Error fetching campaigns:", error);
         } finally {
