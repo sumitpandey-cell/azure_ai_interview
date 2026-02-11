@@ -646,7 +646,9 @@ export default function InterviewSetup() {
                                 </div>
                             </div>
                             <p className="text-[10px] text-muted-foreground font-medium leading-relaxed font-sans">
-                                The AI agent will pace the interview to fill this time. This duration is fixed based on your plan or template requirements.
+                                {session?.campaign_id
+                                    ? "The AI agent will pace the interview to fill this time. This duration is fixed by the recruiter for this campaign."
+                                    : "The AI agent will pace the interview to fill this time. This is the duration you selected for this session."}
                             </p>
                         </div>
 

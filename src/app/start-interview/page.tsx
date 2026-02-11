@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Upload, Sparkles, Play, Briefcase, Code, User, Monitor, CheckCircle2, Clock } from "lucide-react";
 import { CompanyTemplate } from "@/types/company-types";
 import { ResumeCheckDialog } from "@/components/ResumeCheckDialog";
 import { InProgressSessionModal } from "@/components/InProgressSessionModal";
@@ -685,6 +685,49 @@ function StartInterviewContent() {
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
                                                                     <span>Veteran / Senior</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage className="text-[10px] font-bold" />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="duration"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] sm:text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 pl-1">
+                                                        Session Duration
+                                                    </FormLabel>
+                                                    <Select
+                                                        onValueChange={(value) => field.onChange(parseInt(value))}
+                                                        defaultValue={field.value.toString()}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className="bg-background/50 border-border/50 h-11 sm:h-12 rounded-xl focus:ring-primary focus:border-primary text-xs sm:text-sm font-bold">
+                                                                <SelectValue placeholder="Select duration" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl sm:rounded-2xl border-border/50 shadow-2xl">
+                                                            <SelectItem value="10" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="h-4 w-4 text-primary" />
+                                                                    10 Minutes (Express)
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="20" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="h-4 w-4 text-primary" />
+                                                                    20 Minutes (Standard)
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="30" className="font-bold text-xs sm:text-sm py-2 sm:py-3 cursor-pointer">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="h-4 w-4 text-primary" />
+                                                                    30 Minutes (Deep Dive)
                                                                 </div>
                                                             </SelectItem>
                                                         </SelectContent>

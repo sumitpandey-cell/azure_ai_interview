@@ -73,8 +73,8 @@ export function useOptimizedQueries() {
       const sessionsData = await fetchSessions(forceRefresh);
 
       // Calculate stats
-      const totalInterviews = sessionsData.length;
       const completedSessions = sessionsData.filter(s => s.status === 'completed' && s.score !== null);
+      const totalInterviews = completedSessions.length;
       const averageScore = completedSessions.length > 0
         ? Math.round(completedSessions.reduce((acc, s) => acc + (s.score || 0), 0) / completedSessions.length)
         : 0;

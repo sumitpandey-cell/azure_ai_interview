@@ -24,7 +24,6 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useAnalytics } from "@/hooks/use-analytics";
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useFeedback } from "@/context/FeedbackContext";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
@@ -46,7 +45,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     remaining_seconds,
     plan_seconds,
     plan_name,
-    invalidateCache,
     loading: subscriptionLoading
   } = useSubscription();
   const { currentSession } = useInterviewStore();
@@ -60,9 +58,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     }
     return false;
   });
-
-  // Get streak data from analytics cache
-  const { refetch: refetchAnalytics } = useAnalytics(user?.id);
 
   // sidebar persistence
   useEffect(() => {
@@ -81,17 +76,7 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
     }
   }, [user, authLoading, router, isRecruiterPath]);
 
-  // Force refresh subscription data when returning to dashboard
-  useEffect(() => {
-    invalidateCache();
-  }, [invalidateCache]);
 
-  // Force refresh analytical data when returning to dashboard or mounting
-  useEffect(() => {
-    if (user?.id) {
-      refetchAnalytics();
-    }
-  }, [user?.id, refetchAnalytics]);
 
   // Early return after all hooks
   if (authLoading || (!user && pathname !== '/' && !isRecruiterPath)) {
