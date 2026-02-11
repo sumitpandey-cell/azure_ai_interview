@@ -702,7 +702,8 @@ export const interviewService = {
                 .from("interview_sessions")
                 .select("user_id, score")
                 .not("score", "is", null)
-                .eq("status", "completed");
+                .eq("status", "completed")
+                .is("campaign_id", null);
 
             if (error || !allSessions) {
                 console.error("Error fetching sessions for rank:", error);
@@ -721,17 +722,29 @@ export const interviewService = {
                 userStats[session.user_id].count += 1;
             });
 
-            // Calculate Weighted Score (avgScore × (1 + log(count) / 10))
+            // Calculate Weighted Score (avgScore × (1 + log10(count) / 10))
             const rankedUsers = Object.entries(userStats).map(([uid, stats]) => {
                 const avgScore = stats.totalScore / stats.count;
+                // Weighted score heavily rewards both quality (avgScore) and quantity (count)
                 const experienceMultiplier = 1 + (Math.log10(stats.count) / 10);
                 const weightedScore = avgScore * experienceMultiplier;
 
-                return { userId: uid, weightedScore };
+                return { userId: uid, weightedScore, avgScore, count: stats.count };
             });
 
-            // Sort by Weighted Score (descending)
-            const sortedUsers = rankedUsers.sort((a, b) => b.weightedScore - a.weightedScore);
+            // Sort by Weighted Score (descending) with tie-breakers
+            const sortedUsers = rankedUsers.sort((a, b) => {
+                // Primary: Weighted Score
+                if (Math.abs(b.weightedScore - a.weightedScore) > 0.0001) {
+                    return b.weightedScore - a.weightedScore;
+                }
+                // Secondary: Average Score
+                if (Math.abs(b.avgScore - a.avgScore) > 0.0001) {
+                    return b.avgScore - a.avgScore;
+                }
+                // Tertiary: Total Interview Count
+                return b.count - a.count;
+            });
 
             // Find current user's rank
             const userRankIndex = sortedUsers.findIndex(u => u.userId === userId);

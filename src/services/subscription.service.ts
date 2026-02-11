@@ -184,16 +184,16 @@ export const subscriptionService = {
             if (error || !profile) {
                 return {
                     hasLimit: false,
-                    remainingSeconds: 3600, // Default to 1 hour (60 minutes)
-                    remainingMinutes: 60,
+                    remainingSeconds: 0,
+                    remainingMinutes: 0,
                     percentageUsed: 0,
                 };
             }
 
-            const remainingSeconds = profile.balance_seconds ?? 3600; // Default to 1 hour
+            const remainingSeconds = profile.balance_seconds ?? 0;
             // For percentage, we'll calculate based on the current subscription plan's last purchase
             const subscription = await this.getSubscription(userId);
-            const totalAllowance = (subscription as { plan_seconds: number } | null)?.plan_seconds || 3600; // Default to 1 hour
+            const totalAllowance = (subscription as { plan_seconds: number } | null)?.plan_seconds || 3600;
             const percentageUsed = Math.min(100, Math.max(0, Math.round(((totalAllowance - remainingSeconds) / totalAllowance) * 100)));
 
 
@@ -207,8 +207,8 @@ export const subscriptionService = {
             console.error("Error checking usage limit:", error);
             return {
                 hasLimit: false,
-                remainingSeconds: 3600, // Default to 1 hour
-                remainingMinutes: 60,
+                remainingSeconds: 0,
+                remainingMinutes: 0,
                 percentageUsed: 0,
             };
         }
@@ -239,10 +239,10 @@ export const subscriptionService = {
                 };
             }
 
-            return { isAllowed: true, remainingSeconds: 3600 }; // Default to 1 hour
+            return { isAllowed: true, remainingSeconds: 0 };
         } catch (error) {
             console.error("❌ Error checking session eligibility:", error);
-            return { isAllowed: true, remainingSeconds: 3600 }; // Default to 1 hour
+            return { isAllowed: true, remainingSeconds: 0 };
         }
     },
 

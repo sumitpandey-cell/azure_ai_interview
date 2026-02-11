@@ -49,7 +49,8 @@ export const leaderboardService = {
         `)
                 .eq('status', 'completed')
                 .not('score', 'is', null)
-                .not('user_id', 'is', null);
+                .not('user_id', 'is', null)
+                .is('campaign_id', null);
 
             if (startDate) {
                 query = query.gte('created_at', startDate.toISOString());
@@ -114,13 +115,19 @@ export const leaderboardService = {
 
             userStats.forEach((stats, userId) => {
                 const profile = profileMap.get(userId);
+                const fullName = profile?.full_name || null;
+                const lowerName = (fullName || "").toLowerCase();
+
+                // Skip anonymous guest candidates
+                if (lowerName === "anonymous candidate" || lowerName === "guest candidate" || lowerName === "anonymous") return;
+
                 const averageScore = stats.scores.length > 0
                     ? Math.round(stats.scores.reduce((a, b) => a + b, 0) / stats.scores.length)
                     : 0;
 
                 rankings.push({
                     user_id: userId,
-                    full_name: profile?.full_name || null,
+                    full_name: fullName,
                     avatar_url: profile?.avatar_url || null,
                     rank: 0, // Will be set after sorting
                     total_interviews: stats.totalInterviews,
@@ -131,8 +138,14 @@ export const leaderboardService = {
                 });
             });
 
-            // Sort by average score (desc), then by completed interviews (desc)
+            // Sort by Weighted Score (Bayesian approach), then by count
             rankings.sort((a, b) => {
+                const weightedA = a.average_score * (1 + (Math.log10(a.completed_interviews || 1) / 10));
+                const weightedB = b.average_score * (1 + (Math.log10(b.completed_interviews || 1) / 10));
+
+                if (Math.abs(weightedB - weightedA) > 0.0001) {
+                    return weightedB - weightedA;
+                }
                 if (b.average_score !== a.average_score) {
                     return b.average_score - a.average_score;
                 }

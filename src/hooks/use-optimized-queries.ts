@@ -82,7 +82,21 @@ export function useOptimizedQueries() {
       const timePracticed = completedSessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0);
 
       // Calculate REAL leaderboard rank using Bayesian scoring
-      const rank = await interviewService.calculateUserRank(user.id);
+      // Optimization: Try to find rank from leaderboard cache first for consistency
+      let rank = 0;
+      const { leaderboard } = useCacheStore.getState();
+
+      if (leaderboard && leaderboard.length > 0) {
+        const cachedUserIndex = leaderboard.findIndex(u => u.userId === user.id);
+        if (cachedUserIndex >= 0) {
+          rank = cachedUserIndex + 1;
+        }
+      }
+
+      // If not in top of leaderboard cache, use the service calculation
+      if (rank === 0) {
+        rank = await interviewService.calculateUserRank(user.id);
+      }
 
       const calculatedStats = {
         totalInterviews,
@@ -202,17 +216,25 @@ export function useOptimizedQueries() {
       const results = data as unknown as LeaderboardData[];
       const totalUsers = results.length > 0 ? Number(results[0].total_users) : 0;
 
-      // 3. Format data to match LeaderboardUser interface
-      const formattedData = results.map((item) => ({
-        userId: item.user_id,
-        fullName: item.full_name || "Anonymous",
-        avatarUrl: item.avatar_url,
-        interviewCount: Number(item.interview_count || 0),
-        averageScore: Number(item.average_score || 0),
-        bayesianScore: Number(item.bayesian_score || 0),
-        oauthPicture: item.user_id === currentUser?.id ? currentUserOAuthPicture : null,
-        gender: item.user_id === currentUser?.id ? currentUserGender : undefined,
-      }));
+      // 3. Format data and filter out guest/invited users (Anonymous/Guest Candidate)
+      const formattedData = results
+        .filter(item => {
+          const name = (item.full_name || "").toLowerCase();
+          return name !== "anonymous candidate" &&
+            name !== "guest candidate" &&
+            name !== "anonymous" &&
+            item.user_id !== null;
+        })
+        .map((item) => ({
+          userId: item.user_id,
+          fullName: item.full_name || "Anonymous",
+          avatarUrl: item.avatar_url,
+          interviewCount: Number(item.interview_count || 0),
+          averageScore: Number(item.average_score || 0),
+          bayesianScore: Number(item.bayesian_score || 0),
+          oauthPicture: item.user_id === currentUser?.id ? currentUserOAuthPicture : null,
+          gender: item.user_id === currentUser?.id ? currentUserGender : undefined,
+        }));
 
       if (page === 0 && formattedData.length > 0) {
         setLeaderboard(formattedData);

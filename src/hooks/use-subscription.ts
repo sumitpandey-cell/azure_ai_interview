@@ -67,8 +67,8 @@ export function useSubscription(sessionId?: string) {
         return {
             type: 'free',
             allowed: true,
-            remaining_seconds: 3600, // Initialize to 1 hour (seconds) to prevent "Low Time" flash
-            plan_seconds: 3600,
+            remaining_seconds: 0,
+            plan_seconds: 0,
             loading: true
         };
     };
@@ -79,6 +79,7 @@ export function useSubscription(sessionId?: string) {
     const hasFetchedRef = useRef<string | null>(null);
 
     const checkEligibility = useCallback(async () => {
+        setStatus(prev => ({ ...prev, loading: true }));
         // CASE 1: Session-based check (B2B or Campaign)
         if (sessionId) {
             try {

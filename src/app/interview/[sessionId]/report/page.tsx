@@ -95,6 +95,8 @@ export default function InterviewReport() {
         }
     }, [sessionId, fetchSessionDetail, router]);
 
+    const [lastGeneratingState, setLastGeneratingState] = useState(false);
+
     useEffect(() => {
         if (sessionId && !session) {
             // Initial load only if session is not already present
@@ -102,8 +104,30 @@ export default function InterviewReport() {
         }
     }, [sessionId, fetchSession, session]);
 
+    // Force re-fetch when background generation finishes
+    useEffect(() => {
+        // If it was generating and now it's not, we should have fresh data in DB
+        if (lastGeneratingState && !isSessionGenerating && sessionId) {
+            fetchSession(true);
+        }
+        setLastGeneratingState(isSessionGenerating);
+    }, [isSessionGenerating, lastGeneratingState, sessionId, fetchSession]);
+
+    interface SessionFeedback {
+        overall?: unknown;
+        resumptions?: unknown;
+        executiveSummary?: unknown;
+    }
+
+    const hasValidFeedback = !!(session?.feedback &&
+        typeof session.feedback === 'object' &&
+        (Object.keys(session.feedback).length > 0) &&
+        ((session.feedback as SessionFeedback).overall ||
+            (session.feedback as SessionFeedback).resumptions ||
+            (session.feedback as SessionFeedback).executiveSummary));
+
     const isFeedbackGenerating = session?.status === 'completed' &&
-        !session?.feedback &&
+        !hasValidFeedback &&
         (!instantFeedback || !instantFeedback.skills || instantFeedback.skills.length === 0);
 
     useEffect(() => {
@@ -207,7 +231,7 @@ export default function InterviewReport() {
         return score > 0 ? "E" : "F";
     };
 
-    const overallScore = session?.score || Math.round(overallSkills.reduce((acc: number, s: { score?: number }) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
+    const overallScore = typeof session?.score === 'number' ? session.score : Math.round(overallSkills.reduce((acc: number, s: { score?: number }) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
 
     const reportData: FeedbackReportData = {
         candidateName: userMetadata?.full_name || "Candidate",

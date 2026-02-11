@@ -35,7 +35,7 @@ export function useSubscriptionTimer({
     warnAt = [5, 2, 1],
     isActive = true,
 }: UseSubscriptionTimerOptions): UseSubscriptionTimerReturn {
-    const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(3600); // Default to 1 hour to prevent 00:00 flash
+    const [totalRemainingSeconds, setTotalRemainingSeconds] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [billingId, setBillingId] = useState<string | undefined>(userId);
 

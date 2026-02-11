@@ -71,7 +71,20 @@ export default function RecruiterInterviewReport() {
         }
     }, [authLoading, user, sessionId, session, fetchSession]);
 
-    const isFeedbackGenerating = session?.status === 'completed' && !session?.feedback;
+    interface SessionFeedback {
+        overall?: unknown;
+        resumptions?: unknown;
+        executiveSummary?: unknown;
+    }
+
+    const hasValidFeedback = !!(session?.feedback &&
+        typeof session.feedback === 'object' &&
+        (Object.keys(session.feedback).length > 0) &&
+        ((session.feedback as SessionFeedback).overall ||
+            (session.feedback as SessionFeedback).resumptions ||
+            (session.feedback as SessionFeedback).executiveSummary));
+
+    const isFeedbackGenerating = session?.status === 'completed' && !hasValidFeedback;
 
     useEffect(() => {
         if (!isFeedbackGenerating || !sessionId) return;
@@ -158,7 +171,7 @@ export default function RecruiterInterviewReport() {
         return score > 0 ? "E" : "F";
     };
 
-    const overallScore = sessionData.score || Math.round((overallSkills as Skill[]).reduce((acc, s) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
+    const overallScore = typeof sessionData.score === 'number' ? sessionData.score : Math.round((overallSkills as Skill[]).reduce((acc, s) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
 
     let dbTranscript = sessionData.transcript || [];
     if (typeof dbTranscript === 'string') {
