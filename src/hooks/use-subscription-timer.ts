@@ -3,6 +3,7 @@ import { subscriptionService } from '@/services/subscription.service';
 import { toast } from 'sonner';
 import type { InterviewSession } from '@/services/interview.service';
 import type { Campaign } from '@/services/recruiter/campaign.service';
+import type { SessionConfig } from '@/types/interview';
 
 interface UseSubscriptionTimerOptions {
     userId: string | undefined;
@@ -94,6 +95,13 @@ export function useSubscriptionTimer({
                             // Use the minimum of campaign limit and recruiter balance
                             remainingSeconds = Math.min(remainingSeconds, campaignDurationSeconds);
                         }
+                    }
+
+                    // Check for user-selected session duration
+                    const config = (session as InterviewSession).config as unknown as SessionConfig;
+                    if (config?.duration) {
+                        const sessionDurationSeconds = config.duration * 60;
+                        remainingSeconds = Math.min(remainingSeconds, sessionDurationSeconds);
                     }
                 }
 

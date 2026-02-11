@@ -23,7 +23,8 @@ import {
   Code,
   Briefcase,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Clock
 } from "lucide-react";
 import { TemplatesPageSkeleton, CompanyTemplatesPageSkeleton } from "@/components/TemplatesPageSkeleton";
 import { Template } from "@/services/template.service";
@@ -176,7 +177,7 @@ export default function Templates() {
     }
   };
 
-  const executeStartGeneralInterview = async (template: Template, useResume: boolean) => {
+  const executeStartGeneralInterview = async (template: Template, useResume: boolean, duration: number) => {
     try {
       setLoadingTemplate(template.id);
       // Create a new interview session using optimized method
@@ -188,6 +189,7 @@ export default function Templates() {
           skills: template.skills,
           difficulty: template.difficulty,
           useResume,
+          duration,
           currentStage: 'setup'
         }
       });
@@ -259,12 +261,12 @@ export default function Templates() {
     }
   };
 
-  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string, useResume: boolean) => {
+  const executeStartCompanyInterview = async (company: CompanyTemplate, role: string, useResume: boolean, duration: number) => {
     try {
       const templateKey = `${company.id}-${role}`;
       setLoadingTemplate(templateKey);
 
-      // Create interview session directly with 30-minute duration
+      // Create interview session directly
       const session = await createInterviewSession({
         position: role,
         interview_type: "Technical",
@@ -277,6 +279,7 @@ export default function Templates() {
             experienceLevel: 'Mid'
           },
           useResume,
+          duration,
           currentStage: 'setup'
         }
       });
@@ -298,10 +301,11 @@ export default function Templates() {
 
   const handleResumeContinue = async (useResume: boolean) => {
     setShowResumeCheck(false);
+    const duration = 30; // Default fixed duration
     if (pendingGeneralTemplate) {
-      await executeStartGeneralInterview(pendingGeneralTemplate, useResume);
+      await executeStartGeneralInterview(pendingGeneralTemplate, useResume, duration);
     } else if (pendingCompanyRole) {
-      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role, useResume);
+      await executeStartCompanyInterview(pendingCompanyRole.company, pendingCompanyRole.role, useResume, duration);
     }
   };
 
@@ -407,6 +411,10 @@ export default function Templates() {
                                   <Badge variant="secondary" className="font-normal text-xs bg-muted text-muted-foreground hover:bg-muted">
                                     {template.interview_type}
                                   </Badge>
+                                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
+                                    <Clock className="h-3 w-3 text-primary/60" />
+                                    <span>30 Mins</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -621,6 +629,11 @@ export default function Templates() {
                             <Sparkles className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">Analysis:</span>
                             <span className="font-medium">AI Insights</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Duration:</span>
+                            <span className="font-medium">30 Mins</span>
                           </div>
                         </div>
                       </CardContent>

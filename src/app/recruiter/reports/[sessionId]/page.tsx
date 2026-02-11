@@ -1,45 +1,31 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { formatDuration } from "@/lib/format-duration";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Bot, ChevronLeft, MessageSquare, Clock, Target, Activity, Timer, CheckCircle2, User, Mail, Briefcase, Shield, XCircle, Zap } from "lucide-react";
-import dynamic from "next/dynamic";
+import { Card } from "@/components/ui/card";
+import { Clock, XCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { interviewService } from "@/services/interview.service";
 import { toast } from "sonner";
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
-import { format } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { InterviewSession } from "@/services/interview.service";
 
-interface TranscriptEntry {
-    speaker: "user" | "ai";
+import { FeedbackReport, type FeedbackReportData } from "@/components/FeedbackReport";
+import { supabase } from "@/integrations/supabase/client";
+import { FeedbackError } from "@/lib/feedback-error";
+
+interface Skill {
+    name: string;
+    score: number;
+    feedback: string;
+}
+
+interface TranscriptMessage {
+    id: string | number;
+    speaker: string;
     text: string;
-    timestamp: number;
+    timestamp: string;
 }
-
-interface Feedback {
-    overall?: {
-        executiveSummary?: string;
-        strengths?: string[];
-        improvements?: string[];
-        actionPlan?: string[];
-        overallSkills?: { name: string; score: number }[];
-    };
-    executiveSummary?: string;
-    strengths?: string[];
-    improvements?: string[];
-    actionPlan?: string[];
-    overallSkills?: { name: string; score: number }[];
-}
-
-const ReportRadarChart = dynamic(() => import("@/components/ReportRadarChart").then(mod => mod.ReportRadarChart), {
-    loading: () => <div className="h-[300px] w-full animate-pulse bg-muted/20 rounded-xl" />,
-    ssr: false
-});
 
 export default function RecruiterInterviewReport() {
     const router = useRouter();
@@ -48,8 +34,18 @@ export default function RecruiterInterviewReport() {
     const { user, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
     const [session, setSession] = useState<InterviewSession | null>(null);
+    const [feedbackTimeout, setFeedbackTimeout] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [errorState, setErrorState] = useState<FeedbackError | null>(null);
 
-    const fetchSession = useCallback(async () => {
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const fetchSession = useCallback(async (forceRefresh = false) => {
+        if (forceRefresh) {
+            // Placeholder for force refresh logic if needed
+        }
         try {
             setLoading(true);
             if (sessionId) {
@@ -70,253 +66,198 @@ export default function RecruiterInterviewReport() {
     }, [sessionId, router]);
 
     useEffect(() => {
-        if (!authLoading && user) {
+        if (!authLoading && user && sessionId && !session) {
             fetchSession();
         }
-    }, [authLoading, user, fetchSession]);
+    }, [authLoading, user, sessionId, session, fetchSession]);
 
-    if (loading || authLoading) {
+    const isFeedbackGenerating = session?.status === 'completed' && !session?.feedback;
+
+    useEffect(() => {
+        if (!isFeedbackGenerating || !sessionId) return;
+
+        const channel = supabase
+            .channel(`recruiter_session_feedback_${sessionId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'interview_sessions',
+                    filter: `id=eq.${sessionId}`
+                },
+                (payload) => {
+                    const newData = payload.new as InterviewSession;
+                    if (newData.feedback) {
+                        setSession(newData);
+                        setErrorState(null);
+                        setFeedbackTimeout(false);
+                        toast.success("Candidate feedback report is ready!");
+                    }
+                }
+            )
+            .subscribe();
+
+        const timeoutId = setTimeout(() => {
+            if (isFeedbackGenerating) {
+                setFeedbackTimeout(true);
+            }
+        }, 60000);
+
+        return () => {
+            supabase.removeChannel(channel);
+            clearTimeout(timeoutId);
+        };
+    }, [isFeedbackGenerating, sessionId]);
+
+    if (!mounted || loading || authLoading) {
         return <ReportPageSkeleton />;
     }
 
     if (!session) return null;
 
-    const sessionData = session as InterviewSession;
-    const feedback = (sessionData.feedback as unknown as Feedback)?.overall || (sessionData.feedback as unknown as Feedback);
-    const score = sessionData.score || 0;
-    const transcripts = (sessionData.transcript as unknown[] as TranscriptEntry[]) || [];
+    if (isFeedbackGenerating && !feedbackTimeout && !errorState) {
+        return <ReportPageSkeleton />;
+    }
+
+    // Use the session fields directly since they are available on the InterviewSession type
+    const sessionData = session;
+
+    // Normalize Feedback Data (Unify with student side logic)
+    let extractedFeedback = (sessionData.feedback || null) as Record<string, unknown> | null;
+    if (extractedFeedback) {
+        if (extractedFeedback.overall && typeof extractedFeedback.overall === 'object') {
+            extractedFeedback = extractedFeedback.overall as Record<string, unknown>;
+        } else if (Array.isArray(extractedFeedback.resumptions) && extractedFeedback.resumptions.length > 0) {
+            if (!extractedFeedback.overall || Object.keys(extractedFeedback.overall).length === 0 || !extractedFeedback.executiveSummary) {
+                extractedFeedback = extractedFeedback.resumptions[0];
+            }
+        }
+    }
+
+    const feedbackData = extractedFeedback || {};
+
+    const overallSkills = (Array.isArray(feedbackData.overallSkills) ? feedbackData.overallSkills : null) || (Array.isArray(feedbackData.skills) ? feedbackData.skills : null) || [
+        { name: "Technical Knowledge", score: 0, feedback: "Analysis subset not available" },
+        { name: "Communication", score: 0, feedback: "Analysis subset not available" },
+        { name: "Problem Solving", score: 0, feedback: "Analysis subset not available" },
+        { name: "Cultural Fit", score: 0, feedback: "Analysis subset not available" }
+    ];
+
+    const technicalSkills = (Array.isArray(feedbackData.technicalSkills) ? feedbackData.technicalSkills : null) || [];
+
+    const calculateGrade = (score: number) => {
+        if (score >= 95) return "A+";
+        if (score >= 90) return "A";
+        if (score >= 85) return "A-";
+        if (score >= 80) return "B+";
+        if (score >= 75) return "B";
+        if (score >= 70) return "B-";
+        if (score >= 60) return "C";
+        if (score >= 50) return "D";
+        return score > 0 ? "E" : "F";
+    };
+
+    const overallScore = sessionData.score || Math.round((overallSkills as Skill[]).reduce((acc, s) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
+
+    let dbTranscript = sessionData.transcript || [];
+    if (typeof dbTranscript === 'string') {
+        try {
+            dbTranscript = JSON.parse(dbTranscript);
+        } catch (e) {
+            console.error("Failed to parse transcript string:", e);
+            dbTranscript = [];
+        }
+    }
+
+    const reportData: FeedbackReportData = {
+        candidateName: sessionData.candidate_name || "Guest Candidate",
+        position: sessionData.position || "Interview Report",
+        interviewType: sessionData.interview_type,
+        overallScore: overallScore,
+        date: sessionData.created_at ? new Date(sessionData.created_at).toLocaleString() : "-",
+        durationSeconds: sessionData.duration_seconds || 0,
+        executiveSummary: (typeof feedbackData.executiveSummary === 'string' ? feedbackData.executiveSummary : null) ||
+            (typeof feedbackData.note === 'string' ? feedbackData.note : null) ||
+            (typeof feedbackData.error === 'string' ? feedbackData.error : null) ||
+            "The interview session has been recorded. Analysis insights are being processed based on your conversation.",
+        rankGrade: calculateGrade(overallScore),
+        strengths: (Array.isArray(feedbackData.strengths) ? feedbackData.strengths : null) || ["Analysis not available for this session"],
+        improvements: (Array.isArray(feedbackData.improvements) ? feedbackData.improvements : null) || ["Analysis not available for this session"],
+        overallSkills: overallSkills as Skill[],
+        technicalSkills: technicalSkills as Skill[],
+        actionPlan: (Array.isArray(feedbackData.actionPlan) ? feedbackData.actionPlan : null) || ["Review candidate transcript for manual evaluation."],
+        transcript: Array.isArray(dbTranscript)
+            ? (dbTranscript as Array<{ speaker?: string; sender?: string; role?: string; text?: string; id?: string | number; timestamp?: string }>)
+                .filter((m) => m && (m.speaker || m.sender || m.role) && m.text)
+                .map((m, i): TranscriptMessage => ({
+                    id: m.id || i,
+                    speaker: ['ai', 'agent', 'model', 'assistant'].includes(((m.speaker || m.sender || m.role || 'candidate') as string).toLowerCase()) ? 'ai' : 'user',
+                    text: m.text || "",
+                    timestamp: m.timestamp || '-'
+                }))
+            : [{ id: 1, speaker: "ai", text: "No transcript available.", timestamp: "-" }]
+    };
+
+    const isInProgress = session && session.status !== 'completed';
 
     return (
-        <div className="min-h-screen bg-slate-50/50 pb-20">
-            {/* Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.back()}
-                            className="text-slate-500 hover:text-indigo-600 font-bold text-xs uppercase"
-                        >
-                            <ChevronLeft className="h-4 w-4 mr-1" />
-                            Back
-                        </Button>
-                        <div className="h-6 w-px bg-slate-200 mx-2" />
-                        <h1 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <Bot className="h-5 w-5 text-indigo-600" />
-                            Candidate Evaluation Report
-                        </h1>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-                {/* Candidate Summary Card */}
-                <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] overflow-hidden bg-white">
-                    <CardContent className="p-8">
-                        <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
-                            <div className="w-24 h-24 rounded-3xl bg-indigo-500 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-200">
-                                {sessionData.candidate_name?.charAt(0) || <User className="h-10 w-10" />}
-                            </div>
-                            <div className="flex-1 space-y-4">
-                                <div>
-                                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">{sessionData.candidate_name || "Guest Candidate"}</h2>
-                                    <div className="flex flex-wrap gap-4 mt-2">
-                                        <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
-                                            <Mail className="h-4 w-4" />
-                                            {sessionData.candidate_email || "N/A"}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
-                                            <Briefcase className="h-4 w-4" />
-                                            {sessionData.position} ({sessionData.interview_type})
-                                        </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
-                                            <Clock className="h-4 w-4" />
-                                            {format(new Date(sessionData.created_at), "MMM d, yyyy HH:mm")}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-medium bg-slate-100 px-3 py-1 rounded-lg text-sm">
-                                            <Timer className="h-4 w-4" />
-                                            {formatDuration(sessionData.duration_seconds || 0)}
-                                        </div>
+        <div className="min-h-screen pb-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-2 lg:px-2">
+                {(() => {
+                    if (isInProgress) {
+                        return (
+                            <div className="min-h-[60vh] flex flex-col items-center justify-center p-4">
+                                <Card className="max-w-md w-full border-none shadow-2xl bg-card/80 backdrop-blur-3xl overflow-hidden rounded-[2.5rem] p-12 text-center space-y-8">
+                                    <div className="relative mx-auto h-20 w-20 bg-amber-500/10 rounded-3xl flex items-center justify-center">
+                                        <Clock className="h-10 w-10 text-amber-500 animate-pulse" />
                                     </div>
-                                </div>
-                            </div>
-                            <div className="text-center bg-slate-50 p-6 rounded-3xl border border-slate-100 min-w-[160px]">
-                                <div className={cn(
-                                    "text-5xl font-black mb-1",
-                                    score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600"
-                                )}>
-                                    {score}%
-                                </div>
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Overall Score</div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Tabs defaultValue="insights" className="w-full space-y-8">
-                    <TabsList className="bg-white p-1 rounded-2xl h-14 border border-slate-200 shadow-sm inline-flex">
-                        <TabsTrigger value="insights" className="rounded-xl px-8 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">Evaluation</TabsTrigger>
-                        <TabsTrigger value="transcript" className="rounded-xl px-8 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">Transcript</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="insights" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Main Content Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Left Column: Feedback & Skills */}
-                            <div className="lg:col-span-2 space-y-8">
-                                {/* Executive Summary for Recruiter */}
-                                <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white overflow-hidden">
-                                    <CardHeader className="p-8 pb-4">
-                                        <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 uppercase tracking-tight">
-                                            <Target className="h-5 w-5 text-indigo-600" />
-                                            Recruiter Summary
-                                        </h3>
-                                    </CardHeader>
-                                    <CardContent className="p-8 pt-0">
-                                        <p className="text-slate-600 leading-relaxed text-lg italic border-l-4 border-indigo-100 pl-6 py-2">
-                                            {feedback?.executiveSummary || "Analysis in progress..."}
+                                    <div className="space-y-4">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[10px] font-bold uppercase tracking-widest">
+                                            Active Session
+                                        </div>
+                                        <h2 className="text-2xl font-bold uppercase tracking-tight">Interview In Progress</h2>
+                                        <p className="text-muted-foreground text-sm font-medium">
+                                            The candidate is currently in the middle of this interview.
+                                            The evaluation report will be available once the session is completed.
                                         </p>
-                                    </CardContent>
-                                </Card>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Strengths */}
-                                    <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white overflow-hidden">
-                                        <CardHeader className="p-8 pb-4">
-                                            <h3 className="text-lg font-bold flex items-center gap-2 text-emerald-600 uppercase tracking-tight">
-                                                <Shield className="h-5 w-5" /> Key Strengths
-                                            </h3>
-                                        </CardHeader>
-                                        <CardContent className="p-8 pt-0 space-y-4">
-                                            {feedback?.strengths?.map((item: string, i: number) => (
-                                                <div key={i} className="flex gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                                                    <p className="text-sm font-bold text-slate-700">{item}</p>
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Improvements */}
-                                    <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white overflow-hidden">
-                                        <CardHeader className="p-8 pb-4">
-                                            <h3 className="text-lg font-bold flex items-center gap-2 text-rose-600 uppercase tracking-tight">
-                                                <XCircle className="h-5 w-5" /> Areas of Concern
-                                            </h3>
-                                        </CardHeader>
-                                        <CardContent className="p-8 pt-0 space-y-4">
-                                            {feedback?.improvements?.map((item: string, i: number) => (
-                                                <div key={i} className="flex gap-3 p-4 rounded-2xl bg-rose-50 border border-rose-100">
-                                                    <Activity className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
-                                                    <p className="text-sm font-bold text-slate-700">{item}</p>
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </Card>
-                                </div>
-
-                                {/* Action Plan */}
-                                <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white overflow-hidden">
-                                    <CardHeader className="p-8 pb-4">
-                                        <h3 className="text-lg font-bold flex items-center gap-2 text-indigo-600 uppercase tracking-tight">
-                                            <Zap className="h-5 w-5" /> Actionable Next Steps
-                                        </h3>
-                                    </CardHeader>
-                                    <CardContent className="p-8 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {feedback?.actionPlan?.map((item: string, i: number) => (
-                                            <div key={i} className="flex gap-3 p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
-                                                <div className="h-6 w-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                                                    {i + 1}
-                                                </div>
-                                                <p className="text-sm font-bold text-slate-700">{item}</p>
-                                            </div>
-                                        ))}
-                                    </CardContent>
+                                    </div>
+                                    <Button onClick={() => router.back()} variant="outline" className="w-full rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">
+                                        Go Back
+                                    </Button>
                                 </Card>
                             </div>
+                        );
+                    }
 
-                            {/* Right Column: Radar Chart & Metrics */}
-                            <div className="space-y-8">
-                                <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-indigo-600 text-white overflow-hidden">
-                                    <CardHeader className="p-8 pb-0">
-                                        <h3 className="text-xl font-bold uppercase tracking-tight">Skill Matrix</h3>
-                                    </CardHeader>
-                                    <CardContent className="p-4 pt-0">
-                                        <ReportRadarChart
-                                            data={feedback?.overallSkills?.map((s: { name: string; score: number }) => ({
-                                                name: s.name,
-                                                score: s.score
-                                            })) || []}
-                                            themeKey={sessionId || 'recruiter-report'}
-                                        />
-                                    </CardContent>
-                                </Card>
-
-                                {/* Quick Insights */}
-                                <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white">
-                                    <CardHeader className="p-8 pb-4">
-                                        <h3 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-4 uppercase tracking-tight">Engagement</h3>
-                                    </CardHeader>
-                                    <CardContent className="p-8 pt-0 space-y-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-slate-100 rounded-xl">
-                                                    <MessageSquare className="h-4 w-4 text-slate-600" />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Exchanges</span>
-                                            </div>
-                                            <span className="text-lg font-black text-slate-900">{transcripts.length}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-slate-100 rounded-xl">
-                                                    <Activity className="h-4 w-4 text-slate-600" />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Responses / Min</span>
-                                            </div>
-                                            <span className="text-lg font-black text-slate-900">
-                                                {sessionData.duration_seconds && sessionData.duration_seconds > 0
-                                                    ? (transcripts.length / (sessionData.duration_seconds / 60)).toFixed(1)
-                                                    : "N/A"}
-                                            </span>
-                                        </div>
-                                    </CardContent>
+                    if (feedbackTimeout) {
+                        return (
+                            <div className="min-h-[60vh] flex items-center justify-center p-4">
+                                <Card className="max-w-2xl w-full border-none shadow-2xl p-12 text-center space-y-6">
+                                    <div className="h-16 w-16 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+                                        <XCircle className="h-8 w-8 text-red-600" />
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-red-600 tracking-tight">Evaluation Delayed</h2>
+                                    <p className="text-muted-foreground text-lg">AI analysis is taking longer than expected for this candidate. Please refresh the page or check back later.</p>
+                                    <div className="flex justify-center gap-4 pt-4">
+                                        <Button onClick={() => { setFeedbackTimeout(false); fetchSession(true); }} className="bg-emerald-600">
+                                            <RefreshCw className="mr-2 h-4 w-4" /> Refresh Now
+                                        </Button>
+                                        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+                                    </div>
                                 </Card>
                             </div>
-                        </div>
-                    </TabsContent>
+                        );
+                    }
 
-                    <TabsContent value="transcript" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[32px] bg-white overflow-hidden">
-                            <CardContent className="p-0">
-                                <div className="divide-y divide-slate-100">
-                                    {transcripts.map((msg, i) => (
-                                        <div key={i} className={cn(
-                                            "p-8 flex gap-6",
-                                            msg.speaker === 'ai' ? "bg-slate-50/50" : "bg-white"
-                                        )}>
-                                            <div className={cn(
-                                                "w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-xs font-black",
-                                                msg.speaker === 'ai' ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-600"
-                                            )}>
-                                                {msg.speaker === 'ai' ? 'AI' : 'YOU'}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    {msg.speaker === 'ai' ? 'Arjuna AI' : sessionData.candidate_name || 'Candidate'}
-                                                </div>
-                                                <p className="text-slate-700 leading-relaxed font-medium">
-                                                    {msg.text}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
+                    return (
+                        <FeedbackReport
+                            data={reportData}
+                            isRecruiterView={true}
+                            themeKey={sessionId || 'recruiter-report'}
+                        />
+                    );
+                })()}
             </div>
         </div>
     );

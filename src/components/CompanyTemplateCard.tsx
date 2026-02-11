@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CompanyTemplate } from "@/types/company-types";
-import { Building2, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Building2, Loader2, CheckCircle2, ArrowRight, Clock } from "lucide-react";
 import { cn, getCompanyLogo } from "@/lib/utils";
 import Image from "next/image";
 
@@ -58,9 +58,15 @@ export function CompanyTemplateCard({ template, onSelect, isLoading }: CompanyTe
                                 {template.name}
                             </h3>
                             {template.industry && (
-                                <Badge variant="secondary" className="font-normal text-xs">
-                                    {template.industry}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="font-normal text-xs">
+                                        {template.industry}
+                                    </Badge>
+                                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
+                                        <Clock className="h-3 w-3" />
+                                        <span>30 Mins</span>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>

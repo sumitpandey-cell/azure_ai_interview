@@ -5,10 +5,8 @@ import { campaignService } from "@/services/recruiter/campaign.service";
 import {
     Link as LinkIcon,
     Copy,
-    MoreVertical,
     PlusCircle,
     Target,
-    Users,
     Calendar,
     Search,
     Zap,
@@ -17,18 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Campaign } from "@/services/recruiter/campaign.service";
 
 type CampaignWithSessionCount = Campaign & { interview_sessions: { id: string }[] };
@@ -55,6 +47,21 @@ export default function CampaignsPage() {
         }
     };
 
+    const handleCloseLink = async (id: string) => {
+        try {
+            const success = await campaignService.markCampaignConsumed(id);
+            if (success) {
+                toast.success("Campaign link closed successfully");
+                fetchCampaigns(); // Refresh list
+            } else {
+                toast.error("Failed to close campaign link");
+            }
+        } catch (error) {
+            console.error("Error closing campaign:", error);
+            toast.error("An error occurred while closing the campaign");
+        }
+    };
+
     const copyToClipboard = (token: string) => {
         const url = `${window.location.origin}/invite/${token}`;
         navigator.clipboard.writeText(url);
@@ -67,8 +74,43 @@ export default function CampaignsPage() {
     );
 
     if (loading) return (
-        <div className="h-[80vh] flex items-center justify-center">
-            <PremiumLogoLoader text="Refreshing Campaigns..." />
+        <div className="space-y-8 pb-12 max-w-7xl mx-auto animate-pulse">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-2xl bg-indigo-500/5 transition-transform group-hover:scale-105" />
+                        <Skeleton className="h-10 w-48 rounded-xl" />
+                    </div>
+                    <Skeleton className="h-4 w-64 rounded-lg" />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-64 rounded-2xl" />
+                    <Skeleton className="h-12 w-44 rounded-2xl" />
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex flex-col lg:flex-row lg:items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                        <div className="flex items-center gap-4 flex-1">
+                            <Skeleton className="w-12 h-12 rounded-xl" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-5 w-40 rounded" />
+                                <Skeleton className="h-3 w-24 rounded" />
+                            </div>
+                        </div>
+                        <div className="hidden md:flex gap-8 px-8 border-x border-slate-50 dark:border-slate-800 h-10">
+                            <Skeleton className="h-10 w-16 rounded" />
+                            <Skeleton className="h-10 w-16 rounded" />
+                        </div>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-10 w-10 rounded-xl" />
+                            <Skeleton className="h-10 w-24 rounded-xl" />
+                            <Skeleton className="h-10 w-10 rounded-xl" />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 
@@ -181,37 +223,18 @@ export default function CampaignsPage() {
                                             <Copy className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                                         </Button>
 
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="rounded-xl h-10 w-10 bg-slate-50 dark:bg-slate-800 shrink-0"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="rounded-xl p-2 border-slate-100 shadow-xl">
-                                                <DropdownMenuItem
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        router.push(`/recruiter/candidates?search=${campaign.title}`);
-                                                    }}
-                                                    className="rounded-lg font-bold py-2"
-                                                >
-                                                    <Users className="h-4 w-4 mr-2" />
-                                                    View Applicants
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="rounded-lg font-bold py-2 text-rose-600"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Zap className="h-4 w-4 mr-2" />
-                                                    Close Link
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <Button
+                                            variant="ghost"
+                                            className="h-10 px-4 rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 transition-colors shrink-0 font-bold text-[10px] uppercase tracking-wider gap-2"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (isActive) handleCloseLink(campaign.id);
+                                            }}
+                                            disabled={!isActive}
+                                        >
+                                            <Zap className="h-3.5 w-3.5" />
+                                            Close Link
+                                        </Button>
 
                                         <div className="flex-1 lg:hidden" />
 

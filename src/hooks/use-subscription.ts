@@ -79,28 +79,40 @@ export function useSubscription(sessionId?: string) {
     const hasFetchedRef = useRef<string | null>(null);
 
     const checkEligibility = useCallback(async () => {
-        // CASE 1: Guest Session (B2B)
-        if (sessionId && !user?.id) {
+        // CASE 1: Session-based check (B2B or Campaign)
+        if (sessionId) {
             try {
+                // Determine if this is a campaign/delegated session
+                // We trust the RPC to tell us who is paying
                 const { isAllowed, remainingSeconds, billingUserId } = await subscriptionService.checkSessionEligibility(sessionId as string);
 
-                if (billingUserId) {
-                    setBillingId(billingUserId);
+                // If billingUserId is NOT the current user, it's a recruiter-sponsored session (B2B)
+                // We MUST use the RPC results and NOT query the recruiter's profile directly (RLS restriction)
+                const isRecruiterSponsored = billingUserId && user?.id && billingUserId !== user.id;
+                const isGuest = !user?.id;
+
+                if (isRecruiterSponsored || isGuest) {
+                    if (billingUserId) {
+                        setBillingId(billingUserId);
+                    }
+
+                    setStatus({
+                        type: 'paid', // Sponsored sessions are treated as paid
+                        plan_name: isRecruiterSponsored ? 'Recruiter Sponsored' : 'Guest Session',
+                        allowed: isAllowed,
+                        remaining_seconds: remainingSeconds,
+                        plan_seconds: 6000, // Default allowance for display
+                        loading: false
+                    });
+                    return;
                 }
 
-                setStatus({
-                    type: 'paid', // Treat as paid since it's recruiter-sponsored
-                    plan_name: 'Recruiter Sponsored',
-                    allowed: isAllowed,
-                    remaining_seconds: remainingSeconds,
-                    plan_seconds: 6000,
-                    loading: false
-                });
-                return;
+                // If it's the student's own session (billingUserId === user.id), 
+                // we fall through to CASE 2 to fetch full subscription details (Pro, etc.)
+                // since they have permission to read their own profile.
             } catch (error) {
-                console.error('Error checking eligibility for guest:', error);
-                setStatus(prev => ({ ...prev, loading: false, allowed: true }));
-                return;
+                console.error('Error in session eligibility check:', error);
+                // Fallback to normal check
             }
         }
 

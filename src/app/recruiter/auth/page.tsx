@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,6 @@ function RecruiterAuthContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirectTo') || '/recruiter/dashboard';
-    const pendingRedirect = useRef(false);
 
     const signUpForm = useForm<SignUpForm>({
         resolver: zodResolver(signUpSchema),
@@ -60,12 +59,8 @@ function RecruiterAuthContent() {
         },
     });
 
-    useEffect(() => {
-        if (user && (pendingRedirect.current || !isSignUp)) {
-            pendingRedirect.current = false;
-            router.push(redirectTo);
-        }
-    }, [user, router, redirectTo, isSignUp]);
+    // Middleware handles redirection if a user tries to access /auth while already logged in.
+    // Manual login redirection is now handled in handleSignIn to ensure role-verification completes first.
 
     const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -91,29 +86,32 @@ function RecruiterAuthContent() {
 
             const { data: { session } } = await supabase.auth.getSession();
 
-            if (session && avatarFile) {
-                const fileExt = avatarFile.name.split('.').pop();
-                const fileName = `avatar.${fileExt}`;
-                const filePath = `${session.user.id}/${fileName}`;
+            if (session) {
+                if (avatarFile) {
+                    const fileExt = avatarFile.name.split('.').pop();
+                    const fileName = `avatar.${fileExt}`;
+                    const filePath = `${session.user.id}/${fileName}`;
 
-                const { error: uploadError } = await supabase.storage
-                    .from('avatars')
-                    .upload(filePath, avatarFile, { upsert: true });
-
-                if (!uploadError) {
-                    const { data: { publicUrl } } = supabase.storage
+                    const { error: uploadError } = await supabase.storage
                         .from('avatars')
-                        .getPublicUrl(filePath);
+                        .upload(filePath, avatarFile, { upsert: true });
 
-                    await supabase.auth.updateUser({
-                        data: { avatar_url: publicUrl }
-                    });
+                    if (!uploadError) {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('avatars')
+                            .getPublicUrl(filePath);
 
-                    await supabase
-                        .from('profiles')
-                        .update({ avatar_url: publicUrl })
-                        .eq('id', session.user.id);
+                        await supabase.auth.updateUser({
+                            data: { avatar_url: publicUrl }
+                        });
+
+                        await supabase
+                            .from('profiles')
+                            .update({ avatar_url: publicUrl })
+                            .eq('id', session.user.id);
+                    }
                 }
+                router.push(redirectTo);
             }
 
             signUpForm.reset();
@@ -126,10 +124,10 @@ function RecruiterAuthContent() {
 
     const handleSignIn = async (values: SignInForm) => {
         try {
-            pendingRedirect.current = true;
-            await signIn(values.email, values.password);
+            await signIn(values.email, values.password, 'recruiter');
+            // If sign-in and role check pass, manually redirect
+            router.push(redirectTo);
         } catch (error) {
-            pendingRedirect.current = false;
             console.error("Error signing in:", error);
         }
     };

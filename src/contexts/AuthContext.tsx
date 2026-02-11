@@ -17,7 +17,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, userType?: 'student' | 'recruiter', orgName?: string, gender?: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, requiredType?: 'student' | 'recruiter') => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -85,14 +85,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, requiredType?: 'student' | 'recruiter') => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+
+      if (requiredType && data.user) {
+        // Fetch profile to check user_type
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          await supabase.auth.signOut();
+          throw new Error("Could not verify user role. Please try again.");
+        }
+
+        if (profile && profile.user_type !== requiredType) {
+          await supabase.auth.signOut();
+          throw new Error(`This account is registered as a ${profile.user_type}. Please use the correct login page.`);
+        }
+      }
 
       toast.success("Welcome back!");
     } catch (err: unknown) {

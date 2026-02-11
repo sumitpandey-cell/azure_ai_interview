@@ -418,14 +418,14 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
       <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden ml-0 h-screen relative">
         {/* Page Content */}
         <main className={cn(
-          "flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden pt-20 lg:pt-6 relative z-10 w-full",
-          isRecruiterPath ? "bg-slate-50/30" : "bg-background"
+          "flex-1 px-4 sm:px-6 lg:px-5 py-4 overflow-y-auto overflow-x-hidden pt-16 lg:pt-4 relative z-10 w-full",
+          isRecruiterPath ? "bg-slate-50/50 dark:bg-transparent" : "bg-background"
         )}>
           {isRecruiterPath && (
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-              <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] rounded-full" />
-              <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-purple-500/5 blur-[100px] rounded-full" />
-              <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+              <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 dark:bg-indigo-500/15 blur-[120px] rounded-full" />
+              <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-purple-500/10 dark:bg-purple-500/15 blur-[100px] rounded-full" />
+              <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-blue-500/10 dark:bg-blue-500/15 blur-[120px] rounded-full" />
             </div>
           )}
           <div

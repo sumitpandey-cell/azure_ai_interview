@@ -1,41 +1,22 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { formatDuration } from "@/lib/format-duration";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowRight, MessageSquare, Copy, Trash2, Clock, Play, RefreshCw, Target, Shield, Award, Activity, Star, Timer, XCircle, Download, CheckCircle2 } from "lucide-react";
-import dynamic from "next/dynamic";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Clock, Play, RefreshCw, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ReportRadarChart = dynamic(() => import("@/components/ReportRadarChart").then(mod => mod.ReportRadarChart), {
-    loading: () => <div className="h-[300px] w-full animate-pulse bg-muted/20 rounded-xl" />,
-    ssr: false
-});
 import { useInterviewStore } from "@/stores/use-interview-store";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
-import { useThemeKey } from "@/hooks/use-theme-key";
-import { downloadHTMLReport } from "@/lib/report-download";
 import { toast } from "sonner";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { ReportPageSkeleton } from "@/components/ReportPageSkeleton";
 import { ErrorSeverity, FeedbackError } from "@/lib/feedback-error";
 import { useFeedback } from "@/context/FeedbackContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import { SessionFeedback } from "@/components/SessionFeedback";
+
+import { FeedbackReport, type FeedbackReportData } from "@/components/FeedbackReport";
 
 interface InterviewSession {
     id: string;
@@ -88,7 +69,6 @@ export default function InterviewReport() {
     const [feedbackTimeout, setFeedbackTimeout] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [errorState, setErrorState] = useState<FeedbackError | null>(null);
-    const themeKey = useThemeKey();
 
     useEffect(() => {
         setMounted(true);
@@ -229,11 +209,13 @@ export default function InterviewReport() {
 
     const overallScore = session?.score || Math.round(overallSkills.reduce((acc: number, s: { score?: number }) => acc + (s.score || 0), 0) / (overallSkills.length || 1));
 
-    const reportData = {
+    const reportData: FeedbackReportData = {
         candidateName: userMetadata?.full_name || "Candidate",
         position: session?.position || "Interview Report",
+        interviewType: session?.interview_type,
         overallScore: overallScore,
         date: session ? new Date(session.created_at).toLocaleString() : "-",
+        durationSeconds: session?.duration_seconds || 0,
         executiveSummary: (typeof feedbackData.executiveSummary === 'string' ? feedbackData.executiveSummary : null) ||
             (typeof feedbackData.note === 'string' ? feedbackData.note : null) ||
             (typeof feedbackData.error === 'string' ? feedbackData.error : null) ||
@@ -245,7 +227,6 @@ export default function InterviewReport() {
         improvements: (Array.isArray(feedbackData.improvements) ? feedbackData.improvements : null) || ["Analysis not available for this session"],
         overallSkills: overallSkills,
         technicalSkills: technicalSkills,
-        skills: (Array.isArray(feedbackData.skills) ? feedbackData.skills : null) || overallSkills,
         actionPlan: (Array.isArray(feedbackData.actionPlan) ? feedbackData.actionPlan : null) || ["Wait for full AI report generation."],
         transcript: transcriptData.length > 0
             ? transcriptData
@@ -266,31 +247,12 @@ export default function InterviewReport() {
                         speaker: speaker,
                         text: cleanedText,
                         timestamp: m.timestamp || '-'
-                    } as TranscriptMessage;
+                    };
                 })
-                .filter((msg: TranscriptMessage) => msg.text.trim())
+                .filter((msg) => msg.text.trim())
             : [
                 { id: 1, speaker: "ai", text: "No transcript available. The interview may not have contained any recorded conversation.", timestamp: "-" },
             ],
-    };
-
-    const copyTranscriptToClipboard = async () => {
-        try {
-            const transcriptText = reportData.transcript
-                .map((msg: TranscriptMessage) => {
-                    const speakerRaw = msg.speaker.toLowerCase();
-                    const speaker = speakerRaw === 'ai' ? 'AI Interviewer' : 'Candidate';
-                    const timestamp = msg.timestamp ? ` [${msg.timestamp}]` : '';
-                    return `${speaker}${timestamp}:\n${msg.text}`;
-                })
-                .join('\n\n---\n\n');
-
-            await navigator.clipboard.writeText(transcriptText);
-            toast.success("Transcript copied to clipboard!");
-        } catch (error) {
-            toast.error("Failed to copy transcript");
-            console.error("Copy error:", error);
-        }
     };
 
     const handleDelete = async () => {
@@ -302,16 +264,6 @@ export default function InterviewReport() {
         } catch (error) {
             console.error("Error deleting session:", error);
             toast.error("Failed to delete report");
-        }
-    };
-
-    const downloadReport = () => {
-        try {
-            downloadHTMLReport(reportData);
-            toast.success("Report downloaded successfully!");
-        } catch (error) {
-            toast.error("Failed to download report");
-            console.error("Download error:", error);
         }
     };
 
@@ -465,258 +417,17 @@ export default function InterviewReport() {
                 }
 
                 return (
-                    <div className="w-full relative">
-                        <div className="relative mb-2">
-                            <div className="flex flex-col sm:flex-row lg:items-end justify-between gap-4 sm:gap-6 relative z-10">
-                                <div className="space-y-2 sm:space-y-3">
-                                    <div className="space-y-2">
-                                        <h1 className="text-xl sm:text-2xl md:text-2xl font-bold tracking-tight text-foreground leading-[1.1]">
-                                            {reportData.candidateName} <span className="text-primary">Reports</span>
-                                        </h1>
-                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 sm:mt-3">
-                                            <div className="px-4 py-1.5 rounded-full bg-card/80 dark:bg-card/40 backdrop-blur-3xl border border-border shadow-md dark:shadow-2xl">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary leading-none">{reportData.position}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 dark:bg-muted/50 border border-border/80 dark:border-border shadow-sm">
-                                                <div className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,195,77,0.5)]" />
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{session.interview_type.replace('_', ' ')} Session</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-3 lg:pb-2">
-                                    <Button onClick={downloadReport} className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl border border-border/80 dark:border-border hover:bg-card/90 dark:hover:bg-card/60 text-foreground font-black uppercase tracking-[0.15em] text-[10px] transition-all shadow-md dark:shadow-2xl group/btn">
-                                        <Download className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
-                                        <span className="hidden lg:inline">Export Insights</span>
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-xl flex items-center justify-center p-0 shrink-0">
-                                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent className="rounded-2xl border border-border shadow-3xl p-6 sm:p-10 bg-card/90 backdrop-blur-3xl max-w-[90vw] sm:max-w-lg">
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle className="text-2xl font-bold uppercase tracking-tight text-foreground">Delete Feedback Report?</AlertDialogTitle>
-                                                <AlertDialogDescription className="text-muted-foreground font-medium">This action will permanently remove this feedback analysis from your profile. This data cannot be recovered.</AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter className="mt-6 sm:mt-8 gap-3 sm:gap-4 flex-col sm:flex-row">
-                                                <AlertDialogCancel className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl sm:rounded-2xl font-bold uppercase tracking-widest text-[10px] bg-muted hover:bg-muted/80 text-foreground">Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleDelete} className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl sm:rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-rose-600/20">Confirm Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                            </div>
-                            <div className="absolute -left-24 -top-24 h-[400px] w-[400px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-                            <div className="absolute right-0 top-0 h-[300px] w-[300px] bg-accent/5 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                        <FeedbackReport
+                            data={reportData}
+                            onGenerateRoadmap={() => router.push('/roadmap')}
+                            onDelete={handleDelete}
+                            themeKey={sessionId || 'student-report'}
+                        />
+
+                        <div className="mt-8">
+                            <SessionFeedback sessionId={sessionId!} />
                         </div>
-
-                        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
-                            <Card className="xl:col-span-1 border border-border/80 dark:border-white/5 shadow-lg dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative group">
-                                <CardContent className="p-5 sm:p-6 flex flex-col items-center justify-center h-full gap-5 sm:gap-6 text-center relative z-10">
-                                    <div className="relative h-28 w-28 sm:h-40 sm:w-40 group-hover:scale-105 transition-all duration-1000">
-                                        <svg className="h-full w-full transform -rotate-90 filter drop-shadow-[0_0_15px_rgba(var(--primary),0.2)]" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="42" className="fill-none stroke-black/5 dark:stroke-white/5" strokeWidth="8" />
-                                            <circle cx="50" cy="50" r="42" strokeLinecap="round" className={cn("fill-none transition-all duration-1500 ease-out", reportData.overallScore >= 80 ? "stroke-emerald-500" : reportData.overallScore >= 60 ? "stroke-primary" : "stroke-rose-500")} strokeWidth="8" strokeDasharray={`${reportData.overallScore * 2.639}, 263.9`} />
-                                        </svg>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-4xl sm:text-5xl font-black text-foreground tabular-nums tracking-tighter">{reportData.overallScore}</span>
-                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Overall Score</span>
-                                        </div>
-                                    </div>
-                                    <div className={cn("px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.2em] border shadow-xl backdrop-blur-xl", reportData.overallScore >= 70 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-500" : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-500")}>
-                                        {reportData.overallScore >= 70 ? 'Strong Match' : 'Improvement Recommended'}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="xl:col-span-3 border border-border/80 dark:border-white/5 shadow-lg dark:shadow-3xl bg-card/80 dark:bg-card/40 backdrop-blur-3xl rounded-2xl sm:rounded-2xl overflow-hidden relative">
-                                <CardContent className="p-6 md:p-8 relative z-10">
-                                    <div className="flex flex-col h-full gap-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <h3 className="text-xl md:text-2xl font-bold tracking-tight uppercase text-foreground">Executive Summary</h3>
-                                                <p className="text-[10px] text-primary font-bold uppercase tracking-[0.4em]">Detailed Assessment</p>
-                                            </div>
-                                            <div className="hidden sm:flex gap-4 px-4 py-2 rounded-xl bg-muted/30 border border-border backdrop-blur-xl">
-                                                <div className="flex flex-col items-end">
-                                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Date</span>
-                                                    <span className="text-xs font-black text-foreground/80">{reportData.date}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <p className="text-sm md:text-base font-bold leading-relaxed italic border-l-4 border-primary/30 pl-4 py-2 bg-primary/5 rounded-r-xl">
-                                            &quot;{reportData.executiveSummary}&quot;
-                                        </p>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-border">
-                                            {[
-                                                { label: "Duration", value: formatDuration(session.duration_seconds || 0), icon: Timer, color: "text-amber-500" },
-                                                { label: "Skills", value: reportData.overallSkills.length, icon: Target, color: "text-primary" },
-                                                { label: "AI Messages", value: reportData.transcript.filter(m => m.speaker === 'ai').length, icon: MessageSquare, color: "text-blue-500" },
-                                                { label: "Rank", value: reportData.rankGrade, icon: Award, color: "text-emerald-500" }
-                                            ].map((m, i) => (
-                                                <div key={i} className="flex items-center gap-3">
-                                                    <div className={cn("h-10 w-10 rounded-xl bg-muted flex items-center justify-center border border-border", m.color)}>
-                                                        <m.icon className="h-5 w-5" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{m.label}</span>
-                                                        <span className="text-xs font-black text-foreground uppercase">{m.value}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        <Tabs defaultValue="insights" className="w-full">
-                            <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 mb-8 inline-flex border border-border backdrop-blur-3xl shadow-xl overflow-x-auto no-scrollbar max-w-full">
-                                <TabsTrigger value="insights" className="rounded-2xl px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all">Analysis</TabsTrigger>
-                                <TabsTrigger value="skills" className="rounded-2xl px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all">Skills</TabsTrigger>
-                                <TabsTrigger value="transcript" className="rounded-2xl px-12 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] h-full transition-all">Transcript</TabsTrigger>
-                            </TabsList>
-
-                            <TabsContent value="insights" className="space-y-8 animate-in fade-in slide-in-from-top-4">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden relative">
-                                        <CardHeader className="p-6 pb-0">
-                                            <h3 className="text-xl font-bold flex items-center gap-3 uppercase text-emerald-500">
-                                                <Shield className="h-5 w-5" /> Key Strengths
-                                            </h3>
-                                        </CardHeader>
-                                        <CardContent className="p-6 space-y-3">
-                                            {reportData.strengths.map((item, i) => (
-                                                <div key={i} className="flex gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                                    <p className="text-xs font-bold text-foreground/80">{item}</p>
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden relative">
-                                        <CardHeader className="p-6 pb-0">
-                                            <h3 className="text-xl font-bold flex items-center gap-3 uppercase text-rose-500">
-                                                <Activity className="h-5 w-5" /> Dev Areas
-                                            </h3>
-                                        </CardHeader>
-                                        <CardContent className="p-6 space-y-3">
-                                            {reportData.improvements.map((item, i) => (
-                                                <div key={i} className="flex gap-3 p-4 rounded-xl bg-rose-500/5 border border-rose-500/10">
-                                                    <XCircle className="h-4 w-4 text-rose-500 shrink-0" />
-                                                    <p className="text-xs font-bold text-foreground/80">{item}</p>
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </Card>
-                                </div>
-
-                                <Card className="border border-primary/20 shadow-lg bg-primary/5 backdrop-blur-3xl rounded-3xl overflow-hidden">
-                                    <CardContent className="p-8">
-                                        <div className="flex flex-col lg:flex-row items-center gap-8 text-center lg:text-left">
-                                            <Star className="h-12 w-12 text-primary" />
-                                            <div className="flex-1 space-y-2">
-                                                <h3 className="text-2xl font-bold uppercase">Self-Improvement Roadmaps</h3>
-                                                <p className="text-muted-foreground">Ready to level up? Get a personalized learning path based on this interview.</p>
-                                            </div>
-                                            <Button onClick={() => router.push('/roadmap')} className="h-14 px-8 rounded-xl bg-primary text-xs font-bold uppercase tracking-widest">
-                                                Generate Roadmap <ArrowRight className="h-4 w-4 ml-2" />
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-
-                            <TabsContent value="skills" className="space-y-10 animate-in fade-in">
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <Card className="lg:col-span-1 border border-border shadow-3xl bg-card/40 backdrop-blur-3xl rounded-2xl p-6">
-                                        <h3 className="text-xl font-bold uppercase mb-6">Skill Map</h3>
-                                        <ReportRadarChart data={reportData.overallSkills} themeKey={themeKey} />
-                                    </Card>
-                                    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        {reportData.overallSkills.map((skill, i) => (
-                                            <Card key={i} className="border border-border/50 bg-card/50 p-6 rounded-2xl">
-                                                <div className="flex justify-between mb-4">
-                                                    <span className="font-bold uppercase text-sm">{skill.name}</span>
-                                                    <span className="font-bold text-primary">{skill.score}%</span>
-                                                </div>
-                                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mb-4">
-                                                    <div className="h-full bg-primary" style={{ width: `${skill.score}%` }} />
-                                                </div>
-                                                <p className="text-xs text-muted-foreground line-clamp-2">{skill.feedback}</p>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {reportData.technicalSkills && reportData.technicalSkills.length > 0 && (
-                                    <div className="space-y-6">
-                                        <h3 className="text-xl font-bold uppercase flex items-center gap-2">
-                                            <Target className="h-5 w-5 text-primary" />
-                                            Technical Competencies
-                                        </h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {reportData.technicalSkills.map((skill, i) => (
-                                                <Card key={i} className="border border-border/50 bg-card/50 p-6 rounded-2xl hover:bg-card/70 transition-colors">
-                                                    <div className="flex flex-col gap-4">
-                                                        <div className="flex justify-between items-start">
-                                                            <span className="font-bold uppercase text-xs tracking-wide text-foreground/90">{skill.name}</span>
-                                                            <div className={cn(
-                                                                "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border",
-                                                                skill.score >= 70 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
-                                                                    skill.score >= 40 ? "bg-primary/10 border-primary/20 text-primary" :
-                                                                        "bg-rose-500/10 border-rose-500/20 text-rose-500"
-                                                            )}>
-                                                                {skill.score}%
-                                                            </div>
-                                                        </div>
-                                                        <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                                                            <div
-                                                                className={cn("h-full transition-all duration-1000 ease-out",
-                                                                    skill.score >= 70 ? "bg-emerald-500" :
-                                                                        skill.score >= 40 ? "bg-primary" :
-                                                                            "bg-rose-500"
-                                                                )}
-                                                                style={{ width: `${skill.score}%` }}
-                                                            />
-                                                        </div>
-                                                        {skill.feedback && (
-                                                            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-                                                                {skill.feedback}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="transcript" className="animate-in fade-in">
-                                <Card className="border border-border bg-card/40 backdrop-blur-3xl rounded-2xl overflow-hidden">
-                                    <CardHeader className="p-6 border-b border-border bg-muted/20 flex flex-row items-center justify-between">
-                                        <h3 className="text-xl font-bold uppercase">Transcript</h3>
-                                        <Button onClick={copyTranscriptToClipboard} variant="outline" size="sm" className="text-[10px] font-black uppercase tracking-widest"><Copy className="h-3.5 w-3.5 mr-2" />Copy</Button>
-                                    </CardHeader>
-                                    <CardContent className="p-6 space-y-6 max-h-[600px] overflow-y-auto">
-                                        {reportData.transcript.map((msg, i) => (
-                                            <div key={i} className={cn("flex flex-col gap-2 max-w-[80%] animate-in slide-in-from-bottom-2", msg.speaker === 'ai' ? "items-start" : "ml-auto items-end")}>
-                                                <span className="text-[9px] font-bold uppercase opacity-50 px-2">{msg.speaker === 'ai' ? 'Interviewer' : 'You'}</span>
-                                                <div className={cn("p-4 rounded-2xl text-sm leading-relaxed", msg.speaker === 'ai' ? "bg-muted rounded-tl-none" : "bg-primary text-primary-foreground rounded-tr-none")}>
-                                                    {msg.text}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        </Tabs>
-
-                        <SessionFeedback sessionId={sessionId!} />
                     </div>
                 );
             })()}

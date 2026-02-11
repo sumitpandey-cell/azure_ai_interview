@@ -76,17 +76,17 @@ export default function RecruiterDashboard() {
                         {greeting()}, <span className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">{user?.user_metadata?.full_name?.split(' ')[0] || 'Recruiter'}</span>
                     </h1>
                     <p className="text-muted-foreground font-medium text-sm mt-1">
-                        Your hiring pipeline is looking <span className="text-primary font-bold">active</span>. 
+                        Your hiring pipeline is looking <span className="text-primary font-bold">active</span>.
                         Screening <span className="text-foreground font-bold">{stats.totalApplicants}</span> candidates across <span className="text-foreground font-bold">{campaigns.length}</span> links.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3 self-start md:self-center">
-                    <div className="flex items-center gap-1.5 bg-card/50 backdrop-blur-sm border border-border/50 p-1 rounded-xl mr-2">
+                    <div className="flex items-center gap-1.5 glass-panel p-1 rounded-xl mr-2">
                         <NotificationBell />
                         <ThemeToggle />
                     </div>
-                    
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 border border-border/50 hover:bg-muted/50 transition-all overflow-hidden">
@@ -136,8 +136,8 @@ export default function RecruiterDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 + 0.2 }}
                     >
-                        <Card className="border-border/50 bg-card/40 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 rounded-2xl h-full relative overflow-hidden group">
-                            <div className={cn("absolute right-0 top-0 w-20 h-20 blur-3xl opacity-10 transition-transform duration-500 group-hover:scale-150", stat.bg)} />
+                        <Card className="glass-card hover:border-primary/50 transition-all duration-500 rounded-2xl h-full relative overflow-hidden group">
+                            <div className={cn("absolute right-0 top-0 w-24 h-24 blur-3xl opacity-20 transition-transform duration-700 group-hover:scale-150", stat.bg)} />
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
                                     <div className={cn("p-2.5 rounded-xl border", stat.bg, stat.border)}>
@@ -202,16 +202,16 @@ export default function RecruiterDashboard() {
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.05 + 0.3 }}
                                     >
-                                        <Card 
-                                            className="group hover:border-primary/50 transition-all duration-300 bg-card/40 backdrop-blur-sm border-border/50 hover:shadow-xl hover:shadow-primary/5 rounded-2xl cursor-pointer overflow-hidden" 
+                                        <Card
+                                            className="group glass-card hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 rounded-2xl cursor-pointer overflow-hidden"
                                             onClick={() => router.push(`/recruiter/campaigns`)}
                                         >
                                             <CardHeader className="p-5 pb-2">
                                                 <div className="flex justify-between items-start">
                                                     <Badge className={cn(
                                                         "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border-0",
-                                                        campaign.is_active 
-                                                            ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-500/20" 
+                                                        campaign.is_active
+                                                            ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-500/20"
                                                             : "bg-slate-500/10 text-slate-600 ring-1 ring-inset ring-slate-500/20"
                                                     )}>
                                                         {campaign.is_active ? "Live" : "Ended"}
@@ -231,7 +231,7 @@ export default function RecruiterDashboard() {
                                                         <span className="text-sm font-black text-primary">{campaign.avg_score || 0}%</span>
                                                     </div>
                                                     <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                                                        <motion.div 
+                                                        <motion.div
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${campaign.avg_score || 0}%` }}
                                                             className="h-full bg-primary rounded-full shadow-[0_0_8px_rgba(168,85,247,0.3)]"
@@ -254,8 +254,8 @@ export default function RecruiterDashboard() {
                         <h2 className="text-xl font-bold tracking-tight">Top Merit</h2>
                     </div>
 
-                    <Card className="border-border/50 bg-card/40 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
-                        <CardHeader className="p-5 bg-muted/5 border-b border-border/30">
+                    <Card className="glass-card rounded-2xl overflow-hidden shadow-sm border-none">
+                        <CardHeader className="p-5 bg-primary/5 border-b border-white/5">
                             <CardTitle className="text-xs font-black text-muted-foreground uppercase tracking-widest">Candidate Leaderboard</CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -281,7 +281,7 @@ export default function RecruiterDashboard() {
                             ) : (
                                 <div className="divide-y divide-border/20">
                                     {topCandidates.map((candidate, idx) => (
-                                        <motion.div 
+                                        <motion.div
                                             key={candidate.id}
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
@@ -312,22 +312,6 @@ export default function RecruiterDashboard() {
                                 <Link href="/recruiter/candidates" className="gap-2">
                                     Explore Talent Pool <ChevronRight className="h-3 w-3" />
                                 </Link>
-                            </Button>
-                        </div>
-                    </Card>
-
-                    {/* Quick Action Card */}
-                    <Card className="bg-indigo-600 border-none shadow-xl shadow-indigo-900/20 p-6 relative overflow-hidden group rounded-2xl">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform duration-700 pointer-events-none">
-                            <Zap className="h-32 w-32 text-white" />
-                        </div>
-                        <div className="relative z-10 space-y-4">
-                            <h4 className="text-lg font-black text-white leading-tight">Screen candidates effortlessly</h4>
-                            <p className="text-[13px] text-indigo-100 font-medium leading-relaxed">
-                                Use our templates to launch targeted screening for any role in minutes.
-                            </p>
-                            <Button className="w-full bg-white text-indigo-600 hover:bg-indigo-50 font-black rounded-xl shadow-lg border-none h-11 transition-all active:scale-95">
-                                Browse Templates
                             </Button>
                         </div>
                     </Card>

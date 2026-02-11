@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Zap } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, CheckCircle2, Sparkles, ArrowLeft, Zap, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -633,6 +633,22 @@ export default function InterviewSetup() {
                                     : "You have reached your interview limit. Please upgrade your plan."}
                             </p>
                         )}
+
+                        {/* Duration Display */}
+                        <div className="bg-card/40 backdrop-blur-md p-5 rounded-2xl border border-border/50 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-primary" />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-sans">Session Duration</span>
+                                </div>
+                                <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                                    {session?.config?.duration || 30} Minutes
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed font-sans">
+                                The AI agent will pace the interview to fill this time. This duration is fixed based on your plan or template requirements.
+                            </p>
+                        </div>
 
                         {!isMicOn && allowed && remaining_seconds > 0 && (
                             <p className="text-center text-[10px] text-rose-500 font-bold mt-3 animate-pulse">

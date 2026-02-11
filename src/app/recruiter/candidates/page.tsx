@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { InterviewSession } from "@/services/interview.service";
@@ -64,8 +64,46 @@ export default function CandidatesPage() {
     });
 
     if (loading) return (
-        <div className="h-[80vh] flex items-center justify-center">
-            <PremiumLogoLoader text="Analyzing Talent Pool..." />
+        <div className="space-y-8 pb-12 max-w-7xl mx-auto animate-pulse">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 border border-primary/10 bg-primary/10 rounded-2xl" />
+                        <Skeleton className="h-10 w-48 rounded-xl" />
+                    </div>
+                    <Skeleton className="h-4 w-64 rounded-lg" />
+                </div>
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-64 md:w-80 rounded-2xl" />
+                    <Skeleton className="h-12 w-12 rounded-2xl" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-card/40 border border-border/50 p-6 rounded-3xl h-24">
+                        <Skeleton className="h-3 w-20 mb-2" />
+                        <Skeleton className="h-8 w-12" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-xl" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-64" />
+                        </div>
+                        <div className="hidden lg:flex gap-10">
+                            <Skeleton className="h-10 w-16" />
+                            <Skeleton className="h-10 w-16" />
+                        </div>
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 

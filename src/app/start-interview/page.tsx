@@ -52,6 +52,7 @@ const formSchema = z.object({
     experienceLevel: z.string().optional(),
     skills: z.string().optional(),
     jobDescription: z.string().optional(),
+    duration: z.number().min(10).max(30).default(30),
 });
 
 const COMMON_ROLES = [
@@ -123,6 +124,7 @@ function StartInterviewContent() {
             role: "",
             experienceLevel: "",
             skills: "",
+            duration: 30,
         },
     });
 
@@ -279,6 +281,7 @@ function StartInterviewContent() {
     const handleResumeContinue = async (useResume: boolean) => {
         if (!pendingValues) return;
         setShowResumeCheck(false);
+        // Execute interview with pending values and resume choice
         await executeStartInterview(pendingValues, useResume);
     };
 
@@ -290,6 +293,7 @@ function StartInterviewContent() {
                 skills: skillsList,
                 jobDescription: values.jobDescription || null,
                 difficulty: values.difficulty,
+                duration: values.duration,
             };
 
 

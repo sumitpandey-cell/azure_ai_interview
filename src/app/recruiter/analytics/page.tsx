@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
     BarChart3,
     Calendar,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRecruiterStore } from "@/stores";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -25,20 +26,95 @@ import {
     Bar,
     Cell
 } from 'recharts';
+import { toast } from "sonner";
 
 export default function AnalyticsPage() {
+    const router = useRouter();
     const { user } = useAuth();
     const { campaigns, loading, fetchDashboardData } = useRecruiterStore();
     const [isMounted, setIsMounted] = useState(false);
+    const [selectedPeriod, setSelectedPeriod] = useState<'7D' | '30D'>('30D');
 
     useEffect(() => {
         setIsMounted(true);
         if (user) fetchDashboardData(user.id);
     }, [user, fetchDashboardData]);
 
+    const handleExportReport = () => {
+        try {
+            if (campaigns.length === 0) {
+                toast.error("No data available to export");
+                return;
+            }
+
+            const headers = ["Campaign Title", "Position", "Applicants", "Average Score", "Status", "Date Created"];
+            const csvRows = campaigns.map(c => [
+                `"${c.title.replace(/"/g, '""')}"`,
+                `"${c.position.replace(/"/g, '""')}"`,
+                c.applicant_count || 0,
+                `${c.avg_score || 0}%`,
+                c.is_active ? "Active" : "Inactive",
+                new Date(c.created_at).toLocaleDateString()
+            ].join(","));
+
+            const csvContent = [headers.join(","), ...csvRows].join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Hiring_Analytics_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success("Analytics report exported successfully!");
+        } catch (error) {
+            console.error("Export error:", error);
+            toast.error("Failed to export report");
+        }
+    };
+
     if (!isMounted || loading) return (
-        <div className="h-[80vh] flex items-center justify-center">
-            <PremiumLogoLoader text="Crunching numbers..." />
+        <div className="space-y-8 pb-12 max-w-7xl mx-auto animate-pulse">
+            <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 border border-primary/20 bg-primary/10 rounded-2xl" />
+                        <Skeleton className="h-10 w-48 rounded-xl" />
+                    </div>
+                    <Skeleton className="h-4 w-64 rounded-lg" />
+                </div>
+                <Skeleton className="h-12 w-40 rounded-2xl" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-card/40 backdrop-blur-md border border-border/50 p-8 rounded-[2.5rem] relative overflow-hidden">
+                        <div className="flex justify-between items-start mb-4">
+                            <Skeleton className="h-12 w-12 rounded-2xl bg-primary/10" />
+                            <Skeleton className="h-6 w-12 rounded-full" />
+                        </div>
+                        <Skeleton className="h-10 w-24 mb-1 rounded-lg" />
+                        <Skeleton className="h-4 w-32 mb-3 rounded-lg" />
+                        <Skeleton className="h-3 w-40 rounded-lg" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {[1, 2].map((i) => (
+                    <div key={i} className="bg-card/40 backdrop-blur-md border border-border/50 p-8 rounded-[2.5rem] h-[400px]">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <Skeleton className="h-7 w-48 mb-2 rounded-lg" />
+                                <Skeleton className="h-4 w-32 rounded-lg" />
+                            </div>
+                            <Skeleton className="h-8 w-16 rounded-xl" />
+                        </div>
+                        <Skeleton className="h-[250px] w-full rounded-2xl opacity-10" />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 
@@ -74,7 +150,10 @@ export default function AnalyticsPage() {
                     <p className="text-muted-foreground font-medium">Deep dive into your organization&apos;s screening performance.</p>
                 </div>
 
-                <Button className="rounded-2xl gap-2 font-bold h-12">
+                <Button
+                    onClick={handleExportReport}
+                    className="rounded-2xl gap-2 font-bold h-12"
+                >
                     <Download className="h-4 w-4" />
                     Export Report
                 </Button>
@@ -111,8 +190,22 @@ export default function AnalyticsPage() {
                             <p className="text-xs font-bold text-muted-foreground mt-1">Daily candidate flow tracking</p>
                         </div>
                         <div className="flex gap-1 bg-background/50 p-1 rounded-xl">
-                            <Button size="sm" variant="ghost" className="h-7 text-[10px] font-black rounded-lg">7D</Button>
-                            <Button size="sm" variant="secondary" className="h-7 text-[10px] font-black rounded-lg">30D</Button>
+                            <Button
+                                size="sm"
+                                variant={selectedPeriod === '7D' ? "secondary" : "ghost"}
+                                className="h-7 text-[10px] font-black rounded-lg"
+                                onClick={() => setSelectedPeriod('7D')}
+                            >
+                                7D
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant={selectedPeriod === '30D' ? "secondary" : "ghost"}
+                                className="h-7 text-[10px] font-black rounded-lg"
+                                onClick={() => setSelectedPeriod('30D')}
+                            >
+                                30D
+                            </Button>
                         </div>
                     </CardHeader>
                     <div className="h-[300px] w-full">
@@ -211,7 +304,13 @@ export default function AnalyticsPage() {
                         <CardTitle className="text-xl font-black tracking-tight">Link Performance</CardTitle>
                         <p className="text-xs font-bold text-muted-foreground mt-1">Comparing results across active campaigns</p>
                     </div>
-                    <Button variant="ghost" className="text-xs font-black">View All</Button>
+                    <Button
+                        variant="ghost"
+                        className="text-xs font-black"
+                        onClick={() => router.push('/recruiter/campaigns')}
+                    >
+                        View All
+                    </Button>
                 </CardHeader>
                 <div className="space-y-4">
                     {campaigns.slice(0, 5).map((campaign, i) => (

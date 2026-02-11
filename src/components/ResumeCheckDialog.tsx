@@ -212,7 +212,7 @@ export function ResumeCheckDialog({
                                 <Button
                                     variant="outline"
                                     onClick={() => router.push('/settings')}
-                                    className="h-11 px-8 rounded-xl font-bold text-xs uppercase tracking-widest border-border hover:bg-muted group"
+                                    className="h-11 px-8 rounded-xl font-bold text-xs uppercase tracking-widest border-border hover:bg-muted"
                                 >
                                     Go to Settings
                                     <ExternalLink className="ml-2 h-3.5 w-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
