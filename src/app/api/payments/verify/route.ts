@@ -44,12 +44,20 @@ export async function GET(req: Request) {
 
             if (userId && planId) {
                 const supabase = await createAdminClient();
-                const result = await subscriptionService.createSubscription(userId, planId, supabase);
-                if (!result) {
-                    console.error(`❌ Failed to create subscription record for ${userId}`);
+                // createSubscription now handles idempotency internally via orderId
+                const { success, status } = await subscriptionService.createSubscription(userId, planId, orderId, supabase);
+
+                if (!success) {
+                    console.error(`❌ Failed to create or retrieve subscription record for ${userId}`);
+                    // If it failed for a reason other than being processed, we might want to show an error
+                }
+
+                if (status === 'already_processed') {
+                    // Redirect to dashboard with a specific message saying it was already processed
+                    return NextResponse.redirect(new URL("/dashboard?payment=already_processed&refresh=true", req.url));
                 }
             } else {
-                console.error(`❌ Missing UserID (${userId}) or PlanID (${planId}) from order note`);
+                console.error(`❌ Missing UserID (${userId}) or PlanID (${planId}) from order note/details`);
             }
             return NextResponse.redirect(new URL("/dashboard?payment=success&refresh=true", req.url));
         }

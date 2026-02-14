@@ -47,7 +47,7 @@ import { format } from "date-fns";
 
 type SettingsSection = "general" | "resume" | "appearance" | "notifications" | "security" | "billing";
 
-type TransactionItem = Tables<"subscriptions"> & { plans?: { name: string } | null };
+type TransactionItem = Tables<"credit_transactions">;
 
 export default function Settings() {
     const { user } = useAuth();
@@ -757,8 +757,11 @@ export default function Settings() {
                                         <div className="divide-y divide-border">
                                             {transactions
                                                 .map((tx) => {
-                                                    const isPurchase = !!tx.plan_id;
-                                                    const planName = tx.plans?.name || "Welcome Bonus";
+                                                    const isPurchase = tx.type === 'purchase' || tx.type === 'payment';
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    const planName = tx.description || (tx.metadata as any)?.plan_name || "Credit Transaction";
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    const amount = tx.amount_seconds || (tx as any).amount || 0;
 
                                                     return (
                                                         <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-muted/40 dark:hover:bg-muted/30 transition-colors group border-b border-border/40 last:border-0">
@@ -782,7 +785,7 @@ export default function Settings() {
 
                                                             <div className="text-right">
                                                                 <p className="text-sm font-black tabular-nums text-emerald-600 dark:text-emerald-500">
-                                                                    +{Math.floor(tx.plan_seconds / 60)} min
+                                                                    +{Math.floor(amount / 60)} min
                                                                 </p>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{isPurchase ? "Purchase" : "System"}</p>
                                                             </div>

@@ -1,9 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate, Json } from "@/integrations/supabase/types";
+import type { Tables, Json } from "@/integrations/supabase/types";
 
-export type Subscription = Tables<"subscriptions">;
-export type SubscriptionInsert = TablesInsert<"subscriptions">;
-export type SubscriptionUpdate = TablesUpdate<"subscriptions">;
 export type Plan = Tables<"plans">;
 
 
@@ -39,66 +36,130 @@ export const subscriptionService = {
     /**
      * Get user's current subscription
      */
-    async getSubscription(userId: string, client = supabase): Promise<Subscription | null> {
+    /**
+     * Get user's current subscription by looking at the latest payment transaction
+     */
+    async getSubscription(userId: string, client = supabase) {
         try {
-            const { data, error } = await client
-                .from("subscriptions")
-                .select("*, plans(name)")
+            // Fetch the most recent successful payment transaction
+            const { data: latestPayment, error } = await client
+                .from("credit_transactions")
+                .select("*")
                 .eq("user_id", userId)
+                .eq("type", "payment")
                 .order("created_at", { ascending: false })
                 .limit(1)
+                .maybeSingle();
+
+            if (error || !latestPayment) {
+                return null;
+            }
+
+            const metadata = latestPayment.metadata as { plan_id?: string };
+            const planId = metadata?.plan_id;
+
+            if (!planId) return null;
+
+            // Fetch current plan details to get name and allowance
+            const { data: plan } = await client
+                .from("plans")
+                .select("*")
+                .eq("id", planId)
                 .single();
 
-            if (error) {
-                if (error.code === "PGRST116") {
-                    // No subscription found
-                    return null;
+            if (!plan) return null;
+
+            // Return a backward-compatible object for the UI
+            return {
+                plan_id: planId,
+                plan_seconds: plan.plan_seconds,
+                status: 'active', // Derived as active since minutes don't expire
+                created_at: latestPayment.created_at,
+                plans: {
+                    name: plan.name
                 }
-                throw error;
-            }
-            return data;
+            };
         } catch (error) {
-            console.error("Error fetching subscription:", error);
+            console.error("Error fetching derived subscription:", error);
             return null;
         }
     },
 
     /**
-     * Create a new subscription for user
+     * Process a new purchase
+     * Adds minutes via RPC and records the transaction. No 'subscriptions' table needed.
      */
-    async createSubscription(userId: string, planId: string, client = supabase): Promise<Subscription | null> {
+    async createSubscription(userId: string, planId: string, orderId: string, client = supabase): Promise<{ success: boolean; status: 'processed' | 'already_processed' | 'failed' }> {
         try {
+            console.log(`ℹ️ Processing purchase for user ${userId}, plan ${planId}, order ${orderId}`);
 
-            // 1. Get plan details (just to get the seconds for the insert)
+            const cleanOrderId = orderId.replace(/[?&].*$/, '').trim();
+
+            // 1. Idempotency Check: Prevent duplicate crediting for the same order
+            const alreadyProcessed = await this.isOrderProcessed(cleanOrderId, userId, client);
+            if (alreadyProcessed) {
+                console.log(`ℹ️ Order ${cleanOrderId} already processed. Skipping.`);
+                return { success: true, status: 'already_processed' };
+            }
+
+            // 2. Get plan details 
             const { data: plan, error: planError } = await client
                 .from("plans")
                 .select("*")
                 .eq("id", planId)
                 .single();
 
-            if (planError) throw planError;
+            if (planError || !plan) {
+                console.error("❌ Plan not found:", planId);
+                return { success: false, status: 'failed' };
+            }
 
-            // 2. Simply insert into subscriptions table
-            // THE DATABASE TRIGGER WILL AUTOMATICALLY ADD THE CREDITS!
-            const { data, error } = await client
-                .from("subscriptions")
+            // 3. SECURE CREDIT ADDITION & TRANSACTION RECORDING
+            // We'll do this in two steps to ensure the order_id is correctly recorded in the new column.
+
+            // Step 1: Create the transaction record first
+            const { data: transaction, error: transError } = await client
+                .from("credit_transactions")
                 .insert({
                     user_id: userId,
-                    plan_id: planId,
-                    plan_seconds: plan?.plan_seconds || 0,
-                })
+                    amount: plan.plan_seconds || 0, // Matches 'amount' column in SQL
+                    type: 'purchase', // Matches constraint array['purchase'::text, ...]
+                    description: `Purchase: ${plan.name} (${cleanOrderId})`,
+                    order_id: cleanOrderId,
+                    metadata: { plan_id: planId }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any)
                 .select()
                 .single();
 
-            if (error) {
-                console.error("❌ Error inserting into subscriptions table:", error);
-                throw error;
+            if (transError) {
+                console.error("❌ Error creating transaction record:", transError);
+                return { success: false, status: 'failed' };
             }
 
-            return data;
+            // Step 2: Update the user's balance
+            // We use the existing update_user_credits RPC but note that it might also create its own transaction record if not modified.
+            // If the RPC creates a record, we should ensure we don't end up with duplicates.
+            const { error: rpcError } = await client.rpc('update_user_credits', {
+                user_uuid: userId,
+                seconds_to_add: plan.plan_seconds || 0,
+                transaction_type: 'balance_update', // Use a different type to avoid RPC-generated duplicates if possible
+                transaction_description: `Balance Update for ${cleanOrderId}`,
+                p_metadata: { order_id: cleanOrderId, plan_id: planId }
+            });
+
+            if (rpcError) {
+                console.error("❌ RPC Error updating balance:", rpcError);
+                // If balance update fails, we should probably delete the transaction record to stay consistent
+                await client.from("credit_transactions").delete().eq("id", transaction.id);
+                return { success: false, status: 'failed' };
+            }
+
+            console.log(`✅ Successfully processed purchase ${orderId} for user ${userId}`);
+            return { success: true, status: 'processed' };
         } catch (error) {
-            console.error("❌ Critical error in createSubscription:", error);
-            return null;
+            console.error("❌ Critical error in process purchase:", error);
+            return { success: false, status: 'failed' };
         }
     },
 
@@ -263,14 +324,65 @@ export const subscriptionService = {
     },
 
     /**
-     * Get purchase history for a user
+     * Check if a payment order has already been processed
      */
-    async getTransactions(userId: string): Promise<Subscription[]> {
+    async isOrderProcessed(orderId: string, userId?: string, client = supabase): Promise<boolean> {
+        try {
+            if (!orderId) return false;
+
+            // Use the new order_id column for a clean, indexed search
+            let query = client
+                .from("credit_transactions")
+                .select("id")
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .eq("order_id", orderId as any);
+
+            if (userId) query = query.eq('user_id', userId);
+            const { data, error } = await query.limit(1).maybeSingle();
+
+            if (error) {
+                console.error(`❌ Error checking order_id column for ${orderId}:`, error);
+
+                // Final fallback: Manual search in recent transactions if the column check fails
+                // This handles cases where the column exists but might not be in the generated types yet
+                if (userId) {
+                    const { data: recentTrans } = await client
+                        .from("credit_transactions")
+                        .select("description, id")
+                        .eq("user_id", userId)
+                        .eq("type", "purchase")
+                        .order("created_at", { ascending: false })
+                        .limit(20);
+
+                    if (recentTrans) {
+                        for (const tx of recentTrans) {
+                            if (tx.description?.includes(orderId)) {
+                                console.log(`ℹ️ Order ${orderId} found via description fallback search.`);
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            return !!data;
+        } catch (error) {
+            console.error(`❌ Exception checking status for order ${orderId}:`, error);
+            return true; // Fail-closed
+        }
+    },
+
+    /**
+     * Get purchase history for a user from transactions
+     */
+    async getTransactions(userId: string) {
         try {
             const { data, error } = await supabase
-                .from("subscriptions")
-                .select("*, plans(name)")
+                .from("credit_transactions")
+                .select("*")
                 .eq("user_id", userId)
+                .eq("type", "purchase")
                 .order("created_at", { ascending: false });
 
             if (error) throw error;

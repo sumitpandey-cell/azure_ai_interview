@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
 
-export type PaymentStatus = "success" | "failed" | "pending" | "cancelled" | "error" | "invalid";
+export type PaymentStatus = "success" | "failed" | "pending" | "cancelled" | "error" | "invalid" | "already_processed";
 
 interface PaymentStatusModalProps {
     isOpen: boolean;
@@ -68,10 +68,17 @@ export function PaymentStatusModal({
         invalid: {
             icon: <AlertCircle className="h-12 w-12 text-rose-500" />,
             title: "Invalid Order",
-            defaultMessage: "We couldn&apos;t retrieve the details for this transaction.",
+            defaultMessage: "We couldn't retrieve the details for this transaction.",
             buttonText: "Back to Pricing",
             buttonVariant: "outline" as const,
         },
+        already_processed: {
+            icon: <Info className="h-12 w-12 text-blue-500" />,
+            title: "Already Processed",
+            defaultMessage: "This payment link has already been used and credits were added to your account.",
+            buttonText: "Go to Dashboard",
+            buttonVariant: "default" as const,
+        }
     };
 
     const current = config[status] || config.error;

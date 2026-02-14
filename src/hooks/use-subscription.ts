@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { subscriptionService } from '@/services/subscription.service';
 import type { InterviewSession } from '@/services/interview.service';
@@ -135,12 +134,7 @@ export function useSubscription(sessionId?: string) {
             const { remainingSeconds, hasLimit } = await subscriptionService.checkUsageLimit(billingId);
 
             const subscription = await subscriptionService.getSubscription(billingId);
-            const planResponse = subscription?.plan_id ? await supabase
-                .from('plans')
-                .select('name')
-                .eq('id', subscription.plan_id)
-                .single() : null;
-            const planName = planResponse?.data?.name || 'Free';
+            const planName = subscription?.plans?.name || 'Free';
 
             const newStatus: SubscriptionStatus = {
                 type: planName !== 'Free' ? 'paid' : 'free',

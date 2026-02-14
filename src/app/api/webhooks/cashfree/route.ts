@@ -21,20 +21,46 @@ export async function POST(req: Request) {
         if (event.type === "PAYMENT_SUCCESS_WEBHOOK") {
             const { order, customer_details } = event.data;
             const userId = customer_details.customer_id;
+            const cleanOrderId = order.order_id.replace(/[?&].*$/, '').trim();
+            const orderId = cleanOrderId; // Keep variable name for rest of logic
+
+            if (!userId || !orderId) {
+                console.error("❌ Webhook: Missing userId or orderId", { userId, orderId });
+                return NextResponse.json({ status: "error", message: "Missing required fields" });
+            }
 
             const note = order.order_note || "";
-            const planId = note.includes("Subscription for ") ? note.split("Subscription for ")[1].trim() : null;
+            const supabase = await createAdminClient();
 
-            if (userId && planId) {
+            // Case 1: Subscription Purchase
+            if (note.includes("Subscription for ")) {
+                const planId = note.split("Subscription for ")[1].trim();
+                console.log(`ℹ️ Webhook: Processing subscription for ${userId}, order ${orderId}`);
 
-                // Use admin client for webhooks as there is no user session
-                const supabase = await createAdminClient();
+                const result = await subscriptionService.createSubscription(userId, planId, orderId, supabase);
+                if (!result) {
+                    console.error(`❌ Webhook: Failed to record subscription purchase for user ${userId}`);
+                }
+            }
+            // Case 2: Roadmap Purchase
+            else if (note.includes("Roadmap Purchase")) {
+                console.log(`ℹ️ Webhook: Processing roadmap purchase for ${userId}, order ${orderId}`);
 
-                // Create subscription record (adds credits + creates purchase history)
-                const result = await subscriptionService.createSubscription(userId, planId, supabase);
-                if (result) {
-                } else {
-                    console.error(`❌ Webhook: Failed to record purchase for user ${userId}`);
+                // Update roadmap payment status in DB
+                const { error: roadmapError } = await supabase
+                    .from('learning_roadmaps')
+                    .update({
+                        payment_status: 'completed',
+                        is_paid: true,
+                        payment_id: orderId
+                    })
+                    .eq('user_id', userId)
+                    .eq('payment_status', 'pending')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (roadmapError) {
+                    console.error("❌ Webhook: Failed to update roadmap status:", roadmapError);
                 }
             }
         }
