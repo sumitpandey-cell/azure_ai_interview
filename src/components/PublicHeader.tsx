@@ -13,22 +13,12 @@ interface PublicHeaderProps {
 export function PublicHeader({ transparent = true }: PublicHeaderProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [hidden, setHidden] = useState(false);
     const pathname = usePathname();
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
-            const heroHeight = window.innerHeight;
-
             setScrolled(scrollY > 20);
-
-            // Only hide on the landing page (where path is /)
-            if (window.location.pathname === '/' && scrollY > heroHeight - 100) {
-                setHidden(true);
-            } else {
-                setHidden(false);
-            }
         };
 
         window.addEventListener("scroll", handleScroll);

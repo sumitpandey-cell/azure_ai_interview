@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Upload, ArrowRight, User as UserIcon, CheckCircle2, Sparkles, Wand2, X } from "lucide-react";
+import { Eye, EyeOff, Upload, ArrowRight, Sparkles, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,9 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
-import { cn } from "@/lib/utils";
 
 // Schema Definitions
 const signUpSchema = z.object({
@@ -260,7 +259,7 @@ function AuthContent() {
                                     ))}
                                 </div>
                                 <p className="text-lg text-slate-100 font-medium leading-relaxed">
-                                    "{testimonials[currentTestimonial].quote}"
+                                    &ldquo;{testimonials[currentTestimonial].quote}&rdquo;
                                 </p>
                                 <div className="flex items-center gap-3 pt-2">
                                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white uppercase tracking-wider">

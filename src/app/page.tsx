@@ -222,7 +222,7 @@ function HomeContent() {
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-slate-900">You're Hired!</p>
+                    <p className="text-sm font-extrabold text-slate-900">You&apos;re Hired!</p>
                     <p className="text-[10px] text-slate-500 font-bold">Google • L4 Engineer</p>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const signUpSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -60,6 +60,24 @@ function RecruiterAuthContent() {
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
 
+    const testimonials = [
+        {
+            quote: "Arjuna transformed our hiring process. We reduced time-to-hire by 60% and found better candidates faster.",
+            author: "Michael Zhang",
+            role: "Head of Talent at TechCorp"
+        },
+        {
+            quote: "The AI-powered assessments give us objective insights we never had before. Game-changing for remote hiring.",
+            author: "Priya Sharma",
+            role: "Recruiting Lead at StartupHub"
+        },
+        {
+            quote: "Finally, a platform that scales with our needs. We've interviewed 500+ candidates seamlessly.",
+            author: "David Martinez",
+            role: "VP of Engineering"
+        }
+    ];
+
     const { signUp, signIn, signInWithGoogle, resetPassword, user, loading } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -93,6 +111,13 @@ function RecruiterAuthContent() {
 
     // Middleware handles redirection if a user tries to access /auth while already logged in.
     // Manual login redirection is now handled in handleSignIn to ensure role-verification completes first.
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+        }, 6000);
+        return () => clearInterval(interval);
+    }, [testimonials.length]);
 
     const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -238,7 +263,7 @@ function RecruiterAuthContent() {
                                     ))}
                                 </div>
                                 <p className="text-lg text-slate-100 font-medium leading-relaxed">
-                                    "{testimonials[currentTestimonial].quote}"
+                                    &ldquo;{testimonials[currentTestimonial].quote}&rdquo;
                                 </p>
                                 <div className="flex items-center gap-3 pt-2">
                                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white uppercase tracking-wider">
