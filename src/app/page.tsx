@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Target, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Star, Building2, Mic, PlayCircle, Trophy, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import ScrollReveal from "@/components/ScrollReveal";
 import Image from "next/image";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -16,6 +17,9 @@ import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 
 // Animations removed for performance
 
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
 // Section Wrapper - Animations Disabled for Performance
 const SectionWrapper = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => {
   return (
@@ -25,14 +29,21 @@ const SectionWrapper = ({ children, className, id }: { children: React.ReactNode
   );
 };
 
-export default function Landing() {
+function HomeContent() {
   const [mounted, setMounted] = useState(false);
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const skipIntro = searchParams.get('skip_intro') === 'true';
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Optional: Clean up the URL after mounting if skip_intro is present
+    if (skipIntro) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [skipIntro]);
 
   useEffect(() => {
     if (mounted && !loading && user) {
@@ -41,7 +52,7 @@ export default function Landing() {
   }, [mounted, loading, user, router]);
 
 
-  if (!mounted || loading || user) {
+  if ((!mounted || loading || user) && !skipIntro) {
     return (
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
         <PremiumLogoLoader text="Initializing Arjuna AI..." />
@@ -56,113 +67,167 @@ export default function Landing() {
 
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] font-sans text-white overflow-x-hidden max-w-[100vw]">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden max-w-[100vw]">
       {/* JSON-LD Structured Data for SEO */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Arjuna AI", "alternateName": ["ArjunaAI", "AI Interviewer", "Arjuna Interview Coach"], "operatingSystem": "Web", "applicationCategory": "EducationalApplication", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }, "description": "Arjuna AI is your personal AI Interviewer. Practice with realistic AI mock interviews for coding, system design, and behavioral rounds. Get real-time scoring, personalized feedback, and master your technical skills.", "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "20000" } }) }} />
       {/* Scroll Progress Bar - Disabled */}
       {/*  <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 origin-left z-[100]" style={{ scaleX }} /> */}
       <PublicHeader />
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0B] pt-32 md:pt-40 pb-20">
-        {/* Animated Background Effects - Cool Blue/Purple/Indigo Theme */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-indigo-600/20 rounded-full blur-[120px] -translate-x-1/4" />
-          <div className="absolute bottom-[-10%] right-0 w-[min(500px,70vw)] h-[min(500px,70vw)] bg-purple-600/20 rounded-full blur-[120px] translate-x-1/4" />
-          <div className="absolute top-[20%] left-[50%] transform -translate-x-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-blue-900/10 rounded-full blur-[100px]"></div>
+      {/* Hero Section - Pinterest Inspired Light Theme */}
+      <section className="relative min-h-[100vh] flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 md:pt-40 pb-20">
+        {/* Cool Light Bluish Glowing Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          {/* Main Top Center Blue Glow - The "Cool" Factor */}
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[90vw] h-[80vh] bg-blue-500/15 rounded-full blur-[180px] opacity-70 mix-blend-screen" />
+
+          {/* Side Accents for Depth */}
+          <div className="absolute top-[0%] left-[-10%] w-[50vw] h-[50vw] bg-cyan-400/10 rounded-full blur-[140px] opacity-60" />
+          <div className="absolute top-[0%] right-[-10%] w-[50vw] h-[50vw] bg-indigo-400/10 rounded-full blur-[140px] opacity-60" />
+
+          {/* Central White/Blue Bloom */}
+          <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[40vw] h-[40vw] bg-sky-100/40 rounded-full blur-[100px] mix-blend-overlay"></div>
+
+          {/* Sharper Grid Pattern for Technical Feel with Radial Mask */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-[0.35] [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"></div>
+
+          {/* Subtle Radial Fade for Grid */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/50 to-slate-50"></div>
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-5xl mx-auto text-center">
-            {/* Badge */}
-            <div className="flex flex-col items-center gap-2 mb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 shadow-lg">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <span className="text-sm font-medium text-slate-300">
-                  New: AI Voice Intelligence 2.0
-                </span>
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 pt-10">
+          <div className="max-w-6xl mx-auto flex flex-col items-center text-center">
+
+            {/* Top Badge */}
+            <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/40 shadow-sm text-sm font-semibold text-slate-600">
+                <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                AI Voice Intelligence 2.0
               </div>
             </div>
 
-            {/* Heading */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-wide text-white mb-6">
-              Ace Any Interview.
-              <br />
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Powered by AI.
+            {/* Main Headline - Optimized Visual Hierarchy */}
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-slate-900 mb-6 max-w-5xl mx-auto leading-[1.1]">
+              <span className="font-semibold tracking-tighter text-slate-800">Master your interview</span> <br className="hidden md:block" />
+              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 drop-shadow-sm">
+                talk like a pro.
               </span>
             </h1>
 
-            {/* Subheading */}
-            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-6">
-              Practice real interviews with AI scoring and feedback — built to train you like a real hiring manager.
+            {/* Subhead - Action Oriented & Emotional */}
+            <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
+              Stop guessing what interviewers think. <br className="hidden sm:block" />
+              Get real-time feedback on clarity, tone, and body language to land your dream job.
             </p>
 
-            {/* Mini Text Line with Avatars */}
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="flex items-center -space-x-3">
-                {[
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&q=80&fit=crop&crop=faces",
-                  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=64&h=64&q=80&fit=crop&crop=faces",
-                  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=64&h=64&q=80&fit=crop&crop=faces",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&fit=crop&crop=faces"
-                ].map((src, i) => (
-                  <Image key={i} src={src} alt="User" width={32} height={32} className="h-8 w-8 rounded-full border-2 border-[#0A0A0B] object-cover" />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400/80">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
-                Trusted by 20,000+ candidates
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
-              <div>
-                <TransitionButton size="lg" href="/auth" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 h-14 text-lg font-semibold shadow-[0_0_20px_rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all transform hover:-translate-y-1">
-                  Start My Interview
-                  <ArrowRight className="ml-2 h-5 w-5" />
+            {/* CTA Group with Micro-Trust */}
+            <div className="flex flex-col items-center mb-4 relative z-20">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto">
+                <TransitionButton size="lg" href="/auth" className="w-full sm:w-auto bg-[#0A0A0B] hover:bg-slate-800 text-white rounded-full px-8 h-12 text-base font-bold shadow-[0_4px_14px_0_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.23)] hover:-translate-y-0.5 transition-all">
+                  Start Practicing Free
                 </TransitionButton>
-              </div>
-              <div>
-                <Button size="lg" variant="outline" className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5 hover:border-indigo-500/50 rounded-full px-8 h-14 text-lg font-semibold bg-transparent" asChild>
+
+                <Button size="lg" variant="ghost" className="w-full sm:w-auto text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-full px-6 h-12 text-base font-semibold transition-colors" asChild>
                   <Link href="#demo">
                     <PlayCircle className="mr-2 h-5 w-5" />
-                    Watch Demo
+                    See how it works
                   </Link>
                 </Button>
               </div>
+              <p className="text-xs text-slate-400 mt-4 font-medium tracking-wide">
+                No credit card required. Used by 5,000+ engineers.
+              </p>
             </div>
 
-            {/* Dashboard Mockup */}
-            <div className="relative mx-auto max-w-5xl will-change-transform">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] -z-10 opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)" }}></div>
+            {/* Central Visual Composition - Inspired by Analyx */}
+            <div className="relative w-full max-w-6xl h-[500px] md:h-[650px] mt-0 perspective-1000">
 
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-1000"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+              {/* Central Circle/Glow - Stronger Focus */}
+              <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-3xl -z-10 mix-blend-multiply"></div>
 
-              <div className="relative rounded-2xl bg-[#0f1117] border border-white/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/5 group">
-                {/* Mac Window Header */}
-                <div className="relative h-11 bg-[#1a1b26] border-b border-white/5 flex items-center px-4 gap-2 z-10">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#FF5F57] border border-[#E0443E]/50 shadow-inner"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#FEBC2E] border border-[#D89E24]/50 shadow-inner"></div>
-                    <div className="w-3 h-3 rounded-full bg-[#28C840] border border-[#1AAB29]/50 shadow-inner"></div>
+              {/* Main Character Image - Confident Candidate */}
+              <div className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-[400px] md:w-[850px]">
+                <div className="relative w-full aspect-square md:aspect-[1/0.9]">
+                  {/* Gradient Textures behind */}
+                  <div className="absolute inset-0 bg-indigo-500/5 rounded-full blur-3xl transform scale-90"></div>
+
+                  <Image
+                    src="/hero_candidate.png"
+                    alt="Confident Candidate with Laptop"
+                    fill
+                    className="object-contain md:object-cover object-top drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-10 scale-110"
+                    priority
+                  />
+                </div>
+              </div>
+
+              {/* Connected Feature Cards - Narrative Flow (Left to Right) */}
+
+              {/* 1. INPUT: Live Audio (Bottom Left) */}
+              <div className="absolute bottom-[10%] left-[-5%] md:bottom-[20%] md:left-[5%] z-20 animate-float scale-75 md:scale-100 origin-bottom-left">
+                <div className="bg-[#0A0A0B]/90 backdrop-blur-md p-4 rounded-2xl shadow-[0_20px_40px_-5px_rgba(0,0,0,0.4)] w-48 border border-white/10 ring-1 ring-white/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Live Input</span>
+                    </div>
+                    <Mic className="h-3 w-3 text-slate-500" />
                   </div>
-                  <div className="ml-4 flex-1 flex justify-center">
-                    <div className="h-6 w-64 bg-white/5 rounded-md flex items-center justify-center border border-white/5">
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                        <div className="w-2 h-2 rounded-full bg-blue-500/50"></div>
-                        arjunaai.in
-                      </div>
+                  <div className="flex items-center justify-between gap-0.5 h-6">
+                    {[0.4, 0.7, 0.3, 0.9, 0.5, 0.8, 0.4, 0.6, 0.3, 0.7].map((h, i) => (
+                      <div key={i} className="w-1 bg-gradient-to-t from-indigo-500 to-violet-500 rounded-full" style={{ height: `${h * 100}%` }}></div>
+                    ))}
+                  </div>
+                </div>
+                {/* Connector suggested by dotted line closer to person */}
+              </div>
+
+              {/* 2. PROCESSING: Analysis Card (Top Left) */}
+              <div className="absolute top-[10%] left-[-5%] md:top-[18%] md:left-[8%] z-20 animate-float-delayed scale-75 md:scale-100 origin-top-left">
+                <div className="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-200/50 w-52 ring-1 ring-slate-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                      <BarChart3 className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-800">AI Analysis</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-600">
+                      <span>Clarity Score</span>
+                      <span className="text-indigo-600">92%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 w-[92%] rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="relative z-0 bg-[#0f1117]">
-                  <Image src="/dashboard-preview.png" alt="Dashboard Preview" width={1920} height={1080} className="w-full h-auto object-cover opacity-100 brightness-110 transition-all duration-500" priority />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none"></div>
+              {/* 3. INSIGHT: Skills (Bottom Right) */}
+              <div className="absolute bottom-[15%] right-[-5%] md:bottom-[25%] md:right-[5%] z-20 animate-float-delayed scale-75 md:scale-100 origin-bottom-right">
+                <div className="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-200/50 w-44 ring-1 ring-slate-100">
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">Skills Detected</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-100 shadow-sm">React</span>
+                    <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-100 shadow-sm">System Design</span>
+                    <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100 shadow-sm">Leadership</span>
+                  </div>
                 </div>
               </div>
+
+              {/* 4. OUTCOME: Offer (Top Right) */}
+              <div className="absolute top-[8%] right-[-2%] md:top-[15%] md:right-[8%] z-20 animate-float scale-75 md:scale-100 origin-top-right">
+                <div className="bg-white/95 backdrop-blur-xl p-3 pr-5 rounded-full shadow-[0_20px_60px_-10px_rgba(0,0,0,0.18)] border border-slate-200/50 flex items-center gap-3 ring-1 ring-slate-100 hover:scale-105 transition-transform duration-500 cursor-default">
+                  <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 text-white">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900">You're Hired!</p>
+                    <p className="text-[10px] text-slate-500 font-bold">Google • L4 Engineer</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -183,7 +248,7 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1: Voice-based AI Interviews (Large Card - Spans 2 cols on desktop) */}
-            <div className="md:col-span-2 relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl group bg-white">
+            <ScrollReveal className="md:col-span-2 relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl group bg-white" delay={0.1}>
               {/* Main Background Gradient - Light Theme */}
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
 
@@ -226,7 +291,7 @@ export default function Landing() {
                 </div>
 
                 {/* Right Visual Content - Phone & Avatar */}
-                <div className="relative w-full md:w-1/2 flex justify-center items-center">
+                <div className="hidden md:flex relative w-full md:w-1/2 justify-center items-center">
 
 
 
@@ -293,10 +358,10 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Feature 2: Instant Score + Feedback */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <ScrollReveal className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500" delay={0.2}>
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Instant Score + Feedback.</h3>
               <p className="text-slate-600 text-sm mb-6">Get detailed scoring and actionable tips immediately.</p>
@@ -390,10 +455,10 @@ export default function Landing() {
                   </p>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Feature 3: Skill Templates */}
-            <div className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <ScrollReveal className="md:col-span-3 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500" delay={0.1}>
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Skill Templates.</h3>
@@ -426,10 +491,10 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Feature 4: Leaderboard Gamification */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <ScrollReveal className="bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500" delay={0.1}>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Leaderboard Gamification.</h3>
               <p className="text-slate-600 text-sm mb-6">Compete with others and climb the rankings.</p>
 
@@ -470,10 +535,10 @@ export default function Landing() {
                   <span className="text-xs font-bold text-green-400">#1</span>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Feature 5: Smart Analytics Reports */}
-            <div className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500">
+            <ScrollReveal className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all duration-500" delay={0.2}>
               <div className="flex flex-col md:flex-row items-center gap-8 h-full">
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Analytics Reports.</h3>
@@ -535,7 +600,7 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Feature 6: AI-Powered Learning Roadmaps - High Quality UI Redesign */}
             <div className="md:col-span-3 relative rounded-[2.5rem] overflow-hidden bg-[#0B0F19] border border-slate-800 shadow-2xl group">
@@ -841,7 +906,7 @@ export default function Landing() {
           <div className="absolute top-1/4 left-0 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse -translate-x-1/3" />
           <div className="absolute bottom-1/4 right-0 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-purple-600/10 rounded-full blur-[120px] animate-pulse delay-700 translate-x-1/3" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(800px,90vw)] h-[min(800px,90vw)] bg-blue-900/5 rounded-full blur-[100px] animate-pulse delay-1000"></div>
-        </div>
+        </div >
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
@@ -1040,94 +1105,18 @@ export default function Landing() {
         </div>
       </SectionWrapper>
 
-      {/* Final CTA Section - Creative Cosmic Design */}
-      <SectionWrapper id="cta" className="py-10 relative overflow-hidden">
-        {/* Background Grid & Glow */}
-        <div className="absolute inset-0 bg-[#0A0A0B]">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[min(500px,70vw)] w-[min(500px,70vw)] rounded-full bg-indigo-500/20 blur-[120px] animate-pulse"></div>
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[min(300px,50vw)] w-[min(300px,50vw)] rounded-full bg-purple-500/20 blur-[80px] animate-pulse delay-700"></div>
-        </div>
 
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-6xl mx-auto text-center relative">
-            {/* Main Card */}
-            <div className="relative p-8 md:p-16 group transition-all duration-500">
-
-              {/* Content */}
-              {/* Content */}
-              <div className="relative z-10 space-y-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300 text-xs font-medium backdrop-blur-md">
-                  <Sparkles className="h-3 w-3" />
-                  <span>Join 50,000+ Successful Candidates</span>
-                </div>
-
-                <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight">
-                  Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-gradient-x">Transform</span> <br />
-                  Your Career?
-                </h2>
-
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                  Stop guessing, start improving. Practice with AI that thinks like a hiring manager and land your dream offer at top tech companies.
-                </p>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6">
-                  <Button size="lg" className="h-16 px-10 text-lg bg-white text-black hover:bg-slate-100 hover:scale-105 transition-all duration-300 rounded-full font-bold shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]" asChild>
-                    <Link href="/auth">
-                      Start Interviewing Now
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-
-                  <Button variant="outline" size="lg" className="h-16 px-10 text-lg border-white/10 text-white bg-transparent hover:bg-white/5 hover:text-white hover:border-indigo-500/50 hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] rounded-full font-medium backdrop-blur-sm transition-all duration-300" asChild>
-                    <Link href="/sample-report">
-                      View Sample Report
-                    </Link>
-                  </Button>
-                </div>
-
-                {/* Trust Indicators */}
-                <div className="pt-8 flex flex-col items-center gap-6 opacity-60">
-                  <p className="text-sm text-slate-500 font-medium">Practice questions inspired by top tech interviews</p>
-                  <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 grayscale hover:grayscale-0 transition-all duration-500">
-                    {['Google', 'Microsoft', 'Amazon', 'Meta', 'Netflix'].map((company) => (
-                      <span key={company} className="text-lg font-semibold text-white">{company}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Decorative Elements */}
-              <div className="absolute top-1/4 -left-12 p-4 bg-[#0A0A0B]/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl hidden lg:block animate-float">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">Offer Received</div>
-                    <div className="text-xs text-slate-400">Senior Engineer</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-1/4 -right-12 p-4 bg-[#0A0A0B]/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl hidden lg:block animate-float-delayed">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                    <Trophy className="h-5 w-5 text-indigo-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">Top 1% Scorer</div>
-                    <div className="text-xs text-slate-400">System Design</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </SectionWrapper>
 
       {/* Footer */}
-      < Footer />
+      <Footer />
     </div>
+  );
+}
+
+export default function Landing() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center"><PremiumLogoLoader text="Connecting..." /></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

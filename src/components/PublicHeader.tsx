@@ -48,109 +48,94 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
     ];
 
     return (
-        <header
-            className={`fixed left-0 right-0 z-50 transition-all duration-500 ease-in-out ${hidden ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
-                } ${scrolled ? "top-4 flex justify-center px-3" : "top-0 py-6"}`}
-        >
-            <div
-                className={`transition-all duration-500 ease-in-out flex items-center justify-between ${scrolled
-                    ? "bg-[#0f1117]/80 backdrop-blur-md border border-white/5 shadow-2xl rounded-full px-4 py-3 w-full max-w-5xl ring-1 ring-white/5"
-                    : `w-full container mx-auto px-4 sm:px-6 ${transparent ? "bg-transparent border-transparent" : "bg-[#0A0A0B]/80 backdrop-blur-md border-b border-white/5"} border ring-0`
-                    }`}
-            >
-                <Link href="/" className="flex items-center gap-2 text-xl font-bold group">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+        <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+            <div className={`transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex items-center justify-between pointer-events-auto
+                ${scrolled || !transparent
+                    ? "bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] py-2.5 pl-5 pr-2.5 w-full max-w-4xl rounded-full"
+                    : "bg-white/60 backdrop-blur-lg border border-white/20 shadow-[0_4px_20px_rgb(0,0,0,0.02)] py-3 pl-6 pr-3 w-full max-w-5xl rounded-full"
+                }`}>
+
+                {/* Logo Section */}
+                <Link href="/" className="flex items-center gap-2.5 group mr-8">
+                    <div className="relative flex items-center justify-center w-8 h-8 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-lg shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
                         <Image
                             src="/arjuna_logo.png"
                             alt="Arjuna AI"
-                            width={36}
-                            height={36}
-                            className="h-9 w-9 object-contain drop-shadow-lg relative z-10"
+                            width={20}
+                            height={20}
+                            className="w-5 h-5 object-contain brightness-0 invert"
                         />
                     </div>
-                    <span className={`bg-clip-text text-transparent transition-all duration-300 ${scrolled
-                        ? "bg-gradient-to-r from-white to-slate-400"
-                        : "bg-gradient-to-r from-white to-indigo-200"
-                        }`}>
-                        Arjuna AI
+                    <span className="font-bold text-lg tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        Arjuna
                     </span>
                 </Link>
 
-                {/* Desktop Navigation */}
-                <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
+                {/* Desktop Navigation - Centered */}
+                <nav className="hidden md:flex items-center justify-center gap-1 bg-slate-100/50 rounded-full px-1.5 py-1 border border-white/50">
                     {navLinks.map((link) => {
                         const isActive = pathname === link.href;
                         return (
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`relative text-sm font-medium transition-all duration-300 py-2 group ${isActive ? "text-white" : "text-slate-400 hover:text-white"
+                                className={`relative px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-300 ${isActive
+                                    ? "bg-white text-indigo-600 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
                                     }`}
                             >
                                 {link.label}
-                                <span
-                                    className={`absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full transition-all duration-300 ${isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 group-hover:opacity-50 group-hover:translate-y-0"
-                                        }`}
-                                />
                             </Link>
                         );
                     })}
                 </nav>
 
-                <div className="flex items-center gap-4">
-                    <div className="hidden lg:block">
-                        <TransitionButton
-                            variant={scrolled ? "ghost" : "secondary"}
-                            href="/auth"
-                            className={`transition-all duration-300 ${scrolled
-                                ? "text-white hover:bg-white/10 rounded-full px-6"
-                                : "bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.45)]"
-                                } font-medium border-0`}
-                        >
-                            {scrolled ? "Login" : "Get Started"}
-                        </TransitionButton>
-                    </div>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3 ml-auto md:ml-8">
+                    <Link
+                        href="/auth"
+                        className="hidden sm:inline-flex text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors px-2"
+                    >
+                        Sign In
+                    </Link>
+                    <TransitionButton
+                        href="/auth"
+                        className="hidden sm:inline-flex bg-[#0A0A0B] hover:bg-slate-800 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg shadow-slate-900/10 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                        Get Started
+                    </TransitionButton>
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors hover:bg-white/10 rounded-full"
+                        className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
-                        {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </div>
             </div>
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="absolute top-full left-4 right-4 mt-2 bg-[#0f1117] border border-white/10 rounded-2xl shadow-2xl p-4 flex flex-col gap-2 animate-in slide-in-from-top-5 z-50 lg:hidden">
-                    {navLinks.map((link) => {
-                        const isActive = pathname === link.href;
-                        return (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`text-sm font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-between ${isActive
-                                    ? "bg-indigo-500/10 text-white border-l-2 border-indigo-500"
-                                    : "text-slate-300 hover:text-white hover:bg-white/5"
-                                    }`}
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                {link.label}
-                                {isActive && <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />}
-                            </Link>
-                        );
-                    })}
-                    <div className="pt-2 border-t border-white/5 mt-2">
+                <div className="absolute top-full left-4 right-4 mt-4 p-4 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-3xl shadow-[0_20px_40px_-5px_rgba(0,0,0,0.1)] flex flex-col gap-2 animate-in slide-in-from-top-4 duration-300 pointer-events-auto md:hidden">
+                    {navLinks.map((link) => (
                         <Link
-                            href="/auth"
-                            className="flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                            key={link.href}
+                            href={link.href}
+                            className="text-base font-medium text-slate-600 py-3 px-4 hover:bg-slate-50 rounded-xl transition-colors"
                             onClick={() => setMobileMenuOpen(false)}
                         >
-                            Get Started
+                            {link.label}
                         </Link>
-                    </div>
+                    ))}
+                    <div className="h-px bg-slate-100 my-2"></div>
+                    <Link
+                        href="/auth"
+                        className="flex items-center justify-center w-full bg-[#0A0A0B] text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-slate-900/10"
+                        onClick={() => setMobileMenuOpen(false)}
+                    >
+                        Get Started Free
+                    </Link>
                 </div>
             )}
         </header>

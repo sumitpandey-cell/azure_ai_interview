@@ -51,3 +51,4 @@ database
 supabase/*
 remove_bg.py
 
+.env.local
