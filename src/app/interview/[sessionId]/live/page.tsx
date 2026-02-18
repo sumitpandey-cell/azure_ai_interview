@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { interviewService, subscriptionService } from "@/services";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { useInterviewStore } from "@/stores/interviewStore";
 import { LiveInterviewSession } from "@/components/agent-playground/LiveInterviewSession";
@@ -18,6 +19,7 @@ import type { InterviewSession } from "@/services/interview.service";
 import { INTERVIEW_CONFIG } from "@/config/interview-config";
 import { TranscriptEntry } from "@/contexts/TranscriptContext";
 import { useOptimizedQueries } from "@/hooks/use-optimized-queries";
+import { useProctoring } from "@/hooks/use-proctoring";
 
 export default function LiveInterview() {
     const { sessionId } = useParams();
@@ -54,6 +56,16 @@ export default function LiveInterview() {
     const countdownInterval = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttempts = useRef(0);
     const { updateInterviewSession, completeInterviewSession } = useOptimizedQueries();
+
+    // Proctoring / Cheating Restrictions
+    useProctoring({
+        sessionId: currentSessionId,
+        userId: user?.id || null,
+        enabled: isTimerActive && !isEndingSession.current,
+        preventCopyPaste: true,
+        preventRightClick: true,
+        requireFullscreen: true // Forced fullscreen mode active
+    });
 
     // Shared sync function to avoid duplication
     const syncDuration = useCallback(async (reason: string) => {
@@ -103,8 +115,17 @@ export default function LiveInterview() {
             const metThreshold = totalDuration >= INTERVIEW_CONFIG.THRESHOLDS.MIN_DURATION_SECONDS &&
                 userTurns >= INTERVIEW_CONFIG.THRESHOLDS.MIN_USER_TURNS;
 
+            // Fetch clean synced transcripts from the store for final persistence
+            const { transcripts: storedTranscripts } = useInterviewStore.getState();
+            const finalTranscript = storedTranscripts.map(t => ({
+                speaker: t.speaker,
+                text: t.text,
+                timestamp: t.timestamp
+            }));
+
             const completedSession = await completeInterviewSession(currentSessionId, {
-                durationSeconds: deltaSeconds
+                durationSeconds: deltaSeconds,
+                transcript: finalTranscript.length > 0 ? (finalTranscript as unknown as Json) : undefined
             });
 
             if (completedSession) {
@@ -214,6 +235,24 @@ export default function LiveInterview() {
                 // If a user refreshes or re-enters a completed session, the Token API will return 403.
 
                 setCurrentSessionId(currentSessionId);
+
+                // Initialize store with existing transcripts from DB to prevent data loss on refresh
+                if (fetchedSession && Array.isArray(fetchedSession.transcript)) {
+                    const existingTranscripts = (fetchedSession.transcript as Array<{
+                        speaker?: string;
+                        role?: string;
+                        text?: string;
+                        timestamp?: number;
+                    }>).map(t => ({
+                        speaker: (t.speaker || t.role || 'ai') as 'user' | 'ai',
+                        text: t.text || '',
+                        timestamp: t.timestamp || Date.now(),
+                        isComplete: true
+                    }));
+                    useInterviewStore.getState().setTranscripts(existingTranscripts);
+                } else {
+                    useInterviewStore.getState().clearTranscripts();
+                }
 
                 // 3. Fetch Token
                 let url = "";

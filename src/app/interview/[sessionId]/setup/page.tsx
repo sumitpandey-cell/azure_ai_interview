@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { interviewService } from "@/services/interview.service";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, publicSupabase } from "@/integrations/supabase/client";
 import { type Json } from "@/integrations/supabase/types";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card } from "@/components/ui/card";
@@ -327,9 +327,22 @@ export default function InterviewSetup() {
             return;
         }
 
+        // Attempt to enter fullscreen immediately on user click
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (err) {
+            console.warn("Fullscreen request failed during start:", err);
+            // Don't block the interview if fullscreen fails here, 
+            // the proctoring hook will handle it with a required action button.
+        }
+
         setIsLoading(true);
 
         try {
+            const client = user?.id ? supabase : publicSupabase;
+
             // THE PRE-COMPLETE STRATEGY
             // Mark session as completed immediately to prevent "stuck" sessions
             if (sessionId && typeof sessionId === 'string') {
@@ -346,7 +359,7 @@ export default function InterviewSetup() {
                         note: "Interview Started",
                         status: "started"
                     }
-                });
+                }, client);
 
                 // 2. Update config: set stage to 'live' and save selected options
                 await interviewService.updateSession(sessionId, {
@@ -354,7 +367,7 @@ export default function InterviewSetup() {
                         ...currentConfig,
                         currentStage: 'live',
                     } as unknown as Json
-                });
+                }, client);
             }
 
             // Pre-fetch LiveKit token to speed up connection on live page

@@ -29,6 +29,7 @@ interface InterviewStore {
     transcripts: TranscriptEntry[];
     addTranscript: (transcript: TranscriptEntry) => void;
     updateLastTranscript: (transcript: TranscriptEntry) => void;
+    setTranscripts: (transcripts: TranscriptEntry[]) => void;
     clearTranscripts: () => void;
 
     // Feedback
@@ -68,7 +69,7 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
     updateLastTranscript: (transcript) => set((state) => {
         const lastIndex = state.transcripts.length - 1;
 
-        // Only update if there's an existing partial transcript from the same speaker
+        // 1. Only update if there's an existing partial transcript from the same speaker
         if (
             lastIndex >= 0 &&
             state.transcripts[lastIndex].speaker === transcript.speaker &&
@@ -79,12 +80,13 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
             return { transcripts: updated };
         }
 
-        // Check for duplicates (same speaker, same text) to prevent double-adding complete messages
-        if (
-            lastIndex >= 0 &&
-            state.transcripts[lastIndex].speaker === transcript.speaker &&
-            state.transcripts[lastIndex].text === transcript.text
-        ) {
+        // 2. STRICT DEDUPLICATION: Prevent double-adding identically worded complete messages
+        // Check both the last entry AND any entries with same text recently
+        const isExactDuplicate = state.transcripts.slice(-2).some(
+            t => t.speaker === transcript.speaker && t.text === transcript.text && t.isComplete
+        );
+
+        if (isExactDuplicate) {
             return state;
         }
 
@@ -92,6 +94,8 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
         const newTranscripts = [...state.transcripts, transcript].sort((a, b) => a.timestamp - b.timestamp);
         return { transcripts: newTranscripts };
     }),
+
+    setTranscripts: (transcripts) => set({ transcripts }),
 
     clearTranscripts: () => set({ transcripts: [] }),
 

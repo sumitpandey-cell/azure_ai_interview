@@ -8,7 +8,7 @@ import { interviewService } from '@/services/interview.service';
 import { companyService } from '@/services/company.service';
 import { profileService } from '@/services/profile.service';
 import { templateService } from '@/services/template.service';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, publicSupabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 
 export function useOptimizedQueries() {
@@ -324,7 +324,8 @@ export function useOptimizedQueries() {
     }
   ) => {
     try {
-      const session = await interviewService.completeSession(sessionId, updateData);
+      const client = user?.id ? supabase : publicSupabase;
+      const session = await interviewService.completeSession(sessionId, updateData, client);
 
       if (!session) {
         throw new Error('Failed to complete interview session');
@@ -338,7 +339,7 @@ export function useOptimizedQueries() {
       console.error('Error completing interview session:', error);
       throw error;
     }
-  }, [onInterviewCompleted]);
+  }, [onInterviewCompleted, user?.id]);
 
   // Update interview session with cache invalidation
   const updateInterviewSession = useCallback(async (
@@ -346,7 +347,8 @@ export function useOptimizedQueries() {
     updateData: Parameters<typeof interviewService.updateSession>[1]
   ) => {
     try {
-      const session = await interviewService.updateSession(sessionId, updateData);
+      const client = user?.id ? supabase : publicSupabase;
+      const session = await interviewService.updateSession(sessionId, updateData, client);
 
       if (!session) {
         throw new Error('Failed to update interview session');
@@ -360,7 +362,7 @@ export function useOptimizedQueries() {
       console.error('Error updating interview session:', error);
       throw error;
     }
-  }, [onInterviewUpdated]);
+  }, [onInterviewUpdated, user?.id]);
 
   // Delete interview session with cache invalidation
   const deleteInterviewSession = useCallback(async (sessionId: string) => {

@@ -163,10 +163,10 @@ export const interviewService = {
     /**
      * Update interview session (for ongoing changes like transcript updates)
      */
-    async updateSession(sessionId: string, updates: InterviewSessionFrontendUpdate): Promise<InterviewSession | null> {
+    async updateSession(sessionId: string, updates: InterviewSessionFrontendUpdate, client = supabase): Promise<InterviewSession | null> {
         try {
             // Fetch session to get user_id for trigger compatibility
-            const session = await this.getSessionById(sessionId);
+            const session = await this.getSessionById(sessionId, client);
             if (!session) return null;
 
             // If status is being updated, validate the transition
@@ -192,7 +192,7 @@ export const interviewService = {
                         // Case: Search for recruiter if this is a campaign-linked session
                         if (session.campaign_id) {
                             try {
-                                const eligibility = await subscriptionService.checkSessionEligibility(sessionId);
+                                const eligibility = await subscriptionService.checkSessionEligibility(sessionId, client);
                                 if (eligibility.billingUserId) {
                                     billingUserId = eligibility.billingUserId;
                                 }
@@ -208,7 +208,7 @@ export const interviewService = {
                                 candidateName: session.candidate_name,
                                 description: `Interview session: ${session.candidate_name || 'Candidate'}`
                             };
-                            await subscriptionService.trackUsage(billingUserId, updates.durationSeconds, metadata);
+                            await subscriptionService.trackUsage(billingUserId, updates.durationSeconds, metadata, client);
                         }
                     } catch (usageError: unknown) {
                         console.error("❌ Error tracking usage in updateSession:", usageError);
@@ -222,7 +222,7 @@ export const interviewService = {
 
             // Logic for existing in_progress session auto-abandon relies on user_id
             // providing it here ensures any triggers that check ownership during update pass
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from("interview_sessions")
                 .update(mappedUpdates)
                 .eq("id", sessionId)
@@ -518,12 +518,14 @@ export const interviewService = {
             role: "user" | "assistant";
             speaker?: string; // Legacy support
             text: string;
+            text_en?: string;
             timestamp: number;
-        }
+        },
+        client = supabase
     ): Promise<boolean> {
         try {
             // Use the atomic RPC to append to transcript
-            const { error } = await supabase.rpc('append_transcript_entry', {
+            const { error } = await client.rpc('append_transcript_entry', {
                 p_session_id: sessionId,
                 p_user_id: userId,
                 p_entry: entry as Json
