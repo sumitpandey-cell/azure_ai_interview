@@ -5,7 +5,7 @@ import { Check, Trophy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users} from "lucide-react";
+import { Users } from "lucide-react";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -215,7 +215,7 @@ function PricingContent() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-background font-sans text-slate-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
             <GlobalBackground />
             <PublicHeader />
 
@@ -223,14 +223,14 @@ function PricingContent() {
                 <div className="space-y-12 container mx-auto px-4">
                     {/* Header Section */}
                     <div className="text-center space-y-4 max-w-3xl mx-auto">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-widest shadow-sm">
                             <Trophy className="h-3.5 w-3.5" />
                             Premium Practice
                         </div>
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.1]">
-                            Simple, Transparent <span className="text-indigo-400">Pricing</span>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-[1.1]">
+                            Simple, Transparent <span className="text-indigo-600">Pricing</span>
                         </h1>
-                        <p className="text-slate-400 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
+                        <p className="text-slate-600 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
                             {role === 'recruiter'
                                 ? "Scale your recruitment with AI-driven screening and deep candidate insights. Purchase credit packs for your hiring campaigns."
                                 : "Get the credits you need to master your next interview. All plan credits are permanent and never expire."}
@@ -240,12 +240,12 @@ function PricingContent() {
                     {/* Tabs Section */}
                     <div className="flex justify-center">
                         <Tabs value={role} onValueChange={(v) => setRole(v as 'student' | 'recruiter')} className="w-[400px]">
-                            <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 rounded-2xl h-14 p-1.5 backdrop-blur-md">
-                                <TabsTrigger value="student" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-500 data-[state=active]:text-white transition-all">
+                            <TabsList className="grid w-full grid-cols-2 bg-slate-100 border border-slate-200 rounded-2xl h-14 p-1.5 backdrop-blur-md">
+                                <TabsTrigger value="student" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">
                                     <Trophy className="mr-2 h-4 w-4" />
                                     Student
                                 </TabsTrigger>
-                                <TabsTrigger value="recruiter" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-indigo-500 data-[state=active]:text-white transition-all">
+                                <TabsTrigger value="recruiter" className="rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">
                                     <Users className="mr-2 h-4 w-4" />
                                     Recruiter
                                 </TabsTrigger>
@@ -255,8 +255,8 @@ function PricingContent() {
 
                     {loading ? (
                         <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
-                            <Loader2 className="h-12 w-12 text-indigo-500 animate-spin" />
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Plans...</p>
+                            <Loader2 className="h-12 w-12 text-indigo-600 animate-spin" />
+                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Loading Plans...</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -274,48 +274,48 @@ function PricingContent() {
                                     <Card
                                         key={plan.id}
                                         className={cn(
-                                            "flex flex-col relative transition-all duration-300 overflow-hidden border-2 bg-white/[0.02] backdrop-blur-lg group hover:-translate-y-1 will-change-transform",
+                                            "flex flex-col relative transition-all duration-300 overflow-hidden border bg-white group hover:-translate-y-1 will-change-transform shadow-sm",
                                             details.popular
-                                                ? 'border-indigo-500 shadow-[0_0_40px_rgba(99,102,241,0.15)] lg:scale-105 z-10'
-                                                : 'border-white/5 hover:border-indigo-500/30'
+                                                ? 'border-indigo-600 shadow-[0_20px_40px_rgba(99,102,241,0.08)] lg:scale-105 z-10'
+                                                : 'border-slate-200 hover:border-indigo-200 hover:shadow-md'
                                         )}
                                     >
                                         {details.popular && (
                                             <div className="absolute top-0 right-0">
-                                                <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-bold uppercase tracking-widest">
+                                                <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-bold uppercase tracking-widest">
                                                     Best Value
                                                 </div>
                                             </div>
                                         )}
 
                                         <CardHeader className="p-8 pb-4">
-                                            <CardTitle className="text-2xl font-bold tracking-tight text-white">{plan.name}</CardTitle>
+                                            <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">{plan.name}</CardTitle>
                                             <CardDescription className="text-sm font-medium text-slate-500">{details.description}</CardDescription>
                                         </CardHeader>
 
                                         <CardContent className="flex-1 p-8 pt-0 space-y-8">
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-baseline gap-1">
-                                                    <span className="text-5xl font-bold tracking-tighter text-white">₹{plan.price}</span>
-                                                    {plan.price > 0 && <span className="text-sm font-bold text-slate-600">/{role === 'recruiter' ? 'mo' : 'once'}</span>}
+                                                    <span className="text-5xl font-bold tracking-tighter text-slate-900">₹{plan.price}</span>
+                                                    {plan.price > 0 && <span className="text-sm font-bold text-slate-500">/{role === 'recruiter' ? 'mo' : 'once'}</span>}
                                                 </div>
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10 w-fit mt-2">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                                    <span className="text-xs font-bold text-slate-300">
+                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 w-fit mt-2">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                                                    <span className="text-xs font-bold text-slate-600">
                                                         {`${minutes.toLocaleString()} mins`}
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-4">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">What&apos;s included</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">What&apos;s included</p>
                                                 <ul className="space-y-4">
                                                     {(plan.features as string[] || details.features).map((feature: string) => (
                                                         <li key={feature} className="flex items-start gap-3 group/item">
-                                                            <div className="h-5 w-5 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover/item:bg-indigo-500 transition-colors">
-                                                                <Check className="h-3 w-3 text-indigo-400 group-hover/item:text-white" />
+                                                            <div className="h-5 w-5 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100 group-hover/item:bg-indigo-600 transition-colors">
+                                                                <Check className="h-3 w-3 text-white" />
                                                             </div>
-                                                            <span className="text-xs font-medium text-slate-400 group-hover/item:text-slate-200 transition-colors leading-snug">{feature}</span>
+                                                            <span className="text-xs font-medium text-slate-600 group-hover/item:text-slate-900 transition-colors leading-snug">{feature}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -327,8 +327,8 @@ function PricingContent() {
                                                 className={cn(
                                                     "w-full h-12 rounded-xl font-bold text-sm transition-all relative overflow-hidden group/btn",
                                                     details.popular
-                                                        ? 'bg-white text-black hover:bg-slate-200 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.02]'
-                                                        : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:scale-[1.02]'
+                                                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 hover:scale-[1.02]'
+                                                        : 'bg-slate-900 hover:bg-slate-800 text-white hover:scale-[1.02]'
                                                 )}
                                                 onClick={() => handleSubscribe(plan)}
                                                 disabled={!!subscribingPlanId || isFree}
@@ -345,11 +345,11 @@ function PricingContent() {
                     )}
 
                     {/* Information Note */}
-                    <div className="text-center space-y-4 pt-8 border-t border-white/5">
-                        <p className="text-xs font-medium text-indigo-400 tracking-wide">
+                    <div className="text-center space-y-4 pt-8 border-t border-slate-100">
+                        <p className="text-xs font-medium text-indigo-600 tracking-wide">
                             ★ Credits Never Expire • Permanent Account Balance ★
                         </p>
-                        <p className="text-[10px] font-medium text-slate-600 uppercase tracking-widest">
+                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
                             Secure Payments • Instant Credit Activation
                         </p>
                     </div>
@@ -370,7 +370,7 @@ function PricingContent() {
 export default function Pricing() {
     return (
         <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center bg-[#0A0A0B]">
+            <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="relative">
                     <div className="h-16 w-16 border-4 border-indigo-500/20 rounded-full animate-ping absolute" />
                     <div className="h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent relative z-10" />

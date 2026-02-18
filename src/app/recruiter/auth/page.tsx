@@ -281,7 +281,7 @@ function RecruiterAuthContent() {
             </div>
 
             {/* Right Column: Auth Form */}
-            <div className="relative flex flex-col items-center justify-center p-4 sm:p-12 overflow-y-auto bg-white min-h-screen lg:min-h-0">
+            <div className="relative flex flex-col items-center p-4 sm:p-12 overflow-y-auto bg-white h-full">
                 <div className="absolute top-6 right-6 z-20">
                     <button onClick={handleExit} className="p-2 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-900">
                         <X className="w-6 h-6" />
@@ -299,7 +299,7 @@ function RecruiterAuthContent() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="w-full max-w-[440px] space-y-8"
+                    className="w-full max-w-[440px] space-y-8 my-auto py-12"
                 >
                     <div className="space-y-2 text-center lg:text-left mt-16 lg:mt-0">
                         <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">

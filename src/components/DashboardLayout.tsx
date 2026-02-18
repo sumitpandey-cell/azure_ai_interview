@@ -120,8 +120,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
   const brandName = isRecruiterPath ? "RECRUIT" : "AI";
   const upgradePath = isRecruiterPath ? "/pricing?role=recruiter" : "/pricing";
 
-
-
   return (
     <div className="flex h-screen bg-sidebar text-foreground font-sans overflow-hidden">
       {/* Mobile Overlay */}
@@ -247,8 +245,6 @@ export function DashboardLayout({ children, headerControls }: DashboardLayoutPro
 
         {/* Bottom Section: Upgrade */}
         <div className="p-4 space-y-4 mt-auto">
-
-
           {/* Report Action Card */}
           {!sidebarCollapsed && showReportAction ? (
             <div className="bg-sidebar-accent rounded-2xl p-4 border border-sidebar-border shadow-lg text-center relative overflow-hidden group">

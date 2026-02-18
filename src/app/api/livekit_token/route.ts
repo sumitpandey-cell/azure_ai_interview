@@ -27,8 +27,6 @@ export async function GET(request: Request) {
     const candidateIdentity = "candidate-" + Math.random().toString(36).substring(7);
 
     // Fetch session config to get avatar selection and session context
-    let selectedVoice = 'alloy'; // Default voice
-    let selectedAvatar = 'default'; // Default avatar ID
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let sessionContext: any = null;
 
@@ -82,16 +80,9 @@ export async function GET(request: Request) {
       }
 
       if (session && !error) {
-        if (config.selectedVoice) {
-          const supportedVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar', 'fenrir', 'Charon', 'Kore', 'Fenrir', 'Aoede', 'Puck'];
-          if (supportedVoices.includes(config.selectedVoice)) {
-            selectedVoice = config.selectedVoice;
-          }
-        }
 
-        if (config.selectedAvatar) {
-          selectedAvatar = config.selectedAvatar;
-        }
+
+
 
         const isCompanyInterview = config.companyInterviewConfig != null;
         sessionContext = {
@@ -167,8 +158,6 @@ export async function GET(request: Request) {
     const ttl = 3600; // 1 hour token validity
 
     const tokenMetadata = {
-      selectedVoice,
-      selectedAvatar,
       sessionId,
       sessionContext
     };

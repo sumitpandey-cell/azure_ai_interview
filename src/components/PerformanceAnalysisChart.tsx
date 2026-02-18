@@ -94,8 +94,8 @@ export const PerformanceAnalysisChart = React.memo(function PerformanceAnalysisC
                                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                                 </linearGradient>
                                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={1} />
-                                    <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0.6} />
+                                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />

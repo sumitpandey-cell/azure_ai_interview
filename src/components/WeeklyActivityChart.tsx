@@ -88,11 +88,11 @@ export const WeeklyActivityChart = React.memo(function WeeklyActivityChart({ dat
             <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                 <div className="flex-1 w-full p-4">
                     <ResponsiveContainer width="100%" height="100%" key={themeKey}>
-                        <AreaChart data={data} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+                        <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
@@ -108,7 +108,7 @@ export const WeeklyActivityChart = React.memo(function WeeklyActivityChart({ dat
                                 tickLine={false}
                                 axisLine={false}
                                 allowDecimals={false}
-                                width={40}
+                                width={30}
                             />
                             <Tooltip
                                 contentStyle={{
@@ -120,13 +120,13 @@ export const WeeklyActivityChart = React.memo(function WeeklyActivityChart({ dat
                                     fontWeight: '700',
                                     boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)'
                                 }}
-                                itemStyle={{ color: 'hsl(var(--accent))' }}
+                                itemStyle={{ color: 'hsl(var(--primary))' }}
                                 cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="count"
-                                stroke="hsl(var(--accent))"
+                                stroke="hsl(var(--primary))"
                                 fillOpacity={1}
                                 fill="url(#colorCount)"
                                 strokeWidth={3}

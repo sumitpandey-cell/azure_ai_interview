@@ -120,6 +120,7 @@ export const analyticsService = {
             const today = new Date();
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 6);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
 
             const { data: sessions, error } = await supabase
                 .from('interview_sessions')

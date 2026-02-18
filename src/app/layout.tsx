@@ -110,10 +110,29 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme') || 'dark';
+                  const path = window.location.pathname;
+                  const isDashboard = path.startsWith('/dashboard') || 
+                                     path.startsWith('/recruiter') || 
+                                     path.startsWith('/settings') ||
+                                     path.startsWith('/interview') ||
+                                     path.startsWith('/reports') ||
+                                     path.startsWith('/campaign') ||
+                                     path.startsWith('/invite') ||
+                                     path.startsWith('/start-interview') ||
+                                     path.startsWith('/roadmap') ||
+                                     path.startsWith('/leaderboard') ||
+                                     path.startsWith('/badges') ||
+                                     path.startsWith('/templates');
+
+                  let theme = 'light';
+                  if (isDashboard) {
+                    theme = localStorage.getItem('theme') || 'dark';
+                  }
+
                   const colorTheme = localStorage.getItem('color-theme');
                   const root = document.documentElement;
                   
+                  root.classList.remove('light', 'dark');
                   root.classList.add(theme);
                   if (colorTheme && colorTheme !== 'purple') {
                     root.setAttribute('data-color-theme', colorTheme);

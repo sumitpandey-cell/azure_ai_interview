@@ -13,8 +13,6 @@ import { type Json } from "@/integrations/supabase/types";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Card } from "@/components/ui/card";
 import { useInterviewStore } from "@/stores/use-interview-store";
-import { AvatarSelection } from "@/components/AvatarSelection";
-import { getDefaultAvatar, getAvatarById, type InterviewerAvatar } from "@/config/interviewer-avatars";
 import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { type SessionConfig } from "@/types/interview";
 
@@ -54,7 +52,6 @@ export default function InterviewSetup() {
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [selectedAvatar, setSelectedAvatar] = useState<InterviewerAvatar>(getDefaultAvatar());
 
     const [showTimeWarning, setShowTimeWarning] = useState(false);
     const { allowed, remaining_seconds, loading: subscriptionLoading } = useSubscription(sessionId as string);
@@ -67,16 +64,6 @@ export default function InterviewSetup() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionId]);
-
-    // Load selected avatar from session config
-    useEffect(() => {
-        if (session?.config?.selectedAvatar) {
-            const avatar = getAvatarById(session.config.selectedAvatar);
-            if (avatar) {
-                setSelectedAvatar(avatar);
-            }
-        }
-    }, [session]);
 
     const fetchSession = async () => {
         try {
@@ -365,8 +352,6 @@ export default function InterviewSetup() {
                 await interviewService.updateSession(sessionId, {
                     config: {
                         ...currentConfig,
-                        selectedAvatar: selectedAvatar.id,
-                        selectedVoice: selectedAvatar.voice,
                         currentStage: 'live',
                     } as unknown as Json
                 });
@@ -395,7 +380,7 @@ export default function InterviewSetup() {
         }
 
         setIsLoading(false);
-        toast.success(`Starting interview with ${selectedAvatar.name}...`);
+        toast.success(`Starting interview with Drona...`);
         router.replace(`/interview/${sessionId}/live?mic=${isMicOn}&camera=${isCameraOn}`);
     };
 
@@ -541,7 +526,7 @@ export default function InterviewSetup() {
                     </div>
                 </div>
 
-                {/* Right Column: Controls & AvatarSelection */}
+                {/* Right Column: Controls */}
                 <div className="lg:col-span-4 flex flex-col gap-5 w-full">
                     {session && (
                         <Card className="rounded-[1.5rem] border border-white/10 bg-card/60 backdrop-blur-xl shadow-xl overflow-hidden">
@@ -591,15 +576,7 @@ export default function InterviewSetup() {
                         </Card>
                     )}
 
-                    {/* Integrated Avatar Selection */}
-                    <div className="relative">
-                        <AvatarSelection
-                            selectedAvatar={selectedAvatar}
-                            onSelect={setSelectedAvatar}
-                            variant="compact"
-                            disabled={isLoading}
-                        />
-                    </div>
+
 
                     <div className="mt-2">
                         <Button

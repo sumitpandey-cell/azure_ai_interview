@@ -23,6 +23,7 @@ const PUBLIC_ROUTES = [
     '/invite',
     '/interview',
     '/recruiter/auth',
+    '/test',
 ];
 
 // Define routes that should redirect to dashboard if already authenticated

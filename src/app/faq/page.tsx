@@ -11,22 +11,22 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className={`border-b border-white/5 transition-all duration-300 ${isOpen ? 'bg-white/[0.02] rounded-2xl border-transparent' : ''}`}>
+        <div className={`border-b border-slate-100 transition-all duration-300 ${isOpen ? 'bg-indigo-50/50 rounded-2xl border-transparent' : ''}`}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between text-left py-6 px-4 md:px-6"
             >
-                <h3 className={`text-lg md:text-xl font-medium transition-colors ${isOpen ? 'text-indigo-400' : 'text-slate-200 hover:text-white'}`}>
+                <h3 className={`text-lg md:text-xl font-semibold transition-colors ${isOpen ? 'text-indigo-600' : 'text-slate-700 hover:text-indigo-600'}`}>
                     {question}
                 </h3>
-                <div className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-indigo-500/20 rotate-45' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                    <Plus className={`h-5 w-5 transition-colors ${isOpen ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <div className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-indigo-600 rotate-45' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                    <Plus className={`h-5 w-5 transition-colors ${isOpen ? 'text-white' : 'text-slate-500'}`} />
                 </div>
             </button>
             <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out px-4 md:px-6 ${isOpen ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'}`}
             >
-                <div className="text-slate-400 leading-relaxed text-base md:text-lg border-t border-white/5 pt-4">
+                <div className="text-slate-600 leading-relaxed text-base md:text-lg border-t border-slate-100/50 pt-4">
                     {answer}
                 </div>
             </div>
@@ -92,7 +92,7 @@ export default function FAQPage() {
     });
 
     return (
-        <div className="min-h-screen bg-[#0A0A0B] font-sans text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-background font-sans text-slate-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
             <GlobalBackground />
             <PublicHeader />
 
@@ -100,26 +100,26 @@ export default function FAQPage() {
                 <div className="container mx-auto px-4">
                     {/* Hero & Search */}
                     <div className="max-w-3xl mx-auto text-center mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        <div className="inline-flex items-center justify-center p-3 mb-6 rounded-2xl bg-indigo-500/10 text-indigo-400">
+                        <div className="inline-flex items-center justify-center p-3 mb-6 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                             <HelpCircle className="h-6 w-6" />
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-                            How can we <span className="text-indigo-400">help?</span>
+                        <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
+                            How can we <span className="text-indigo-600">help?</span>
                         </h1>
-                        <p className="text-xl text-slate-400 mb-10">
+                        <p className="text-xl text-slate-600 mb-10">
                             Everything you need to know about preparing with Arjuna AI.
                         </p>
 
                         <div className="relative max-w-2xl mx-auto group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl opacity-20 group-hover:opacity-40 blur transition-opacity duration-500" />
-                            <div className="relative bg-[#0F0F12] rounded-xl flex items-center p-2 border border-white/10 group-hover:border-indigo-500/30 transition-colors">
-                                <Search className="h-6 w-6 text-slate-500 ml-3 mr-4" />
+                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl opacity-10 group-hover:opacity-20 blur transition-opacity duration-500" />
+                            <div className="relative bg-white rounded-xl flex items-center p-2 border border-slate-200 group-hover:border-indigo-300 transition-colors shadow-sm">
+                                <Search className="h-6 w-6 text-slate-400 ml-3 mr-4" />
                                 <input
                                     type="text"
                                     placeholder="Search for answers..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-transparent text-white placeholder:text-slate-600 focus:outline-none text-lg py-2"
+                                    className="w-full bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none text-lg py-2"
                                 />
                             </div>
                         </div>
@@ -132,9 +132,9 @@ export default function FAQPage() {
                                 <button
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
-                                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeCategory === cat
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 scale-105'
-                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                    className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${activeCategory === cat
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                                         }`}
                                 >
                                     {cat}
@@ -148,24 +148,24 @@ export default function FAQPage() {
                                     <FAQItem key={i} question={faq.question} answer={faq.answer} />
                                 ))
                             ) : (
-                                <div className="text-center py-20 text-slate-500">
+                                <div className="text-center py-20 text-slate-400 font-medium">
                                     No questions found matching your search.
                                 </div>
                             )}
                         </div>
 
                         {/* CTA Box */}
-                        <div className="mt-24 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/10 to-transparent border border-white/10 p-12 text-center relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                        <div className="mt-24 rounded-[2.5rem] bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 p-12 text-center relative overflow-hidden shadow-sm">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-200 to-transparent" />
                             <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6 border border-white/10">
-                                    <MessageCircle className="h-8 w-8 text-indigo-400" />
+                                <div className="w-16 h-16 rounded-full bg-indigo-600/10 flex items-center justify-center mx-auto mb-6 border border-indigo-100">
+                                    <MessageCircle className="h-8 w-8 text-indigo-600" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
-                                <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                                <h3 className="text-2xl font-bold text-slate-900 mb-4">Still have questions?</h3>
+                                <p className="text-slate-600 mb-8 max-w-md mx-auto font-medium">
                                     Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly team.
                                 </p>
-                                <Button size="lg" className="h-12 px-8 bg-white text-black hover:bg-slate-200 rounded-full font-bold" asChild>
+                                <Button size="lg" className="h-12 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-full font-bold shadow-lg" asChild>
                                     <Link href="/contact">Contact Support</Link>
                                 </Button>
                             </div>

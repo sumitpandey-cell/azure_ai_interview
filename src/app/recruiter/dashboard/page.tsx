@@ -13,7 +13,9 @@ import {
     ChevronRight,
     Zap,
     Settings,
-    LogOut
+    LogOut,
+    Share2,
+    Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -56,57 +58,69 @@ export default function RecruiterDashboard() {
 
     const greeting = () => {
         const hours = new Date().getHours();
-        if (hours < 12) return "Good Morning";
-        if (hours < 18) return "Good Afternoon";
-        return "Good Evening";
+        if (hours < 12) return "Morning";
+        if (hours < 18) return "Afternoon";
+        return "Evening";
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 pb-12 animate-in fade-in duration-700">
-            {/* Top Toolbar / Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 rounded-full px-2 py-0 text-[10px] font-bold uppercase tracking-wider">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
-                            Live Metrics
-                        </Badge>
+        <div className="max-w-7xl mx-auto space-y-6 pb-12 animate-in fade-in duration-700">
+            {/* Header Section - Greeting and Controls */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-border/50">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm animate-pulse" />
+                        <span className="text-xs font-medium text-muted-foreground">System Active</span>
                     </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                        {greeting()}, <span className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">{user?.user_metadata?.full_name?.split(' ')[0] || 'Recruiter'}</span>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                        Good {greeting()},{' '}
+                        <span className="text-primary">
+                            {user?.user_metadata?.full_name?.split(' ')[0] || 'Recruiter'}
+                        </span>
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm mt-1">
-                        Your hiring pipeline is looking <span className="text-primary font-bold">active</span>.
-                        Screening <span className="text-foreground font-bold">{stats.totalApplicants}</span> candidates across <span className="text-foreground font-bold">{campaigns.length}</span> links.
+                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Sparkles className="h-3 w-3 text-primary" />
+                        Screening {stats.totalApplicants} candidates across {campaigns.length} links
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 self-start md:self-center">
-                    <div className="flex items-center gap-1.5 glass-panel p-1 rounded-xl mr-2">
+                {/* Desktop Header Controls */}
+                <div className="hidden lg:flex items-center gap-2 p-1.5 bg-background/60 backdrop-blur-md border border-border/40 rounded-full shadow-sm">
+                    <div className="flex items-center gap-1 px-2 border-r border-border/40 h-8">
                         <NotificationBell />
                         <ThemeToggle />
                     </div>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 border border-border/50 hover:bg-muted/50 transition-all overflow-hidden">
-                                <Avatar className="h-full w-full">
+                            <button className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 hover:bg-accent border border-border/40 rounded-full transition-all duration-300 group">
+                                <Avatar className="h-8 w-8 border border-border/40 shadow-sm transition-transform group-hover:scale-105">
                                     <AvatarImage src={getAvatarUrl(user?.user_metadata?.avatar_url, user?.id || 'recruiter')} />
-                                    <AvatarFallback>{getInitials(user?.user_metadata?.full_name)}</AvatarFallback>
+                                    <AvatarFallback className="text-xs font-bold">{getInitials(user?.user_metadata?.full_name)}</AvatarFallback>
                                 </Avatar>
-                            </Button>
+                                <div className="flex flex-col items-start leading-none">
+                                    <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                                        {user?.user_metadata?.full_name?.split(' ')[0] || "Recruiter"}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-muted-foreground">Account</span>
+                                </div>
+                            </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-2xl">
-                            <div className="px-3 py-2 border-b border-border/50">
-                                <p className="text-sm font-bold truncate">{user?.user_metadata?.full_name || 'Recruiter'}</p>
-                                <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                        <DropdownMenuContent align="end" className="w-56 p-1.5 bg-background/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="px-3 py-2 mb-1 border-b border-border/40">
+                                <p className="text-sm font-bold truncate text-foreground">{user?.user_metadata?.full_name || 'Recruiter'}</p>
+                                <p className="text-[10px] font-medium truncate text-muted-foreground">{user?.email}</p>
                             </div>
-                            <DropdownMenuItem onClick={() => router.push('/recruiter/settings')} className="cursor-pointer gap-2 py-2">
+                            <DropdownMenuItem onClick={() => router.push('/recruiter/settings')} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
                                 <Settings className="h-4 w-4" />
                                 <span>Settings</span>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer gap-2 py-2">
+                            <DropdownMenuItem onClick={() => {/* Add share functionality */ }} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-accent focus:text-accent-foreground">
+                                <Share2 className="h-4 w-4" />
+                                <span>Share Platform</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="my-1 border-border/40" />
+                            <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg cursor-pointer transition-colors focus:bg-destructive/10 focus:text-destructive text-destructive">
                                 <LogOut className="h-4 w-4" />
                                 <span>Sign Out</span>
                             </DropdownMenuItem>
@@ -114,21 +128,21 @@ export default function RecruiterDashboard() {
                     </DropdownMenu>
 
                     <Link href="/recruiter/campaigns/create">
-                        <Button className="rounded-xl shadow-lg shadow-primary/20 gap-2 h-11 px-5 font-bold group">
-                            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                        <Button className="h-9 px-4 text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 group">
+                            <Plus className="h-4 w-4 mr-1 transition-transform group-hover:rotate-90" />
                             Create Link
                         </Button>
                     </Link>
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Quick Stats Grid - Matching Student Dashboard */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: "Active Links", value: stats.activeCampaigns, icon: Target, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-                    { label: "Total Applicants", value: stats.totalApplicants, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
-                    { label: "Interviews (Week)", value: stats.interviewsThisWeek, icon: Activity, color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20" },
-                    { label: "Avg. Merit", value: `${stats.avgScore}%`, icon: Trophy, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+                    { label: "Active Links", value: stats.activeCampaigns, icon: Target, color: "text-blue-500", iconBg: "text-blue-500 fill-blue-500/20" },
+                    { label: "Total Applicants", value: stats.totalApplicants, icon: Users, color: "text-indigo-500", iconBg: "text-indigo-500 fill-indigo-500/20" },
+                    { label: "Interviews (Week)", value: stats.interviewsThisWeek, icon: Activity, color: "text-rose-500", iconBg: "text-rose-500 fill-rose-500/20" },
+                    { label: "Avg. Merit", value: `${stats.avgScore}%`, icon: Trophy, color: "text-amber-500", iconBg: "text-amber-500 fill-amber-500/20" },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -136,41 +150,32 @@ export default function RecruiterDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 + 0.2 }}
                     >
-                        <Card className="glass-card hover:border-primary/50 transition-all duration-500 rounded-2xl h-full relative overflow-hidden group">
-                            <div className={cn("absolute right-0 top-0 w-24 h-24 blur-3xl opacity-20 transition-transform duration-700 group-hover:scale-150", stat.bg)} />
-                            <CardContent className="p-6">
-                                <div className="flex items-center gap-4">
-                                    <div className={cn("p-2.5 rounded-xl border", stat.bg, stat.border)}>
-                                        <stat.icon className={cn("h-5 w-5", stat.color)} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
-                                        <div className="flex items-baseline gap-2">
-                                            {loading ? (
-                                                <Skeleton className="h-7 w-12" />
-                                            ) : (
-                                                <h3 className="text-2xl font-black tracking-tight">{stat.value}</h3>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div className="bg-card/85 dark:bg-card/75 backdrop-blur-md rounded-3xl p-5 border border-border/80 dark:border-border/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 flex flex-col justify-between h-20">
+                            <div className={cn("absolute -right-3 top-1/2 -translate-y-1/2 opacity-[0.06] group-hover:opacity-10 transition-opacity pointer-events-none")}>
+                                <stat.icon className={cn("h-20 w-20", stat.iconBg)} />
+                            </div>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider relative z-10">{stat.label}</span>
+                            <span className="text-2xl font-black text-foreground tabular-nums tracking-tighter relative z-10">
+                                {loading ? <Skeleton className="h-8 w-12 bg-muted/50 rounded-lg" /> : stat.value}
+                            </span>
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Main Content: Pipeline */}
                 <div className="lg:col-span-8 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="h-8 w-1 bg-primary rounded-full" />
-                            <h2 className="text-xl font-bold tracking-tight">Active Pipeline</h2>
+                    <div className="flex items-end justify-between px-1 pb-2 border-b border-border/40">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                <div className="h-1 w-8 bg-primary rounded-full" />
+                                Active Pipeline
+                            </h3>
                         </div>
-                        <Button variant="ghost" size="sm" asChild className="text-primary hover:text-primary/10 font-bold rounded-lg px-3">
+                        <Button variant="ghost" size="sm" asChild className="h-8 px-3 text-muted-foreground hover:text-primary hover:bg-primary/5 font-medium text-xs gap-1">
                             <Link href="/recruiter/campaigns" className="flex items-center gap-1.5">
-                                View all links <ArrowRight className="h-4 w-4" />
+                                View all links <ArrowRight className="h-3 w-3" />
                             </Link>
                         </Button>
                     </div>

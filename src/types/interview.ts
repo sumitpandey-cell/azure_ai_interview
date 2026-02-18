@@ -15,8 +15,6 @@ export interface SessionConfig {
     jobDescription?: string;
     duration?: number;
     difficulty?: 'Beginner' | 'Intermediate' | 'Advanced' | string;
-    selectedAvatar?: string;
-    selectedVoice?: string;
     useResume?: boolean;
     companyName?: string;
     role?: string;
