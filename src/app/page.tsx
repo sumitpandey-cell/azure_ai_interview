@@ -34,7 +34,12 @@ const VoiceSphere = ({ isActive }: { isActive: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const sphereRef = useRef<THREE.Points | null>(null);
+  const requestRef = useRef<number | null>(null);
+  const targetActiveRef = useRef(0);
+
+  useEffect(() => {
+    targetActiveRef.current = isActive ? 1 : 0;
+  }, [isActive]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -167,13 +172,22 @@ const VoiceSphere = ({ isActive }: { isActive: boolean }) => {
 
     const sphere = new THREE.Points(geometry, material);
     scene.add(sphere);
-    sphereRef.current = sphere;
 
     let time = 0;
     const animate = () => {
-      requestAnimationFrame(animate);
+      requestRef.current = requestAnimationFrame(animate);
       time += 0.01;
       material.uniforms.uTime.value = time;
+
+      // Smoothed Active Transition
+      const current = material.uniforms.uActive.value;
+      const target = targetActiveRef.current;
+      if (Math.abs(current - target) > 0.001) {
+        material.uniforms.uActive.value += (target - current) * 0.08;
+      } else {
+        material.uniforms.uActive.value = target;
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -188,30 +202,14 @@ const VoiceSphere = ({ isActive }: { isActive: boolean }) => {
     };
     window.addEventListener('resize', handleResize);
 
-    const container = containerRef.current;
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (container && renderer.domElement) {
-        container.removeChild(renderer.domElement);
-      }
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      renderer.dispose();
+      geometry.dispose();
+      material.dispose();
     };
   }, []);
-
-  useEffect(() => {
-    if (materialRef.current) {
-      const targetValue = isActive ? 1 : 0;
-      const animateActive = () => {
-        const current = materialRef.current!.uniforms.uActive.value;
-        if (Math.abs(current - targetValue) < 0.005) {
-          materialRef.current!.uniforms.uActive.value = targetValue;
-          return;
-        }
-        materialRef.current!.uniforms.uActive.value += (targetValue - current) * 0.06;
-        requestAnimationFrame(animateActive);
-      };
-      animateActive();
-    }
-  }, [isActive]);
 
   return <div ref={containerRef} className="absolute inset-0 flex items-center justify-center pointer-events-none" />;
 };
@@ -436,28 +434,29 @@ const CapabilitiesSection = () => {
 };
 
 const ModernBackground = () => {
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
-      });
+      if (!containerRef.current) return;
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      containerRef.current.style.setProperty('--mouse-x', `${x}%`);
+      containerRef.current.style.setProperty('--mouse-y', `${y}%`);
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
+    <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
       <div className="absolute inset-0 bg-background" />
 
-      {/* Interactive Spotlight */}
+      {/* Interactive Spotlight - uses CSS variables for performance */}
       <div
         className="absolute inset-0 transition-opacity duration-1000"
         style={{
-          background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, hsl(var(--primary) / 0.1) 0%, transparent 65%)`,
+          background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(var(--primary) / 0.1) 0%, transparent 65%)`,
         }}
       />
 

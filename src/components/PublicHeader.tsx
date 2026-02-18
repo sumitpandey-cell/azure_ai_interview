@@ -82,7 +82,7 @@ export function PublicHeader({ }: PublicHeaderProps) {
                         />
                     </div>
                     <span className="font-bold text-xl tracking-tight text-foreground group-hover:text-primary transition-colors">
-                        Arjuna
+                        ArjunaAI
                     </span>
                 </Link>
 
