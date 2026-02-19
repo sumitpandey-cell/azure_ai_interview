@@ -178,6 +178,6 @@ export const config = {
          * - public folder
          * - api routes (handled separately)
          */
-        '/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|manifest\\.json|site\\.webmanifest|sw\\.js|workbox-.*\\.js|apple-touch-icon.*\\.png|robots\\.txt|sitemap.*\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|manifest\\.json|site\\.webmanifest|sw\\.js|workbox-.*\\.js|apple-touch-icon.*\\.png|robots\\.txt|sitemap.*\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm)$).*)',
     ],
 };
