@@ -2,9 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Target, MessageSquare, Award, Zap, CheckCircle2, ArrowRight, Sparkles, Star, Building2, Mic, PlayCircle, Trophy, BarChart3 } from "lucide-react";
+import { MessageSquare, CheckCircle2, ArrowRight, Star, Building2, Mic, PlayCircle, BarChart3 } from "lucide-react";
 import Link from "next/link";
-import ScrollReveal from "@/components/ScrollReveal";
 import Image from "next/image";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";

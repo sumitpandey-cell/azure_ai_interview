@@ -1,8 +1,6 @@
-"use strict";
-import { Mic, BarChart3, Trophy, Target, Sparkles, Brain, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { Mic, BarChart3, Target, Sparkles, Brain, ArrowRight, Zap } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
 // Reusable Bento Card Component
 const BentoCard = ({
@@ -18,7 +16,7 @@ const BentoCard = ({
     className?: string;
     title: string;
     description: string;
-    icon: any;
+    icon: React.ElementType;
     visual?: React.ReactNode;
     delay?: number
 }) => {

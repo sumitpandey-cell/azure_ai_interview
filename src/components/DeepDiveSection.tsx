@@ -1,9 +1,8 @@
 "use strict";
 import { useRef, useEffect } from "react";
-import { CheckCircle2, TrendingUp, Mic, Activity, ArrowRight, Zap, Play, BarChart3, LineChart, MoveRight } from "lucide-react";
+import { CheckCircle2, Activity, MoveRight } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export function DeepDiveSection() {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -47,7 +46,7 @@ export function DeepDiveSection() {
                         </h3>
 
                         <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-                            Confidence comes from evidence. Stop wondering if you're good enough—benchmark your performance against thousands of ambitious engineers worldwide.
+                            Confidence comes from evidence. Stop wondering if you&apos;re good enough—benchmark your performance against thousands of ambitious engineers worldwide.
                         </p>
 
                         <div className="space-y-4">
@@ -115,7 +114,7 @@ export function DeepDiveSection() {
                         </h3>
 
                         <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-                            Don't practice in the dark. See exactly how your skills compare to successful candidates at top tech companies. Track your daily improvements and know when you're ready.
+                            Don&apos;t practice in the dark. See exactly how your skills compare to successful candidates at top tech companies. Track your daily improvements and know when you&apos;re ready.
                         </p>
 
                         <div className="space-y-4">
