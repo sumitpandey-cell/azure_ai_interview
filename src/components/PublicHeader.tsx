@@ -66,17 +66,15 @@ export function PublicHeader({ transparent = true }: PublicHeaderProps) {
 
                     {/* Logo Section */}
                     <Link href="/" className="flex items-center gap-2.5 group mr-8">
-                        <div className="relative flex items-center justify-center w-9 h-9 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
                             <Image
                                 src="/arjuna_logo.png"
                                 alt="Arjuna AI"
                                 width={22}
                                 height={22}
-                                className="w-5 h-5 object-contain brightness-0 invert"
+                                className="w-10 h-10 object-contain"
                             />
-                        </div>
                         <span className="font-bold text-xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
-                            Arjuna
+                            ArjunaAI
                         </span>
                     </Link>
 
