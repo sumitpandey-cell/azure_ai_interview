@@ -17,11 +17,11 @@ import { PremiumLogoLoader } from "@/components/PremiumLogoLoader";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { DeepDiveSection } from "@/components/DeepDiveSection";
 import { GlobalReachSection } from "@/components/GlobalReachSection";
-
-// Animations removed for performance
-
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+
+
 
 // Section Wrapper - Animations Disabled for Performance
 const SectionWrapper = ({ children, className, id }: { children: React.ReactNode, className?: string, id?: string }) => {
@@ -235,6 +235,8 @@ function HomeContent() {
           </div>
         </div>
       </section>
+
+
 
       {/* Features Section (Bento Grid Redesign) */}
       <FeaturesSection />
